@@ -9,7 +9,7 @@ import util = require('util');
 import * as model from '../../models/models';
 // Misc models
 // Autoload
-import { Controller, Get, QueryParams, PathParams, Locals, BodyParams, UseBeforeEach, UseBefore, Put, Required, Patch, Post, Delete } from '@tsed/common';
+import { Controller, Get, QueryParams, PathParams, Locals, BodyParams, UseBeforeEach, UseBefore, Put, Required, Patch, Post, Delete, Err } from '@tsed/common';
 import {MulterOptions, MultipartFile} from "@tsed/multipartfiles";
 import controller from '../controller';
 import { Summary, Returns, ReturnsArray, Description } from '@tsed/swagger';
@@ -162,9 +162,11 @@ export class GroupsController extends controller {
         let groupInfo;
         try {
             groupInfo = await this.group.getInfo(groupId);
+            /*
             if (groupInfo.groupStatus === model.group.groupStatus.locked) {
                 throw false;
             }
+            */
         } catch (e) {
             throw new this.BadRequest('InvalidGroupId');
         }
@@ -387,8 +389,15 @@ export class GroupsController extends controller {
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number
     ) {
-        // Verify Group Exists
-        await this.getGroupInfo(groupId);
+        // Verify group exists and isnt locked
+        try {
+            let groupData = await this.group.getInfo(groupId);
+            if (groupData.groupStatus === model.group.groupStatus.locked) {
+                throw new Error('Group is locked');
+            }
+        }catch(e) {
+            throw new this.BadRequest('InvalidGroupId');
+        }
         // Get Role
         const role = await this.getAuthRole(userInfo, groupId);
         // Must be a guest in this group to join it
@@ -422,8 +431,12 @@ export class GroupsController extends controller {
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number
     ) {
-        // Verify Group Exists
-        await this.getGroupInfo(groupId);
+        // Verify group exists, ignoring locked state
+        try {
+            await this.group.getInfo(groupId);
+        }catch(e) {
+            throw new this.BadRequest('InvalidGroupId');
+        }
         // Get Role
         const role = await this.getAuthRole(userInfo, groupId);
         // Must not be a guest

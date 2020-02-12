@@ -44,11 +44,9 @@ $.imgReload = function() {
     });
 }
 
-jQuery(document).ready(function() {
-    setTimeout(() => {
-        $.imgReload();
-    },2500);
-});
+setInterval(() => {
+    $.imgReload();
+}, 2500);
 
 $(document).on('error', 'img', function(ev) {
     console.log('Image load error');
@@ -1286,6 +1284,9 @@ function request(url, method, body) {
                         if (typeof xhr.responseJSON.message === "undefined") {
                             xhr.responseJSON.message = "An unknown error has ocurred.";
                         }
+                        if (xhr.responseJSON && xhr.responseJSON.error && xhr.responseJSON.error.code) {
+                            xhr.responseJSON.message = errorTransform(xhr.responseJSON.error.code);
+                        }
                         reject(xhr);
                     }
                 },
@@ -1294,8 +1295,8 @@ function request(url, method, body) {
                         err.responseJSON = {};
                         err.responseJSON.message = "An unknown error has ocurred.";
                     }
-                    if (error.responseJSON && error.responseJSON.error && error.responseJSON.error.code) {
-                        err.responseJSON.message = errorTransform(error.responseJSON.error.code);
+                    if (err.responseJSON && err.responseJSON.error && err.responseJSON.error.code) {
+                        err.responseJSON.message = errorTransform(err.responseJSON.error.code);
                     }
                     reject(err);
                 }

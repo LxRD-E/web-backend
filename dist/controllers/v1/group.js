@@ -115,9 +115,6 @@ let GroupsController = class GroupsController extends controller_1.default {
         let groupInfo;
         try {
             groupInfo = await this.group.getInfo(groupId);
-            if (groupInfo.groupStatus === model.group.groupStatus.locked) {
-                throw false;
-            }
         }
         catch (e) {
             throw new this.BadRequest('InvalidGroupId');
@@ -236,7 +233,15 @@ let GroupsController = class GroupsController extends controller_1.default {
         return { success: true };
     }
     async join(userInfo, groupId) {
-        await this.getGroupInfo(groupId);
+        try {
+            let groupData = await this.group.getInfo(groupId);
+            if (groupData.groupStatus === model.group.groupStatus.locked) {
+                throw new Error('Group is locked');
+            }
+        }
+        catch (e) {
+            throw new this.BadRequest('InvalidGroupId');
+        }
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.rank !== 0) {
             throw new this.Conflict('AlreadyGroupMember');
@@ -253,7 +258,12 @@ let GroupsController = class GroupsController extends controller_1.default {
         return { success: true };
     }
     async leave(userInfo, groupId) {
-        await this.getGroupInfo(groupId);
+        try {
+            await this.group.getInfo(groupId);
+        }
+        catch (e) {
+            throw new this.BadRequest('InvalidGroupId');
+        }
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.rank === 0) {
             throw new this.BadRequest('InvalidGroupPermissions');

@@ -79,7 +79,12 @@ let WWWGroupController = class WWWGroupController extends controller_1.default {
         try {
             groupData = await this.group.getInfo(filteredId);
             if (groupData.groupStatus === model.group.groupStatus.locked) {
-                return res.redirect("/404");
+                let viewData = new this.WWWTemplate({ 'title': 'Locked Group' });
+                viewData.page = {
+                    groupStatus: 1,
+                    groupId: filteredId,
+                };
+                return viewData;
             }
         }
         catch (e) {

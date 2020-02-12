@@ -106,7 +106,12 @@ export class WWWGroupController extends controller {
             groupData = await this.group.getInfo(filteredId);
             // If locked (aka banned), redirect to 404
             if (groupData.groupStatus === model.group.groupStatus.locked) {
-                return res.redirect("/404");
+                let viewData = new this.WWWTemplate({'title': 'Locked Group'});
+                viewData.page = {
+                    groupStatus: 1,
+                    groupId: filteredId,
+                };
+                return viewData;
             }
         } catch (e) {
             return res.redirect("/404");
