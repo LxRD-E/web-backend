@@ -7,3 +7,4 @@
 /.nyc_output
 /src/uploads
 /dist/uploads
+/dist_module/*
