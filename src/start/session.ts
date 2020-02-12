@@ -8,7 +8,6 @@ const options = Config.redis;
 
 import redis = require('redis')
 import session = require('express-session')
-/*
 let RedisStore = require('connect-redis')(session)
 
 const redisConfig = {
@@ -26,7 +25,7 @@ redisClient.on('error', (e) => {
     console.log(e);
 })
 let store = new RedisStore({ client: redisClient })
-*/
+
 
 /**
  * App is the Express App, but the type can't actually be defined so it has to be left as "any"
@@ -35,7 +34,7 @@ export const parser = session({
     name: 'rbxsession',
     secret: Config.session.secret,
     resave: false,
-    // store: store,
+    store: store,
     saveUninitialized: true,
     cookie: {
         secure: Config.session.secure,

@@ -4,7 +4,7 @@ import Knex = require('knex');
 import redis from '../helpers/ioredis';
 import ioredis = require('ioredis');
 import moment = require('moment');
-import * as test from 'moment';
+
 /**
  * **Database Access Layer**
  * Provides access to knex and redis for DAL services.
