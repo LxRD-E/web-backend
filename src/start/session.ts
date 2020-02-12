@@ -15,6 +15,7 @@ const redisConfig = {
     host: Config.redis.host,
     port: Config.redis.port || 6379,
     enable_offline_queue: true,
+    auth_pass: Config.redis.pass || '',
 };
 let redisClient = redis.createClient(redisConfig)
 redisClient.unref()
