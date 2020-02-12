@@ -45,7 +45,9 @@ $.imgReload = function() {
 }
 
 jQuery(document).ready(function() {
-    setTimeout('$.imgReload()',2500);
+    setTimeout(() => {
+        $.imgReload();
+    },2500);
 });
 
 $(document).on('error', 'img', function(ev) {
