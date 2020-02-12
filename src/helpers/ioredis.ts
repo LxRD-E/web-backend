@@ -1,5 +1,6 @@
 import config from './config';
 import ioRedis = require('ioredis');
+/*
 const ioRedisConfig = {
     password: config.redis.pass || '',
     host: config.redis.host,
@@ -16,3 +17,5 @@ redis.on('error', (ev) => {
 });
 
 export default redis;
+*/
+export default {} as any;
