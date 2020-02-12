@@ -58,7 +58,7 @@ export default class AvatarController extends controller {
         const TorsoArray = filterRGB([...TorsoRGB]) as Array<number>;
         const HeadArray = filterRGB([...HeadRGB]) as Array<number>;
         if (!LegArray || !HeadArray || !TorsoArray) {
-            throw new this.BadRequest('InvalidCatalogIds');
+            throw new this.BadRequest('InvalidRGBArray');
         }
 
         const jsonArray = {
@@ -96,11 +96,11 @@ export default class AvatarController extends controller {
 
         for (const catalogId of filteredHats) {
             // Check if owns
-            if (isNaN(catalogId)) {
+            if (typeof catalogId !== 'number') {
                 throw new this.BadRequest('InvalidCatalogIds');
             }
             let owns = await this.user.getUserInventoryByCatalogId(userInfo.userId, catalogId);
-            if (owns.length <= 0) {
+            if (owns.length === 0) {
                 throw new this.BadRequest('InvalidCatalogIds');
             }
             if (owns[0]) {

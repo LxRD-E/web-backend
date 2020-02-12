@@ -108,7 +108,8 @@ export enum HttpErrors {
     InvalidComment,
     NoFileSpecified,
     InvalidOBJSpecified,
-    InvalidMTLSpecified
+    InvalidMTLSpecified,
+    InvalidRGBArray,
 };
 // @Locals('userInfo') userInfo: model.user.UserInfo,
 export const ErrorTemplate = (title: string, body: string): string => {

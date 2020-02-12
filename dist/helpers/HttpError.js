@@ -112,6 +112,7 @@ var HttpErrors;
     HttpErrors[HttpErrors["NoFileSpecified"] = 107] = "NoFileSpecified";
     HttpErrors[HttpErrors["InvalidOBJSpecified"] = 108] = "InvalidOBJSpecified";
     HttpErrors[HttpErrors["InvalidMTLSpecified"] = 109] = "InvalidMTLSpecified";
+    HttpErrors[HttpErrors["InvalidRGBArray"] = 110] = "InvalidRGBArray";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 ;
 exports.ErrorTemplate = (title, body) => {
