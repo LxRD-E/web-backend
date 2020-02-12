@@ -5,7 +5,13 @@ const options = config_1.default.redis;
 const redis = require("redis");
 const session = require("express-session");
 let RedisStore = require('connect-redis')(session);
-let redisClient = redis.createClient(options);
+const redisConfig = {
+    password: config_1.default.redis.pass || '',
+    host: config_1.default.redis.host,
+    port: config_1.default.redis.port || 6379,
+    enable_offline_queue: true,
+};
+let redisClient = redis.createClient(redisConfig);
 redisClient.unref();
 redisClient.on('error', console.log);
 let store = new RedisStore({ client: redisClient });
