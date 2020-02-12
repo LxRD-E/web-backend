@@ -7,7 +7,7 @@ const ioRedisConfig = {
     host: config_1.default.redis.host,
     connectTimeout: 10000,
     port: config_1.default.redis.port || 6379,
-    useOfflineQueue: true,
+    enableOfflineQueue: true,
 };
 console.log(ioRedisConfig);
 const redis = new ioRedis(ioRedisConfig);
