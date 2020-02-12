@@ -79,10 +79,12 @@ let AvatarController = class AvatarController extends controller_1.default {
         const insertArray = [];
         for (const catalogId of filteredHats) {
             if (typeof catalogId !== 'number') {
+                console.log('catalogId is of invalid type: ' + catalogId);
                 throw new this.BadRequest('InvalidCatalogIds');
             }
             let owns = await this.user.getUserInventoryByCatalogId(userInfo.userId, catalogId);
             if (owns.length === 0) {
+                console.log('User is not owner of: ' + catalogId.toString());
                 throw new this.BadRequest('InvalidCatalogIds');
             }
             if (owns[0]) {
