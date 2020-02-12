@@ -609,7 +609,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getOwnedItemsByCatalogId", null);
 __decorate([
-    common_1.Patch('/market/:inventoryId'),
+    common_1.Patch('/market/:userInventoryId'),
     swagger_1.Summary('Sell an item that the authenticated user has permission to sell. If price set to 0, the item will be delisted'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidPrice: Price must be between 0 and 1,000,000\nCannotBeSold: Item cannot be listed for sale\n' }),
     common_1.UseBeforeEach(auth_1.csrf),

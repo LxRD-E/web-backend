@@ -436,7 +436,7 @@ export class UsersController extends controller {
         return ownedItems;
     }
 
-    @Patch('/market/:inventoryId')
+    @Patch('/market/:userInventoryId')
     @Summary('Sell an item that the authenticated user has permission to sell. If price set to 0, the item will be delisted')
     @Returns(400, { type: model.Error, description: 'InvalidPrice: Price must be between 0 and 1,000,000\nCannotBeSold: Item cannot be listed for sale\n' })
     @UseBeforeEach(csrf)
