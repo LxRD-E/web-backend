@@ -892,7 +892,7 @@ __decorate([
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __param(2, common_1.Required()),
-    __param(2, common_1.PathParams('description', String)),
+    __param(2, common_1.BodyParams('description', String)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
     __metadata("design:returntype", Promise)

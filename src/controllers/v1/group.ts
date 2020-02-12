@@ -725,7 +725,7 @@ export class GroupsController extends controller {
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number, 
         @Required()
-        @PathParams('description', String) newDescription: string
+        @BodyParams('description', String) newDescription: string
     ) {
         const userData = userInfo;
         // Validate Description
