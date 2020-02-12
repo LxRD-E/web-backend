@@ -1,0 +1,92 @@
+@html.extend('layouts/default', function(model) {
+    @html.block('content', function(model) {
+        <div class="row" style="padding:1rem 0 1rem 0">
+            <div class="col-6">
+                <h1>Forums</h1>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="row">
+                    <div class="col-8 col-md-8">
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="searchForForumInput" placeholder="Search Forum" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="col-4 col-md-4">
+                        <div class="form-group">
+                            <button type="button" class="btn btn-success" style="width: 100%;" id="searchForumPostClick">Search</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="row" id="forumpreloader">
+                    <div class="col-12">
+                                            <div class="spinner-border text-success" role="status" style="display: block;margin: 0 auto;">
+                                                <span class="sr-only">Loading...</span>
+                                            </div>
+                                            </div>
+                </div>
+                <div class="row forumcategories" style="display: none;">
+                    <div class="col-12">
+                        <div class="card bg-success" style="color:white;border-radius:0;">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <h5 style="margin-bottom:0;">Subcategory</h5>
+                                    </div>
+                                    <div class="col-2 d-none d-md-block text-center">
+                                        <h5 style="margin-bottom:0;">Threads</h5>
+                                    </div>
+                                    <div class="col-2 d-none d-lg-block text-center">
+                                        <h5 style="margin-bottom:0;">Posts</h5>
+                                    </div>
+                                    <div class="col-6 col-md-4 col-lg-2 text-center">
+                                        <h5 style="margin-bottom:0;">Last Post</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 forumSubCategory" data-id="1" style="border-bottom: 1px solid rgba(0,0,0,.125);">
+                        <div class="card" style="border-radius:0;border:none;box-shadow:none;">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <a href="/">
+                                            <h5 style="margin-bottom:0;">Loading...</h5>
+                                        </a>
+                                        <p style="margin-bottom:0;">Loading Forum...</p>
+                                    </div>
+                                    <div class="col-2 d-none d-md-block vertical-align-text text-center">
+                                        <h6 style="margin-bottom:0;">
+                                            <div class="spinner-border text-success" role="status">
+                                                <span class="sr-only">Loading...</span>
+                                            </div>
+                                        </h6>
+                                    </div>
+                                    <div class="col-2 d-none d-lg-block vertical-align-text text-center">
+                                        <h6 style="margin-bottom:0;">
+                                            <div class="spinner-border text-success" role="status">
+                                                <span class="sr-only">Loading...</span>
+                                            </div>
+                                        </h6>
+                                    </div>
+                                    <div class="col-6 col-md-4 col-lg-2 vertical-align-text text-center">
+                                        <h6 style="margin-bottom:0;">
+                                            <div class="spinner-border text-success" role="status">
+                                                <span class="sr-only">Loading...</span>
+                                            </div>
+                                        </h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    })
+    @html.block('js', function(model) {
+        <script nonce="@model.nonce" src="/js/pages/forum/index.js?v=@model.v"></script>
+    })
+})

@@ -1,0 +1,40 @@
+@html.extend('layouts/banned', function(model) {
+  @html.block('content', function(model) {
+      <div id="tradedata" data-userid ="@model.page.userId" data-username="@model.page.userId"></div>
+      <div class="row">
+        <div class="col-sm-12">
+            <br>
+            @/*<h1 style="white-space:pre-wrap;padding-top: 1rem;" class="text-left">Trade with @model.page.username</h1>*/
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm-12">
+            <button type="button" class="btn btn-small btn-success" id="sendTradeRequest" style="margin:0 auto;display: block;">Send Trade</button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 col-md-6">
+            <div class="row">
+                <div class="col-sm-12">
+                    <h3 style="color:white;">Your Inventory</h3>
+                </div>
+            </div>
+            <div class="row" id="tradeYourInventory">
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-6">
+            <div class="row">
+                <div class="col-sm-12">
+                    <h3 style="color:white;">@model.page.username's Inventory</h3>
+                </div>
+            </div>
+            <div class="row" id="tradePartnerInventory">
+
+            </div>
+        </div>
+    </div>
+  })
+  @html.block('js', function(model) {
+      <script nonce="@model.nonce" src="/js/pages/trade.js?v=@model.v"></script>
+  })
+})

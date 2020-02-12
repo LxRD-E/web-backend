@@ -1,0 +1,232 @@
+@html.extend('layouts/default', function(model) {
+    @html.block("meta", function(model) {
+        <meta property="og:title" content="@model.page.username's Profile" />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://hindigamer.club/api/v1/user/@model.page.userId/thumbnail/redirect" />
+        <meta name="twitter:title" content="@model.page.username's Profile">
+        <meta name="twitter:description" content="@model.page.username's Profile | @model.page.blurb">
+        <meta name="twitter:image1" content="https://hindigamer.club/api/v1/user/@model.page.userId/thumbnail/redirect">
+    })
+    @html.block('content', function(model) {
+        <div id="profiledata" data-userid ="@model.page.userId" data-username="@model.page.username"></div>
+        @if (model.page.deleted) {
+            <div class="row" style="margin:0;margin-top:1rem;" id="bannerText">
+                <div class="col-12 bg-danger text-white">
+                    <div class="container">
+                        <h6 style="margin-top:1rem;margin-bottom:1rem;">This user's account has been terminated.</h6>
+                    </div>
+                </div>
+            </div>
+        }
+        <div class="row" style="margin-top:1rem;">
+            <div class="col-12">
+                <div class="card" style="">
+                    <div class="card-body">
+                        <div class="row">
+                                <div class="col-9 col-sm-10 col-lg-11">
+                                    @if (model.page.online === true) {
+                                        <h3>
+                                        <span style="color:#46c35b;font-size:small;vertical-align: middle;" data-toggle="tooltip" data-placement="top" title="This user is online."><i class="fas fa-circle"></i></span> <span>@model.page.username</span>
+                                        @if (model.page.staff >= 1) {
+                                            <i style="font-size:small;color:red;" class="fas fa-user-shield" data-toggle="tooltip" data-placement="top" title="This user is an administrator."></i>
+                                        }
+                                        </h3>
+                                    }else{
+                                        <h3>
+                                        <span style="color:grey;font-size:small;vertical-align: middle;" data-toggle="tooltip" data-placement="top" title="This user is offline."><i class="fas fa-circle"></i></span> <span>@model.page.username</span>
+                                        @if (model.page.staff >= 1) {
+                                            <i style="font-size:small;color:red;" class="fas fa-user-shield" data-toggle="tooltip" data-placement="top" title="This user is an administrator."></i>
+                                        }
+                                        </h3>
+                                    }
+                                    <p style="white-space:pre-wrap;margin-bottom:0;">&quot;@model.page.status&quot;</p>
+                                </div>
+                                <div class="col-3 col-sm-2 col-lg-1">
+                                         @if (model.page.userId !== model.userid) {
+                                                <button type="button" class="btn btn-light" style="margin:0auto;display:block;width: 100%;" data-toggle="dropdown" aria-expanded="false" aria-haspopup="true"><i class="fas fa-chevron-circle-down"></i></button>
+                                                <div class="dropdown-menu dropdown-menu-right fade">
+                                                                <a class="dropdown-item" id="acceptFriendRequest" href="#">Friend</a>
+                                                                @if (model.page.tradingEnabled === 1) {
+                                                                <a class="dropdown-item" href="/users/@model.page.userId/trade" id="tradingButton">Trade</a>
+                                                                }
+                                                                @if (model.userInfo && model.userInfo.staff >= 1) {
+                                                                <a class="dropdown-item" href="#" id="regenAvatar">Regenerate Avatar</a>
+                                                                <a class="dropdown-item" href="/staff/user/profile?userId=@model.page.userId">Mod Profile</a>
+                                                                }
+                                                                <!--
+                                                                <div class="dropdown-divider"></div>
+                                                                <a class="dropdown-item" href="#">Block</a>
+                                                                -->
+                                                            </div>
+                                    }
+                                </div>
+                            </div>
+                        <div class="row">
+                            <div class="col-12 col-sm-6">
+                                <div class="card-title text-left">
+                                    <img src="/api/v1/user/@model.page.userId/thumbnail/redirect" style="width: 100%;max-width: 300px;margin: 0 auto;display: block;max-height: 300px;" /> <!-- This endpoint is only used for SEO purposes -->
+                                </div>
+                            </div>
+                            <div class="d-block d-sm-none col-12">
+                                <h5>@model.page.username's Avatar</h5>
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <div class="card-title text-left">
+                                    <div class="row" id="userAvatarDiv" style="height:300px;max-height:300px;overflow-y:scroll;">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (model.page.blurb) {
+        <div class="row" style="margin-top:1rem;">
+            <div class="col-12">
+                <div class="card" style="">
+                    <div class="card-body">
+                    <div class="row">
+                            <div class="col-12">
+                                <h3>About</h3>
+                                <p style="white-space:pre-wrap;" class="text-left">@html.raw(model.page.blurb)</p>
+                                @if (model.page.usernameChanges[0]) {
+                                    <div class="row" style="margin-top:1rem;">
+                                            <div class="col-6 col-md-4 col-lg-2">
+                                            @{
+                                                model.page.pastNamesCsv = "";
+                                                model.page.usernameChanges.forEach(function(name) {
+                                                    model.page.pastNamesCsv += ", " + name.username
+                                                })
+                                                model.page.pastNamesCsv = model.page.pastNamesCsv.slice(1, model.page.pastNamesCsv.length)
+                                            }
+                                                <p style="cursor:pointer;" data-toggle="tooltip" data-placement="top" title="@model.page.pastNamesCsv"><i class="fas fa-history"></i> Past Usernames</p>
+                                            </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        </div>
+                        </div>
+            </div>
+        </div>
+        }
+
+        <div class="row">
+        <div class="col-12 col-xl-6">
+            <!--
+            <div class="card" style="margin: 1rem 0;">
+                <div class="card-body">
+                    <div class="card-title text-left" style="margin-bottom:0;">
+                        <div class="row">
+                            <div class="col-12">
+                                <h5>@model.page.username's Games</h5>
+                            </div>
+                        </div>
+                        <div class="row" id="profileGamesDiv">
+                            <div class="col-12">
+                                <p>This user has not created any games.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            -->
+            <div id="friends" style="display:none;">
+                <div class="card" style="margin: 1rem 0;">
+                    <div class="card-body">
+                        <div class="card-title text-left" style="margin-bottom:0;">
+                            <div class="row">
+                                <div class="col-sm-10">
+                                    <h3 class="text-truncate">@model.page.username's Friends <span id="friendCountDiv"></span></h3>
+                                </div>
+                                <div class="col-sm-2 text-right">
+                                    <a href="/users/@model.page.userId/friends">See All</a>
+                                </div>
+                            </div>
+                            <div class="row" id="profileFriendsDiv">
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-xl-6">
+
+            <div id="items">
+                <div class="card" style="margin: 1rem 0;">
+                    <div class="card-body">
+                        <div class="card-title text-left" style="margin-bottom:0;">
+                            <div class="row">
+                                <div class="col-sm-10">
+                                    <h3 class="text-truncate">@model.page.username's Items</h3>
+                                </div>
+                                <div class="col-sm-2 text-right">
+                                    <a href="/users/@model.page.userId/inventory">See All</a>
+                                </div>
+                            </div>
+                            <div class="row" id="profileCollectionsDiv">
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+        <!-- TODO: move this card somewhere else... -->
+            <div id="groups" style="display:none;">
+                <div class="card-title text-left" style="margin-bottom:0;">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <h3>@model.page.username's Groups <span id="groupsCountDiv"></span></h3>
+                        </div>
+                        <div class="col-sm-6 text-right">
+                            <a href="/users/@model.page.userId/groups">See All</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="profileGroupsDiv">
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card" style="margin: 1rem 0;">
+                <div class="card-body">
+                    <div class="card-title">
+                        <h3>Stats</h3>
+                        <div class="row">
+                            <div class="col-6 col-md-4 text-center">
+                                <p><span style="font-weight:600;">Join Date</span></p>
+                                <p><span class="formatDate" data-date="@model.page.joinDate"></span></p>
+                            </div>
+                            <div class="col-6 col-md-4 text-center">
+                                <p><span style="font-weight:600;">Last Online</span></p>
+                                <p><span class="formatDate" data-date="@model.page.lastOnline"></span></p>
+                            </div>
+                            <div class="col-12 col-md-4 text-center">
+                                <p><span style="font-weight:600;">Forum Post Count</span></p>
+                                <p><span>@model.page.forumPostCount</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  })
+  @html.block('js', function(model) {
+      <script nonce="@model.nonce" src="/js/pages/profile.js?v=@model.v"></script>
+  })
+})

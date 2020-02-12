@@ -1,0 +1,181 @@
+@html.extend('layouts/default', function(model) {
+    @html.block('content', function(model) {
+        <div id="groupdata" data-groupid ="@model.page.groupId" data-groupowner="@model.page.groupOwnerUserId" data-encoded-name="@model.page.groupEncodedName"></div>
+        <div class="row" style="margin-top:1rem;">
+            <div class="col-12">
+                <h1><a href="/groups/@model.page.groupId/@model.page.groupEncodedName">@model.page.groupName</a></h1>
+                @if (model.userid === model.page.groupOwnerUserId) {
+                    <p><span style="color:#28a745;"><img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/money-green-2.svg"/> </span> @model.page.Primary <span style="color:#ffc107;"><img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/coin-stack-yellow.svg"/> </span> @model.page.Secondary</p><br>
+                }
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12 col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <form>
+                            <div class="form-group">
+                                <h5 class="card-title">Group Shout</h5>
+                                <div class="row">
+                                    <div class="col-md-8 col-sm-12">
+                                        <input type="text" class="form-control" id="newShoutValue" placeholder="">
+                                        <small class="form-text text-muted">Max 255 Characters</small>
+                                    </div>
+                                    <div class="col-md-4 col-sm-12">
+                                        <button type="button" class="btn btn-small btn-success" id="updateShoutClick" style="margin:0 auto;display: block;">Shout</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <form>
+                            <div class="form-group">
+                                <h5 class="card-title">Group Icon</h5>
+                                <div class="row">
+                                    <div class="col-md-8 col-sm-12">
+                                        <input type="file" class="form-control-file" id="textureFile">
+                                    </div>
+                                    <div class="col-md-4 col-sm-12">
+                                        <button type="button" class="btn btn-small btn-success" id="updateIconClick" style="margin:0 auto;display: block;">Update Icon</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12" style="margin-top:1rem;">
+                <div class="card">
+                    <div class="card-body">
+                        <form>
+                            <div class="form-group">
+                                <h5 class="card-title">Group Description</h5>
+                                <div class="row">
+                                    <div class="col-md-8 col-sm-12">
+                                        <textarea class="form-control" id="groupDescriptionText" rows="3">@model.page.groupDescription</textarea>
+                                        <small class="form-text text-muted">Max 1,024 Characters</small>
+                                    </div>
+                                    <div class="col-md-4 col-sm-12">
+                                        <button type="button" class="btn btn-small btn-success" id="updateGroupDescription" style="margin:0 auto;display: block;">Update Description</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            @if (model.userid === model.page.groupOwnerUserId) {
+                <div class="col-12 col-md-6" style="margin-top:1rem;">
+                    <div class="card">
+                        <div class="card-body">
+                            <form>
+                                <div class="form-group">
+                                    <h5 class="card-title">Transfer Ownership</h5>
+                                    <div class="row">
+                                        <div class="col-md-8 col-sm-12">
+                                            <input type="text" class="form-control" id="newOwnerValue" placeholder="New Owner Username">
+                                        </div>
+                                        <div class="col-md-4 col-sm-12">
+                                            <button type="button" class="btn btn-small btn-success" id="transferOwnerClick" style="margin:0 auto;display: block;">Transfer</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-12" style="margin-top:1rem;">
+                    <div class="card">
+                        <div class="card-body">
+                            <form>
+                                <div class="form-group">
+                                    <h5 class="card-title">Payout Funds</h5><br>
+                                    <div class="row">
+                                        <div class="col-md-8 col-sm-12">
+                                            <input type="text" class="form-control" id="payoutUsername" placeholder="Username"><br>
+                                            <input type="text" class="form-control" id="amountOfFunds" placeholder="Amount of Funds"><br>
+                                            <select class="form-control" id="currencyType">
+                                                <option value="1">Primary</option>
+                                                <option value="2">Secondary</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 col-sm-12">
+                                            <button type="button" class="btn btn-small btn-success" id="spendGroupFunds" style="margin:0 auto;display: block;">Payout</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+            <div class="col-12" style="margin-top:1rem;">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-6 col-md-8">
+                                                    <h3>Members</h3>
+                                                </div>
+                                                <div class="col-6 col-md-4">
+                                                    <select class="form-control" id="groupRolesSelection"></select>
+                                                </div>
+                                            </div>
+                                            <div class="row" id="noMembersDisplay" style="display:none;">
+                                                <div class="col-12">
+                                                    <p>This roleset has no members.</p>
+                                                </div>
+                                            </div>
+                                            <div class="row" id="hasMembersDisplay" style="">
+                                                
+                                            </div>
+                                            <div class="row" style="padding-top: 1rem;">
+                                                <div class="col-3">
+                                                    <button type="button" class="btn btn-small btn-success" id="loadLessMembers" style="width:100%;margin: 0px auto;display:none;">Previous Page</button>
+                                                </div>
+                                                <div class="col-3 offset-6">
+                                                    <button type="button" class="btn btn-small btn-success" id="loadMoreMembers" style="width:100%;margin: 0px auto;display:none;">Next Page</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <div class="col-12" style="margin-top:1rem;">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-6 col-md-8">
+                                                    <h3>Group Roles</h3>
+                                                </div>
+                                                <div class="col-6 col-md-4">
+                                                    <select class="form-control" id="groupRoleManageSelection"></select>
+                                                </div>
+                                            </div>
+                                            <div class="row" id="groupRolesOptionsDisplay" style="">
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+        </div>
+    })
+    @html.block('js', function(model) {
+        <script nonce="@model.nonce" src="/js/pages/group_manage.js?v=@model.v"></script>
+    })
+})

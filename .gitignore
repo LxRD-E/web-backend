@@ -1,0 +1,9 @@
+/config.json
+# /dist/*
+/node_modules
+/ca.pem
+/client_cert.pem
+/client_key.pem
+/.nyc_output
+/src/uploads
+/dist/uploads

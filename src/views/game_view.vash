@@ -1,0 +1,51 @@
+@html.extend('layouts/default', function(model) {
+    @html.block('content', function(model) {
+            <div class="row">
+                <div class="col-sm-12">
+                    <h1 style="white-space:pre-wrap;padding-top: 1rem;" class="text-left">@model.page.gameInfo.gameName</h1>
+                </div>
+                <div class="col-12 col-lg-8">
+                    <img src="@model.page.ThumbnailURL" style="width:100%;height:auto;" />
+                </div>
+                <div class="col-12 col-lg-4">
+                    @if (model.page.gameInfo.creatorType === 0) {
+                        <a href="/users/@model.page.gameInfo.creatorId/profile">
+                            <img src="/api/v1/user/@model.page.gameInfo.creatorId/thumbnail/redirect" style="width:100%;height:auto;display:block;margin:0 auto;max-width:200px;" />
+                        </a>
+                    }else{
+                        <a href="/catalog/@model.page.thumbnailId/redirect">
+                            <img src="/api/v1/group/@model.page.gameInfo.creatorId/thumbnail/redirect" style="width:100%;height:auto;display:block;margin:0 auto;max-width:200px;" />
+                        </a>
+                    }
+                    <p>By @model.page.creatorName</p>
+
+                    <a href="/game/@model.page.gameInfo.gameId/play" role="button" style="width:100%;color:white;cursor: pointer;" class="btn btn-success" >PLAY</a>
+                    @if (model.page.gameInfo.creatorId === model.userInfo.userId && model.page.gameInfo.creatorType === 0) {
+                        <a href="/game/@model.page.gameInfo.gameId/edit" role="button" style="width:100%;color:white;cursor: pointer;margin-top:1rem;" class="btn btn-success">EDIT</a>
+                    }
+                </div>
+            </div>
+            <div class="row" style="padding-top:1rem;padding-bottom:1rem;">
+                <div class="col-12">
+                    @model.page.gameInfo.gameDescription
+                </div>
+                <div class="col-6 col-md-4 text-center" style="padding-top:1rem;">
+                    <p style="font-weight:600;">Player Count</p>
+                    <p>@model.page.gameInfo.playerCount</p>
+                </div>
+                <div class="col-6 col-md-4 text-center" style="padding-top:1rem;">
+                    <p style="font-weight:600;">Visit Count</p>
+                    <p>@model.page.gameInfo.visitCount</p>
+                </div>
+                <div class="col-6 col-md-4 text-center" style="padding-top:1rem;">
+                    <p style="font-weight:600;">Last Updated</p>
+                    <p><span class="formatDate" data-date="@model.page.gameInfo.updatedAt"></span></p>
+                </div>
+            </div>
+    })
+    @html.block('js', function(model) {
+        @*
+        <script nonce="@model.nonce" src="/js/pages/game_view.js?v=@model.v"></script>
+        *@
+    })
+})

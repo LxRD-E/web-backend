@@ -1,0 +1,29 @@
+@html.extend('layouts/default', function(model) {
+    @html.block('content', function(model) {
+        <div class="row" style="padding-top:1rem;">
+            <div class="col-8 col-md-10">
+                <h4>Top Free Games</h4>
+                <p>Experience thousands of user-created 3D games designed for all ages, all for free! No download required.</p>
+            </div>
+            <div class="col-4 col-md-2">
+                <div class='form-group'>
+                <a style="margin-top: 1rem;width:100%;color:white;" href="/game/create" class="btn btn-success">Create</a>
+                </div>
+            </div>
+        </div>
+        <div class="row" style="padding-top:1rem;" id="topTwoGames">
+                
+        </div>
+        <div class="row" style="padding-top:1rem;padding-bottom:1rem;">
+            <div class="col-12">
+                <h4>Popular Free Games</h4>
+            </div>
+        </div>
+        <div class="row" id="popularGamesList">
+                
+        </div>
+    })
+    @html.block('js', function(model) {
+        <script nonce="@model.nonce" src="/js/pages/play.js?v=@model.v"></script>
+    })
+})

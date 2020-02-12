@@ -1,0 +1,148 @@
+@html.extend('layouts/default', function(model) {
+  @html.block('content', function(model) {
+    <div class="row" style="padding:1rem 0 1rem 0">
+        <div class="col-sm-12">
+            <h1>Settings</h1>
+            <div class="card">
+                <div class="card-body">
+                    <form>
+                        <div class="form-group">
+                            <h5 class="card-title text-margin">My Email</h5>
+                            <div class="row">
+                                <div class="col-md-8 col-sm-12">
+                                    <input type="text" class="form-control" id="newEmailValue" value="" placeholder="Email">
+                                </div>
+                                <div class="col-md-4 col-sm-12">
+                                    <button type="button" class="btn btn-small btn-success" id="updateEmailClick" style="margin:0 auto;display: block;">Update</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                        
+                </div>
+            </div>
+            <div class="card" style="margin-top:1rem;">
+                <div class="card-body">
+                    <form>
+                        <div class="form-group">
+                            <h5 class="card-title text-margin">My Username</h5>
+                            <div class="row">
+                                <div class="col-md-8 col-sm-12">
+                                    <input type="text" class="form-control" id="newUsernameValue" value="" placeholder="New Username">
+                                    <small class="form-text text-muted">
+                                    Changing your username costs <span style="color:#28a745;"><img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/money-green-2.svg"/> </span>1,000 and can only be reversed by purchasing another username change.
+                                    </small>
+                                </div>
+                                <div class="col-md-4 col-sm-12">
+                                    <button type="button" class="btn btn-small btn-success" id="updateUsernameClick" style="margin:0 auto;display: block;">Update</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                        
+                </div>
+            </div>
+            <div class="card" style="margin-top:1rem;">
+                <div class="card-body">
+                    <form>
+                        <div class="form-group">
+                            <h5 class="card-title text-margin">My Password</h5>
+                            <div class="row">
+                                <div class="col-md-8 col-sm-12">
+                                    <input type="password" class="form-control" id="newPasswordValue" value="" placeholder="New Password">
+                                </div>
+                                <div class="col-md-8 col-sm-12" style="padding-top:1rem;">
+                                    <div class="g-recaptcha" id="rcaptcha" data-sitekey="@model.captchakey"></div>
+                                </div>
+                                <div class="col-md-4 col-sm-12">
+                                    <button type="button" class="btn btn-small btn-success" id="updatePasswordClick" style="margin:0 auto;display: block;">Update</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card" style="margin-top:1rem;">
+                <div class="card-body">
+                    <form>
+                        <div class="form-group">
+                            <h5 class="card-title text-margin">My Blurb</h5>
+                            <div class="row">
+                                <div class="col-md-8 col-sm-12">
+                                    <textarea aria-describedby="blurbHelpBox" class="form-control" id="newBlurbValue" rows="3"></textarea>
+                                    <small id="blurbHelpBox" class="form-text text-muted">
+                                    You can put <code>${primary}</code> to show your Primary balance, and <code>${secondary}</code> to show your Secondary balance
+                                    </small>
+                                </div>
+                                <div class="col-md-4 col-sm-12">
+                                    <button type="button" class="btn btn-small btn-success" id="updateBlurbClick" style="margin:0 auto;display: block;">Update</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card" style="margin-top:1rem;">
+                <div class="card-body">
+                    <form>
+                        <div class="form-group">
+                            <h5 class="card-title text-margin">Forum Signature</h5>
+                            <div class="row">
+                                <div class="col-md-8 col-sm-12">
+                                    <textarea class="form-control" id="newForumSignatureValue" rows="3"></textarea>
+                                </div>
+                                <div class="col-md-4 col-sm-12">
+                                    <button type="button" class="btn btn-small btn-success" id="updateForumSignatureClick" style="margin:0 auto;display: block;">Update</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card" style="margin-top:1rem;">
+                <div class="card-body">
+                    <form>
+                        <div class="form-group">
+                            <h5 class="card-title text-margin">Trading Enabled</h5>
+                            <div class="row">
+                                <div class="col-md-8 col-sm-12">
+                                    <select class="form-control form-control-sm" id="selectTradingOption">
+                                        <option value="1">Yes</option>
+                                        <option value="0">No</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 col-sm-12">
+                                    <button type="button" class="btn btn-small btn-success" id="updateTradingClick" style="margin:0 auto;display: block;">Update</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card" style="margin-top:1rem;">
+                <div class="card-body">
+                    <form>
+                        <div class="form-group">
+                            <h5 class="card-title text-margin">Theme</h5>
+                            <div class="row">
+                                <div class="col-md-8 col-sm-12">
+                                    <select class="form-control form-control-sm" id="selectThemeOption">
+                                        <option value="0">Light</option>
+                                        <option value="1">Dark</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 col-sm-12">
+                                    <button type="button" class="btn btn-small btn-success" id="updateThemeClick" style="margin:0 auto;display: block;">Update</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+  })
+  @html.block('js', function(model) {
+        <script nonce="@model.nonce" src="/js/pages/settings.js?v=@model.v"></script>
+  })
+})

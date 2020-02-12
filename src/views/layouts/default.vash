@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+  <head>
+        <!-- Meta -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        @html.block('meta')
+
+        <!-- Prefetch -->
+        <link rel="dns-prefetch" href="https://cdn.hindigamer.club">
+        <link rel="dns-prefetch" href="https://cdn.jsdelivr.net/">
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com/">
+
+        <!-- CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@@4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous">
+        <!-- Local CSS -->
+        <link href="/css/custom.css?v=@model.v" rel="stylesheet">
+        <link href="/css/animate.css?v=@model.v" rel="stylesheet">
+        @if (model.userInfo) {
+            @if (model.userInfo.theme === 1) {
+                <!-- Dark Theme -->
+                <link href="/css/dark.css?v=@model.v" rel="stylesheet">
+            }
+        }
+        <!-- Fonts -->
+        <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500,700&display=swap" rel="stylesheet">
+        <!-- Metrics -->
+        <script nonce="@model.nonce" src="/js/metrics.js?v=@model.v"></script>
+        <!-- Font Awesome -->
+        <script nonce="@model.nonce" src="https://kit.fontawesome.com/983cb40861.js"></script>
+        <!-- Recaptcha -->
+        <script nonce="@model.nonce" src="https://www.google.com/recaptcha/api.js" async defer></script>
+        <!-- Title -->
+        <title>@model.title - Hindi Gamer Club</title>
+        <!-- SEO -->
+        @model.seo
+        <!-- Extra CSS -->
+        @html.block('css')
+    </head>
+    <body>
+    @if (typeof model.userInfo !== "undefined") {
+        <div 
+            id="userdata" 
+            data-authenticated="true" 
+            data-csrf="@model.csrf" 
+            data-userid="@model.userInfo.userId" 
+            data-username="@model.userInfo.username" 
+    ></div>
+    }else{
+        <div id="userdata" data-authenticated="false" data-csrf="@model.csrf"></div>
+    }
+        <nav class="navbar navbar-expand-lg navbar-dark bg-success fixed-top">
+            <div class="container">
+            <h3 style="margin-top: 0.25rem;"><a class="navbar-brand" href="/">@*<img src="https://cdn.hindigamer.club/static/homosexual.svg" style="height:1rem;width:1rem;margin-bottom:0.05rem;"/> *@HINDI GAMER CLUB</a></h3>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/play">Play</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/catalog">Catalog</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/groups">Groups</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/users">Users</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/forum">Forum</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/discord">Discord</a>
+                    </li>
+                    <!--
+                    <li class="nav-item">
+                        <a class="nav-link" href="/membership">Membership</a>
+                    </li>
+                    -->
+                </ul>
+                @if (typeof model.userInfo !== 'undefined' && typeof model.userInfo.userId !== "undefined" && model.userInfo.userId !== null) {
+                 <ul class="navbar-nav ml-auto">
+                    <li class="nav-item displayCurrency">
+                        <a class="nav-link" href="/notifications">
+                            <i class="far fa-envelope-open"></i>
+                            <span id="notificationCount">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item displayCurrency">
+
+                    <a class="nav-link" href="/transactions">
+                                    <img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/money-white-2.svg"/>                                    
+                                    <span data-toggle="currency" data-placement="bottom" title="$ @model.userInfo.primaryBalance" id="currencyBalanceOne" data-amt="@model.userInfo.primaryBalance">0</span>
+                                </a>
+                            </li>
+                            <li class="nav-item displayCurrency">
+                                <a class="nav-link" href="/transactions"> 
+                                    <img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/coin-stack-white.svg"/>
+                                    <span data-toggle="currency" data-placement="bottom" title="$ @model.userInfo.secondaryBalance" id="currencyBalanceTwo" data-amt="@model.userInfo.secondaryBalance">0</span>
+                                </a>
+                    <!--
+                                <a class="nav-link" href="/transactions">
+                                    <i class="far fa-money-bill-alt"></i> 
+                                    <span id="currencyBalanceOne"></span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/transactions"> 
+                                    <i class="fas fa-coins"></i> 
+                                    <span id="currencyBalanceTwo"></span>
+                                </a>
+                                -->
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">@model.userInfo.username</a>
+                        <div class="dropdown-menu dropdown-menu-right fade" aria-labelledby="navbarDropdown">
+                            <a class="dropdown-item" href="/dashboard"><i class="fas fa-home"></i> Home</a>
+                            <a class="dropdown-item" href="/users/@model.userInfo.userId/profile"><i class="fas fa-id-card"></i> My Profile</a>
+                            <a class="dropdown-item" href="/avatar"><i class="fas fa-user-tag"></i> My Avatar</a>
+                            <a class="dropdown-item" href="/trades"><i class="fas fa-exchange-alt"></i> My Trades</a>
+                            <a class="dropdown-item" href="/transactions"><i class="fas fa-money-bill-alt"></i> My Transactions</a>
+                            <a class="dropdown-item" href="/settings"><i class="fas fa-sliders-h"></i> My Settings</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" id="logoutAClick" href="#"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
+                        </div>
+                    </li>
+                </ul>
+                }else{
+                    <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">Sign In</a>
+                    </li>
+                </ul>
+                }
+            </div>
+            </div>
+        </nav>
+        <div class="row paddingForStickyNav" style="margin-top: 52px;"></div>
+        @if (typeof model.userInfo !== "undefined") {
+        <div class="row secondaryNavBar">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12" style="padding-top:0.25rem;padding-bottom:0.25rem;">
+                        <ul class="list-inline" style="padding-bottom:0;margin-bottom:0;">
+                            <li class="list-inline-item">
+                                <a class="text-white" href="/users/@model.userInfo.userId/profile">My Profile</a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a class="text-white" href="/avatar">My Character</a>
+                            </li>
+                            <li class="list-inline-item d-lg-inline-block d-none">
+                                <a class="text-white" href="/users/@model.userInfo.userId/friends">My Friends</a>
+                            </li>
+                            <li class="list-inline-item d-lg-inline-block d-none">
+                                <a class="text-white" href="/users/@model.userInfo.userId/groups">My Groups</a>
+                            </li>
+                            <li class="list-inline-item d-lg-inline-block d-none">
+                                <a class="text-white" href="/users/@model.userInfo.userId/inventory">My Inventory</a>
+                            </li>
+                            <li class="list-inline-item d-md-inline-block d-none">
+                                <a class="text-white" href="/trades">My Trades</a>
+                            </li>
+                            <li class="list-inline-item d-sm-inline-block d-none">
+                                <a class="text-white" href="/transactions">My Money</a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a class="text-white" href="/settings">My Settings</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        }
+        <!-- Scripts Disabled -->
+        <noscript>
+            <div class="row" style="margin: 0;">
+                <div class="col-12 bg-danger text-white">
+                    <div class="container">
+                        <h4 style="margin-top:1rem;margin-bottom:1rem;">Please enable javascript, or upgrade to a newer browser, in order to properly use our website.</h4>
+                    </div>
+                </div>
+            </div>
+        </noscript>
+        <!-- XHR Error -->
+        <div class="row" style="display:none;margin:0;" id="alert">
+            <div class="col-12 bg-danger text-white">
+                <div class="container">
+                    <h6 style="margin-top:1rem;margin-bottom:1rem;">Our website seems to be experiencing issues right now. Please try again later.</h6>
+                </div>
+            </div>
+        </div>
+        <div class="row" style="display:none;margin:0;" id="systemWideStatsArea"></div>
+        @if (model.bannerText) {
+            <div class="row" style="margin:0;" id="bannerText">
+                <div class="col-12 bg-warning text-white">
+                    <div class="container">
+                        <h6 style="margin-top:1rem;margin-bottom:1rem;">@html.raw(model.bannerText)</h6>
+                    </div>
+                </div>
+            </div>
+        }
+        <!-- Nav -->
+
+
+        @html.block('aboveContent')
+
+        <div class="container">
+            <div class="row">
+                <div class="content" style="width:100%;overflow:visible;">
+                <!--
+                    <div class="alert alert-warning" role="alert" style="margin-top: -3rem;z-index: -1;display:hidden;" id="warningAlertSystem"></div>-->
+                    @html.block('content')
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <div id="footerUpper" class="row">
+                <div class="container">
+                    <div class="content" style="width:100%;">
+                    <div class="col-12" style="padding: 3rem 0;">
+                        <div class="row" style="padding-bottom:1rem;">
+                            <div class="col-12">
+                                <h2 style="">Hindi Gamer Club</h2>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6 col-md-4 footerBarListItems">
+                                <h5>COMPANY</h5>
+                                <p><a href="https://blog.hindigamer.club/">Blog</a></p>
+                                <p><a href="https://blog.hindigamer.club/hey-were-hiring/">Jobs</a></p>
+                                <p><a href="/staff">Staff</a></p>
+                                <p><a href="/terms">Terms of Service</a></p>
+                                <p><a href="/terms#privacypolicy">Privacy Policy</a></p>
+                            </div>
+                            <div class="col-6 col-md-4 footerBarListItems">
+                                <h5>SUPPORT</h5>
+                                <p><a href="/support">Contact Us</a></p>
+                                <p><a href="/support/refund-policy">Refund Policy</a></p>
+                            </div>
+                            <div class="col-12 col-md-4 footerBarListItems">
+                                <p>
+                                    idk maybe we can put like a tagline or description here or something
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                        <div class="col-12">
+                            <div class="row" style="padding: 1rem 0;">
+                                <div class="mr-auto">
+                                    <div class="row justify-content-center">
+                                        <div class="col-12">
+                                            <p style="color:white;padding-top: 10%;">&copy; @model.year Hindi Gamer Club</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ml-auto" style="color :white;">
+                                    <span style="font-size: 2rem;" class="text-right"><i class="fab fa-cc-paypal"></i></span>
+                                    <span style="font-size: 2rem;" class="text-right"><i class="fab fa-cc-stripe"></i></span>
+                                </div>
+                            </div>
+                            <div class="row" style="padding-bottom:1rem;">
+                                <div class="col-12">
+                                    <p class="text-center" style="font-size:small;font-weight:300;margin-bottom:1rem;">Certain Icons made by freepik & vectors-market from <a href="http://www.flaticon.com/" target="_blank" rel="noopener">www.flaticon.com</a></p>
+                                    <p class="text-center" style="font-size:small;font-weight: 300;">We are not sponsored, authorized or endorsed by any producer of plastic building bricks, and no resemblance to the products of these companies is intended. Use of this site signifies your acceptance of the <a href="/terms" style="font-weight: 400;">Terms and Conditions.</a></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+        <!-- Optional JavaScript -->
+        <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+        <script nonce="@model.nonce" src="https://cdn.jsdelivr.net/npm/jquery@@3.4.1/dist/jquery.min.js" integrity="sha384-vk5WoKIaW/vJyUAd9n/wmopsmNhiy+L2Z+SBxGYnUkunIxVxAv/UtMOhba/xskxh" crossorigin="anonymous"></script>
+        <!-- swal2 -->
+        <script nonce="@model.nonce" src="https://cdn.jsdelivr.net/npm/sweetalert2@@8.17.1/dist/sweetalert2.all.min.js" integrity="sha256-VxbmCDobjdVsaHYJOlEcQcc/p89LW76+b4x3r7l5Ikg=" crossorigin="anonymous"></script>
+        <!-- popper js -->
+        <script nonce="@model.nonce" src="https://cdn.jsdelivr.net/npm/popper.js@@1.14.4/dist/umd/popper.min.js" integrity="sha256-EGs9T1xMHdvM1geM8jPpoo8EZ1V1VRsmcJz8OByENLA=" crossorigin="anonymous"></script>
+        <!-- Bootstrap -->
+        <script nonce="@model.nonce" src="https://cdn.jsdelivr.net/npm/bootstrap@@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <!-- Moment -->
+        <script nonce="@model.nonce" src="https://cdn.jsdelivr.net/npm/moment@@2.24.0/moment.min.js" crossorigin="anonymous"></script>
+        <!-- XSS -->
+        <script nonce="@model.nonce" src="/js/xss.js?v=@model.v"></script>
+        <!-- Local Stuff -->
+        <script nonce="@model.nonce" src="/js/app.js?v=@model.v"></script>
+        @if (model.userInfo && typeof model.userInfo.userId !== "undefined" && model.userInfo.userId !== null) {
+        <!-- Chat Stuff -->
+            <script nonce="@model.nonce" src="/js/chat.js?v=@model.v"></script>
+        }
+        <!-- Page Specific JS -->
+        @html.block('js')
+    </body>
+</html>

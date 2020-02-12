@@ -1,0 +1,31 @@
+{
+    "mysql": {
+        "host" : "127.0.0.1",
+        "user" : "root",
+        "password" : "",
+        "database" : "froastmons"
+    },
+    "redis": {
+        "host": "127.0.0.1"
+    },
+    "render": {
+        "host": "127.0.0.1:70",
+        "key":"insertKeyHere"
+    },
+    "cdn": {
+        "host": "127.0.0.1:70",
+        "key":"insertKeyHere"
+    },
+    "email": {
+        "user": "email@email.com",
+        "pass": "passwordhere123"
+    },
+    "session": {
+        "secret": "session_key_here",
+        "secure": false
+    },
+    "captchaKey": {
+        "private": "private_key_here"
+    },
+    "debug": false
+}

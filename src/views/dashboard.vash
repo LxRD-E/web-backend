@@ -1,0 +1,101 @@
+@html.extend('layouts/default', function(model) {
+  @html.block('content', function(model) {
+    <div class="row" style="padding:1rem 0 1rem 0">
+        <div class="col-sm-12 col-md-6 col-lg-4">
+            <div class="card">
+                <img src="/api/v1/user/@model.userInfo.userId/thumbnail/redirect" class="card-img-top" style="width: 100%;" alt="@model.userInfo.username">
+                <div class="card-body">
+                    <h5 class="card-title text-margin" style="margin-bottom:0;">@model.userInfo.username</h5>
+                    <!--
+                    <div class="row">
+                        <div class="col text-center" style="padding:0;">
+                            <h6>Friends</h6>
+                        </div>
+                        <div class="col text-center" style="padding:0;">
+                            <h6>Forum Posts</h6>
+                        </div>
+                        <div class="col text-center" style="padding:0;">
+                            <h6>Game Visits</h6>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col text-center" style="padding:0;" id="userFriendsCountDiv">
+                            <div class="spinner-border text-success" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="col text-center" style="padding:0;" id="userForumPostsCountDiv">
+                            <div class="spinner-border text-success" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="col text-center" style="padding:0;" id="userGameVisitsCountDiv">
+                            <div class="spinner-border text-success" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                    </div>-->
+                </div>
+            </div>
+            <div class="card" style="margin-top:1rem;">
+                <div class="card-body">
+                    <h5 class="card-title" style="margin-bottom:0;">My Friends <span id="myFriendsCount"></span></h5>
+                </div>
+                <div class="card-body" id="userFriendsDiv" style="padding-top: 0;">
+                    <div class="row">
+                        <div class="col"></div>
+                        <div class="col">
+                            <div class="spinner-border text-success" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="col"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-6 col-lg-8">
+        <!--
+            <h1>Hello, @model.userInfo.username</h1>-->
+            <div class="card">
+                <div class="card-body">
+                    <form>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <h5 class="card-title">Status</h5>
+                            <div class="row">
+                                <div class="col-md-8 col-sm-12">
+                                    <input type="text" class="form-control" id="newStatusValue" value="" placeholder="Your Status">
+                                    <small id="newStatusValueHelp" class="form-text text-muted">Max 255 Characters</small>
+                                </div>
+                                <div class="col-md-4 col-sm-12">
+                                    <button type="button" class="btn btn-small btn-success" id="updateStatusClick" style="margin:0 auto;display: block;">Update</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card" style="margin-top:1rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Feed</h5>
+                    <div id="userFeedDiv" class="row">
+
+                    </div>
+                    <div id="feedLoader" class="row">
+                        <div class="col"></div>
+                        <div class="col">
+                            <div class="spinner-border text-success" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="col"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  })
+  @html.block('js', function(model) {
+        <script nonce="@model.nonce" src="/js/pages/dashboard.js?v=@model.v"></script>
+  })
+})
