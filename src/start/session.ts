@@ -4,14 +4,7 @@
 
 import Config from '../helpers/config';
 // Setup Parse
-const options = {
-    host: Config.redis.host,
-    pass: '',
-    db: 1,
-};
-if (Config.redis.pass) {
-    options.pass = Config.redis.pass;
-}
+const options = Config.redis;
 
 import redis = require('redis')
 import session = require('express-session')

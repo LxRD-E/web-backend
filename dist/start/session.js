@@ -1,14 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const config_1 = require("../helpers/config");
-const options = {
-    host: config_1.default.redis.host,
-    pass: '',
-    db: 1,
-};
-if (config_1.default.redis.pass) {
-    options.pass = config_1.default.redis.pass;
-}
+const options = config_1.default.redis;
 const redis = require("redis");
 const session = require("express-session");
 let RedisStore = require('connect-redis')(session);

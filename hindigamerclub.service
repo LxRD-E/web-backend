@@ -1,0 +1,30 @@
+# sudo rm /etc/systemd/system/hindigamerclub.service
+# sudo nano /etc/systemd/system/hindigamerclub.service
+# sudo systemctl enable hindigamerclub.service
+# sudo systemctl start hindigamerclub.service
+# sudo systemctl status hindigamerclub.service
+# to view logs:
+# sudo journalctl -u hindigamerclub.service
+[Unit]
+Description=Hindi Gamer Club Web/API Daemon
+# After=mysql.service redis.service
+
+[Service]
+ExecStart=/usr/bin/npm run start
+# Required on some systems
+WorkingDirectory=/home/beak/sites/hindigamerclub/www/
+Restart=always
+# Restart service after 0 seconds if service crashes
+RestartSec=0
+RemainAfterExit=yes
+# Output to null
+StandardOutput=null
+StandardError=syslog
+SyslogIdentifier=hindigamerclub
+# obviously we dont wanna be running this on root
+User=beak
+#Group=<alternate group>
+Environment=NODE_ENV=production PORT=3000
+
+[Install]
+WantedBy=multi-user.target
