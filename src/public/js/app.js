@@ -28,7 +28,7 @@ setInterval(() => {
     });
 }, 100);
 */
-
+/*
 var retries = 0;
 $.imgReload = function() {
     var loaded = 1;
@@ -47,6 +47,7 @@ $.imgReload = function() {
 setInterval(() => {
     $.imgReload();
 }, 2500);
+*/
 
 $(document).on('error', 'img', function(ev) {
     console.log('Image load error');

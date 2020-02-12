@@ -64,16 +64,16 @@ let AvatarController = class AvatarController extends controller_1.default {
             "Pants": false,
         };
         const filteredHats = Array.from(new Set(Hats));
-        if (typeof Face === "number") {
+        if (typeof Face === "number" && Face !== 0) {
             filteredHats.push(Face);
         }
-        if (typeof TShirt === "number") {
+        if (typeof TShirt === "number" && TShirt !== 0) {
             filteredHats.push(TShirt);
         }
-        if (typeof Shirt === "number") {
+        if (typeof Shirt === "number" && Shirt !== 0) {
             filteredHats.push(Shirt);
         }
-        if (typeof Pants === "number") {
+        if (typeof Pants === "number" && Pants !== 0) {
             filteredHats.push(Pants);
         }
         const insertArray = [];
