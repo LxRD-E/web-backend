@@ -5,9 +5,9 @@ const redis = require('redis');
 const { RateLimiterRedis } = require('rate-limiter-flexible');
 import config from '../helpers/config';
 const redisClient = redis.createClient({
-    host: config.redis.host,
-    port: config.redis.port,
-    password: config.redis.password,
+    host: config.redis.host || '127.0.0.1',
+    port: config.redis.port || 3306,
+    password: config.redis.pass || '',
     enable_offline_queue: false,
 });
 
