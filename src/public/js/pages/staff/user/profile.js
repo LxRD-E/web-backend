@@ -32,6 +32,44 @@ $('#deleteUserForumSignature').click(function() {
         });
 });
 
+$('#disableTwoFactor').click(function() {
+    questionYesNo('Are you sure you\'d like to disable 2FA for this user?', (resp) => {
+        request('/staff/user/'+$('#userId').val()+'/two-factor', 'DELETE')
+        .then(d => {
+            success('This user\'s two-factor authentication has been disabled.');
+            $('#two-factor-enabled').empty().append(`<span style="font-weight:600;" id="two-factor-enabled">2-Factor Enabled: </span><span style="font-weight:100;">No</span>`);
+        })
+        .catch(e => {
+            warning(e.responseJSON.message);
+        })
+    });
+});
+
+$('#deleteUserPrimaryBalance').click(function() {
+    questionYesNo('Are you sure you\'d like to clear the primary balance of this user?', (resp) => {
+        request('/staff/user/'+$('#userId').val()+'/clear-balance/1', 'DELETE')
+        .then(d => {
+            success('This user\'s balance has been cleared.');
+            $('#user-balance-primary').empty().append(`0`);
+        })
+        .catch(e => {
+            warning(e.responseJSON.message);
+        })
+    });
+});
+$('#deleteUserSecondaryBalance').click(function() {
+    questionYesNo('Are you sure you\'d like to clear the secondary balance of this user?', (resp) => {
+        request('/staff/user/'+$('#userId').val()+'/clear-balance/2', 'DELETE')
+        .then(d => {
+            success('This user\'s balance has been cleared.');
+            $('#user-balance-secondary').empty().append(`0`);
+        })
+        .catch(e => {
+            warning(e.responseJSON.message);
+        })
+    });
+});
+
 /**
  * Create a Comment on a User Profile
  */

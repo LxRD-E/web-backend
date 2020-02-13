@@ -112,12 +112,16 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
         let isOver13 = false;
         let isEmailVerified = false;
         let userEmails = [];
+        let twoFactorEnabled = false;
         try {
-            userInfo = await this.user.getInfo(userId, ['accountStatus', 'userId', 'username', 'primaryBalance', 'secondaryBalance', 'blurb', 'staff', 'birthDate', 'dailyAward', 'lastOnline', 'status', 'joinDate', 'forumSignature']);
+            userInfo = await this.user.getInfo(userId, ['accountStatus', 'userId', 'username', 'primaryBalance', 'secondaryBalance', 'blurb', 'staff', 'birthDate', 'dailyAward', 'lastOnline', 'status', 'joinDate', 'forumSignature', '2faEnabled']);
+            if (userInfo['2faEnabled'] === 1) {
+                twoFactorEnabled = true;
+            }
             if (moment().isSameOrAfter(moment(userInfo.birthDate).add(13, 'years'))) {
                 isOver13 = true;
             }
-            if (moment(userInfo.lastOnline).isSameOrAfter(moment().subtract(1, 'minutes'))) {
+            if (moment(userInfo.lastOnline).isSameOrAfter(moment().subtract(5, 'minutes'))) {
                 isOnline = true;
             }
             moderationHistory = await this.staff.getModerationHistory(userId);
@@ -138,6 +142,7 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
         ViewData.page.userInfo = userInfo;
         ViewData.page.ModerationHistory = moderationHistory;
         ViewData.page.userEmails = userEmails;
+        ViewData.page.twoFactorEnabled = twoFactorEnabled;
         return ViewData;
     }
 };

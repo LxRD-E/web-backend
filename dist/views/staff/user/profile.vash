@@ -4,23 +4,22 @@
             <div class="col-sm-12">
                 <h1 style="white-space:pre-wrap;padding-top: 1rem;" class="text-left">@model.page.userInfo.username's Moderation Profile</h1>
             </div>
-            <div class="col-md-4 col-12">
+            <div class="col-md-4 col-12" style="margin-bottom:1rem;">
                 <div class="card">
                     <div class="card-body">
                         <div class="row">
                             <div class="col-12">
-                                <h5>User Info</h5>
+                                <h5><p><a href="/users/@model.page.userInfo.userId/profile">Profile</a></p></h5>
                             </div>
-                            <div class="col-md-4 col-6">
+                            <div class="col-12">
                                 <img src="/api/v1/user/@model.page.userInfo.userId/thumbnail/redirect" style="width:100%;display:block;margin:0 auto;" />
                             </div>
-                            <div class="col-md-8 col-6">
+                            <div class="col-12">
                                 @if (model.page.online) {
                                     <p><i class="fas fa-circle" style="color: #46c35b;"></i> [ Online ]</p>
                                 }else{
                                     <p><i class="fas fa-circle" style="color: grey;"></i> [ Offline ]</p>
                                 }
-                                <p><a href="/users/@model.page.userInfo.userId/profile">Profile</a></p>
                                 <p>
                                     <span style="font-weight:600;">Moderation Status:</span>
                                     @switch(model.page.userInfo.accountStatus) {
@@ -46,10 +45,21 @@
                                     }
                                 </p>
                                 <p>
-                                   <span style="font-weight:600;">Primary Balance:</span> <span style="font-weight:100;">@model.page.userInfo.primaryBalance</span>
+                                   <span style="font-weight:600;">Primary:</span> 
+                                    @if (model.userInfo.staff >= 2) {
+                                        <span style="font-weight:100;" id="user-balance-primary">@model.page.userInfo.primaryBalance <span style="color:red;cursor:pointer;" id="deleteUserPrimaryBalance">(Clear)</span></span>
+                                    }else{
+                                        <span style="font-weight:100;">@model.page.userInfo.primaryBalance</span>
+                                    }
+
                                 </p>
                                 <p>
-                                    <span style="font-weight:600;">Secondary Balance:</span> <span style="font-weight:100;">@model.page.userInfo.secondaryBalance</span>
+                                    <span style="font-weight:600;">Secondary:</span>
+                                     @if (model.userInfo.staff >= 2) {
+                                        <span style="font-weight:100;" id="user-balance-secondary">@model.page.userInfo.secondaryBalance <span style="color:red;cursor:pointer;" id="deleteUserSecondaryBalance">(Clear)</span></span>
+                                    }else{
+                                        <span style="font-weight:100;">@model.page.userInfo.secondaryBalance</span>
+                                    }
                                 </p>
                                 <p>
                                     <span style="font-weight:600;">Join Date: </span>
@@ -71,6 +81,16 @@
                                         <span style="font-weight:100;">No</span>
                                     }
                                 </p>
+                                @if (model.userInfo.staff >= 1) {
+                                    <p>
+                                        <span style="font-weight:600;" id="two-factor-enabled">2-Factor Enabled: </span>
+                                        @if (model.page.twoFactorEnabled) {
+                                            <span style="font-weight:100;">Yes <span style="color:red;cursor:pointer;" id="disableTwoFactor">(Disable)</span></span>
+                                        }else{
+                                            <span style="font-weight:100;">No</span>
+                                        }
+                                    </p>
+                                }
                                 <p>
                                     <span style="font-weight:600;">Mod Level: </span>
                                     <span style="font-weight:100;">@model.page.userInfo.staff</span>

@@ -415,6 +415,28 @@ let StaffController = class StaffController extends controller_1.default {
             'success': true,
         };
     }
+    async disableTwoFactor(userInfo, userId) {
+        this.validate(userInfo, 1);
+        await this.settings.disable2fa(userId);
+        return {
+            'success': true,
+        };
+    }
+    async clearBalance(userInfo, userId, currencyTypeId) {
+        this.validate(userInfo, 2);
+        if (currencyTypeId !== 1 && currencyTypeId !== 2) {
+            throw new this.BadRequest('InvalidCurrencyType');
+        }
+        let balToGrab = 'primaryBalance';
+        if (currencyTypeId === 2) {
+            balToGrab = 'secondaryBalance';
+        }
+        let userBalance = await this.user.getInfo(userId, [balToGrab]);
+        await this.economy.subtractFromUserBalance(userId, userBalance[balToGrab], currencyTypeId);
+        return {
+            success: true,
+        };
+    }
     async search(offset = 0) {
         const numericOffset = Filter_1.filterOffset(offset);
         const results = await this.staff.search(numericOffset);
@@ -630,6 +652,29 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "deleteForumSignature", null);
+__decorate([
+    common_1.Delete('/user/:userId/two-factor'),
+    swagger_1.Summary('Disable an accounts two-factor authentcation'),
+    common_1.UseBeforeEach(auth_1.csrf),
+    common_1.UseBefore(Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('userId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "disableTwoFactor", null);
+__decorate([
+    common_1.Delete('/user/:userId/clear-balance/:currencyTypeId'),
+    swagger_1.Summary('Disable an accounts two-factor authentcation'),
+    common_1.UseBeforeEach(auth_1.csrf),
+    common_1.UseBefore(Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('userId', Number)),
+    __param(2, common_1.PathParams('currencyTypeId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "clearBalance", null);
 __decorate([
     common_1.Get('/search'),
     swagger_1.Summary('Search staff'),

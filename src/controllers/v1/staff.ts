@@ -666,6 +666,54 @@ export class StaffController extends controller {
     }
 
     /**
+     * Delete a User's 2FA Status
+     */
+    @Delete('/user/:userId/two-factor')
+    @Summary('Disable an accounts two-factor authentcation')
+    @UseBeforeEach(csrf)
+    @UseBefore(YesAuth)
+    public async disableTwoFactor(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('userId', Number) userId: number
+    ) {
+        // Verify User
+        this.validate(userInfo, 1);
+        await this.settings.disable2fa(userId);
+        return {
+            'success': true,
+        };
+    }
+
+     /**
+     * Clear a users balance
+     */
+    @Delete('/user/:userId/clear-balance/:currencyTypeId')
+    @Summary('Disable an accounts two-factor authentcation')
+    @UseBeforeEach(csrf)
+    @UseBefore(YesAuth)
+    public async clearBalance(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('userId', Number) userId: number,
+        @PathParams('currencyTypeId', Number) currencyTypeId: number
+    ) {
+        // Verify User
+        this.validate(userInfo, 2);
+        if (currencyTypeId !== 1 && currencyTypeId !== 2) {
+            throw new this.BadRequest('InvalidCurrencyType');
+        }
+        let balToGrab: 'primaryBalance'|'secondaryBalance' = 'primaryBalance';
+        if (currencyTypeId === 2) {
+            balToGrab = 'secondaryBalance';
+        }
+        let userBalance = await this.user.getInfo(userId, [balToGrab]);
+        await this.economy.subtractFromUserBalance(userId, userBalance[balToGrab], currencyTypeId);
+        // Return success
+        return {
+            success: true,
+        };
+    }
+
+    /**
      * Get all staff
      * @param offset 
      */
