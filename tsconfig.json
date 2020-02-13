@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
       "target": "esnext",
-      "lib": ["es2017"],
+      "lib": ["es2017","DOM"],
       "types": ["reflect-metadata","node","mocha"],
       "removeComments": true,
       "module": "commonjs",
@@ -10,7 +10,7 @@
       "experimentalDecorators":true,
       "emitDecoratorMetadata": true,
       "sourceMap": true,
-      "declaration": false
+      "declaration": false    
     },
     "exclude": [
       "node_modules"
