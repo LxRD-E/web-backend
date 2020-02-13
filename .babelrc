@@ -8,5 +8,8 @@
         "removeConsole": true,
         "removeDebugger": true
     }]],
-    "comments": false
+    "comments": false,
+    "ignore": [
+        "node_modules"
+    ]
 }
