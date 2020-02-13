@@ -113,6 +113,11 @@ export class UserInfo {
      */
     @PropertyType(String)
     forumSignature: string | null;
+    /**
+     * Is 2fa enabled?
+     */
+    @PropertyType(Number)
+    '2faEnabled': 0|1;
 }
 
 export interface PastUsernames {

@@ -2,9 +2,10 @@
  * Imports
  */
 // TSed
-import { Controller, Get, All, Next, Req, Res, UseBefore, Render, QueryParams, PathParams, Redirect, Response, Request, Locals, UseAfter, Required, Use, Err, Post, BodyParams, HeaderParams, Session, UseBeforeEach, PropertyType, MinItems, MaxItems, Maximum, Minimum, Patch } from "@tsed/common";
+import { Controller, Get, All, Next, Req, Res, UseBefore, Render, QueryParams, PathParams, Redirect, Response, Request, Locals, UseAfter, Required, Use, Err, Post, BodyParams, HeaderParams, Session, UseBeforeEach, PropertyType, MinItems, MaxItems, Maximum, Minimum, Patch, Delete } from "@tsed/common";
 import { Description, Summary, Returns, ReturnsArray } from "@tsed/swagger"; // import swagger Ts.ED module
 import moment = require('moment');
+import { RateLimiterMiddleware } from '../../middleware/RateLimit';
 // Models
 import * as model from '../../models/models';
 // Auth stuff
@@ -24,12 +25,74 @@ export default class AuthController extends controller {
         super();
     }
 
+    @Post('/login/two-factor')
+    @Summary('Login to an account using the two-factor JWT generated from /auth/login')
+    @UseBeforeEach(csrf)
+    @UseBefore(NoAuth)
+    @Use(RateLimiterMiddleware('loginAttempt'))
+    public async loginWithTwoFactor(
+        @BodyParams('code', String) code: string,
+        @BodyParams('token', String) token: string,
+        @HeaderParams('cf-connecting-ip') userIp: string,
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Session() session: Express.Session,
+    ) {
+        // probably dev env
+        if (!userIp) {
+            userIp = '127.0.0.1';
+        }
+        let decoded: {userId: number; expectedIp: string; iat: number;};
+        try {
+            decoded = this.auth.decodeTwoFactorJWT(code);
+        }catch(e) {
+            console.log('failed to decode: ',e);
+            throw new this.BadRequest('InvalidTwoFactorCode');
+        }
+        // Ip does not match
+        if (decoded.expectedIp !== userIp) {
+            console.log('ip mis-match');
+            throw new this.BadRequest('InvalidTwoFactorCode');
+        }
+        // Expired
+        if (moment(decoded.iat * 1000).subtract(5, 'minutes').isSameOrAfter(moment())) {
+            console.log('expired');
+            throw new this.BadRequest('InvalidTwoFactorCode');
+        }
+        let userId = decoded.userId;
+        let twoFactorInfo = await this.settings.is2faEnabled(userId);
+        if (!twoFactorInfo || !twoFactorInfo.enabled) {
+            throw new Error('2fa is not enabled for the specified account.');
+        }
+        // Validate secret
+        let result: boolean;
+        try {
+            result = await this.auth.validateTOTPSecret(twoFactorInfo.secret, token);
+        }catch(e) {
+            throw new this.BadRequest('InvalidTwoFactorCode');
+        }
+        if (!result) {
+            throw new this.BadRequest('InvalidTwoFactorCode');
+        }
+        // 2FA token is GOOD. Create session
+        let userData = await this.user.getInfo(userId, ['username', 'passwordChanged']);
+        session.userdata = {};
+        session.userdata.id = userId;
+        session.userdata.username = userData.username;
+        session.userdata.passwordUpdated = userData.passwordChanged;
+        return {
+            userId: userId,
+            username: userData.username,
+            isTwoFactorRequied: false,
+        };
+    }
+
     @Post('/login')
     @Summary('Login to an account')
     @Returns(400, { description: 'InvalidUsernameOrPassword: Invalid Credentials\n', type: model.Error })
     @Returns(409, { description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error })
     @UseBeforeEach(csrf)
     @UseBefore(NoAuth)
+    @Use(RateLimiterMiddleware('loginAttempt'))
     public async login(
         @BodyParams('username', String) username: string,
         @BodyParams('password', String) password: string,
@@ -63,6 +126,19 @@ export default class AuthController extends controller {
                 } catch (e) {
                     throw new Error('Unable to log user ip address');
                 }
+                // Check if 2fa required
+                let twoFactorEnabled = await this.settings.is2faEnabled(userId);
+                if (twoFactorEnabled.enabled) {
+                    // Create JWT
+                    let jwtInfo = this.auth.generateTwoFactorJWT(userId, userIp);
+                    return {
+                        success: true,
+                        userId: userId,
+                        username: userData.username,
+                        isTwoFactorRequied: true,
+                        twoFactor: jwtInfo,
+                    };
+                }
                 // Setup user session
                 session.userdata = {};
                 session.userdata.id = userId;
@@ -71,6 +147,7 @@ export default class AuthController extends controller {
                 return {
                     userId: userId,
                     username: userData.username,
+                    isTwoFactorRequied: false,
                 };
             } else {
                 throw new Error('Invalid password submitted');
@@ -83,7 +160,7 @@ export default class AuthController extends controller {
             } catch (e) {
 
             }
-            throw new this.BadRequest('InvalidUsernameOrPassword');;
+            throw new this.BadRequest('InvalidUsernameOrPassword');
         }
     }
 
@@ -108,6 +185,93 @@ export default class AuthController extends controller {
         // Return success
         return {
             success: true
+        };
+    }
+
+    @Post('/generate-totp-secret')
+    @Summary('Generate a secret for TOTP')
+    @UseBeforeEach(csrf)
+    @UseBefore(YesAuth)
+    public async generateTOTPSecret(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+    ) {
+        let enabled = await this.settings.is2faEnabled(userInfo.userId);
+        if (enabled.enabled) {
+            throw new this.Conflict('TwoFactorAlreadyEnabled');
+        }
+        let secret = await this.auth.generateTOTPSecret();
+        return secret;
+    }
+
+    @Delete('/totp')
+    @Summary('Delete a two-factor authentication code')
+    @UseBeforeEach(csrf)
+    @UseBefore(YesAuth)
+    @Use(RateLimiterMiddleware('twoFactorEnableOrDisable'))
+    public async deleteTOTP(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Required()
+        @BodyParams('password', String) password: string,
+    ) {
+        // Verify password
+        let userPassword = await this.user.getPassword(userInfo.userId);
+        const valid = await this.auth.verifyPassword(password, userPassword);
+        if (!valid) {
+            throw new this.BadRequest('InvalidPassword');
+        }
+        // Check if not enabled
+        let enabled = await this.settings.is2faEnabled(userInfo.userId);
+        if (enabled.enabled === false) {
+            throw new this.Conflict('TwoFactorNotEnabled');
+        }
+        // Delete 2fa
+        await this.settings.disable2fa(userInfo.userId);
+        // Return success
+        return {
+            success: true,
+        };
+    }
+
+    @Patch('/totp')
+    @Summary('Update (or set) the authenticated users TOTP secret')
+    @UseBeforeEach(csrf)
+    @UseBefore(YesAuth)
+    @Use(RateLimiterMiddleware('twoFactorEnableOrDisable'))
+    public async updateTOTPSecret(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Required()
+        @BodyParams('secret', String) secret: string,
+        @Required()
+        @BodyParams('token', String) token: string,
+        @Required()
+        @BodyParams('password', String) password: string,
+    ) {
+        // Verify password
+        let userPassword = await this.user.getPassword(userInfo.userId);
+        const valid = await this.auth.verifyPassword(password, userPassword);
+        if (!valid) {
+            throw new this.BadRequest('InvalidPassword');
+        }
+        // Check if already enabled
+        let enabled = await this.settings.is2faEnabled(userInfo.userId);
+        if (enabled.enabled) {
+            throw new this.Conflict('TwoFactorAlreadyEnabled');
+        }
+        // Validate secret
+        let result: boolean;
+        try {
+            result = await this.auth.validateTOTPSecret(secret, token);
+        }catch(e) {
+            throw new this.BadRequest('InvalidTokenOrSecret');
+        }
+        if (!result) {
+            throw new this.BadRequest('InvalidTokenOrSecret');
+        }
+        // Set in database
+        await this.settings.enable2fa(userInfo.userId, secret);
+        // Return
+        return {
+            success: true,
         };
     }
 

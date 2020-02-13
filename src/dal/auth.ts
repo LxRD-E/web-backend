@@ -7,6 +7,10 @@ import * as util from 'util';
 import moment = require('moment');
 import { Unauthorized, Conflict, Forbidden } from 'ts-httpexceptions';
 import { Request, Response, Middleware, Req, Res } from '@tsed/common';
+import speakeasy = require('speakeasy');
+import qrcode = require('qrcode');
+import jwt = require('jsonwebtoken');
+import config from '../helpers/config';
 
 // kinda useless but yolo
 const randomBytes = util.promisify(Crypto.randomBytes);
@@ -218,4 +222,59 @@ export const decrypt = (encryptedString: string, key: string): string => {
         decipher.final(),
     ]);
     return decrypted.toString();
+}
+
+export const generateTOTPSecret = () => {
+    return new Promise((res, rej) => {
+        let secret = speakeasy.generateSecret({length: 32, name: 'Hindi Gamer Club'});
+        qrcode.toDataURL(secret.otpauth_url, (err, text) => {
+            if (err) {
+                return rej(err);
+            }
+            res({
+                qrCodeUrl: text,
+                secret: {
+                    base32: secret.base32,
+                },
+            });
+        });
+    });
+}
+
+export const validateTOTPSecret = async (secret: string, token: string) => {
+    let result;
+    try {
+        result = speakeasy.totp.verify({
+            secret: secret,
+            encoding: 'base32',
+            token: token,
+        });
+    }catch{
+        throw new Error('Invalid Secret or Token Provided');
+    }
+    if (!result  || secret.length !== 52) {
+        throw new Error('Invalid Secret or Token Provided');
+    }
+    return result;
+}
+
+export const generateTwoFactorJWT = (userId: number, expectedIp: string) => {
+    if (!config.jwt || !config.jwt.twoFactor) {
+        console.error('No jwt.twoFactor specified in config.json');
+        process.exit(1);
+    }
+    let obj = {
+        userId: userId,
+        expectedIp: expectedIp,
+    };
+    return jwt.sign(obj, config.jwt.twoFactor);
+}
+
+export const decodeTwoFactorJWT = (code: string): {userId: number; expectedIp: string; iat: number} => {
+    if (!config.jwt || !config.jwt.twoFactor) {
+        console.error('No jwt.twoFactor specified in config.json');
+        process.exit(1);
+    }
+    let val = jwt.verify(code, config.jwt.twoFactor);
+    return val as any;
 }

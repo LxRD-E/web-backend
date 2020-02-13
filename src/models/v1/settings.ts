@@ -30,4 +30,6 @@ export class UserSettings {
     forumSignature: string|null;
     @Required()
     email: EmailModelForSettings;
+    @Required()
+    '2faEnabled': 0|1;
 }

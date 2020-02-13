@@ -38,12 +38,15 @@ export default class SettingsController extends controller {
             theme: 0,
             forumSignature: "e",
             email: {},
+            '2faEnabled': 0,
         } as model.settings.UserSettings;
-        let userInfoModel = await this.user.getInfo(userInfo.userId, ['blurb', 'tradingEnabled', 'theme', 'forumSignature']);
+        let userInfoModel = await this.user.getInfo(userInfo.userId, ['blurb', 'tradingEnabled', 'theme', 'forumSignature', '2faEnabled']);
         settingsObject.blurb = userInfoModel.blurb;
         settingsObject.tradingEnabled = userInfoModel.tradingEnabled;
         settingsObject.theme = userInfoModel.theme;
         settingsObject.forumSignature = userInfoModel.forumSignature;
+        settingsObject.forumSignature = userInfoModel.forumSignature;
+        settingsObject["2faEnabled"] = userInfoModel['2faEnabled'];
         const userEmailModel = await this.user.getUserEmail(userInfo.userId);
         const userEmail = await this.settings.getUserEmail(userInfo.userId);
         if (!userEmailModel) {

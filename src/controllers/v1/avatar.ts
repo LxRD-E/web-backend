@@ -102,7 +102,6 @@ export default class AvatarController extends controller {
             }
             let owns = await this.user.getUserInventoryByCatalogId(userInfo.userId, catalogId);
             if (owns.length === 0) {
-                console.log('User is not owner of: '+catalogId.toString());
                 throw new this.BadRequest('InvalidCatalogIds');
             }
             if (owns[0]) {

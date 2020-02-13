@@ -110,6 +110,10 @@ export enum HttpErrors {
     InvalidOBJSpecified,
     InvalidMTLSpecified,
     InvalidRGBArray,
+    InvalidTokenOrSecret,
+    TwoFactorAlreadyEnabled,
+    TooManyRequests,
+    InvalidTwoFactorCode,
 };
 // @Locals('userInfo') userInfo: model.user.UserInfo,
 export const ErrorTemplate = (title: string, body: string): string => {

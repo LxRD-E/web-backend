@@ -1245,6 +1245,9 @@ const errorTransform = (errCode) => {
         case 'InvalidMTLSpecified': {
             return 'The MTL file specified is invalid.';
         }
+        case 'TooManyRequests': {
+            return 'You have been making too many requests. Try again later.';
+        }
     }
     return 'An unknown error has ocurred. Please try again later, or contact support.';
 }

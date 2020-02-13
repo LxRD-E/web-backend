@@ -137,6 +137,32 @@ class SettingsDAL extends _init {
     public async updateTradingStatus(userId: number, isEnabled: model.user.tradingEnabled): Promise<void> {
         await this.knex("users").update({"user_tradingenabled":isEnabled}).where({"id":userId});
     }
+
+    /**
+     * Enable 2fa and set secret
+     */
+    public async enable2fa(userId: number, secret: string): Promise<void> {
+        await this.knex('users').update({'2fa_enabled': true,'2fa_secret': secret}).where({'id':userId}).limit(1);
+    }
+
+    /**
+     * Disable 2fa
+     */
+    public async disable2fa(userId: number): Promise<void> {
+        await this.knex('users').update({'2fa_enabled': false,'2fa_secret':null}).where({'id': userId}).limit(1);
+    }
+
+    /**
+     * Check if 2fa enabled. If enabled, secret is returned, otherwise it isnt
+     */
+    public async is2faEnabled(userId: number): Promise<{enabled: false}|{enabled: true; secret: string}> {
+        let data = await this.knex('users').select('2fa_enabled','2fa_secret').where({'id': userId}).limit(1);
+        if (data[0]['2fa_enabled'] === 1) {
+            return {enabled: true, secret: data[0]['2fa_secret']};
+        }else{
+            return {enabled: false};
+        }
+    }
 }
 
 export default SettingsDAL;

@@ -1,3 +1,4 @@
+let twoFactorJwt = '';
 $(document).on('click', '#signInButton', function() {
     console.log("Sign In");
     var username = $('#username').val();
@@ -10,16 +11,24 @@ $(document).on('click', '#signInButton', function() {
     if (username !== "" && password !== "" && username !== null && password !== null) {
         $('#signInButton').attr("disabled","disabled");
         request("/auth/login", "POST", JSON.stringify({username:username,password:password}))
-            .then(function() {
-                $('#signInButton').removeAttr("disabled");
-                /*
-                if (typeof $.urlParam('return') !== "undefined" && $.urlParam('return') !== false) {
-                    window.location.href = $.urlParam('return')
+            .then(function(d) {
+                if (d.isTwoFactorRequied) {
+                    twoFactorJwt = d.twoFactor;
+                    $('#login-row').empty().append(`
+                    <div class="col-sm-12" style="padding:0.5rem;">
+                        <p>Please enter your two-factor authentication token to login.</p>
+                    </div>
+                    <div class="col-sm-12" style="padding:0.5rem;">
+                        <input type="text" class="form-control" id="two-factor-token" value="" maxlength="7" placeholder="Two-Factor Token">
+                    </div>
+                    <div class="col-sm-12" style="padding-top:0.5rem;">
+                        <button type="button" class="btn btn-small btn-success" id="twoFactorLogin" style="margin:0 auto;display: block;">Continue</button>
+                    </div>
+                `);
                 }else{
+                    $('#signInButton').removeAttr("disabled");
                     window.location.reload();
                 }
-                */
-               window.location.reload();
             })
             .catch(function(e) {
                 // grecaptcha.reset();
@@ -32,4 +41,19 @@ $(document).on('click', '#signInButton', function() {
     }
     // Get Friends
     // request("/user/"+userId+"/friends", "POST", )
+});
+
+$(document).on('click', '#twoFactorLogin', function(e) {
+    let token = $('#two-factor-token').val().replace(/\s/g,'').replace(/,/g, '').replace(/\./g, '');
+    request("/auth/login/two-factor", "POST", JSON.stringify({code: twoFactorJwt, token: token}))
+    .then(function(d) {
+        window.location.reload();
+    }).catch(e => {
+        if (e.responseJSON && e.responseJSON.error && e.responseJSON.error.code === 'InvalidTwoFactorCode') {
+            warning("It seems your 2FA code is invalid. Please try again");
+        }else{
+            warning(e.responseJSON.message);
+        }
+        console.log(e);
+    });
 });

@@ -24,7 +24,7 @@ class UsersDAL extends _init {
      * @param id User's ID
      * @param specificColumns Specific Columns from the Table to grab
      */
-    public async getInfo(id: number, specificColumns?: Array<'userId' | 'username' | 'passwordChanged' | 'primaryBalance' | 'secondaryBalance' | 'membership' | 'dailyAward' | 'status' | 'blurb' | 'joinDate' | 'lastOnline' | 'birthDate' | 'theme' | 'tradingEnabled' | 'staff' | 'banned' | 'forumPostCount' | 'forumSignature' | 'accountStatus'>): Promise<users.UserInfo> {
+    public async getInfo(id: number, specificColumns?: Array<'userId' | 'username' | 'passwordChanged' | 'primaryBalance' | 'secondaryBalance' | 'membership' | 'dailyAward' | 'status' | 'blurb' | 'joinDate' | 'lastOnline' | 'birthDate' | 'theme' | 'tradingEnabled' | 'staff' | 'banned' | 'forumPostCount' | 'forumSignature' | 'accountStatus' | '2faEnabled'>): Promise<users.UserInfo> {
         if (!specificColumns) {
             specificColumns = ['userId', 'username', 'status', 'joinDate', 'blurb', 'lastOnline', 'banned', 'membership', 'tradingEnabled', 'staff', 'accountStatus'];
         }
@@ -73,6 +73,8 @@ class UsersDAL extends _init {
                 array[index] = 'user_staff as staff';
             }else if (element === 'accountStatus') {
                 array[index] = 'account_status as accountStatus';
+            }else if (element === '2faEnabled') {
+                array[index] = '2fa_enabled as 2faEnabled';
             }
         });
         const userInfoSelect = await this.knex('users').select(specificColumns).where({'users.id': id });
