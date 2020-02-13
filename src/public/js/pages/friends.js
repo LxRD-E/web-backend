@@ -6,7 +6,7 @@ $(document).on('click', '.loadMoreItems', function() {
     loadInventory(window.invOffset);
 });
 function loadInventory(offset) {
-    request("/user/"+userid+"/friends?offset="+offset)
+    request("/user/"+userid+"/friends?limit=100&offset="+offset)
     .then(function(d) {
         $('#friendCountDiv').html('('+d.total+')');
         if (d["friends"].length <= 0) {
@@ -22,8 +22,8 @@ function loadInventory(offset) {
             setUserThumbs(userIdsRequest);
             setUserNames(userIdsRequest);
         }
-        if (d["friends"].length >= 25) {
-            window.invOffset = window.invOffset + 25;
+        if (d["friends"].length >= 100) {
+            window.invOffset = window.invOffset + 100;
             $('.loadMoreItems').css("display", "block")
         }else{
             $('.loadMoreItems').hide();

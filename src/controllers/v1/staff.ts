@@ -647,10 +647,10 @@ export class StaffController extends controller {
     }
 
     /**
-     * Delete a User's Status
+     * Delete a User's Forum Signature
      */
-    @Delete('/user/:userId/status')
-    @Summary('Delete a users status')
+    @Delete('/user/:userId/forum/signature')
+    @Summary('Delete a users forum signature')
     @UseBeforeEach(csrf)
     @UseBefore(YesAuth)
     public async deleteForumSignature(

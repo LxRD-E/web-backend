@@ -642,8 +642,8 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "deleteStatus", null);
 __decorate([
-    common_1.Delete('/user/:userId/status'),
-    swagger_1.Summary('Delete a users status'),
+    common_1.Delete('/user/:userId/forum/signature'),
+    swagger_1.Summary('Delete a users forum signature'),
     common_1.UseBeforeEach(auth_1.csrf),
     common_1.UseBefore(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),

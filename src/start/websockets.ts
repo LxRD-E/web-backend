@@ -16,7 +16,7 @@ webSocketServer.listen(8080);
 export default (): void => {
     webSocketServer.on('upgrade', function upgrade(request, socket, head) {
         parser(request, {} as unknown as Response, () => {
-            if (!request.session.userdata.id) {
+            if (!request.session || !request.session.userdata || !request.session.userdata.id) {
                 socket.destroy();
                 return;
             }

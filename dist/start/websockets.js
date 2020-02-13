@@ -13,7 +13,7 @@ exports.webSocketServer.listen(8080);
 exports.default = () => {
     exports.webSocketServer.on('upgrade', function upgrade(request, socket, head) {
         session_1.parser(request, {}, () => {
-            if (!request.session.userdata.id) {
+            if (!request.session || !request.session.userdata || !request.session.userdata.id) {
                 socket.destroy();
                 return;
             }

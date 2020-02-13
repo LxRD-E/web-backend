@@ -61,6 +61,16 @@ $('.formatDate').each(function () {
     var localDate = moment(date).local();
     $(this).html(localDate.format('MMMM Do YYYY, h:mm a'));
 });
+$('.formatDateNoTime').each(function () {
+    var date = moment($(this).attr("data-date"));
+    var localDate = moment(date).local();
+    $(this).html(localDate.format('MMMM Do YYYY'));
+});
+$('.formatDateFromNow').each(function () {
+    var date = moment($(this).attr("data-date"));
+    var localDate = moment(date).local();
+    $(this).html(localDate.fromNow());
+});
 function formatDate(dat) {
     var date = moment(dat);
     var localDate = moment(date).local();

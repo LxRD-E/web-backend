@@ -17,7 +17,7 @@ function loadInventory(category, offset) {
         offset = 0;
     }
     window.defaultcategory = category;
-    request("/user/"+userid+"/inventory?offset="+offset+"&category="+category)
+    request("/user/"+userid+"/inventory?limit=100&offset="+offset+"&category="+category)
     .then(function(d) {
         d=d.items;
         if (d.length <= 0) {
@@ -38,11 +38,11 @@ function loadInventory(category, offset) {
             });
             setCatalogThumbs(catalogIdsRequest);
         }
-        if (d.length >= 25) {
+        if (d.length >= 100) {
             if (typeof window.invOffset[category] === "undefined") {
                 window.invOffset[category] = 0;
             }
-            window.invOffset[category] = window.invOffset[category] + 25;
+            window.invOffset[category] = window.invOffset[category] + 100;
             $('.loadMoreItems').css("display", "block")
         }else{
             $('.loadMoreItems').hide();

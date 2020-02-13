@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Render, Redirect, PathParams, QueryParams } from '@tsed/common';
+import { Controller, Get, Post, Render, Redirect, PathParams, QueryParams, UseBefore } from '@tsed/common';
 import { Summary } from '@tsed/swagger';
 import controller from '../controller';
 import * as model from '../../models/models';
+import { YesAuth } from '../../middleware/Auth';
 
 @Controller('/')
 export class WWWUsersController extends controller {
@@ -137,6 +138,7 @@ export class WWWUsersController extends controller {
     @Get('/users/:userId/trade')
     @Summary('Open trade request with a user')
     @Render('trade')
+    @UseBefore(YesAuth)
     public async trade(
         @PathParams('userId', Number) filteredUserId: number
     ) {

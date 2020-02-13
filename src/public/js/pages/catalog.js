@@ -115,7 +115,7 @@ $(document).on('click', '#searchForCatalogClick', function() {
         $(this).css("opacity", "0.5");
     }); 
     window.defaultcategory = category;
-    request("/catalog?offset="+offset+"&category="+category+"&orderBy="+window.orderBy+"&orderByType="+window.orderByType+"&q="+q)
+    request("/catalog?limit=25&offset="+offset+"&category="+category+"&orderBy="+window.orderBy+"&orderByType="+window.orderByType+"&q="+q)
         .then(function(d) {
             window.history.replaceState(null, null, "/catalog?category="+category+"&orderBy="+orderBy+"&orderByType="+orderByType+"&q="+q);
             loadCatalogStuff(d, false);

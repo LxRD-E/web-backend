@@ -70,22 +70,19 @@ function search(offset) {
             }
             $('#userSearchResultsDiv').append(`
             <div class="col-12" >
-                <div class="card">
-                    <div class="card-body">
+                <div class="card" style="border-radius: 0;">
+                    <div class="card-body" style="padding-bottom:0;border-bottom-radius:0;border-radius: 0;">
                         <div class="row">
-                            <div class="col-3 col-md-2 col-lg-1">
+                            <div class="col-3 col-md-2 col-lg-1" style="padding-right:0.25rem;">
                                 <a href="/users/`+k.userId+`/profile">
                                     <img src="" data-userid="`+k.userId+`" style="width: 100%;margin: 0 auto;max-width: 150px; display: block;" />
                                     `+k.staff+`
                                 </a>
                             </div>
                             <div class="col-7 col-md-8 col-lg-11">
-                                <a href="/users/`+k.userId+`/profile"><h5>`+k.username+`</h5></a>
+                                <h5 style="margin-bottom:0;"><a href="/users/`+k.userId+`/profile">`+k.username+`</a></h5>
+                                <p style="font-size:0.75rem;margin-bottom:0.25rem;">Last Online: `+moment(k.lastOnline).local().fromNow()+`</p>
                                 <p>`+k.status.escape()+`</p>
-                                <p>Last Online: `+moment(k.lastOnline).local().fromNow()+`</p>
-                            </div>
-                            <div class="col-12">
-                                <hr style="margin-bottom: 0;" />
                             </div>
                         </div>
                     </div>
@@ -95,7 +92,7 @@ function search(offset) {
             $('[data-toggle="staffTooltip"]').tooltip();
         });
         if (d.length >= 25) {
-            window.searchOffset = window.searchOffset + 25;
+            window.searchOffset = window.searchOffset + 100;
             $('.loadMorePlayer').show();
         }else{
             window.searchOffset = 0;

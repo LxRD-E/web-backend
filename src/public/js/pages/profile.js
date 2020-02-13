@@ -56,7 +56,7 @@ if (userid !== $('#userdata').attr("data-userid")) {
     $('#acceptFriendRequest').hide();
 }
 
-request('/user/' + userid + '/inventory?category=1', "GET")
+request('/user/' + userid + '/inventory?category=1&limit=6', "GET")
     .then(function (d) {
         var div = $('#profileCollectionsDiv');
         var catalogIdsRequest = [];
@@ -68,7 +68,7 @@ request('/user/' + userid + '/inventory?category=1', "GET")
                 } else {
                     extraclass = "";
                 }
-                $('#profileCollectionsDiv').append('<div style="display:none;" class="' + extraclass + ' col-3 col-md-2 col-lg-2"><img style="width:100%;" data-catalogid=' + value.catalogId + ' /><a style="color:#212529;" href="/catalog/' + value.catalogId + '/"><p class="text-center text-truncate">' + value.catalogName.escape() + '</p></a></div>');
+                $('#profileCollectionsDiv').append('<div style="display:none;" class="' + extraclass + ' col-3 col-md-2 col-lg-2"><img style="width:100%;" data-catalogid=' + value.catalogId + ' /><a style="color:#212529;" href="/catalog/' + value.catalogId + '/"><p class="text-center text-truncate" style="font-size:0.75rem;">' + value.catalogName.escape() + '</p></a></div>');
             }
             catalogIdsRequest.push(value.catalogId);
         });
@@ -115,7 +115,7 @@ request('/user/' + userid + '/groups', "GET")
         $('#profileGroupsDiv').html(msg);
     });
 
-request("/user/" + userid + "/friends?sort=desc", "GET")
+request("/user/" + userid + "/friends?sort=desc&limit=6", "GET")
     .then(function (d) {
         $(document).ready(function () {
             var userIdsRequest = [];
@@ -127,7 +127,7 @@ request("/user/" + userid + "/friends?sort=desc", "GET")
                     } else {
                         extraclass = "";
                     }
-                    $('#profileFriendsDiv').append('<div class="' + extraclass + ' col-3 col-sm-3 col-md-2 col-lg-2"><img data-userid="' + value.userId + '" style="width:100%;" /><a style="color:#212529;" href="/users/' + value.userId + '/profile"><p class="text-center text-truncate" data-userid="' + value.userId + '"></p></a></div>');
+                    $('#profileFriendsDiv').append('<div class="' + extraclass + ' col-3 col-sm-3 col-md-2 col-lg-2"><img data-userid="' + value.userId + '" style="width:100%;" /><a style="color:#212529;" href="/users/' + value.userId + '/profile"><p class="text-center text-truncate" data-userid="' + value.userId + '" style="font-size:0.75rem;"></p></a></div>');
                     userIdsRequest.push(value.userId);
                 }
             });

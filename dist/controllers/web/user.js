@@ -21,6 +21,7 @@ const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 const controller_1 = require("../controller");
 const model = require("../../models/models");
+const Auth_1 = require("../../middleware/Auth");
 let WWWUsersController = class WWWUsersController extends controller_1.default {
     async profile(filteredUserId) {
         let ViewData = new this.WWWTemplate({ title: '' });
@@ -152,6 +153,7 @@ __decorate([
     common_1.Get('/users/:userId/trade'),
     swagger_1.Summary('Open trade request with a user'),
     common_1.Render('trade'),
+    common_1.UseBefore(Auth_1.YesAuth),
     __param(0, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),

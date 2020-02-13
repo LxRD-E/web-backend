@@ -146,7 +146,7 @@
                             <div class="row">
                                 <div class="col-md-7 col-sm-12">
                                     <h5 class="card-title text-margin" style="margin-bottom:0.5rem;">Two-Factor Authentication</h5>
-                                    <p style="margin-top:0rem;margin-bottom:1rem;">Once enabled, you will be required to enter a two factor authentication code every time you login to your account.</p>
+                                    <p style="margin-top:0rem;margin-bottom:1rem;font-size:0.85rem;">Once enabled, you will be required to enter a two factor authentication code every time you login to your account.</p>
                                 </div>
                                 <div class="col-md-8 col-sm-12">
                                     <select class="form-control form-control-sm" id="twoFactorAuth">

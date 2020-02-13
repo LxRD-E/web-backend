@@ -101,33 +101,35 @@ function getUserInventoryAndWriteToDisplay(userid, type) {
         if (offset > 100) {
             return; // temporary
         }
+        let div;
         if (type === "you") {
-            var div = $('#tradeYourInventory');
+            div = $('#tradeYourInventory');
         }else{
-            var div = $('#tradePartnerInventory');
+            div = $('#tradePartnerInventory');
         }
-        request("/user/"+userid+"/inventory/collectibles?sort=desc&offset="+offset)
+        request("/user/"+userid+"/inventory/collectibles?limit=100&sort=desc&offset="+offset)
             .then(function(d) {
                 d = d["items"];
                 if (d.length <= 0 && offset === 0) {
-                    div.html('<div class="col-sm-12"><h5>This user does not have any tradeable items.</h5></div>');
+                    div.html('<div class="col-sm-12"><h5>This user does not have any trade-able items.</h5></div>');
                 }else{
                     if (d.length >= 25) {
-                        recurseOverInventory(offset+25);
+                        recurseOverInventory(offset+100);
                     }
                     console.log(d.length);
                     var catalogIdsRequest = [];
                     $.each(d, function(index, value) {
                         if (value.serial !== null && value.serial !== 0) {
-                            value.serial = "<p>Serial: "+value.serial+"</p>";
+                            value.serial = "<p style='font-size:0.75rem;'>Serial: "+value.serial+"</p>";
                         }else{
-                            value.serial = "<p>Serial: N/A</p>";
+                            value.serial = "<p style='font-size:0.75rem;'>Serial: N/A</p>";
                         }
-                        div.append('<div style="display:none;" class="col-6 col-sm-6 col-md-6 col-lg-4 addItemToTrade'+type+'" data-uid="'+value.userInventoryId+'" data-catalogid="'+value.catalogId+'" id="user_inventory_item_'+index+'"><div class="card" style="margin: 1rem 0;"><img data-catalogid="'+value.catalogId+'" style="width:100%;" /> <div class="card-body"><div class="card-title text-left text-truncate" style="margin-bottom:0;"><a href="/catalog/'+value.catalogId+'/" target="_blank">'+value.catalogName+'</a>'+value.serial+'</div></div></div></div>');
+                        div.append('<div style="display:none;padding:0.25rem;margin-bottom:0;cursor:pointer;" class="col-4 col-md-3 col-lg-2 addItemToTrade'+type+'" data-uid="'+value.userInventoryId+'" data-catalogid="'+value.catalogId+'" id="user_inventory_item_'+index+'"><div class="card" style="margin:0;"><img data-catalogid="'+value.catalogId+'" style="width:100%;" /> <div class="card-body" style="padding:0.75rem;"><div class="card-title text-left text-truncate" style="margin-bottom:0;"><a href="/catalog/'+value.catalogId+'/" target="_blank">'+value.catalogName+'</a><p style="font-size:0.75rem;" title="Average Sales Price" class="average-sales-toolip">ASP: '+number_format(value.averagePrice)+'</p>'+value.serial+'</div></div></div></div>');
                         catalogIdsRequest.push(value.catalogId);
                         $('.addItemToTrade'+type).show();
                     });
                     setCatalogThumbs(catalogIdsRequest);
+                    $(".average-sales-toolip").tooltip();
                 }
             })
             .catch(function(e) {
