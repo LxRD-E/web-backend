@@ -206,4 +206,29 @@ export class WWWStaffController extends controller {
         ViewData.page.twoFactorEnabled = twoFactorEnabled;
         return ViewData;
     }
+
+    @Get('/staff/forums')
+    @UseBefore(YesAuth)
+    @Render('staff/forums')
+    public async modifyForums(
+        @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
+    ) {
+        const staff = userInfo.staff >= 3 ? true : false;
+        if (!staff) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        let cats = await this.forum.getCategories();
+        let subs = await this.forum.getSubCategories();
+        for (const sub of subs) {
+            for (const cat of cats) {
+                if (sub.categoryId === cat.categoryId) {
+                    sub['category'] = cat;
+                }
+            }
+        }
+        return new this.WWWTemplate({title: 'Modify Forum Categories/SubCategories', userInfo: userInfo, page: {
+            subs: subs,
+            cats: cats,
+        }});
+    }
 }

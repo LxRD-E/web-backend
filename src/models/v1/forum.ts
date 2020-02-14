@@ -26,6 +26,7 @@ export interface Categories {
     categoryId: number;
     title: string;
     description: string;
+    weight: number;
 }
 export interface SubCategories {
     subCategoryId: number;
@@ -36,6 +37,7 @@ export interface SubCategories {
         read: number;
         post: number;
     };
+    weight: number;
 }
 export interface PostSnippet {
     threadId: number;

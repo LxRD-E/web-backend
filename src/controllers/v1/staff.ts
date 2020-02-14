@@ -10,7 +10,7 @@ import * as model from '../../models/models';
 import { filterOffset, filterId } from '../../helpers/Filter';
 // Autoload
 import controller from '../controller';
-import { Controller, Post, Get, Patch, Delete, Put, QueryParams, BodyParams, PathParams, UseBeforeEach, UseBefore, Locals } from '@tsed/common';
+import { Controller, Post, Get, Patch, Delete, Put, QueryParams, BodyParams, PathParams, UseBeforeEach, UseBefore, Locals, Use, MaxLength, MinLength, Required } from '@tsed/common';
 import { Summary } from '@tsed/swagger';
 import { YesAuth } from '../../middleware/Auth';
 import { csrf } from '../../dal/auth';
@@ -771,5 +771,107 @@ export class StaffController extends controller {
         }
         await this.user.updateStaffRank(userId, newRank);
         return { success: true };
+    }
+
+    @Patch('/forum/category/:categoryId')
+    @Summary('Update a forum category')
+    @Use(csrf, YesAuth)
+    public async updateForumCategory(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Required()
+        @PathParams('categoryId', Number) catId: number,
+        @Required()
+        @BodyParams('title', String) title: string,
+        @Required()
+        @BodyParams('description', String) description: string = '',
+        @Required()
+        @BodyParams('weight', Number) weight: number = 0,
+    ) {
+        // Validate staff rank
+        this.validate(userInfo, 3);
+        // Update cat
+        await this.forum.updateCategory(catId, title, description, weight);
+        // Return success
+        return {
+            success: true,
+        };
+    }
+
+    @Put('/forum/category/')
+    @Summary('Update a forum category')
+    @Use(csrf, YesAuth)
+    public async createForumCategory(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Required()
+        @BodyParams('title', String) title: string,
+        @Required()
+        @BodyParams('description', String) description: string = '',
+        @Required()
+        @BodyParams('weight', Number) weight: number = 0,
+    ) {
+        // Validate staff rank
+        this.validate(userInfo, 3);
+        // Update cat
+        await this.forum.createCategory(title, description, weight);
+        // Return success
+        return {
+            success: true,
+        };
+    }
+
+    @Patch('/forum/sub-category/:subCategoryId')
+    @Summary('Update a forum subCategory')
+    @Use(csrf,YesAuth)
+    public async updateForumSubCategory(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Required()
+        @PathParams('subCategoryId', Number) subId: number,
+        @Required()
+        @BodyParams('categoryId', Number) catId: number,
+        @Required()
+        @BodyParams('title', String) title: string,
+        @Required()
+        @BodyParams('description', String) desc: string,
+        @Required()
+        @BodyParams('readPermissionLevel', Number) readPermissionLevel: number,
+        @Required()
+        @BodyParams('postPermissionLevel', Number) postPermissionLevel: number,
+        @BodyParams('weight', Number) weight: number = 0,
+    ) {
+        // Validate staff rank
+        this.validate(userInfo, 3);
+        // Update sub
+        await this.forum.updateSubCategory(subId, catId, title, desc, readPermissionLevel, postPermissionLevel, weight);
+        // Return success
+        return {
+            success: true,
+        };
+    }
+
+    @Put('/forum/sub-category/')
+    @Summary('Create a forum subCategory')
+    @Use(csrf,YesAuth)
+    public async createForumSubCategory(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Required()
+        @BodyParams('categoryId', Number) catId: number,
+        @Required()
+        @BodyParams('title', String) title: string,
+        @Required()
+        @BodyParams('description', String) desc: string,
+        @Required()
+        @BodyParams('readPermissionLevel', Number) readPermissionLevel: number,
+        @Required()
+        @BodyParams('postPermissionLevel', Number) postPermissionLevel: number,
+        @BodyParams('weight', Number) weight: number = 0,
+    ) {
+        // Validate staff rank
+        this.validate(userInfo, 3);
+        // Create sub
+        await this.forum.createSubCategory(catId, title, desc, readPermissionLevel, postPermissionLevel, weight);
+        // Return success
+        return {
+            success: true,
+        };
     }
 }

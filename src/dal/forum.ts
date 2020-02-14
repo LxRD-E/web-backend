@@ -9,7 +9,7 @@ class ForumDAL extends _init {
      * Get All Categories
      */
     public async getCategories(): Promise<Forum.Categories[]> {
-        const categories = await this.knex("forum_categories").select("id as categoryId","title","description");
+        const categories = await this.knex("forum_categories").select("id as categoryId","title","description",'weight').orderBy('weight','desc');
         return categories;
     }
     /**
@@ -17,7 +17,7 @@ class ForumDAL extends _init {
      * @param minimumRank The minimum rank required to read the subcategory. Defaults to 0 (aka Guest/Regular User)
      */
     public async getSubCategories(minimumRank = 0): Promise<Forum.SubCategories[]> {
-        const subCategories = await this.knex("forum_subcategories").select("id as subCategoryId","category as categoryId","title","description","read_permission_level","post_permission_level").where("read_permission_level","<=",minimumRank);
+        const subCategories = await this.knex("forum_subcategories").select("id as subCategoryId","category as categoryId","title","description","read_permission_level","post_permission_level",'forum_subcategories.weight').where("read_permission_level","<=",minimumRank).orderBy('weight','desc');
         const formattedCategories = [];
         for (const sub of subCategories) {
             formattedCategories.push({
@@ -28,7 +28,8 @@ class ForumDAL extends _init {
                 'permissions': {
                     'read': sub.read_permission_level,
                     'post': sub.post_permission_level,
-                }
+                },
+                'weight': sub.weight,
             });
         }
         return formattedCategories as Forum.SubCategories[];
@@ -347,6 +348,78 @@ class ForumDAL extends _init {
             'forum_threads.title', 'like', '%'+query+'%',
         );
         return threads as unknown as Forum.Threads[];
+    }
+
+    /**
+     * Update a category
+     * @param categoryId 
+     * @param title 
+     * @param description 
+     * @param weight 
+     */
+    public async updateCategory(categoryId: number, title: string, description: string, weight: number = 0) {
+        await this.knex('forum_categories').update({
+            'title': title,
+            description: description,
+            'weight': weight,
+        }).where({'id': categoryId}).limit(1);
+    }
+
+    /**
+     * Create a category
+     * @param categoryId 
+     * @param title 
+     * @param description 
+     * @param weight 
+     */
+    public async createCategory(title: string, description: string, weight: number = 0) {
+        await this.knex('forum_categories').insert({
+            'title': title,
+            description: description,
+            'weight': weight,
+        });
+    }
+
+
+    /**
+     * Update a subCategory
+     * @param subCategoryId 
+     * @param categoryId 
+     * @param title 
+     * @param description 
+     * @param readPermissionLevel 
+     * @param postPermissionLevel 
+     * @param weight 
+     */
+    public async updateSubCategory(subCategoryId: number, categoryId: number, title: string, description: string, readPermissionLevel: number, postPermissionLevel: number, weight: number = 0) {
+        await this.knex('forum_subcategories').update({
+            'title': title,
+            'description': description,
+            'category': categoryId,
+            'read_permission_level': readPermissionLevel,
+            'post_permission_level': postPermissionLevel,
+            'weight': weight,
+        }).where({'id': subCategoryId}).limit(1);
+    }
+
+    /**
+     * Create a subCategory
+     * @param categoryId 
+     * @param title 
+     * @param description 
+     * @param readPermissionLevel 
+     * @param postPermissionLevel 
+     * @param weight 
+     */
+    public async createSubCategory(categoryId: number, title: string, description: string, readPermissionLevel: number, postPermissionLevel: number, weight: number = 0) {
+        await this.knex('forum_subcategories').insert({
+            'title': title,
+            'description': description,
+            'category': categoryId,
+            'read_permission_level': readPermissionLevel,
+            'post_permission_level': postPermissionLevel,
+            'weight': weight,
+        });
     }
 }
 

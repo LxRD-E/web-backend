@@ -145,6 +145,25 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
         ViewData.page.twoFactorEnabled = twoFactorEnabled;
         return ViewData;
     }
+    async modifyForums(userInfo) {
+        const staff = userInfo.staff >= 3 ? true : false;
+        if (!staff) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        let cats = await this.forum.getCategories();
+        let subs = await this.forum.getSubCategories();
+        for (const sub of subs) {
+            for (const cat of cats) {
+                if (sub.categoryId === cat.categoryId) {
+                    sub['category'] = cat;
+                }
+            }
+        }
+        return new this.WWWTemplate({ title: 'Modify Forum Categories/SubCategories', userInfo: userInfo, page: {
+                subs: subs,
+                cats: cats,
+            } });
+    }
 };
 __decorate([
     common_1.Get('/staff'),
@@ -254,6 +273,15 @@ __decorate([
     __metadata("design:paramtypes", [UserModel.SessionUserInfo, Number]),
     __metadata("design:returntype", Promise)
 ], WWWStaffController.prototype, "moderationProfile", null);
+__decorate([
+    common_1.Get('/staff/forums'),
+    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Render('staff/forums'),
+    __param(0, common_1.Locals('userInfo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [UserModel.SessionUserInfo]),
+    __metadata("design:returntype", Promise)
+], WWWStaffController.prototype, "modifyForums", null);
 WWWStaffController = __decorate([
     common_1.Controller("/"),
     __metadata("design:paramtypes", [])

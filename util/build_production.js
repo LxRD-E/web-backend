@@ -113,7 +113,7 @@ if (ignore.match(/\/dist\//g)) {
 }
 try {
     const res = cp.execSync('ssh-agent bash -c \'ssh-add C:\\Users\\buizel\\.ssh\\cid_rsa; cd ./dist_module & git config core.ignorecase false & git -C ./dist_module add . & git -C ./dist_module commit -m "update dist" & git -C ./dist_module push');
-    cp.execSync('ssh-agent bash -c \'ssh-add C:\\Users\\buizel\\.ssh\\cid_rsa; git config core.ignorecase false & git add . & git commit -m "do something" & git push');
+    // cp.execSync('ssh-agent bash -c \'ssh-add C:\\Users\\buizel\\.ssh\\cid_rsa; git config core.ignorecase false & git add . & git commit -m "do something" & git push');
     // console.log(res.toString());
     // console.log('deployed.');
 }catch(e) {

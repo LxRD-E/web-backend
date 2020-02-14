@@ -19,13 +19,17 @@
                 </div>
             </div>
             <div class="col-12 col-lg-8">
-                <div class="row forumcategories">
+            @for (const cat of model.page.cats) {
+                if (cat.subCategories.length === 0) {
+                    continue;
+                }
+                <div class="row forumcategories" style="margin-top:1rem;">
                     <div class="col-12">
                         <div class="card bg-success" style="color:white;border-radius:0;">
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-6">
-                                        <h5 style="margin-bottom:0;font-size:1rem;">Subcategory</h5>
+                                        <h5 style="margin-bottom:0;font-size:1rem;">@cat.title</h5>
                                     </div>
                                     <div class="col-2 d-none d-md-block text-center">
                                         <h5 style="margin-bottom:0;font-size:1rem;">Threads</h5>
@@ -40,41 +44,41 @@
                             </div>
                         </div>
                     </div>
-                    @for (const cat of model.page.subs) {
-                        <div class="col-12 forumSubCategory" data-id="@cat.subCategoryId">
+                    @for (const sub of cat.subCategories) {
+                        <div class="col-12 forumSubCategory" data-id="@sub.subCategoryId">
                             <div class="card" style="border-radius:0;border:none;box-shadow:none;border-bottom: 1px solid rgba(0,0,0,.125);">
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-6">
-                                            <a href="/forum/@cat.subCategoryId?page=1">
-                                                <h5 style="margin-bottom:0;font-size:1.05rem;">@cat.title</h5>
+                                            <a href="/forum/@sub.subCategoryId?page=1">
+                                                <h5 style="margin-bottom:0;font-size:1.05rem;">@sub.title</h5>
                                             </a>
-                                            <p style="margin-bottom:0;font-size:0.85rem;" class="text-truncate">@cat.description</p>
+                                            <p style="margin-bottom:0;font-size:0.85rem;" class="text-truncate">@sub.description</p>
                                         </div>
                                         <div class="col-2 d-none d-md-block vertical-align-text text-center">
                                             <h6 style="margin-bottom:0;margin-top:0.5rem;font-size:0.95rem;">
-                                                @cat.totalThreads
+                                                @sub.totalThreads
                                             </h6>
                                         </div>
                                         <div class="col-2 d-none d-lg-block vertical-align-text text-center">
                                             <h6 style="margin-bottom:0;margin-top:0.5rem;font-size:0.95rem;">
-                                                @cat.totalPosts
+                                                @sub.totalPosts
                                             </h6>
                                         </div>
                                         <div class="col-6 col-md-4 col-lg-2 vertical-align-text text-center">
                                             <h6 style="margin-bottom:0;">
-                                                @if (!cat.latestPost) {
+                                                @if (!sub.latestPost) {
                                                     <span>N/A</span>
                                                 }else{
                                                     <div>
                                                         <p class="text-truncate" style="font-size:0.75rem;">
-                                                            <a href="/forum/thread/@cat.latestPost.threadId">
-                                                                <span class="formatDateFromNow" data-date="@cat.latestPost.dateCreated"></span>
+                                                            <a href="/forum/thread/@sub.latestPost.threadId">
+                                                                <span class="formatDateFromNow" data-date="@sub.latestPost.dateCreated"></span>
                                                             </a>
                                                         </p>
                                                         <p class="text-truncate" style="font-size:0.65rem;">
-                                                            By <a href="/users/@cat.latestPost.userId/profile">
-                                                                <span data-userid="@cat.latestPost.userId" class="setUserName">...</span>
+                                                            By <a href="/users/@sub.latestPost.userId/profile">
+                                                                <span data-userid="@sub.latestPost.userId" class="setUserName">...</span>
                                                             </a>
                                                         </p>
                                                     </div>
@@ -87,8 +91,10 @@
                         </div>
                     }
                 </div>
+            }
             </div>
-            <div class="col-12 col-lg-4">
+            
+            <div class="col-12 col-lg-4" style="margin-top:1rem;">
                 <div class="row forumlatestposts">
                     <div class="col-12">
                         <div class="card bg-success" style="color:white;border-radius:0;">

@@ -468,6 +468,34 @@ let StaffController = class StaffController extends controller_1.default {
         await this.user.updateStaffRank(userId, newRank);
         return { success: true };
     }
+    async updateForumCategory(userInfo, catId, title, description = '', weight = 0) {
+        this.validate(userInfo, 3);
+        await this.forum.updateCategory(catId, title, description, weight);
+        return {
+            success: true,
+        };
+    }
+    async createForumCategory(userInfo, title, description = '', weight = 0) {
+        this.validate(userInfo, 3);
+        await this.forum.createCategory(title, description, weight);
+        return {
+            success: true,
+        };
+    }
+    async updateForumSubCategory(userInfo, subId, catId, title, desc, readPermissionLevel, postPermissionLevel, weight = 0) {
+        this.validate(userInfo, 3);
+        await this.forum.updateSubCategory(subId, catId, title, desc, readPermissionLevel, postPermissionLevel, weight);
+        return {
+            success: true,
+        };
+    }
+    async createForumSubCategory(userInfo, catId, title, desc, readPermissionLevel, postPermissionLevel, weight = 0) {
+        this.validate(userInfo, 3);
+        await this.forum.createSubCategory(catId, title, desc, readPermissionLevel, postPermissionLevel, weight);
+        return {
+            success: true,
+        };
+    }
 };
 __decorate([
     common_1.UseBeforeEach(auth_1.csrf),
@@ -702,6 +730,80 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "updateUserStaffRank", null);
+__decorate([
+    common_1.Patch('/forum/category/:categoryId'),
+    swagger_1.Summary('Update a forum category'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Required()),
+    __param(1, common_1.PathParams('categoryId', Number)),
+    __param(2, common_1.Required()),
+    __param(2, common_1.BodyParams('title', String)),
+    __param(3, common_1.Required()),
+    __param(3, common_1.BodyParams('description', String)),
+    __param(4, common_1.Required()),
+    __param(4, common_1.BodyParams('weight', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String, String, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "updateForumCategory", null);
+__decorate([
+    common_1.Put('/forum/category/'),
+    swagger_1.Summary('Update a forum category'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Required()),
+    __param(1, common_1.BodyParams('title', String)),
+    __param(2, common_1.Required()),
+    __param(2, common_1.BodyParams('description', String)),
+    __param(3, common_1.Required()),
+    __param(3, common_1.BodyParams('weight', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, String, String, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "createForumCategory", null);
+__decorate([
+    common_1.Patch('/forum/sub-category/:subCategoryId'),
+    swagger_1.Summary('Update a forum subCategory'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Required()),
+    __param(1, common_1.PathParams('subCategoryId', Number)),
+    __param(2, common_1.Required()),
+    __param(2, common_1.BodyParams('categoryId', Number)),
+    __param(3, common_1.Required()),
+    __param(3, common_1.BodyParams('title', String)),
+    __param(4, common_1.Required()),
+    __param(4, common_1.BodyParams('description', String)),
+    __param(5, common_1.Required()),
+    __param(5, common_1.BodyParams('readPermissionLevel', Number)),
+    __param(6, common_1.Required()),
+    __param(6, common_1.BodyParams('postPermissionLevel', Number)),
+    __param(7, common_1.BodyParams('weight', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number, String, String, Number, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "updateForumSubCategory", null);
+__decorate([
+    common_1.Put('/forum/sub-category/'),
+    swagger_1.Summary('Create a forum subCategory'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Required()),
+    __param(1, common_1.BodyParams('categoryId', Number)),
+    __param(2, common_1.Required()),
+    __param(2, common_1.BodyParams('title', String)),
+    __param(3, common_1.Required()),
+    __param(3, common_1.BodyParams('description', String)),
+    __param(4, common_1.Required()),
+    __param(4, common_1.BodyParams('readPermissionLevel', Number)),
+    __param(5, common_1.Required()),
+    __param(5, common_1.BodyParams('postPermissionLevel', Number)),
+    __param(6, common_1.BodyParams('weight', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String, String, Number, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "createForumSubCategory", null);
 StaffController = __decorate([
     common_1.Controller('/staff'),
     __metadata("design:paramtypes", [])

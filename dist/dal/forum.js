@@ -4,11 +4,11 @@ const Forum = require("../models/v1/forum");
 const _init_1 = require("./_init");
 class ForumDAL extends _init_1.default {
     async getCategories() {
-        const categories = await this.knex("forum_categories").select("id as categoryId", "title", "description");
+        const categories = await this.knex("forum_categories").select("id as categoryId", "title", "description", 'weight').orderBy('weight', 'desc');
         return categories;
     }
     async getSubCategories(minimumRank = 0) {
-        const subCategories = await this.knex("forum_subcategories").select("id as subCategoryId", "category as categoryId", "title", "description", "read_permission_level", "post_permission_level").where("read_permission_level", "<=", minimumRank);
+        const subCategories = await this.knex("forum_subcategories").select("id as subCategoryId", "category as categoryId", "title", "description", "read_permission_level", "post_permission_level", 'forum_subcategories.weight').where("read_permission_level", "<=", minimumRank).orderBy('weight', 'desc');
         const formattedCategories = [];
         for (const sub of subCategories) {
             formattedCategories.push({
@@ -19,7 +19,8 @@ class ForumDAL extends _init_1.default {
                 'permissions': {
                     'read': sub.read_permission_level,
                     'post': sub.post_permission_level,
-                }
+                },
+                'weight': sub.weight,
             });
         }
         return formattedCategories;
@@ -181,6 +182,40 @@ class ForumDAL extends _init_1.default {
         }).innerJoin("forum_threads", "forum_threads.id", "forum_posts.threadid").orderBy("forum_threads.thread_pinned", 'desc').orderBy("latestReply", 'desc').limit(limit).offset(offset).groupBy("forum_threads.id")
             .andWhere('forum_threads.title', 'like', '%' + query + '%');
         return threads;
+    }
+    async updateCategory(categoryId, title, description, weight = 0) {
+        await this.knex('forum_categories').update({
+            'title': title,
+            description: description,
+            'weight': weight,
+        }).where({ 'id': categoryId }).limit(1);
+    }
+    async createCategory(title, description, weight = 0) {
+        await this.knex('forum_categories').insert({
+            'title': title,
+            description: description,
+            'weight': weight,
+        });
+    }
+    async updateSubCategory(subCategoryId, categoryId, title, description, readPermissionLevel, postPermissionLevel, weight = 0) {
+        await this.knex('forum_subcategories').update({
+            'title': title,
+            'description': description,
+            'category': categoryId,
+            'read_permission_level': readPermissionLevel,
+            'post_permission_level': postPermissionLevel,
+            'weight': weight,
+        }).where({ 'id': subCategoryId }).limit(1);
+    }
+    async createSubCategory(categoryId, title, description, readPermissionLevel, postPermissionLevel, weight = 0) {
+        await this.knex('forum_subcategories').insert({
+            'title': title,
+            'description': description,
+            'category': categoryId,
+            'read_permission_level': readPermissionLevel,
+            'post_permission_level': postPermissionLevel,
+            'weight': weight,
+        });
     }
 }
 exports.default = ForumDAL;

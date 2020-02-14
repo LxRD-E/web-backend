@@ -1265,6 +1265,9 @@ const errorTransform = (errCode) => {
 }
 
 function request(url, method, body) {
+    if (typeof body === 'object') {
+        body=JSON.stringify(body);
+    }
     return new Promise((resolve, reject) => {
         ajax($('#userdata').attr("data-csrf"));
         function ajax(csrf) {
