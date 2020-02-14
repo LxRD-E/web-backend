@@ -13,6 +13,8 @@ export class SignupRequest {
     @Description('Format: Day, Month, Year')
     @Example([1,12,2000])
     birth: number[];
+    @PropertyType(String)
+    captcha: string;
 }
 
 export class UsernameChangedResponseOK {

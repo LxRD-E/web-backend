@@ -1,7 +1,4 @@
 window.subsitutionimageurl = "https://cdn.hindigamer.club/thumbnails/d8f9737603db2d077e9c6f2d5bd3eec1db8ff9fc8ef64784a5e4e6580c4519ba.png";
-// Self-XSS Warning
-console.log("%cStop!", "color:red; font-size:80px;font-family:sans-serif;");
-console.log("%cThis is a browser feature intended for developers. If someone told you to copy-paste something here to enable a feature or \"hack\", it is a scam and will give them access to your account.", "color:black;font-size:25px;font-family:sans-serif;");
 // Get UserData
 var userData = $('#userdata');
 

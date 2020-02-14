@@ -63,7 +63,7 @@ $('#birthMonthFormSelect').change(function() {
 function usernameOk(name) {
     console.log(name);
     return new Promise(function(resolve, reject) {
-        request("/username/available?username="+name, "GET")
+        request("/auth/username/available?username="+name, "GET")
             .then(function() {
                 resolve();
             })
@@ -94,7 +94,7 @@ $(document).on('click', '#signUpButton', function() {
         $('#signUpButton').attr("disabled","disabled");
         usernameOk(username)
             .then(function() {
-                request("/signup", "POST", JSON.stringify({username:username,password:password,birth:[day,month,year],captcha:response}))
+                request("/auth/signup", "POST", JSON.stringify({username:username,password:password,birth:[day,month,year],captcha:response}))
                     .then(function() {
                         $('#signUpButton').removeAttr("disabled");
                         window.location.reload();

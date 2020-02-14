@@ -54,14 +54,14 @@ function chatInit() {
         </div>
         <div id="scrollingDivForAllChatUsersList" class="card-body" style="
         padding: 0;    
-        max-height: 300px;
+        height: auto;
         overflow-y: scroll;
         overflow-x: hidden;
         ">
 
             <div class="row" id="latestChatUsersParent" style="display:none;">
                 <div class="col-12">
-                    <h5 style="padding-left:1rem;">Latest Chats</h5>
+                    <h5 style="padding-left:0.5rem;margin-top:0.5rem;">Latest Chats</h5>
                 </div>
                 <div class="col-12" id="latestChatUsers">
 
@@ -70,7 +70,7 @@ function chatInit() {
 
             <div class="row" id="chatUsersParent" style="display:none;">
                 <div class="col-12">
-                    <h5 style="padding-left:1rem;">Friends</h5>
+                    <h5 style="padding-left:0.5rem;margin-top:0.5rem;">Friends</h5>
                 </div>
                 <div class="col-12" id="chatUsers">
 
@@ -92,7 +92,7 @@ function chatInit() {
             </div>
         </div>
         <div class="card-body" style="padding: 0;padding-left:1rem;padding-right:1rem;">
-            <div class="row" style="min-height:300px;max-height:300px;">
+            <div class="row" style="min-height:300px;height:300px;">
                 <div class="col-12" id="dmchatmessages" style="height:225px;overflow-y: scroll;">
 
                 </div>
@@ -245,6 +245,7 @@ function chatInit() {
     }
     if (openedChatModalUserIdLS !== 0 && !isNaN(openedChatModalUserIdLS)) {
         $('#chatModalTextBar').attr('data-open', 'true');
+        $('#scrollingDivForAllChatUsersList').css('height','300px');
         $('#chatUsersParent').show();
         $('#latestChatUsersParent').show();
         $('#chatDMModal').show();
@@ -261,36 +262,42 @@ function chatInit() {
             $(this).attr('data-open', 'true');
             $('#chatUsersParent').show();
             $('#latestChatUsersParent').show();
+            $('#scrollingDivForAllChatUsersList').css('height','300px');
         } else {
             // Is open. Let's close it
             $(this).attr('data-open', 'false');
             $('#chatUsersParent').hide();
             $('#latestChatUsersParent').hide();
             $('#chatDMModal').hide();
+            $('#scrollingDivForAllChatUsersList').css('height','auto');
             openUserId = 0;
             chatDmOffset = 0;
             localStorage.setItem('ChatModalOpenUserId', 0);
         }
     });
-    loadLatestChats();
+    loadLatestChats().then(() => {
+        loadChatFriends(0);
+    })
     // Load latest convos
     function loadLatestChats() {
-        request('/chat/latest', 'GET')
+        return request('/chat/latest', 'GET')
             .then((d) => {
                 if (d.length === 0) {
-                    $('#chatUsersLatest').append('<div class="row"><div class="col-12"><p class="text-center">N/A</p></div></div>');
+                    // $('#latestChatUsersParent').empty();
+                    // $('#chatUsersLatest').append('<div class="row"><div class="col-12"><p class="text-center">N/A</p></div></div>');
                     return;
                 }
                 let index = 0;
                 for (const chatMessage of d) {
-                    console.log(chatMessage);
                     index++;
                     let savedIndex = index;
                     let user = chatMessage.userIdTo;
                     if (user === userId) {
                         user = chatMessage.userIdFrom;
                     }
+                    console.log(user);
                     if (currentlyDisplayedUserIds.includes(user)) {
+                        console.log('already includes');
                         continue;
                     }
                     currentlyDisplayedUserIds.push(user);
@@ -316,24 +323,24 @@ function chatInit() {
                                 <hr style="margin: 0.05rem;" />
                             </div>
                         `);
-                        if (savedIndex === d.length) {
-                            setUserThumbs(currentlyDisplayedUserIds);
-                            setUserNames(currentlyDisplayedUserIds);
-                            loadChatFriends(0);
-                        }
                 }
+                setUserThumbs(currentlyDisplayedUserIds);
+                setUserNames(currentlyDisplayedUserIds);
             })
             .catch((e) => {
                 console.log(e);
-                loadChatFriends(0);
             });
     }
 
     // Load Friends
     function loadChatFriends(offset) {
         canLoadMore = false;
-        request('/user/' + userId + '/friends?offset=' + offset, 'GET')
+        request('/user/' + userId + '/friends?limit=25&offset=' + offset, 'GET')
             .then(function (d) {
+                console.log(d);
+                if (d.total === 0) {
+
+                }
                 console.log(d);
                 if (d.friends.length >= 25) {
                     canLoadMore = true;
@@ -466,13 +473,25 @@ function chatInit() {
                     hr = '<hr style="margin: 0;" />'
                 }
                 */
-                $('#dmchatmessages').append(`
+                if ($('#dmchatmessages').children().length === 0) {
+                    $('#dmchatmessages').append(`
+                    <div class="row userChatMessageCard" style="cursor:pointer;" data-userid="${fr.userIdFrom}">
+                        <div class="col-12" style="padding: 0;padding-right:0.25rem;padding-left:0.25rem;">
+                            <a href="/users/${fr.userIdFrom}/profile"><p data-userid="${fr.userIdFrom}" class="text-truncate text-right" style="font-weight:500;">...</p></a>
+                            <p class="text ${textalign}" style="font-size: small;">${fr.content.escape()}</p>
+                        </div>
+                    </div>
+                    `);
+                }else{
+                    $('#dmchatmessages').append(`
                     <div class="row userChatMessageCard" style="cursor:pointer;" data-userid="${fr.userIdFrom}">
                         <div class="col-12" style="padding: 0;padding-right:0.25rem;padding-left:0.25rem;">
                             <p class="text ${textalign}" style="font-size: small;">${fr.content.escape()}</p>
                         </div>
                     </div>
                     `);
+               }
+                
             } else {
                 /*
                 var hr = "";
@@ -528,9 +547,12 @@ function chatInit() {
 
     function sendMessageFinal() {
         lastKeyUp = false;
+        var content = $('#chatMessageContent').val();
+        if (content === '') {
+            return;
+        }
         $('#chatMessageContent').attr("disabled", "disabled");
         $('#sendChatMessage').attr("disabled", "disabled");
-        var content = $('#chatMessageContent').val();
         request('/chat/' + openUserId + '/send', 'PUT', JSON.stringify({ 'content': content }))
             .then(function () {
                 $('#chatMessageContent').val("");

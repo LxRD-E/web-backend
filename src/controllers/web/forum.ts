@@ -34,10 +34,12 @@ export class WWWForumController extends controller {
             item.totalThreads = await this.forum.getThreadCount(item.subCategoryId);
             item.totalPosts = await this.forum.getPostCount(item.subCategoryId);
         }
+        let latestThreads = await this.forum.getLatestThreads(subs.length);
         return new this.WWWTemplate({
             title: 'Forum',
             page: {
                 subs: subs,
+                latestThreads: latestThreads,
             }
         });
     }

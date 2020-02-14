@@ -18,23 +18,23 @@
                     </div>
                 </div>
             </div>
-            <div class="col-12">
+            <div class="col-12 col-lg-8">
                 <div class="row forumcategories">
                     <div class="col-12">
                         <div class="card bg-success" style="color:white;border-radius:0;">
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-6">
-                                        <h5 style="margin-bottom:0;">Subcategory</h5>
+                                        <h5 style="margin-bottom:0;font-size:1rem;">Subcategory</h5>
                                     </div>
                                     <div class="col-2 d-none d-md-block text-center">
-                                        <h5 style="margin-bottom:0;">Threads</h5>
+                                        <h5 style="margin-bottom:0;font-size:1rem;">Threads</h5>
                                     </div>
                                     <div class="col-2 d-none d-lg-block text-center">
-                                        <h5 style="margin-bottom:0;">Posts</h5>
+                                        <h5 style="margin-bottom:0;font-size:1rem;">Posts</h5>
                                     </div>
                                     <div class="col-6 col-md-4 col-lg-2 text-center">
-                                        <h5 style="margin-bottom:0;">Last Post</h5>
+                                        <h5 style="margin-bottom:0;font-size:1rem;">Last Post</h5>
                                     </div>
                                 </div>
                             </div>
@@ -67,18 +67,65 @@
                                                     <span>N/A</span>
                                                 }else{
                                                     <div>
-                                                        <p class="text-truncate" style="font-size:0.85rem;">
+                                                        <p class="text-truncate" style="font-size:0.75rem;">
                                                             <a href="/forum/thread/@cat.latestPost.threadId">
                                                                 <span class="formatDateFromNow" data-date="@cat.latestPost.dateCreated"></span>
                                                             </a>
                                                         </p>
-                                                        <p class="text-truncate" style="font-size:0.85rem;">
+                                                        <p class="text-truncate" style="font-size:0.65rem;">
                                                             By <a href="/users/@cat.latestPost.userId/profile">
                                                                 <span data-userid="@cat.latestPost.userId" class="setUserName">...</span>
                                                             </a>
                                                         </p>
                                                     </div>
                                                 }
+                                            </h6>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="col-12 col-lg-4">
+                <div class="row forumlatestposts">
+                    <div class="col-12">
+                        <div class="card bg-success" style="color:white;border-radius:0;">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h5 style="margin-bottom:0;font-size:1rem;">Latest Threads</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @for (const thread of model.page.latestThreads) {
+                        <div class="col-12 forumLatestPost">
+                            <div class="card" style="border-radius:0;border:none;box-shadow:none;border-bottom: 1px solid rgba(0,0,0,.125);">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <a href="/forum/@thread.threadId?page=1">
+                                                <h5 style="margin-bottom:0;font-size:0.75rem;">@thread.title</h5>
+                                            </a>
+                                        </div>
+                                        <div class="col-6 vertical-align-text text-center">
+                                            <h6 style="margin-bottom:0;">
+
+                                                    <div>
+                                                        <p class="text-truncate" style="font-size:0.75rem;">
+                                                            <a href="/forum/thread/@thread.threadId?page=1">
+                                                                <span class="formatDateFromNow" data-date="@thread.dateCreated"></span>
+                                                            </a>
+                                                        </p>
+                                                        <p class="text-truncate" style="font-size:0.65rem;">
+                                                            By <a href="/users/@thread.userId/profile">
+                                                                <span data-userid="@thread.userId" class="setUserName">...</span>
+                                                            </a>
+                                                        </p>
+                                                    </div>
                                             </h6>
                                         </div>
                                     </div>

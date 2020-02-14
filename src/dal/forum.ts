@@ -92,6 +92,25 @@ class ForumDAL extends _init {
     }
 
     /**
+     * Get the latest site-wide threads
+     * @param limit 
+     */
+    public async getLatestThreads(limit: number): Promise<Forum.Thread[]> {
+        const threads = await this.knex('forum_threads').select(
+            'id as threadId',
+            'category as categoryId',
+            'sub_category as subCategoryId',
+            'title',
+            'userid as userId',
+            'date_created as dateCreated',
+            'date_edited as dateEdited',
+            'thread_locked as threadLocked',
+            'thread_pinned as threadPinned',
+        ).orderBy('id','desc').limit(limit);
+        return threads;
+    }
+
+    /**
      * Get Threads for a Subcategory
      * @param subCategoryId 
      * @param offset 

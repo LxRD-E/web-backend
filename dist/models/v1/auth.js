@@ -35,6 +35,10 @@ __decorate([
     swagger_1.Example([1, 12, 2000]),
     __metadata("design:type", Array)
 ], SignupRequest.prototype, "birth", void 0);
+__decorate([
+    common_1.PropertyType(String),
+    __metadata("design:type", String)
+], SignupRequest.prototype, "captcha", void 0);
 exports.SignupRequest = SignupRequest;
 class UsernameChangedResponseOK {
 }

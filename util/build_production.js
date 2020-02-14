@@ -97,6 +97,10 @@ for (const file of walk('./dist_module/dist')) {
     // console.log(obj.getObfuscatedCode());
     fs.writeFileSync(file, obj.getObfuscatedCode());
 }
+// add self xss warning
+fs.writeFileSync('./dist_module/dist/public/js/warning.js', `// Self-XSS Warning
+console.log("%cStop!", "color:red; font-size:80px;font-family:sans-serif;");
+console.log("%cThis is a browser feature intended for developers. If someone told you to copy-paste something here to enable a feature or \"hack\", it is a scam and will give them access to your account.", "color:black;font-size:25px;font-family:sans-serif;");`);
 // edit gitignore
 let ignore = fs.readFileSync('./dist_module/.gitignore').toString();
 if (ignore.match(/\/dist\//g)) {
