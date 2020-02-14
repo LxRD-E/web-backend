@@ -10,6 +10,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+if (process.env.NODE_ENV === 'production') {
+    const Sentry = require('@sentry/node');
+    Sentry.init({ dsn: 'https://dccc8567d5714c75a7b884ffd1d73843@sentry.io/2506252' });
+}
 const Express = require("express");
 const common_1 = require("@tsed/common");
 require("@tsed/ajv");
