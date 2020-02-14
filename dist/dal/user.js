@@ -565,6 +565,32 @@ class UsersDAL extends _init_1.default {
             'date_created': this.moment().format('YYYY-MM-DD HH:mm:ss'),
         });
     }
+    async checkIfIpIsNew(userId, ipAddress, actionsToCheckFor) {
+        const time = this.moment().subtract(30, 'days').format('YYYY-MM-DD HH:mm:ss');
+        const encryptedIP = await this.encryptIpAddress(ipAddress);
+        if (typeof actionsToCheckFor === 'object') {
+            let query = this.knex("user_ip").select("date").limit(1).orderBy("id", "desc");
+            for (const item of actionsToCheckFor) {
+                query = query.orWhere({ 'ip_address': encryptedIP, 'action': item, 'userid': userId }).andWhere('date', '>', time);
+            }
+            let results = await query;
+            if (!results[0]) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        else {
+            let results = await this.knex("user_ip").select("date").where({ 'ip_address': encryptedIP, 'action': actionsToCheckFor, 'userid': userId }).andWhere('date', '>', time).limit(1).orderBy("id", "desc");
+            if (!results[0]) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+    }
 }
 exports.default = UsersDAL;
 

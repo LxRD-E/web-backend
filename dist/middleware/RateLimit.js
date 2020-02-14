@@ -12,7 +12,7 @@ const redisClient = redis.createClient({
 });
 const rateLimitTypeConfigs = {
     'default': {
-        keyPrefix: 'middleware',
+        keyPrefix: 'default_',
         points: 500,
         duration: 60,
         inmemoryBlockOnConsumed: 500,
@@ -20,7 +20,7 @@ const rateLimitTypeConfigs = {
         storeClient: redisClient,
     },
     'loginAttempt': {
-        keyPrefix: 'middleware',
+        keyPrefix: 'loginattempt_',
         points: 25,
         duration: 3600,
         inmemoryBlockOnConsumed: 25,
@@ -28,7 +28,15 @@ const rateLimitTypeConfigs = {
         storeClient: redisClient,
     },
     'twoFactorEnableOrDisable': {
-        keyPrefix: 'middleware',
+        keyPrefix: 'twofactorenable_',
+        points: 25,
+        duration: 3600,
+        inmemoryBlockOnConsumed: 25,
+        inmemoryBlockDuration: 3600,
+        storeClient: redisClient,
+    },
+    'sendFriendRequest': {
+        keyPrefix: 'sendfriendrequest_',
         points: 25,
         duration: 3600,
         inmemoryBlockOnConsumed: 25,
@@ -40,6 +48,7 @@ const rateLimitTypes = {
     'default': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.default),
     'loginAttempt': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.loginAttempt),
     'twoFactorEnableOrDisable': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.twoFactorEnableOrDisable),
+    'sendFriendRequest': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.sendFriendRequest),
 };
 exports.RateLimiterMiddleware = (typeOfRateLimit = 'default') => {
     return (req, res, next) => {

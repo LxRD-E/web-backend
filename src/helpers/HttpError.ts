@@ -114,6 +114,8 @@ export enum HttpErrors {
     TwoFactorAlreadyEnabled,
     TooManyRequests,
     InvalidTwoFactorCode,
+    TwoStepVerificationRequired,
+    TwoStepRequiredVerificationFailed,
 };
 // @Locals('userInfo') userInfo: model.user.UserInfo,
 export const ErrorTemplate = (title: string, body: string): string => {

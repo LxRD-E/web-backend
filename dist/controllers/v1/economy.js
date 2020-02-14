@@ -23,6 +23,7 @@ const auth_1 = require("../../dal/auth");
 const controller_1 = require("../controller");
 const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
+const TwoStepCheck_1 = require("../../middleware/TwoStepCheck");
 let EconomyController = class EconomyController extends controller_1.default {
     constructor() {
         super();
@@ -161,7 +162,11 @@ let EconomyController = class EconomyController extends controller_1.default {
             throw new this.BadRequest('InvalidCurrency');
         }
     }
-    async buy(userInfo, catalogIdStr, userInventoryIdStr, sellerUserIdStr, expectedPriceStr, expectedCurrencyStr, ipAddress) {
+    async buy(userInfo, catalogIdStr, userInventoryIdStr, sellerUserIdStr, expectedPriceStr, expectedCurrencyStr, req) {
+        let ipAddress = req.ip;
+        if (req.headers['cf-connecting-ip']) {
+            ipAddress = req.headers['cf-connecting-ip'];
+        }
         const catalogId = parseInt(catalogIdStr);
         const userInventoryId = parseInt(userInventoryIdStr);
         const sellerUserId = parseInt(sellerUserIdStr);
@@ -589,8 +594,7 @@ __decorate([
     swagger_1.Summary('Purchase a catalog item'),
     swagger_1.Description('Notes: User can own multiple collectible items but can only own one non-collectible item. If a collectible item is still listed for sale, the user can only own one and cannot own multiple until it is taken off sale or sells out.'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidCatalogId: CatalogId is invalid\nNoLongerForSale: Item is no longer for sale\nSellerHasChanged: The userId of the seller has changed\nPriceHasChanged: Price has changed\nCurrencyHasChanged: Currency has changed\nAlreadyOwns: User already owns the item specified\nNotEnoughCurrency: User does not have enough currency for this purchase\nInvalidCurrencySpecified: Currency of product is invalid\nItemStillForSale: You cannot purchase collectible items that have not finished selling yet\nInvalidUserInventoryId: Invalid userInventoryId\nItemNoLongerForSale: Item is no longer for sale\nInvalidUserId: Seller userId is invalid\n' }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, TwoStepCheck_1.default('BuyItem')),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('id', Number)),
     __param(2, common_1.Required()),
@@ -601,9 +605,9 @@ __decorate([
     __param(4, common_1.BodyParams('expectedPrice', Number)),
     __param(5, common_1.Required()),
     __param(5, common_1.BodyParams('expectedCurrency', Number)),
-    __param(6, common_1.HeaderParams('cf-connecting-ip')),
+    __param(6, common_1.Req()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, String, String, String, String, String, String]),
+    __metadata("design:paramtypes", [model.user.UserInfo, String, String, String, String, String, Object]),
     __metadata("design:returntype", Promise)
 ], EconomyController.prototype, "buy", null);
 __decorate([

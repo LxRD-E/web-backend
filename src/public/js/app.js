@@ -1306,6 +1306,32 @@ function request(url, method, body) {
                         if (xhr.responseJSON && xhr.responseJSON.error && xhr.responseJSON.error.code) {
                             xhr.responseJSON.message = errorTransform(xhr.responseJSON.error.code);
                         }
+                        if (xhr.responseJSON && xhr.responseJSON.error && xhr.responseJSON.error.code === 'TwoStepVerificationRequired') {
+                            question('<span style="font-size:1rem;font-weight:400;">For security reasons, please enter your two-factor authentication token to continue.</span>', function(code) {
+                                if (!body) {
+                                    body = {};
+                                }
+                                if (typeof body === 'string') {
+                                    body = JSON.parse(body);
+                                }
+                                body['twoStepToken'] = code;
+                                request(url, method, JSON.stringify(body)).then(d => {resolve(d)}).catch(e => {reject(e)});
+                            });
+                            return;
+                        }
+                        if (xhr.responseJSON && xhr.responseJSON.error && xhr.responseJSON.error.code === 'TwoStepRequiredVerificationFailed') {
+                            question('<span style="font-size:1rem;font-weight:400;"><span style="color:red;">The code you entered was invalid.</span> For security reasons, please enter your two-factor authentication token to continue.</span>', function(code) {
+                                if (!body) {
+                                    body = {};
+                                }
+                                if (typeof body === 'string') {
+                                    body = JSON.parse(body);
+                                }
+                                body['twoStepToken'] = code;
+                                request(url, method, JSON.stringify(body)).then(d => {resolve(d)}).catch(e => {reject(e)});
+                            });
+                            return;
+                        }
                         reject(xhr);
                     }
                 },

@@ -8,8 +8,9 @@ import { YesAuth } from '../../middleware/Auth';
 import { csrf } from '../../dal/auth';
 // Autoload
 import controller from '../controller';
-import { Controller, Get, QueryParams, PathParams, BodyParams, Post, Patch, Put, Delete, Locals, UseBeforeEach, UseBefore, Required, HeaderParams, Err } from '@tsed/common';
+import { Controller, Get, QueryParams, PathParams, BodyParams, Post, Patch, Put, Delete, Locals, UseBeforeEach, UseBefore, Required, HeaderParams, Err, Use, Req } from '@tsed/common';
 import { Summary, Returns, ReturnsArray, Description } from '@tsed/swagger';
+import TwoStepCheck from '../../middleware/TwoStepCheck';
 /**
  * Auth Controller
  */
@@ -202,8 +203,7 @@ export default class EconomyController extends controller {
     @Summary('Purchase a catalog item')
     @Description('Notes: User can own multiple collectible items but can only own one non-collectible item. If a collectible item is still listed for sale, the user can only own one and cannot own multiple until it is taken off sale or sells out.')
     @Returns(400, {type: model.Error, description: 'InvalidCatalogId: CatalogId is invalid\nNoLongerForSale: Item is no longer for sale\nSellerHasChanged: The userId of the seller has changed\nPriceHasChanged: Price has changed\nCurrencyHasChanged: Currency has changed\nAlreadyOwns: User already owns the item specified\nNotEnoughCurrency: User does not have enough currency for this purchase\nInvalidCurrencySpecified: Currency of product is invalid\nItemStillForSale: You cannot purchase collectible items that have not finished selling yet\nInvalidUserInventoryId: Invalid userInventoryId\nItemNoLongerForSale: Item is no longer for sale\nInvalidUserId: Seller userId is invalid\n'})
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, TwoStepCheck('BuyItem'))
     public async buy(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('id', Number) catalogIdStr: string, 
@@ -215,8 +215,12 @@ export default class EconomyController extends controller {
         @BodyParams('expectedPrice', Number) expectedPriceStr: string, 
         @Required()
         @BodyParams('expectedCurrency', Number) expectedCurrencyStr: string, 
-        @HeaderParams('cf-connecting-ip') ipAddress: string
+        @Req() req: Req,
     ) {
+        let ipAddress = req.ip;
+        if (req.headers['cf-connecting-ip']) {
+            ipAddress = req.headers['cf-connecting-ip'] as string;
+        }
         // Parse Input Data
         const catalogId = parseInt(catalogIdStr);
         const userInventoryId = parseInt(userInventoryIdStr);

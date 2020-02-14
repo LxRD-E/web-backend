@@ -12,6 +12,7 @@ import Config from '../helpers/config';
 import {encrypt, decrypt} from './auth'
 // Init
 import _init from './_init';
+import * as model from '../models/models';
 /**
  * Encryption/Decryption Keys
  */
@@ -905,6 +906,37 @@ class UsersDAL extends _init {
             'code': code,
             'date_created': this.moment().format('YYYY-MM-DD HH:mm:ss'),
         });
+    }
+
+    /**
+     * Check if a user has used the ipaddress specified for an action(s) specified. Will only check the latest of each action
+     * @param userId 
+     * @param actionsToCheckFor 
+     */
+    public async checkIfIpIsNew(userId: number, ipAddress: string, actionsToCheckFor: model.user.ipAddressActions[]|model.user.ipAddressActions): Promise<boolean> {
+        const time = this.moment().subtract(30, 'days').format('YYYY-MM-DD HH:mm:ss');
+        const encryptedIP = await this.encryptIpAddress(ipAddress);
+        if (typeof actionsToCheckFor === 'object') {
+            // Array
+            let query = this.knex("user_ip").select("date").limit(1).orderBy("id","desc");
+            for (const item of actionsToCheckFor) {
+                query = query.orWhere({'ip_address': encryptedIP,'action': item, 'userid': userId}).andWhere('date','>',time);
+            }
+            let results = await query;
+            if (!results[0]) {
+                return true;
+            }else{
+                return false;
+            }
+        }else{
+            // Single action
+            let results = await this.knex("user_ip").select("date").where({'ip_address': encryptedIP,'action': actionsToCheckFor,'userid': userId}).andWhere('date','>',time).limit(1).orderBy("id","desc");
+            if (!results[0]) {
+                return true;
+            }else{
+                return false;
+            }
+        }
     }
 }
 

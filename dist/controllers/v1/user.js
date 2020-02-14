@@ -24,6 +24,8 @@ const swagger_1 = require("@tsed/swagger");
 const controller_1 = require("../controller");
 const Auth_1 = require("../../middleware/Auth");
 const auth_1 = require("../../dal/auth");
+const RateLimit_1 = require("../../middleware/RateLimit");
+const TwoStepCheck_1 = require("../../middleware/TwoStepCheck");
 let UsersController = class UsersController extends controller_1.default {
     constructor() {
         super();
@@ -352,7 +354,7 @@ let UsersController = class UsersController extends controller_1.default {
         const results = await this.user.search(offset, limit, sort, goodSortBy, query);
         return results;
     }
-    async createTradeRequest(userInfo, partnerUserId, requesteeItems, requestedItems) {
+    async createTradeRequest(userInfo, partnerUserId, requesteeItems, requestedItems, req) {
         const partnerInfo = await this.user.getInfo(partnerUserId, ['userId', 'accountStatus', 'tradingEnabled']);
         if (partnerInfo.accountStatus === model.user.accountStatus.deleted || partnerInfo.accountStatus === model.user.accountStatus.terminated) {
             throw new this.BadRequest('InvalidUserId');
@@ -414,6 +416,11 @@ let UsersController = class UsersController extends controller_1.default {
         await this.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requested, safeRequestedItems);
         await this.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requester, safeRequesteeItems);
         await this.notification.createMessage(partnerUserId, 1, 'Trade Request from ' + userInfo.username, "Hi,\n" + userInfo.username + " has sent you a new trade request. You can view it in the trades tab.");
+        let ip = req.ip;
+        if (req.headers['cf-connecting-ip']) {
+            ip = req.headers['cf-connecting-ip'];
+        }
+        await this.user.logUserIp(userInfo.userId, ip, model.user.ipAddressActions.TradeSent);
         return {
             'success': true,
         };
@@ -539,6 +546,7 @@ __decorate([
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nCannotSendRequest: You cannot send a friend request right now\n' }),
     common_1.UseBeforeEach(auth_1.csrf),
     common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(RateLimit_1.RateLimiterMiddleware('sendFriendRequest')),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
@@ -612,8 +620,7 @@ __decorate([
     common_1.Patch('/market/:userInventoryId'),
     swagger_1.Summary('Sell an item that the authenticated user has permission to sell. If price set to 0, the item will be delisted'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidPrice: Price must be between 0 and 1,000,000\nCannotBeSold: Item cannot be listed for sale\n' }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, TwoStepCheck_1.default('ListItem')),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userInventoryId', Number)),
     __param(2, common_1.Required()),
@@ -664,14 +671,14 @@ __decorate([
     swagger_1.Description('requesterItems and requestedItems should both be arrays of userInventoryIds'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nInvalidItemsSpecified: One or more of the userInventoryId(s) are invalid\n' }),
     swagger_1.Returns(409, { type: model.Error, description: 'CannotTradeWithUser: Authenticated user has trading disabled or partner has trading disabled\nTooManyPendingTrades: You have too many pending trades with this user\n' }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, TwoStepCheck_1.default('TradeRequest')),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __param(2, common_1.BodyParams('requesterItems', Array)),
     __param(3, common_1.BodyParams('requestedItems', Array)),
+    __param(4, common_1.Req()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, Array, Array]),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Array, Array, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "createTradeRequest", null);
 UsersController = __decorate([

@@ -425,6 +425,7 @@ export enum ipAddressActions {
     'TradeSent',
     'TradeCompleted',
     'PutItemForSale',
+    'TradeFailedDueToTwoStep', 
 }
 /**
  * Is a user banned?

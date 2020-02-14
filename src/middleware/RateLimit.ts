@@ -23,7 +23,7 @@ const rateLimiter = new RateLimiterRedis({
 const rateLimitTypeConfigs = {
     'default': {
         // redis: redisClient,
-        keyPrefix: 'middleware',
+        keyPrefix: 'default_',
         points: 500, // 60 requests
         duration: 60, // per 1 minute by IP
         inmemoryBlockOnConsumed: 500,
@@ -32,7 +32,7 @@ const rateLimitTypeConfigs = {
     },
     'loginAttempt': {
         // redis: redisClient,
-        keyPrefix: 'middleware',
+        keyPrefix: 'loginattempt_',
         points: 25, // 25 requests
         duration: 3600, // per 1 hour by IP
         inmemoryBlockOnConsumed: 25,
@@ -41,7 +41,16 @@ const rateLimitTypeConfigs = {
     },
     'twoFactorEnableOrDisable': {
         // redis: redisClient,
-        keyPrefix: 'middleware',
+        keyPrefix: 'twofactorenable_',
+        points: 25, // 25 requests
+        duration: 3600, // per 1 hour by IP
+        inmemoryBlockOnConsumed: 25,
+        inmemoryBlockDuration: 3600,
+        storeClient: redisClient,
+    },
+    'sendFriendRequest': {
+        // redis: redisClient,
+        keyPrefix: 'sendfriendrequest_',
         points: 25, // 25 requests
         duration: 3600, // per 1 hour by IP
         inmemoryBlockOnConsumed: 25,
@@ -53,9 +62,10 @@ const rateLimitTypes = {
     'default': new RateLimiterRedis(rateLimitTypeConfigs.default),
     'loginAttempt': new RateLimiterRedis(rateLimitTypeConfigs.loginAttempt),
     'twoFactorEnableOrDisable': new RateLimiterRedis(rateLimitTypeConfigs.twoFactorEnableOrDisable),
+    'sendFriendRequest': new RateLimiterRedis(rateLimitTypeConfigs.sendFriendRequest),
 }
 
-export const RateLimiterMiddleware = (typeOfRateLimit: 'default'|'loginAttempt'|'twoFactorEnableOrDisable' = 'default') => {
+export const RateLimiterMiddleware = (typeOfRateLimit: 'default'|'loginAttempt'|'twoFactorEnableOrDisable'|'sendFriendRequest' = 'default') => {
     return (req: Request, res: Response, next: NextFunction) => {
         let head = req.headers['x-ratelimit-bypass'];
         if (head !== undefined) {

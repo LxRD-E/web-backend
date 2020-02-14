@@ -46,6 +46,9 @@ let MyGEHMiddleware = class MyGEHMiddleware extends common_1.GlobalErrorHandlerM
                 return response.status(400).json({ success: false, error: fullErrorMessage });
             }
             else if (error.name === 'NOT_FOUND') {
+                if (request.accepts('html')) {
+                    return response.status(404).send(HttpError_1.ErrorTemplate('404: Not Found', 'The page you tried to view does not seem to exist.')).end();
+                }
                 if (error.message && HttpError_1.HttpErrors[error.message]) {
                     return response.status(404).json({ success: false, error: { code: error.message } });
                 }

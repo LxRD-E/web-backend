@@ -5,6 +5,28 @@ import fs = require('fs');
 import path = require('path');
 let versionStr = crypto.randomBytes(16).toString('hex');
 
+// banner text stuff
+import StaffDAL  from '../../dal/staff';
+let staff = new StaffDAL();
+let currentBannerText = '';
+let bannerTextLocked = false;
+setInterval(() => {
+    if (bannerTextLocked) {
+        return;
+    }
+    bannerTextLocked= true;
+    staff.getBannerText()
+    .then(txt => {
+        currentBannerText = txt;
+    })
+    .catch(e => {
+        console.error(e);
+    })
+    .finally(() => {
+        bannerTextLocked = false;
+    });
+}, 5000);
+
 import * as UserModel from '../../models/v1/user';
 export class WWWTemplate {
     constructor(props: WWWTemplate) {
@@ -39,4 +61,9 @@ export class WWWTemplate {
      * UserInfo Object
      */
     userInfo?: UserModel.SessionUserInfo;
+
+    /**
+     * Banner Thing
+     */
+    bannerText?: string = currentBannerText;
 }

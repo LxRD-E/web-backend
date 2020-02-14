@@ -342,6 +342,9 @@ $(document).on('click', '#onClickSellitem', function() {
     }
     if (askForSerial) {
         question('What serial would you like to sell?', function(d) {
+            if (!d) {
+                return;
+            }
             sell(parseInt(d));
         }, 'select', html);
     }else{

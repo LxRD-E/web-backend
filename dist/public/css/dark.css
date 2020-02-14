@@ -134,3 +134,7 @@ pre {
 .image-with-background {
     background-color: #212529!important;
 }
+div.groupChangeBgOnHover:hover {
+    background-color: #212529;
+    cursor: pointer;
+}

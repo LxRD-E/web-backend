@@ -29,6 +29,9 @@ export class MyGEHMiddleware extends GlobalErrorHandlerMiddleware {
                 }
                 return response.status(400).json({ success: false, error: fullErrorMessage })
             } else if (error.name === 'NOT_FOUND') {
+                if (request.accepts('html')) {
+                    return response.status(404).send(ErrorTemplate('404: Not Found', 'The page you tried to view does not seem to exist.')).end();
+                }
                 if (error.message && HttpErrors[error.message]) {
                     return response.status(404).json({ success: false, error: { code: error.message } });
                 }

@@ -117,6 +117,8 @@ var HttpErrors;
     HttpErrors[HttpErrors["TwoFactorAlreadyEnabled"] = 112] = "TwoFactorAlreadyEnabled";
     HttpErrors[HttpErrors["TooManyRequests"] = 113] = "TooManyRequests";
     HttpErrors[HttpErrors["InvalidTwoFactorCode"] = 114] = "InvalidTwoFactorCode";
+    HttpErrors[HttpErrors["TwoStepVerificationRequired"] = 115] = "TwoStepVerificationRequired";
+    HttpErrors[HttpErrors["TwoStepRequiredVerificationFailed"] = 116] = "TwoStepRequiredVerificationFailed";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 ;
 exports.ErrorTemplate = (title, body) => {

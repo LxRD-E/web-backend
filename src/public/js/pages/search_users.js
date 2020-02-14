@@ -71,7 +71,7 @@ function search(offset) {
             $('#userSearchResultsDiv').append(`
             <div class="col-12" >
                 <div class="card" style="border-radius: 0;">
-                    <div class="card-body" style="padding-bottom:0;border-bottom-radius:0;border-radius: 0;">
+                    <div class="card-body groupChangeBgOnHover" style="padding-bottom:0;border-bottom-radius:0;border-radius: 0;padding-top:0;">
                         <div class="row">
                             <div class="col-3 col-md-2 col-lg-1" style="padding-right:0.25rem;">
                                 <a href="/users/`+k.userId+`/profile">

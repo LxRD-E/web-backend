@@ -289,7 +289,9 @@ code {
 .catalogItem > .card:hover > a > img {
     opacity: 0.8;
 }
-
+.catalogItem > .card {
+    transition: all 0.15s;
+}
 .catalogItem > .card:hover {
     box-shadow: 0px 0px 28px -10px rgba(0,0,0,0.44)!important;
 }
@@ -297,4 +299,12 @@ code {
 div.secondaryNavBar li {
     font-size: 0.8rem;
     font-weight: 500;
+}
+
+div.groupChangeBgOnHover {
+    transition: all 0.15s;
+}
+div.groupChangeBgOnHover:hover {
+    background-color: rgb(245, 245, 245);
+    cursor: pointer;
 }

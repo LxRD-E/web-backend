@@ -12,11 +12,11 @@ function search(q, offset) {
             $('#groupSearchResultsDiv').append(`
             <div class="col-sm-12">
                 <div class="card">
-                    <div class="card-body">
+                    <div class="card-body groupChangeBgOnHover">
                         <div class="row">
                             <div class="col-sm-2">
                                 <a href="/groups/`+k.groupId+`/`+urlencode(k.groupName)+`">
-                                    <img src="`+window.subsitutionimageurl+`" data-catalogid="`+k.groupIconCatalogId+`" style="width:100%" />
+                                    <img src="`+window.subsitutionimageurl+`" data-catalogid="`+k.groupIconCatalogId+`" style="width:100%;border-radius:15%;" />
                                 </a>
                             </div>
                             <div class="col-sm-6">

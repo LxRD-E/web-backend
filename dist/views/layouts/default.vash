@@ -75,6 +75,9 @@
                         <a class="nav-link" href="/forum">Forum</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="/currency">Shop</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="/discord">Discord</a>
                     </li>
                     <!--
@@ -95,13 +98,13 @@
 
                     <a class="nav-link" href="/transactions">
                                     <img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/money-white-2.svg"/>                                    
-                                    <span data-toggle="currency" data-placement="bottom" title="$ @model.userInfo.primaryBalance" id="currencyBalanceOne" data-amt="@model.userInfo.primaryBalance">0</span>
+                                    <span data-toggle="currency" data-placement="bottom" title="$ @model.userInfo.primaryBalance" id="currencyBalanceOne" data-amt="@model.userInfo.primaryBalance">@model.userInfo.primaryBalance</span>
                                 </a>
                             </li>
                             <li class="nav-item displayCurrency">
                                 <a class="nav-link" href="/transactions"> 
                                     <img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/coin-stack-white.svg"/>
-                                    <span data-toggle="currency" data-placement="bottom" title="$ @model.userInfo.secondaryBalance" id="currencyBalanceTwo" data-amt="@model.userInfo.secondaryBalance">0</span>
+                                    <span data-toggle="currency" data-placement="bottom" title="$ @model.userInfo.secondaryBalance" id="currencyBalanceTwo" data-amt="@model.userInfo.secondaryBalance">@model.userInfo.secondaryBalance</span>
                                 </a>
                     <!--
                                 <a class="nav-link" href="/transactions">

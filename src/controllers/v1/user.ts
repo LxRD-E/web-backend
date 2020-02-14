@@ -6,11 +6,14 @@ import * as model from '../../models/models';
 // Misc Models
 import { filterOffset, filterLimit, filterId, filterSort } from '../../helpers/Filter';
 // Autoload
-import { Controller, Get, PathParams, QueryParams, Required, Req, Enum, Schema, Res, Status, UseBeforeEach, Locals, Post, UseBefore, Put, Delete, Patch, BodyParams, HeaderParams, ModelStrict, Property, PropertyType, Render } from '@tsed/common';
+import { Controller, Get, PathParams, QueryParams, Required, Req, Enum, Schema, Res, Status, UseBeforeEach, Locals, Post, UseBefore, Put, Delete, Patch, BodyParams, HeaderParams, ModelStrict, Property, PropertyType, Render, Use } from '@tsed/common';
 import { Description, Summary, Returns, Operation, ReturnsArray } from '@tsed/swagger';
 import controller from '../controller';
+// Middleware
 import { YesAuth } from '../../middleware/Auth';
 import { csrf } from '../../dal/auth';
+import { RateLimiterMiddleware } from '../../middleware/RateLimit';
+import TwoStepMiddleware from '../../middleware/TwoStepCheck';
 
 /**
  * Users Controller
@@ -283,6 +286,7 @@ export class UsersController extends controller {
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nCannotSendRequest: You cannot send a friend request right now\n' })
     @UseBeforeEach(csrf)
     @UseBefore(YesAuth)
+    @Use(RateLimiterMiddleware('sendFriendRequest'))
     public async sendFriendRequest(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number
@@ -439,8 +443,7 @@ export class UsersController extends controller {
     @Patch('/market/:userInventoryId')
     @Summary('Sell an item that the authenticated user has permission to sell. If price set to 0, the item will be delisted')
     @Returns(400, { type: model.Error, description: 'InvalidPrice: Price must be between 0 and 1,000,000\nCannotBeSold: Item cannot be listed for sale\n' })
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, TwoStepMiddleware('ListItem'))
     public async sellItem(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userInventoryId', Number) userInventoryId: number,
@@ -529,35 +532,18 @@ export class UsersController extends controller {
         return results;
     }
 
-    /*
-    @Get('')
-    public async getTrades(
-        @QueryParams('tradeType', String) tradeType: string, 
-        @QueryParams('offset', Number) offset: number = 0
-    ) {
-        let tradeValue;
-        if (tradeType !== 'inbound' && tradeType !== 'outbound' && tradeType !== 'completed' && tradeType !== 'inactive') {
-            throw new this.BadRequest('InvalidTradeType');
-        } else {
-            tradeValue = tradeType;
-        }
-        const trades = await this.economy.getTrades(userInfo.userId, tradeValue, offset);
-        return trades;
-    }
-    */
-
     @Put('/:userId/trade/request')
     @Summary('Create a trade request')
     @Description('requesterItems and requestedItems should both be arrays of userInventoryIds')
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nInvalidItemsSpecified: One or more of the userInventoryId(s) are invalid\n' })
     @Returns(409, { type: model.Error, description: 'CannotTradeWithUser: Authenticated user has trading disabled or partner has trading disabled\nTooManyPendingTrades: You have too many pending trades with this user\n' })
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, TwoStepMiddleware('TradeRequest'))
     public async createTradeRequest(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) partnerUserId: number,
         @BodyParams('requesterItems', Array) requesteeItems: number[], 
-        @BodyParams('requestedItems', Array) requestedItems: number[]
+        @BodyParams('requestedItems', Array) requestedItems: number[],
+        @Req() req: Req,
     ) {
         const partnerInfo = await this.user.getInfo(partnerUserId, ['userId', 'accountStatus', 'tradingEnabled']);
         if (partnerInfo.accountStatus === model.user.accountStatus.deleted || partnerInfo.accountStatus === model.user.accountStatus.terminated) {
@@ -638,6 +624,12 @@ export class UsersController extends controller {
         await this.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requester, safeRequesteeItems);
         // Send Message to Partner
         await this.notification.createMessage(partnerUserId, 1, 'Trade Request from ' + userInfo.username, "Hi,\n" + userInfo.username + " has sent you a new trade request. You can view it in the trades tab.");
+        // Log ip
+        let ip = req.ip;
+        if (req.headers['cf-connecting-ip']) {
+            ip = req.headers['cf-connecting-ip'] as string;
+        }
+        await this.user.logUserIp(userInfo.userId, ip, model.user.ipAddressActions.TradeSent);
         // Return Success
         return {
             'success': true,
