@@ -35,7 +35,7 @@ export const csp = {
     'media-src': `'none'`,
     'frame-ancestors': `'self'`,
     'img-src': `'self' data: https://cdn.hindigamer.club/ https://hindigamerclub-game.ewr1.vultrobjects.com/`,
-    'connect-src': `'self' ws://localhost:8080/`,
+    'connect-src': `'self' ws://localhost:8080/ https://sentry.io/`,
     'object-src': `'none'`,
     'base-uri': `'self'`,
 } as any;
@@ -56,7 +56,6 @@ export const getCspString = (): string => {
  * Generate CSP with nonce middleware
  */
 export const generateCspWithNonce = async (req: Request, res: Response, next: NextFunction, randomBytesFunction = randomBytes): Promise<void> => {
-    console.log(req.url);
     if (req.url === '/docs' || req.url === '/docs/') {
         return next();
     }

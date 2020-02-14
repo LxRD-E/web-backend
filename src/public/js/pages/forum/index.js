@@ -1,3 +1,4 @@
+/*
 // LMAOBRUH.com
 function loadVerticalAlign()
 {
@@ -56,3 +57,8 @@ request("/forum/subcategories", "GET")
             var query = $('#searchForForumInput').val();
             window.location.href = "/forum/search?q="+query;
         });
+        */
+$(document).on('click', '#searchForumPostClick', function() {
+    var query = $('#searchForForumInput').val();
+    window.location.href = "/forum/search?q="+query;
+});

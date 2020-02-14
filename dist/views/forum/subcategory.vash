@@ -107,32 +107,32 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 forumSubCategory" data-id="1" style="border-bottom: 1px solid rgba(0,0,0,.125);display:none;">
-                        <div class="card" style="border-radius:0;border:none;box-shadow:none;">
+                    <div class="col-12 forumSubCategory" data-id="1" style="display:none;">
+                        <div class="card" style="border-radius:0;border:none;box-shadow:none;border-bottom: 1px solid rgba(0,0,0,.125);">
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-6">
-                                        <span class="pinned"></span>
+                                        <span class="pinned" style="float:left;font-size:0.85rem;padding-right:5px;"></span>
                                         <a href="#">
-                                            <h5 style="margin-bottom:0;">Loading...</h5>
+                                            <h5 style="margin-bottom:0;font-size:1rem;" class="text-truncate">Loading...</h5>
                                         </a>
                                     </div>
                                     <div class="col-2 d-none d-md-block text-center">
-                                        <h6 style="margin-bottom:0;">
+                                        <h6 style="margin-bottom:0;font-size:0.85rem;" class="text-truncate">
                                             <div class="spinner-border text-success" role="status">
                                                 <span class="sr-only">Loading...</span>
                                             </div>
                                         </h6>
                                     </div>
                                     <div class="col-2 d-none d-lg-block text-center">
-                                        <h6 style="margin-bottom:0;">
+                                        <h6 style="margin-bottom:0;font-size:0.85rem;" class="text-truncate">
                                             <div class="spinner-border text-success" role="status">
                                                 <span class="sr-only">Loading...</span>
                                             </div>
                                         </h6>
                                     </div>
                                     <div class="col-6 col-md-4 col-lg-2 text-center">
-                                        <h6 style="margin-bottom:0;">
+                                        <h6 style="margin-bottom:0;font-size:0.85rem;" class="text-truncate">
                                             <div class="spinner-border text-success" role="status">
                                                 <span class="sr-only">Loading...</span>
                                             </div>

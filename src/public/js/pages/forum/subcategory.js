@@ -23,7 +23,66 @@ if (offset === 0) {
 var offset = offset * 25 - 25;
 var isLoading = false;
 var preventForward = false;
+var currentPage = 0;
+$('.pagination').css('opacity','0.5');
+preventForward = true;
+
+const cached_pages = {};
+
+
 loadThreads();
+
+const loadThreadData = (d) => {
+    $('.pagination').css('opacity','1');
+    $(window).scrollTop(0);
+    var pageNum = Math.trunc(offset/25);
+    pageNum += 1;
+    let totalThreadPageCount = Math.trunc(d.total/25)+1;
+    if (totalThreadPageCount > pageNum) {
+        preventForward = false;
+        $('#nextPage').css('opacity','1');
+    }else{
+        preventForward = true;
+        $('#nextPage').css('opacity','0.5');
+    }
+    if (pageNum !== 1) {
+        $('#previousPage').css('opacity','1');
+    }else{
+        $('#previousPage').css('opacity','0.5');
+    }
+    window.history.replaceState(null, null, "/forum/"+forumData.attr("data-categoryid")+"?page="+pageNum);
+    $('.forumThreads').children().each(function() {
+        $(this).remove();
+    });
+    isLoading = false;
+    var userIds = [];
+    d.threads.forEach(function (k) {
+        var clonetemp = template.clone().appendTo('.forumThreads');
+        clonetemp.find("h6").each(function (i) {
+            if (i == 0) {
+                $(this).html('<a href="/users/' + k.userId + '/profile"><span data-userid=' + k["userId"] + '></span></a>');
+                userIds.push(k["userId"]);
+            }
+            if (i == 1) {
+                $(this).html(k["postCount"] - 1);
+            }
+            if (i == 2) {
+                $(this).addClass("update-timestamp");
+                $(this).attr("data-timestamp", k.latestReply);
+                $(this).html(moment(k.latestReply).fromNow());
+            }
+        });
+        clonetemp.find("h5").html(k.title.escape());
+        clonetemp.find("a").first().attr("href", "/forum/thread/" + k.threadId + "?page=1");
+        if (k.threadPinned === 1) {
+            clonetemp.find('.pinned').first().html('<i class="fas fa-thumbtack"></i>');
+        }
+        clonetemp.show();
+    });
+    setUserNames(userIds);
+    $('.forumThreads').show();
+}
+
 function loadThreads() {
     if (isLoading) {
         return;
@@ -32,57 +91,27 @@ function loadThreads() {
         $(this).css("opacity", "0.5");
     });
     isLoading = true;
-    request("/forum/" + forumData.attr("data-categoryid") + "/threads?sort=desc&offset=" + offset, "GET")
+    if (cached_pages[offset]) {
+        return loadThreadData(cached_pages[offset]);
+    }
+    request("/forum/" + forumData.attr("data-categoryid") + "/threads?sort=desc&limit=25&offset=" + offset, "GET")
         .then(function (d) {
-            $(window).scrollTop(0);
-            var pageNum = Math.trunc(offset/25);
-            pageNum += 1;
-            window.history.replaceState(null, null, "/forum/"+forumData.attr("data-categoryid")+"?page="+pageNum);
-            $('.forumThreads').children().each(function() {
-                $(this).remove();
-            });
-            isLoading = false;
-            var userIds = [];
-            d.threads.forEach(function (k) {
-                var clonetemp = template.clone().appendTo('.forumThreads');
-                clonetemp.find("h6").each(function (i) {
-                    if (i == 0) {
-                        $(this).html('<a href="/users/' + k.userId + '/profile"><span data-userid=' + k["userId"] + '></span></a>');
-                        userIds.push(k["userId"]);
-                    }
-                    if (i == 1) {
-                        $(this).html(k["postCount"] - 1);
-                    }
-                    if (i == 2) {
-                        $(this).addClass("update-timestamp");
-                        $(this).attr("data-timestamp", k.latestReply);
-                        $(this).html(moment(k.latestReply).fromNow());
-                    }
-                });
-                clonetemp.find("h5").html(k.title.escape());
-                clonetemp.find("a").first().attr("href", "/forum/thread/" + k.threadId + "?page=1");
-                if (k.threadPinned === 1) {
-                    clonetemp.find('.pinned').first().html('<i class="fas fa-thumbtack"></i> Pinned');
-                }
-                clonetemp.show();
-            });
-            setUserNames(userIds);
-            if (d.total < 25) {
-                preventForward = false;
-            }
-            $('.forumThreads').show();
+            cached_pages[offset] = d;
+            loadThreadData(d);
         })
         .catch(function (e) {
             console.log(e);
             $('#alert').show();
         });
 }
-var currentPage = 0;
+
+
+
 $('#nextPage').click(function(event) {
+    event.preventDefault();
     if (preventForward) {
         return;
     }
-    event.preventDefault();
     $('#previousPage').removeAttr("disabled");
     offset += 25;
     loadThreads();

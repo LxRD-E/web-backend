@@ -25,9 +25,25 @@ let WWWForumController = class WWWForumController extends controller_1.default {
     constructor() {
         super();
     }
-    index() {
+    async index(userInfo) {
+        let subs;
+        if (!userInfo) {
+            subs = await this.forum.getSubCategories();
+        }
+        else {
+            subs = await this.forum.getSubCategories(userInfo.staff);
+        }
+        for (const item of subs) {
+            let latestPost = await this.forum.getLatestPost(item.subCategoryId);
+            item.latestPost = latestPost;
+            item.totalThreads = await this.forum.getThreadCount(item.subCategoryId);
+            item.totalPosts = await this.forum.getPostCount(item.subCategoryId);
+        }
         return new this.WWWTemplate({
             title: 'Forum',
+            page: {
+                subs: subs,
+            }
         });
     }
     search(q) {
@@ -171,9 +187,10 @@ let WWWForumController = class WWWForumController extends controller_1.default {
 __decorate([
     common_1.Render('forum/index'),
     common_1.Get('/forum'),
+    __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [model.user.SessionUserInfo]),
+    __metadata("design:returntype", Promise)
 ], WWWForumController.prototype, "index", null);
 __decorate([
     common_1.Render('forum/search'),

@@ -19,9 +19,26 @@ export class WWWForumController extends controller {
 
     @Render('forum/index')
     @Get('/forum')
-    public index() {
+    public async index(
+        @Locals('userInfo') userInfo: model.user.SessionUserInfo,
+    ) {
+        let subs;
+        if (!userInfo) {
+            subs = await this.forum.getSubCategories();
+        }else{
+            subs = await this.forum.getSubCategories(userInfo.staff);
+        }
+        for (const item of subs) {
+            let latestPost = await this.forum.getLatestPost(item.subCategoryId);
+            item.latestPost = latestPost;
+            item.totalThreads = await this.forum.getThreadCount(item.subCategoryId);
+            item.totalPosts = await this.forum.getPostCount(item.subCategoryId);
+        }
         return new this.WWWTemplate({
             title: 'Forum',
+            page: {
+                subs: subs,
+            }
         });
     }
 

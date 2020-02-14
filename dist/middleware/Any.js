@@ -20,7 +20,7 @@ exports.csp = {
     'media-src': `'none'`,
     'frame-ancestors': `'self'`,
     'img-src': `'self' data: https://cdn.hindigamer.club/ https://hindigamerclub-game.ewr1.vultrobjects.com/`,
-    'connect-src': `'self' ws://localhost:8080/`,
+    'connect-src': `'self' ws://localhost:8080/ https://sentry.io/`,
     'object-src': `'none'`,
     'base-uri': `'self'`,
 };
@@ -35,7 +35,6 @@ exports.getCspString = () => {
     return cspString;
 };
 exports.generateCspWithNonce = async (req, res, next, randomBytesFunction = randomBytes) => {
-    console.log(req.url);
     if (req.url === '/docs' || req.url === '/docs/') {
         return next();
     }

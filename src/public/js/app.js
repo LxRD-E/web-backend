@@ -71,6 +71,11 @@ $('.formatDateFromNow').each(function () {
     var localDate = moment(date).local();
     $(this).html(localDate.fromNow());
 });
+let _userIdsToSet = [];
+$('.setUserName').each(function() {
+    _userIdsToSet.push($(this).attr('data-userid'));
+});
+setUserNames(_userIdsToSet);
 function formatDate(dat) {
     var date = moment(dat);
     var localDate = moment(date).local();

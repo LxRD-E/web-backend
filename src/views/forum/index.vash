@@ -19,14 +19,7 @@
                 </div>
             </div>
             <div class="col-12">
-                <div class="row" id="forumpreloader">
-                    <div class="col-12">
-                                            <div class="spinner-border text-success" role="status" style="display: block;margin: 0 auto;">
-                                                <span class="sr-only">Loading...</span>
-                                            </div>
-                                            </div>
-                </div>
-                <div class="row forumcategories" style="display: none;">
+                <div class="row forumcategories">
                     <div class="col-12">
                         <div class="card bg-success" style="color:white;border-radius:0;">
                             <div class="card-body">
@@ -47,41 +40,52 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 forumSubCategory" data-id="1" style="border-bottom: 1px solid rgba(0,0,0,.125);">
-                        <div class="card" style="border-radius:0;border:none;box-shadow:none;">
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-6">
-                                        <a href="/">
-                                            <h5 style="margin-bottom:0;">Loading...</h5>
-                                        </a>
-                                        <p style="margin-bottom:0;">Loading Forum...</p>
-                                    </div>
-                                    <div class="col-2 d-none d-md-block vertical-align-text text-center">
-                                        <h6 style="margin-bottom:0;">
-                                            <div class="spinner-border text-success" role="status">
-                                                <span class="sr-only">Loading...</span>
-                                            </div>
-                                        </h6>
-                                    </div>
-                                    <div class="col-2 d-none d-lg-block vertical-align-text text-center">
-                                        <h6 style="margin-bottom:0;">
-                                            <div class="spinner-border text-success" role="status">
-                                                <span class="sr-only">Loading...</span>
-                                            </div>
-                                        </h6>
-                                    </div>
-                                    <div class="col-6 col-md-4 col-lg-2 vertical-align-text text-center">
-                                        <h6 style="margin-bottom:0;">
-                                            <div class="spinner-border text-success" role="status">
-                                                <span class="sr-only">Loading...</span>
-                                            </div>
-                                        </h6>
+                    @for (const cat of model.page.subs) {
+                        <div class="col-12 forumSubCategory" data-id="@cat.subCategoryId">
+                            <div class="card" style="border-radius:0;border:none;box-shadow:none;border-bottom: 1px solid rgba(0,0,0,.125);">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <a href="/forum/@cat.subCategoryId?page=1">
+                                                <h5 style="margin-bottom:0;font-size:1.05rem;">@cat.title</h5>
+                                            </a>
+                                            <p style="margin-bottom:0;font-size:0.85rem;" class="text-truncate">@cat.description</p>
+                                        </div>
+                                        <div class="col-2 d-none d-md-block vertical-align-text text-center">
+                                            <h6 style="margin-bottom:0;margin-top:0.5rem;font-size:0.95rem;">
+                                                @cat.totalThreads
+                                            </h6>
+                                        </div>
+                                        <div class="col-2 d-none d-lg-block vertical-align-text text-center">
+                                            <h6 style="margin-bottom:0;margin-top:0.5rem;font-size:0.95rem;">
+                                                @cat.totalPosts
+                                            </h6>
+                                        </div>
+                                        <div class="col-6 col-md-4 col-lg-2 vertical-align-text text-center">
+                                            <h6 style="margin-bottom:0;">
+                                                @if (!cat.latestPost) {
+                                                    <span>N/A</span>
+                                                }else{
+                                                    <div>
+                                                        <p class="text-truncate" style="font-size:0.85rem;">
+                                                            <a href="/forum/thread/@cat.latestPost.threadId">
+                                                                <span class="formatDateFromNow" data-date="@cat.latestPost.dateCreated"></span>
+                                                            </a>
+                                                        </p>
+                                                        <p class="text-truncate" style="font-size:0.85rem;">
+                                                            By <a href="/users/@cat.latestPost.userId/profile">
+                                                                <span data-userid="@cat.latestPost.userId" class="setUserName">...</span>
+                                                            </a>
+                                                        </p>
+                                                    </div>
+                                                }
+                                            </h6>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    }
                 </div>
             </div>
         </div>
