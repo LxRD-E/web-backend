@@ -155,7 +155,7 @@ let ForumController = class ForumController extends controller_1.default {
         if (!title || title.length > 32) {
             throw new this.BadRequest('InvalidTitle');
         }
-        if (!body || body.length > 1024) {
+        if (!body || body.length > 4096) {
             throw new this.BadRequest('InvalidBody');
         }
         const titleWithoutWhiteSpace = title.replace(/ /g, '');
@@ -207,7 +207,7 @@ let ForumController = class ForumController extends controller_1.default {
         catch (e) {
             throw new this.BadRequest('InvalidThreadId');
         }
-        if (!body || body.length > 1024) {
+        if (!body || body.length > 4096) {
             throw new this.BadRequest('Invalidbody');
         }
         const bodyWithoutWhiteSpace = body.replace(/ /g, '');
@@ -385,7 +385,7 @@ let ForumController = class ForumController extends controller_1.default {
         if (postData.userId !== userInfo.userId) {
             throw new this.BadRequest('InvalidThreadId');
         }
-        if (!newBody || newBody.length > 1024) {
+        if (!newBody || newBody.length > 4096) {
             throw new this.BadRequest('InvalidBody');
         }
         const bodyWithoutWhiteSpace = newBody.replace(/ /g, '');
