@@ -381,7 +381,7 @@ let StaffController = class StaffController extends controller_1.default {
         else {
             isEnabled = 1;
         }
-        if (bannerText && bannerText.length > 128) {
+        if (bannerText && bannerText.length > 1024) {
             throw new this.BadRequest('InvalidBannerText');
         }
         if (isEnabled === 1) {

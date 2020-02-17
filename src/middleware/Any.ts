@@ -243,6 +243,7 @@ export default async (req: Request, res: Response, next: NextFunction, UserModel
             next();
         }
     } else {
+        console.warn('[warning] sessions appear to be down');
         // Sessions are down/unavailable
         next();
     }

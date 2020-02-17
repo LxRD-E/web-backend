@@ -167,8 +167,8 @@ $(document).on('click', '#createThreadClick', function () {
         return;
     }
     var body = $('#threadBody').val();
-    if (body.length > 512 || body.length < 10) {
-        warning("Your body must be at least 10 characters, and at most 512 characters.");
+    if (body.length > 4096 || body.length < 10) {
+        warning("Your body must be at least 10 characters, and at most 4096 characters.");
         return;
     }
     $('#createThreadClick').attr("disabled", "disabled");

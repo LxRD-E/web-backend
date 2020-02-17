@@ -13,6 +13,12 @@ export default class DAL {
     public knex: Knex;
     public redis: ioredis.Redis;
     public moment: (inp?: moment.MomentInput, format?: moment.MomentFormatSpecification, strict?: boolean) => moment.Moment;
+    public knexTime = (momentObject?: moment.Moment) => {
+        if (!momentObject) {
+            return this.moment().format('YYYY-MM-DD HH:mm:ss');
+        }
+        return momentObject.format('YYYY-MM-DD HH:mm:ss');
+    }
     constructor(knexService: Knex = knex) {
         this.knex = knexService;
         this.redis = redis;

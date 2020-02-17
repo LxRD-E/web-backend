@@ -110,8 +110,8 @@ function loadPosts(offset) {
                                 <div class="col-6 col-md-4 col-lg-3">
                                     <img style="width:100%;max-width: 150px;display: block;margin: 0 auto;" data-userid="`+ k.userId + `" />
                                     <a href="/users/`+ k.userId + `/profile"><h6 class="text-truncate"><span style="font-weight:600;"></span><span data-stafftype-userid="`+ k.userId + `" class="staffRankLevel"></span><span data-userid="`+k.userId+`">Loading...</span></h6></a>
-                                    <p style="margin-bottom:0;">`+ moment(k.dateCreated).format("MMMM Do YYYY, h:mm a") + `</p>
-                                    <p style="margin-bottom:0;"><span style="font-weight:600;">Post Count: </span><span data-postcount-userid="`+ k.userId + `"></span></p>
+                                    <p style="margin-bottom:0;font-size:0.75rem;" title="${moment(k.dateCreated).format("MMMM Do YYYY, h:mm a")}"><span style="font-weight:600;">Posted: </span>`+ moment(k.dateCreated).fromNow() + `</p>
+                                    <p style="margin-bottom:0;font-size:0.75rem;"><span style="font-weight:600;">Post Count: </span><span data-postcount-userid="`+ k.userId + `"></span></p>
                                     <p style="margin-bottom:0;"></p>
                                 </div>
                                 <div class="col-6 col-md-8 col-lg-9 text-left">

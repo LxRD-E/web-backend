@@ -594,7 +594,7 @@ export class StaffController extends controller {
         } else {
             isEnabled = 1;
         }
-        if (bannerText && bannerText.length > 128) {
+        if (bannerText && bannerText.length > 1024) {
             throw new this.BadRequest('InvalidBannerText');
         }
         // Set Redis

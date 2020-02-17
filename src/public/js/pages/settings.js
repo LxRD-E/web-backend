@@ -265,9 +265,9 @@ $(document).on("click", "#updateUsernameClick", function() {
         return warning('Your new username cannot be the same as your current username.');
     }
     questionYesNoHtml('Changing your username costs <span style="color:#28a745;"><img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/money-green-2.svg"/></span> 1,000. Are you sure you\'d like to continue?', function() {
-        request('/username/change/available?username='+newUsername, "GET")
+        request('/auth/username/change/available?username='+newUsername, "GET")
             .then(function() {
-                request('/username/change', 'PATCH', JSON.stringify({'username': newUsername}))
+                request('/auth/username/change', 'PATCH', JSON.stringify({'username': newUsername}))
                     .then(function() {
                         success('Your username has been changed.', function() {
                             window.location.reload();
