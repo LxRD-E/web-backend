@@ -8,7 +8,7 @@ import Config from '../../helpers/config';
 // Autoload
 import controller from '../controller';
 // TSED
-import { Controller, Locals, QueryParams, BodyParams, PathParams, UseBefore, UseBeforeEach, Patch, Required, Post, HeaderParams, Get } from '@tsed/common';
+import { Controller, Locals, QueryParams, BodyParams, PathParams, UseBefore, UseBeforeEach, Patch, Required, Post, HeaderParams, Get, Enum } from '@tsed/common';
 import { csrf } from '../../dal/auth';
 import { YesAuth } from '../../middleware/Auth';
 import { Summary, Returns, Description, ReturnsArray } from '@tsed/swagger';
@@ -71,8 +71,8 @@ export default class BillingController extends controller {
     /**
      * Verify a Bitcoin IPN Transaction
      */
-    @Post('/bitcoin/currency/ipn')
-    @Summary('Verify a Bitcoin IPN Transaction')
+    @Post('/currency/ipn')
+    @Summary('Verify a Cryptopayments IPN Transaction')
     @Description('Used solely by coinpayments')
     public async bitcoinCurrencyIpn(
         @HeaderParams('hmac') hmacHeader: string|undefined, 
@@ -81,7 +81,7 @@ export default class BillingController extends controller {
         if (!hmacHeader) {
             throw new Error('No HMAC Specified');
         }
-        let data = await this.billing.verifyBitcoinTransaction(hmacHeader, payload);
+        let data = await this.billing.verifyCryptoTransaction(hmacHeader, payload);
         // Transaction is OK, continue
         const product = await this.billing.getCurrencyProductById(data.productId);
         const buyerEmail = await this.settings.getUserEmail(data.userId);
@@ -147,24 +147,36 @@ export default class BillingController extends controller {
         }
     }
 
+    @Get('/accepted-currencies')
+    @Summary('Get accepted currencies')
+    public getAcceptedCurrencies() {
+        return this.billing.getAcceptedCurrencies();
+    }
+
     /**
-     * Create a Bitcoin Currency Transaction
+     * Create a Crypto Currency Transaction
      */
-    @Post('/bitcoin/currency/purchase')
-    @Summary('Create a Bitcoin Currency Transaction')
+    @Post('/currency/purchase')
+    @Summary('Create a Crypto-Currency Currency Transaction')
     @UseBeforeEach(csrf)
     @UseBefore(YesAuth)
     @Returns(409, {type: model.Error, description: 'EmailVerificationRequired: Your email must be verification before purchasing something off of Hindi Gamer Club\n'})
     public async createCurrencyPurchaseBitcoin(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
-        @BodyParams('currencyProductId', Number) currencyProductId: number
+        @BodyParams('currencyProductId', Number) currencyProductId: number,
+        @Required()
+        @BodyParams('currency', String) currency = 'BTC',
     ) {
+        let isValid = this.billing.isCurrencyValid(currency);
+        if (!isValid) {
+            throw new this.BadRequest('InvalidCurrency');
+        }
         const userEmail = await this.settings.getUserEmail(userInfo.userId);
         if (!userEmail.email) {
             throw new this.Conflict('EmailVerificationRequired');
         }
-        const transactionInfo = await this.billing.createBitcoinTransaction(userEmail.email, userInfo.userId, currencyProductId);
+        const transactionInfo = await this.billing.createBitcoinTransaction(userEmail.email, userInfo.userId, currencyProductId, currency);
         return {
             url: transactionInfo.checkout_url,
             success: true,

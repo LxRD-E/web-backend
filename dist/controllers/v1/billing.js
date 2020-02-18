@@ -107,7 +107,7 @@ let BillingController = class BillingController extends controller_1.default {
         if (!hmacHeader) {
             throw new Error('No HMAC Specified');
         }
-        let data = await this.billing.verifyBitcoinTransaction(hmacHeader, payload);
+        let data = await this.billing.verifyCryptoTransaction(hmacHeader, payload);
         const product = await this.billing.getCurrencyProductById(data.productId);
         const buyerEmail = await this.settings.getUserEmail(data.userId);
         const payerFirstName = this.auth.encrypt('', config_1.default.encryptionKeys.payments);
@@ -153,12 +153,19 @@ let BillingController = class BillingController extends controller_1.default {
             }
         }
     }
-    async createCurrencyPurchaseBitcoin(userInfo, currencyProductId) {
+    getAcceptedCurrencies() {
+        return this.billing.getAcceptedCurrencies();
+    }
+    async createCurrencyPurchaseBitcoin(userInfo, currencyProductId, currency = 'BTC') {
+        let isValid = this.billing.isCurrencyValid(currency);
+        if (!isValid) {
+            throw new this.BadRequest('InvalidCurrency');
+        }
         const userEmail = await this.settings.getUserEmail(userInfo.userId);
         if (!userEmail.email) {
             throw new this.Conflict('EmailVerificationRequired');
         }
-        const transactionInfo = await this.billing.createBitcoinTransaction(userEmail.email, userInfo.userId, currencyProductId);
+        const transactionInfo = await this.billing.createBitcoinTransaction(userEmail.email, userInfo.userId, currencyProductId, currency);
         return {
             url: transactionInfo.checkout_url,
             success: true,
@@ -189,8 +196,8 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], BillingController.prototype, "updateCurrencyProduct", null);
 __decorate([
-    common_1.Post('/bitcoin/currency/ipn'),
-    swagger_1.Summary('Verify a Bitcoin IPN Transaction'),
+    common_1.Post('/currency/ipn'),
+    swagger_1.Summary('Verify a Cryptopayments IPN Transaction'),
     swagger_1.Description('Used solely by coinpayments'),
     __param(0, common_1.HeaderParams('hmac')),
     __param(1, common_1.BodyParams()),
@@ -199,16 +206,25 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], BillingController.prototype, "bitcoinCurrencyIpn", null);
 __decorate([
-    common_1.Post('/bitcoin/currency/purchase'),
-    swagger_1.Summary('Create a Bitcoin Currency Transaction'),
+    common_1.Get('/accepted-currencies'),
+    swagger_1.Summary('Get accepted currencies'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], BillingController.prototype, "getAcceptedCurrencies", null);
+__decorate([
+    common_1.Post('/currency/purchase'),
+    swagger_1.Summary('Create a Crypto-Currency Currency Transaction'),
     common_1.UseBeforeEach(auth_1.csrf),
     common_1.UseBefore(Auth_1.YesAuth),
     swagger_1.Returns(409, { type: model.Error, description: 'EmailVerificationRequired: Your email must be verification before purchasing something off of Hindi Gamer Club\n' }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.BodyParams('currencyProductId', Number)),
+    __param(2, common_1.Required()),
+    __param(2, common_1.BodyParams('currency', String)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number]),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Object]),
     __metadata("design:returntype", Promise)
 ], BillingController.prototype, "createCurrencyPurchaseBitcoin", null);
 BillingController = __decorate([

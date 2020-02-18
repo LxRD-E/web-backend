@@ -1,4 +1,8 @@
-request("/billing/currency/products", 'GET')
+request('/billing/accepted-currencies', 'GET')
+.then(d => {
+    let possibleCurrencies = d;
+    
+    request("/billing/currency/products", 'GET')
     .then(function(amts) {
         $('#currencyOptions').empty();
         let catalogIds = [];
@@ -29,9 +33,9 @@ request("/billing/currency/products", 'GET')
         $('#alerts').show();
     });
 
-console.log("There's gonna be a ton of errors here due to paypal not being compatible with our csp - but that's OK. This seems to just be metric logging right now so it does not matter");
+    console.log("There's gonna be a ton of errors here due to paypal not being compatible with our csp - but that's OK. This seems to just be metric logging right now so it does not matter");
 
-$(document).on('click', '.onClickPurchaseCurrency', function() {
+    $(document).on('click', '.onClickPurchaseCurrency', function() {
     var amt = parseFloat($(this).attr('data-price'));
     var id = parseInt($(this).attr('data-id'));
     var append = $(this).parent().parent().parent().clone();
@@ -74,24 +78,31 @@ $(document).on('click', '.onClickPurchaseCurrency', function() {
     },
     }).render('#currencyPurchasePaypal');
     */
-});
-
-$(document).on('click', '.onClickStartTransaction', function(e) {
-    note('Note: After payment, your transaction will be in a confirming state. This may take anywhere from 2 minutes to 24 hours, depending on network congestion. After the payment is confirmed, you will recieve the product you purchased.', () => {
-        loading();
-        request('/billing/bitcoin/currency/purchase', 'POST', JSON.stringify({
-            'currencyProductId': parseInt($(this).attr('data-id')),
-        }))
-        .then((d) => {
-            window.location.href = d.url;
-        })
-        .catch((e) => {
-            warning(e.responseJSON.message);
-        });
     });
-});
 
-$(document).on('click', '#goBackToPurchaseScreen', function(e) {
+    $(document).on('click', '.onClickStartTransaction', function(e) {
+        let kv = {};
+        for (const item of possibleCurrencies) {
+            kv[item.id] = item.name;
+        }
+        question('Please select the currency you\'d like to pay in.', (currency) => {
+            note('Note: After payment, your transaction will be in a confirming state. This may take anywhere from 2 minutes to 24 hours, depending on network congestion. After the payment is confirmed, you will recieve the product you purchased.', () => {
+                loading();
+                request('/billing/currency/purchase', 'POST', JSON.stringify({
+                    'currencyProductId': parseInt($(this).attr('data-id')),
+                    'currency': currency,
+                }))
+                .then((d) => {
+                    window.location.href = d.url;
+                })
+                .catch((e) => {
+                    warning(e.responseJSON.message);
+                });
+            });
+        }, 'select', kv);
+    });
+
+    $(document).on('click', '#goBackToPurchaseScreen', function(e) {
     e.preventDefault();
     $('#currencyPurchaseArea').empty();
     $('#currencyPurchasePaypal').empty();
@@ -100,4 +111,11 @@ $(document).on('click', '#goBackToPurchaseScreen', function(e) {
     setTimeout(function() {
         $('#currencyOptions').fadeIn(100);
     }, 100);
+    });
+})
+.catch(e => {
+    console.error(e);
+    return warning('Sorry, our website seems to be having issues right now. Try again later.', () => {
+        window.location.reload();
+    });
 });

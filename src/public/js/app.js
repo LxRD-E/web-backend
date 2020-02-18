@@ -2,6 +2,10 @@ window.subsitutionimageurl = "https://cdn.hindigamer.club/thumbnails/d8f9737603d
 // Get UserData
 var userData = $('#userdata');
 
+const xss = (str) => {
+    return filterXSS(str, {whiteList: {}});
+}
+
 function urlencode(string) {
     if (!string) {
         return "unnamed";
@@ -465,6 +469,7 @@ function setNames(type, idsarray) {
     var pending = window["pendingNameArray" + type];
     // Setup names for divs
     function setDivs(id, name) {
+        name = xss(name);
         $("h6[data-" + type + "id='" + id + "']").html(name);
         $("h5[data-" + type + "id='" + id + "']").html(name);
         $("h4[data-" + type + "id='" + id + "']").html(name);
@@ -504,7 +509,7 @@ function setNames(type, idsarray) {
             .then(function (ids) {
                 $.each(ids, function (index, value) {
                     if (value.username) {
-                        setDivs(value.userId, value.username);
+                        setDivs(value.userId, value.username, {whiteList: {}});
                         global[value.userId] = value.username;
                     } else if (value.catalogName) {
                         setDivs(value.catalogId, value.catalogName);

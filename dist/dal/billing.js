@@ -31,23 +31,35 @@ class BillingDAL extends _init_1.default {
         }
         return product[0];
     }
-    async createBitcoinTransaction(buyerEmail, buyerUserId, currencyProductId) {
+    getAcceptedCurrencies() {
+        return config_1.default.coinpayments.currency;
+    }
+    isCurrencyValid(currency) {
+        for (const acceptedCurrency of config_1.default.coinpayments.currency) {
+            if (acceptedCurrency.id === currency) {
+                return true;
+            }
+        }
+        return false;
+    }
+    async createBitcoinTransaction(buyerEmail, buyerUserId, currencyProductId, currency) {
         const productInfo = await this.getCurrencyProductById(currencyProductId);
         const info = await coinpaymentsClient.createTransaction({
             currency1: 'USD',
-            currency2: config_1.default.coinpayments.currency[0],
+            currency2: currency,
             amount: productInfo.usdPrice,
             'buyer_email': buyerEmail,
             custom: JSON.stringify({
                 'userId': buyerUserId,
                 'type': Billing.TransactionType.Currency,
                 'productId': productInfo.currencyProductId,
+                'currency': currency,
             }),
             'ipn_url': config_1.default.coinpayments.ipn,
         });
         return info;
     }
-    async verifyBitcoinTransaction(hmacHeader, payload) {
+    async verifyCryptoTransaction(hmacHeader, payload) {
         const isValid = verify(hmacHeader, config_1.default.coinpayments.ipnSecret, payload);
         if (isValid) {
             const custom = JSON.parse(payload.custom);
@@ -58,10 +70,10 @@ class BillingDAL extends _init_1.default {
                 throw false;
             }
             if (payload.currency1 !== 'USD') {
-                throw "Currency is not valid";
+                throw new Error("Currency is not valid");
             }
             if (payload.amount1 < productInfo.usdPrice) {
-                throw "Amount is less than order price";
+                throw new Error("Amount is less than order price");
             }
             if (payload.status >= 100 || payload.status === 2) {
                 return custom;

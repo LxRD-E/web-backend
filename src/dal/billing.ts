@@ -65,10 +65,24 @@ class BillingDAL extends _init {
         return product[0];
     }
 
+    public getAcceptedCurrencies() {
+        return Config.coinpayments.currency;
+    }
+
+    public isCurrencyValid(currency: string): boolean {
+        for (const acceptedCurrency of Config.coinpayments.currency) {
+            if (acceptedCurrency.id === currency) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Create a Bitcoin Transaction
+     * @param {string} currency - The Config.coinpayments.currency type
      */
-    public async createBitcoinTransaction(buyerEmail: string, buyerUserId: number, currencyProductId: number): Promise<{
+    public async createBitcoinTransaction(buyerEmail: string, buyerUserId: number, currencyProductId: number, currency: string): Promise<{
         amount: number;
         txn_id: string;
         address: string;
@@ -81,13 +95,14 @@ class BillingDAL extends _init {
         const productInfo = await this.getCurrencyProductById(currencyProductId);
         const info = await coinpaymentsClient.createTransaction({
             currency1: 'USD', 
-            currency2: Config.coinpayments.currency[0],
+            currency2: currency,
             amount: productInfo.usdPrice,
             'buyer_email': buyerEmail,
             custom: JSON.stringify({
                 'userId': buyerUserId,
                 'type': Billing.TransactionType.Currency,
                 'productId': productInfo.currencyProductId,
+                'currency': currency,
             }),
             'ipn_url': Config.coinpayments.ipn,
         });
@@ -99,7 +114,7 @@ class BillingDAL extends _init {
      * @param body 
      * @returns false = payment is not read
      */
-    public async verifyBitcoinTransaction(hmacHeader: string, payload: {
+    public async verifyCryptoTransaction(hmacHeader: string, payload: {
         'txn_id': string;
         'amount1': number;
         'amount2': number;
@@ -131,10 +146,10 @@ class BillingDAL extends _init {
             // valid
             if (payload.currency1 !== 'USD') {
                 // Invalid Currency
-                throw "Currency is not valid";
+                throw new Error("Currency is not valid");
             }
             if (payload.amount1 < productInfo.usdPrice) {
-                throw "Amount is less than order price";
+                throw new Error("Amount is less than order price");
             }
 
             if (payload.status >= 100 || payload.status === 2) {
