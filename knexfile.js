@@ -4,6 +4,7 @@ const path = require('path');
 
 const config = require("fs").readFileSync('./config.json');
 let configJson = JSON.parse(config);
+delete configJson.mysql.charset;
 let table;
 if (configJson.mysqlTLS.enabled) {
     table = {
