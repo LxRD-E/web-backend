@@ -64,6 +64,56 @@ export class WWWController extends controller {
         });
     }
 
+    @Get("/support/ticket/:ticketId")
+    @Render('support_ticket')
+    @Use(YesAuth)
+    public async SupportTicket(
+        @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
+        @PathParams('ticketId', Number) ticketId: number,
+    ) {
+        let info = await this.support.getTicketById(ticketId);
+        if (info.userId !== userInfo.userId) {
+            throw new this.BadRequest('InvalidTicketId');
+        }
+        info['createdAt'] = moment(info['createdAt']).fromNow();
+        info['updatedAt'] = moment(info['updatedAt']).fromNow();
+        let replies = await this.support.getTicketReplies(ticketId);
+        for (const reply of replies) {
+            reply['createdAt'] = moment(reply['createdAt']).fromNow();
+            reply['updatedAt'] = moment(reply['updatedAt']).fromNow();
+        }
+        return new WWWTemplate({
+            title: "Support",
+            userInfo: userInfo,
+            page: {
+                ticket: info,
+                replies: replies,
+            },
+        });
+    }
+
+    @Get("/support/ticket/:ticketId/reply")
+    @Render('support_ticket_reply')
+    @Use(YesAuth)
+    public async SupportTicketReply(
+        @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
+        @PathParams('ticketId', Number) ticketId: number,
+    ) {
+        let info = await this.support.getTicketById(ticketId);
+        if (info.userId !== userInfo.userId) {
+            throw new this.BadRequest('InvalidTicketId');
+        }
+        info['createdAt'] = moment(info['createdAt']).fromNow();
+        info['updatedAt'] = moment(info['updatedAt']).fromNow();
+        return new WWWTemplate({
+            title: "Support Ticket Reply",
+            userInfo: userInfo,
+            page: {
+                ticket: info,
+            },
+        });
+    }
+
     @Get("/support/refund-policy")
     @Render('refund_policy')
     public async RefundPolicy(

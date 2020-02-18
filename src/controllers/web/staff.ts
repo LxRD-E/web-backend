@@ -231,4 +231,17 @@ export class WWWStaffController extends controller {
             cats: cats,
         }});
     }
+
+    @Get('/staff/tickets')
+    @UseBefore(YesAuth)
+    @Render('staff/tickets')
+    public async staffTickets(
+        @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
+    ) {
+        const staff = userInfo.staff >= 1 ? true : false;
+        if (!staff) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        return new this.WWWTemplate({title: 'View Tickets Awaiting Response', userInfo: userInfo});
+    }
 }

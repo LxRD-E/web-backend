@@ -510,6 +510,48 @@ let StaffController = class StaffController extends controller_1.default {
             success: true,
         };
     }
+    async getTickets(userInfo) {
+        this.validate(userInfo, 1);
+        let tickets = this.support.getTicketsAwaitingSupportResponse();
+        return tickets;
+    }
+    async getRepliesToTicket(userInfo, ticketId) {
+        this.validate(userInfo, 1);
+        let responses = await this.support.getTicketRepliesAll(ticketId);
+        return responses;
+    }
+    async replyToTicket(userInfo, ticketId, body, visibleToClient = true) {
+        this.validate(userInfo, 1);
+        await this.support.replyToTicket(ticketId, userInfo.userId, body, visibleToClient);
+        return {
+            success: true,
+        };
+    }
+    getTicketMetaData() {
+        let status = model.support.TicketStatus;
+        let statuses = [];
+        for (const item of Object.getOwnPropertyNames(status)) {
+            if (!isNaN(parseInt(item))) {
+                statuses.push({
+                    key: item,
+                    value: status[item],
+                });
+            }
+        }
+        return {
+            status: statuses,
+        };
+    }
+    async updateTicketStatus(userInfo, ticketId, status) {
+        this.validate(userInfo, 1);
+        if (!model.support.TicketStatus[status]) {
+            throw new this.BadRequest('InvalidTicketStatus');
+        }
+        await this.support.updateTicketStatus(ticketId, status);
+        return {
+            success: true,
+        };
+    }
 };
 __decorate([
     common_1.UseBeforeEach(auth_1.csrf),
@@ -829,6 +871,55 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number, String, String, Number, Number, Number]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "createForumSubCategory", null);
+__decorate([
+    common_1.Get('/support/tickets-awaiting-response'),
+    swagger_1.Summary('Get support tickets awaiting cs response'),
+    common_1.Use(Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "getTickets", null);
+__decorate([
+    common_1.Get('/support/ticket/:ticketId/replies'),
+    swagger_1.Summary('Get replies to ticket'),
+    common_1.Use(Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('ticketId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "getRepliesToTicket", null);
+__decorate([
+    common_1.Post('/support/ticket/:ticketId/reply'),
+    swagger_1.Summary('Reply to a ticket'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('ticketId', Number)),
+    __param(2, common_1.BodyParams('body', String)),
+    __param(3, common_1.BodyParams('visibleToClient', Boolean)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String, Boolean]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "replyToTicket", null);
+__decorate([
+    common_1.Get('/support/ticket/metadata'),
+    swagger_1.Summary('Get ticket meta-data'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], StaffController.prototype, "getTicketMetaData", null);
+__decorate([
+    common_1.Patch('/support/ticket/:ticketId/status'),
+    swagger_1.Summary('Update ticket_status'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('ticketId', Number)),
+    __param(2, common_1.BodyParams('status', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "updateTicketStatus", null);
 StaffController = __decorate([
     common_1.Controller('/staff'),
     __metadata("design:paramtypes", [])

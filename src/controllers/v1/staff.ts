@@ -903,4 +903,82 @@ export class StaffController extends controller {
             success: true,
         };
     }
+
+    @Get('/support/tickets-awaiting-response')
+    @Summary('Get support tickets awaiting cs response')
+    @Use(YesAuth)
+    public async getTickets(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+    ) {
+        this.validate(userInfo, 1);
+        let tickets = this.support.getTicketsAwaitingSupportResponse();
+        return tickets;
+    }
+
+    @Get('/support/ticket/:ticketId/replies')
+    @Summary('Get replies to ticket')
+    @Use(YesAuth)
+    public async getRepliesToTicket(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('ticketId', Number) ticketId: number
+    ) {
+        this.validate(userInfo, 1);
+        let responses = await this.support.getTicketRepliesAll(ticketId);
+        return responses;
+    }
+
+    @Post('/support/ticket/:ticketId/reply')
+    @Summary('Reply to a ticket')
+    @Use(csrf, YesAuth)
+    public async replyToTicket(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('ticketId', Number) ticketId: number,
+        @BodyParams('body', String) body: string,
+        @BodyParams('visibleToClient', Boolean) visibleToClient: boolean = true,
+    ) {
+        this.validate(userInfo, 1);
+        // reply
+        await this.support.replyToTicket(ticketId, userInfo.userId, body, visibleToClient);
+        // return success
+        return {
+            success: true,
+        };
+    }
+
+    @Get('/support/ticket/metadata')
+    @Summary('Get ticket meta-data')
+    public getTicketMetaData() {
+        let status = model.support.TicketStatus;
+        let statuses = [];
+        for (const item of Object.getOwnPropertyNames(status)) {
+            if (!isNaN(parseInt(item))) {
+                statuses.push({
+                    key: item,
+                    value: status[item],
+                });
+            }
+        }
+        return {
+            status: statuses,
+        };
+    }
+
+    @Patch('/support/ticket/:ticketId/status')
+    @Summary('Update ticket_status')
+    @Use(csrf, YesAuth)
+    public async updateTicketStatus(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('ticketId', Number) ticketId: number,
+        @BodyParams('status', Number) status: number,
+    ) {
+        this.validate(userInfo, 1);
+        if (!model.support.TicketStatus[status]) {
+            throw new this.BadRequest('InvalidTicketStatus');
+        }
+        await this.support.updateTicketStatus(ticketId, status);
+        // return success
+        return {
+            success: true,
+        };
+    }
 }

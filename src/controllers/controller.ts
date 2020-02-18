@@ -15,6 +15,7 @@ import notification from '../dal/notification';
 import settings from '../dal/settings';
 import staff from '../dal/staff';
 import ad from '../dal/ad';
+import support from '../dal/support';
 import { WWWTemplate } from '../models/v2/Www';
 import xss = require('xss');
 import moment = require('moment');
@@ -52,6 +53,7 @@ export default class StandardController {
     public settings = new settings();
     public staff = new staff();
     public ad = new ad();
+    public support = new support();
     constructor() {
 
     }

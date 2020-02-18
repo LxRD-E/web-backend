@@ -220,8 +220,10 @@ export default async (req: Request, res: Response, next: NextFunction, UserModel
                     req.url.substr(0, "/api/v1/auth/unlock".length) === "/api/v1/auth/unlock" || 
                     // Logout
                     req.url.substr(0, "/api/v1/auth/logout".length) === "/api/v1/auth/logout" || 
-                    // Support page
-                    req.url.toLowerCase() === '/support' || 
+                    // Support pages
+                    req.url.toLowerCase().slice(0,'/support'.length) === '/support' || 
+                    // Support pages
+                    req.url.toLowerCase().slice(0,'/api/v1/support'.length) === '/api/v1/support' || 
                     // & Terms of Service
                     req.url.toLowerCase() === '/terms'
                 ) {

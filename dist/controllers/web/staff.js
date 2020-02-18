@@ -164,6 +164,13 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
                 cats: cats,
             } });
     }
+    async staffTickets(userInfo) {
+        const staff = userInfo.staff >= 1 ? true : false;
+        if (!staff) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        return new this.WWWTemplate({ title: 'View Tickets Awaiting Response', userInfo: userInfo });
+    }
 };
 __decorate([
     common_1.Get('/staff'),
@@ -282,6 +289,15 @@ __decorate([
     __metadata("design:paramtypes", [UserModel.SessionUserInfo]),
     __metadata("design:returntype", Promise)
 ], WWWStaffController.prototype, "modifyForums", null);
+__decorate([
+    common_1.Get('/staff/tickets'),
+    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Render('staff/tickets'),
+    __param(0, common_1.Locals('userInfo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [UserModel.SessionUserInfo]),
+    __metadata("design:returntype", Promise)
+], WWWStaffController.prototype, "staffTickets", null);
 WWWStaffController = __decorate([
     common_1.Controller("/"),
     __metadata("design:paramtypes", [])

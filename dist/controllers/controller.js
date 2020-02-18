@@ -16,6 +16,7 @@ const notification_1 = require("../dal/notification");
 const settings_1 = require("../dal/settings");
 const staff_1 = require("../dal/staff");
 const ad_1 = require("../dal/ad");
+const support_1 = require("../dal/support");
 const Www_1 = require("../models/v2/Www");
 const xss = require("xss");
 const moment = require("moment");
@@ -45,6 +46,7 @@ class StandardController {
         this.settings = new settings_1.default();
         this.staff = new staff_1.default();
         this.ad = new ad_1.default();
+        this.support = new support_1.default();
     }
 }
 exports.default = StandardController;

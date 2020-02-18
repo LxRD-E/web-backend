@@ -171,7 +171,8 @@ exports.default = async (req, res, next, UserModel = user_1.default, ModModel = 
                 }
                 else if (req.url.substr(0, "/api/v1/auth/unlock".length) === "/api/v1/auth/unlock" ||
                     req.url.substr(0, "/api/v1/auth/logout".length) === "/api/v1/auth/logout" ||
-                    req.url.toLowerCase() === '/support' ||
+                    req.url.toLowerCase().slice(0, '/support'.length) === '/support' ||
+                    req.url.toLowerCase().slice(0, '/api/v1/support'.length) === '/api/v1/support' ||
                     req.url.toLowerCase() === '/terms') {
                 }
                 else if (req.url.substr(0, 5) === "/api/") {
