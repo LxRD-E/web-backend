@@ -14,6 +14,7 @@ import * as settings from './v1/settings';
 import * as staff from './v1/staff';
 import * as thumbnails from './v1/thumnails';
 import * as user from './v1/user';
+import * as ad from './v1/ad';
 import { Required } from '@tsed/common';
 import { Example } from '@tsed/swagger';
 
@@ -31,4 +32,4 @@ export class Error {
     error: _errorData;
 }
 
-export {any, auth, avatar, billing, catalog, chat, economy, forum, game, group, mod, notification, settings, staff, thumbnails, user}
+export {any, auth, avatar, billing, catalog, chat, economy, forum, game, group, mod, notification, settings, staff, thumbnails, user, ad}

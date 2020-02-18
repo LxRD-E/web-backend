@@ -1435,3 +1435,43 @@ $(document).on('click', '.onClickShowTabs', function (e) {
         }
     });
 });
+
+
+/**
+ *  load ads
+ */
+request('/ad/random', 'GET')
+.then(d => {
+    $('#leaderboard-ad-one').append(`
+    <div class="col-12" style="margin-top:1rem;">
+        <div style="display:block;margin:0 auto;max-width:728px;">
+            <a href="/api/v1/ad/${d.adId}/click">
+                <img style="width:100%;" src="${d.imageUrl}" title="${d.title.escape()}" />
+                <p class="ad-alert-text" style="color: rgba(33, 37, 41, 0.95);"><i class="fas fa-ad"></i></p>
+            </a>
+        </div>
+    </div>
+    `);
+    $('#leaderboard-ad-one').find('img').on('load', () => {
+        console.log('ad image loaded');
+        $('#leaderboard-ad-one').find('.whitespace-ad').remove();
+    });
+})
+.catch(e => {
+    // default ad url https://cdn.hindigamer.club/thumbnails/684bc763f1459a12ac64c74d5b6154216f2bf26bd1b76cb976449ffad5e163d8.png
+    $('#leaderboard-ad-one').append(`
+    <div class="col-12" style="margin-top:1rem;">
+        <div style="display:block;margin:0 auto;max-width:728px;">
+            <a href="/ads">
+                <img style="width:100%;" src="https://cdn.hindigamer.club/thumbnails/684bc763f1459a12ac64c74d5b6154216f2bf26bd1b76cb976449ffad5e163d8.png" />
+                <p class="ad-alert-text"><i class="fas fa-ad"></i></p>
+            </a>
+        </div>
+    </div>
+    `);
+    $('#leaderboard-ad-one').find('img').on('load', () => {
+        console.log('ad image loaded');
+        $('#leaderboard-ad-one').find('.whitespace-ad').remove();
+    });
+    
+});

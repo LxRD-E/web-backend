@@ -46,6 +46,8 @@ const thumbnails = require("./v1/thumnails");
 exports.thumbnails = thumbnails;
 const user = require("./v1/user");
 exports.user = user;
+const ad = require("./v1/ad");
+exports.ad = ad;
 const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 class _errorData {

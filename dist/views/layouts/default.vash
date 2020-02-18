@@ -128,6 +128,7 @@
                             <a class="dropdown-item" href="/avatar"><i class="fas fa-user-tag"></i> My Avatar</a>
                             <a class="dropdown-item" href="/trades"><i class="fas fa-exchange-alt"></i> My Trades</a>
                             <a class="dropdown-item" href="/transactions"><i class="fas fa-money-bill-alt"></i> My Transactions</a>
+                            <a class="dropdown-item" href="/ads"><i class="fas fa-ad"></i> My Ads</a>
                             <a class="dropdown-item" href="/settings"><i class="fas fa-sliders-h"></i> My Settings</a>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item" id="logoutAClick" href="#"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
@@ -209,6 +210,14 @@
                 </div>
             </div>
         }
+
+
+
+        <div class="row" id="leaderboard-ad-one">
+            <!-- whitespace so that when the ad loads, the user doesnt accidentally click it -->
+            <div style="padding-top:100px;" class="whitespace-ad"></div>
+        </div>
+
         <!-- Nav -->
 
 

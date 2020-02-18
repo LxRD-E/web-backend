@@ -166,9 +166,19 @@ class StaffDAL extends _init {
     /**
      * Get Items Awaiting Moderation
      */
-    public async getItems(): Promise<model.catalog.SearchResults[]> {
+    public async getItems(): Promise<any> {
+        let fullArr = [];
         const info = await this.knex("catalog").select("catalog.id as catalogId","catalog.name as catalogName","catalog.price", "catalog.currency","catalog.creator as userId","catalog.is_collectible as collectible", "catalog.max_sales as maxSales").limit(25).orderBy('id', 'desc').where({'catalog.is_pending': model.catalog.moderatorStatus.Pending});
-        return info;
+        for (const item of info) {
+            item['type'] = 'CatalogItem';
+            fullArr.push(item);
+        }
+        let pendingAds = await this.knex('user_ads').select('id as adId','user_id as userId','image_url as imageUrl','title').where({'moderation_status': model.ad.ModerationStatus.Pending});
+        for (const ad of pendingAds) {
+            ad['type'] = 'Advertisment';
+            fullArr.push(ad);
+        }
+        return fullArr;
     }
 
     /**
@@ -203,6 +213,10 @@ class StaffDAL extends _init {
     public async search(offset: number): Promise<model.user.UserInfo[]> {
         const results = await this.knex("users").select(['id as userId', 'username', 'user_status as status', 'user_joindate as joinDate', 'user_lastonline as lastOnline', 'user_staff as staff']).offset(offset).orderBy('id', 'asc').where('user_staff', '>=', model.user.staff.Mod);
         return results;
+    }
+
+    public async updateAdState(adId: number, state: number): Promise<void> {
+        await this.knex('user_ads').update({'moderation_status': state}).where({'id': adId}).limit(1);
     }
 }
 

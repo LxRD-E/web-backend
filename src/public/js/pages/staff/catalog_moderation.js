@@ -99,6 +99,7 @@ function loadItems() {
             if(d.length >=1) {
                 var ids = [];
                 d.forEach(function(k) {
+                    if (k.type ==='CatalogItem') {
                     ids.push(k.catalogId);
                     if (k.catalogName) {
                         k.catalogName = k.catalogName.escape();
@@ -130,6 +131,38 @@ function loadItems() {
                         </div>
                     </div>
                     `);
+                }else if (k.type === 'Advertisment') {
+                    if (!k.title) {
+                        k.title = 'N/A';
+                    }
+                    $('#pendingAssetsDiv').append(`
+                    <div class="col-sm-12 col-md-6 col-lg-4" style="margin-top:1rem;">
+                        <div class="card">
+                            <div class="card-body">
+                                <img style="width:100%;" src="${k.imageUrl}" />
+                                <div class="card-title text-center">
+                                    <h6 style="margin-bottom:1rem;" class="text-truncate">${k.title.escape()}</h6>
+                                    <button type="button" class="btn btn-success approveAdvertisment" data-id="`+k.adId+`" style="width:100%;margin-bottom:1rem;">Approve</button>
+                                    <!-- Example split danger button -->
+                                    <div class="btn-group dropup" style="width:100%;">
+                                        <button type="button" data-id="`+k.adId+`" class="btn btn-danger declineAdvertisment">Decline</button>
+                                        <button type="button" class="btn btn-danger dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <span class="sr-only">Toggle Dropdown</span>
+                                        </button>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item banUploaderAd" data-length="0" data-catalogname="`+k.title.escape()+`" data-userid="`+k.userId+`" data-id="`+k.adId+`" href="#">Warn Uploader</a>
+                                            <a class="dropdown-item banUploaderAd" data-catalogname="`+k.title.escape()+`" data-userid="`+k.userId+`" data-id="`+k.adId+`" data-length="1" href="#">1 Day Ban Uploader</a>
+                                            <a class="dropdown-item banUploaderAd" data-catalogname="`+k.title.escape()+`" data-userid="`+k.userId+`" data-id="`+k.adId+`" href="#" data-length="7">7 Day Ban Uploader</a>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item terminateUploaderAd" data-catalogname="`+k.title.escape()+`" data-userid="`+k.userId+`" data-id="`+k.adId+`" href="#">Terminate Uploader</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    `);
+                }
                 });
                 setCatalogThumbsIgnoreModeration(ids);
             }else{
@@ -154,6 +187,19 @@ $(document).on('click', '.approveCatalogItem', function() {
         });
 
 });
+$(document).on('click', '.approveAdvertisment', function() {
+    request("/staff/ad/"+parseInt($(this).attr("data-id"))+"/", "PATCH", JSON.stringify({"state":1}))
+        .then(function(d) {
+            console.log(d);
+            toast(true, "The specified ad item has been approved.");
+            loadItems();
+        })
+        .catch(function(e) {
+            toast(false, "The specified ad item could not be approved. Please try again.");
+            loadItems();
+        });
+
+});
 function decline(catalogid) {
     request("/staff/catalog/"+catalogid+"/", "PATCH", JSON.stringify({"state":2}))
         .then(function(d) {
@@ -166,8 +212,23 @@ function decline(catalogid) {
             loadItems();
         });
 }
+function declineAd(adid) {
+    request("/staff/ad/"+adid+"/", "PATCH", JSON.stringify({"state":2}))
+        .then(function(d) {
+            console.log(d);
+            toast(true, "The specified ad item has been declined.");
+            loadItems();
+        })
+        .catch(function(e) {
+            toast(false, "The specified ad item could not be declined. Please try again.");
+            loadItems();
+        });
+}
 $(document).on('click', '.declineCatalogItem', function() {
     decline(parseInt($(this).attr("data-id")));
+});
+$(document).on('click', '.declineAdvertisment', function() {
+    declineAd(parseInt($(this).attr("data-id")));
 });
 
 $(document).on('click', '.banUploader', function() {
@@ -177,6 +238,23 @@ $(document).on('click', '.banUploader', function() {
     var len = parseInt($(this).attr('data-length'));
     var name = $(this).attr('data-catalogname');
     var reason = "The item you uploaded, \""+name+"\", is not appropriate for our website. Please fully review our terms of service before uploading assets.";
+    request("/staff/user/"+userId+"/ban", "POST", JSON.stringify({"reason":reason,"privateReason": 'Automated Ban',"length":len,"lengthType":'days',"terminated":0,"deleted":0}))
+        .then(function(d) {
+            console.log(d);
+        })
+        .catch(function(e) {
+            console.log(e);
+            toast(false, 'This user couldn\'t be banned. Try again.');
+        });
+});
+
+$(document).on('click', '.banUploaderAd', function() {
+    var id = parseInt($(this).attr('data-id'));
+    declineAd(id);
+    var userId = parseInt($(this).attr('data-userid'));
+    var len = parseInt($(this).attr('data-length'));
+    var name = $(this).attr('data-title') || 'N/A';
+    var reason = "The advertisement you uploaded, \""+name+"\", is not appropriate for our website. Please fully review our terms of service before uploading assets.";
     request("/staff/user/"+userId+"/ban", "POST", JSON.stringify({"reason":reason,"privateReason": 'Automated Ban',"length":len,"lengthType":'days',"terminated":0,"deleted":0}))
         .then(function(d) {
             console.log(d);

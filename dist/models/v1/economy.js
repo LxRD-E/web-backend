@@ -106,6 +106,7 @@ var transactionType;
     transactionType[transactionType["UsernameChange"] = 13] = "UsernameChange";
     transactionType[transactionType["CurrencyPurchaseBonusItemRecieved"] = 14] = "CurrencyPurchaseBonusItemRecieved";
     transactionType[transactionType["CurrencyPurchaseBonusItemRefund"] = 15] = "CurrencyPurchaseBonusItemRefund";
+    transactionType[transactionType["PurchaseOfAdvertisment"] = 16] = "PurchaseOfAdvertisment";
 })(transactionType = exports.transactionType || (exports.transactionType = {}));
 var membershipType;
 (function (membershipType) {

@@ -55,6 +55,7 @@
                                                 <a class="dropdown-item" href="#" id="claimOwnership" style="display:none;">Claim Ownership</a>
                                                 <a class="dropdown-item" href="#" id="groupLeave" style="display:none;">Leave Group</a>
                                                 <a class="dropdown-item" href="/groups/@model.page.groupId/@model.page.groupEncodedName/manage" id="groupManage" style="display:none;">Manage</a>
+                                                <a class="dropdown-item" href="/ad/group/create/@model.page.groupId" id="advertise" style="display:none;">Advertise</a>
                                             </div>
                                         @*
                                             <button type="button" class="btn btn-success" id="groupJoin" style="display:none;">Join Group</button>

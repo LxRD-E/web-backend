@@ -432,7 +432,7 @@ export class StaffController extends controller {
     @Get('/catalog/pending')
     public async getPendingModerationCatalogItems(
         @Locals('userInfo') userInfo: model.user.UserInfo,
-    ): Promise<model.catalog.SearchResults[]> {
+    ) {
         // Verify User
         this.validate(userInfo, 1);
         const data = await this.staff.getItems();
@@ -474,6 +474,35 @@ export class StaffController extends controller {
     }
 
     /**
+     * Update ad item state
+     * @param userInfo 
+     * @param catalogId 
+     * @param moderationStatus 
+     */
+    @Patch('/ad/:adId/')
+    @Summary('Update ad item state')
+    @Use(csrf, YesAuth)
+    public async updateAdState(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('adId', Number) adId: number,
+        @BodyParams('state', Number) moderationStatus: number
+    ) {
+        this.validate(userInfo, 1);
+        if (moderationStatus !== 1 && moderationStatus !== 2) {
+            throw new this.BadRequest('InvalidState');
+        }
+        let adInfo = await this.ad.getFullAdInfoById(adId);
+        await this.staff.updateAdState(adId, moderationStatus);
+        if (moderationStatus === model.catalog.moderatorStatus.Moderated) {
+            // Send Message
+            await this.notification.createMessage(adInfo.userId, 1, 'Ad "' + adInfo.title + '" has been Rejected', 'Hello,\nYour ad, "' + adInfo.title + '", has been rejected by our moderation team. Please fully review our terms of service before uploading assets so that you don\'t run into this issue again. Sorry for the inconvenience,\n\n-The Moderation Team');
+        }
+        return {
+            success: true,
+        };
+    }
+
+    /**
      * Update Item State
      * @param catalogId 
      * @param moderationStatus 
@@ -500,9 +529,9 @@ export class StaffController extends controller {
             throw new this.BadRequest('InvalidCatalogIdOrState');
         }
         await this.staff.updateItemStatus(numericCatalogId, numericState);
-        if (numericState === model.catalog.moderatorStatus.Moderated) {
+        if (numericState === model.catalog.moderatorStatus.Moderated && itemInfo.creatorType === model.catalog.creatorType.User) {
             // Send Message
-            await this.notification.createMessage(itemInfo.creatorId, 1, '"' + itemInfo.catalogName + '" has been Rejected', 'Hello,\nYour item, "' + itemInfo.catalogName + '", has been rejected by our moderation team. Please fully review our terms of service before uploading assets so that you dom\'t run into this issue again. Sorry for the inconvenience,\n\n-The Moderation Team');
+            await this.notification.createMessage(itemInfo.creatorId, 1, '"' + itemInfo.catalogName + '" has been Rejected', 'Hello,\nYour item, "' + itemInfo.catalogName + '", has been rejected by our moderation team. Please fully review our terms of service before uploading assets so that you don\'t run into this issue again. Sorry for the inconvenience,\n\n-The Moderation Team');
         }
         return {
             'success': true,

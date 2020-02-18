@@ -56,13 +56,14 @@ let multerMemStore = multer.memoryStorage();
         logStart: false,
         logEnd: false,
         logRequest: false,
+        disableRoutesSummary: true,
     },
     validationModelStrict: true,
     multer: {
         // see multer options
         storage: multerMemStore,
         files: 10,
-    }
+    },
 })
 export class Server extends ServerLoader {
     public $onInit(): void {

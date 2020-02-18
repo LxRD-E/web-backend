@@ -140,6 +140,10 @@ export enum transactionType {
      * Refund due to item not being available or user already owning item. Refund is half the sale price
      */
     'CurrencyPurchaseBonusItemRefund',
+    /**
+     * Purchase of advertisment
+     */
+    'PurchaseOfAdvertisment',
 }
 export interface TradeItemObject {
     catalogId: number;

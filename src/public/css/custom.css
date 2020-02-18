@@ -308,3 +308,10 @@ div.groupChangeBgOnHover:hover {
     background-color: rgb(245, 245, 245);
     cursor: pointer;
 }
+body {
+    overflow-x: hidden;
+}
+
+p.ad-alert-text {
+    color: rgba(33, 37, 41, 0.75);
+}

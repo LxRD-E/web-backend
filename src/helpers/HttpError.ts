@@ -116,6 +116,11 @@ export enum HttpErrors {
     InvalidTwoFactorCode,
     TwoStepVerificationRequired,
     TwoStepRequiredVerificationFailed,
+    NoAdvertismentAvailable,
+    InvalidAdId,
+    InvalidAdType,
+    InvalidAdTitle,
+    ModerationStatusConflict,
 };
 // @Locals('userInfo') userInfo: model.user.UserInfo,
 export const ErrorTemplate = (title: string, body: string): string => {

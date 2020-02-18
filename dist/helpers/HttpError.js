@@ -119,6 +119,11 @@ var HttpErrors;
     HttpErrors[HttpErrors["InvalidTwoFactorCode"] = 114] = "InvalidTwoFactorCode";
     HttpErrors[HttpErrors["TwoStepVerificationRequired"] = 115] = "TwoStepVerificationRequired";
     HttpErrors[HttpErrors["TwoStepRequiredVerificationFailed"] = 116] = "TwoStepRequiredVerificationFailed";
+    HttpErrors[HttpErrors["NoAdvertismentAvailable"] = 117] = "NoAdvertismentAvailable";
+    HttpErrors[HttpErrors["InvalidAdId"] = 118] = "InvalidAdId";
+    HttpErrors[HttpErrors["InvalidAdType"] = 119] = "InvalidAdType";
+    HttpErrors[HttpErrors["InvalidAdTitle"] = 120] = "InvalidAdTitle";
+    HttpErrors[HttpErrors["ModerationStatusConflict"] = 121] = "ModerationStatusConflict";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 ;
 exports.ErrorTemplate = (title, body) => {

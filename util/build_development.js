@@ -1,5 +1,7 @@
 const fs = require('fs-extra');
+const path = require('path');
 const swc = require("@swc/core");
+
 const walk = function(dir) {
     var results = [];
     var list = fs.readdirSync(dir);
@@ -30,18 +32,31 @@ const main = async () => {
             let fileData = await fs.readFile(file);
             let ouput = await swc.transform(fileData.toString(), {
                     // Some options cannot be specified in .swcrc
-                    filename: file,
                     sourceMaps: 'inline',
-        
                     // All options below can be configured via .swcrc
                     jsc: {
+                        "loose": true,
+                        target: 'gwaijgwapijwga',
                         parser: {
-                            syntax: "typescript"
+                            syntax: "typescript",
+                            decorators: true,
+                            tsx: false,
                         },
-                    transform: {}
-                    }
-                });
+                        module: {
+                            "type": "commonjs",
+                        },
+                        transform: {}
+                    },
+                }
+            );
+            console.log(ouput.code);
+            process.exit();
         }
+        copyPromises.push(processFile());
     }
-    await Promise.all([Promise.all([copyPromises,])]);
+    await Promise.all(copyPromises).catch(e => {
+        console.error(e);
+    })
 }
+
+main();

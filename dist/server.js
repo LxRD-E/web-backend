@@ -101,12 +101,13 @@ Server = __decorate([
             logStart: false,
             logEnd: false,
             logRequest: false,
+            disableRoutesSummary: true,
         },
         validationModelStrict: true,
         multer: {
             storage: multerMemStore,
             files: 10,
-        }
+        },
     })
 ], Server);
 exports.Server = Server;

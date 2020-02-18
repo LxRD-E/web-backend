@@ -9,11 +9,11 @@ const ioRedisConfig = {
     enableOfflineQueue: true,
     sentinelPassword: config.redis.pass||'',
 };
-console.log(ioRedisConfig)
-const redis = new ioRedis(ioRedisConfig);
+let redis = new ioRedis(ioRedisConfig);
 redis.on('error', (ev) => {
     console.log('IORedis Error:');
     console.log(ev);
+    redis = new ioRedis(ioRedisConfig);
 });
 
 export default redis;

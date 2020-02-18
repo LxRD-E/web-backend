@@ -191,6 +191,7 @@ exports.default = async (req, res, next, UserModel = user_1.default, ModModel = 
         }
     }
     else {
+        console.warn('[warning] sessions appear to be down');
         next();
     }
 };

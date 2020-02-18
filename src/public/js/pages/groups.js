@@ -232,6 +232,7 @@ const loadGoup = () => {
                 $('#groupJoin').show();
             }else if (perms["manage"] === 1) {
                 $('#groupManage').show();
+                $('#advertise').show();
                 $('.deletePost').show();
                 window.managegroup = true;
                 // Show create button

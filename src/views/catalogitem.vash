@@ -44,6 +44,8 @@
                                 @if (model.userInfo && model.page.userId === model.userInfo.userId || model.userInfo && model.userInfo.staff >= 1) {
                                     <br>
                                     <a role="button" class="btn btn-small btn-success" href="/catalog/@model.page.catalogId/@model.page.catalogEncodedName/edit" style="margin:0 auto;display: block;width:100%;">Edit</button>
+                                    <br>
+                                    <a role="button" class="btn btn-small btn-success" href="/ad/catalog/create/@model.page.catalogId" style="margin:0 auto;display: block;width:100%;">Advertise</button>
                                 }
                                 @if (model.userInfo && model.userInfo.staff >= 1) {
                                     <br>

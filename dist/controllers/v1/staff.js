@@ -306,6 +306,20 @@ let StaffController = class StaffController extends controller_1.default {
         const thumbnails = await this.staff.multiGetThumbnailsFromIdsIgnoreModeration(safeIds);
         return thumbnails;
     }
+    async updateAdState(userInfo, adId, moderationStatus) {
+        this.validate(userInfo, 1);
+        if (moderationStatus !== 1 && moderationStatus !== 2) {
+            throw new this.BadRequest('InvalidState');
+        }
+        let adInfo = await this.ad.getFullAdInfoById(adId);
+        await this.staff.updateAdState(adId, moderationStatus);
+        if (moderationStatus === model.catalog.moderatorStatus.Moderated) {
+            await this.notification.createMessage(adInfo.userId, 1, 'Ad "' + adInfo.title + '" has been Rejected', 'Hello,\nYour ad, "' + adInfo.title + '", has been rejected by our moderation team. Please fully review our terms of service before uploading assets so that you don\'t run into this issue again. Sorry for the inconvenience,\n\n-The Moderation Team');
+        }
+        return {
+            success: true,
+        };
+    }
     async updateItemStatus(userInfo, catalogId, moderationStatus) {
         console.log(catalogId);
         this.validate(userInfo, 1);
@@ -319,8 +333,8 @@ let StaffController = class StaffController extends controller_1.default {
             throw new this.BadRequest('InvalidCatalogIdOrState');
         }
         await this.staff.updateItemStatus(numericCatalogId, numericState);
-        if (numericState === model.catalog.moderatorStatus.Moderated) {
-            await this.notification.createMessage(itemInfo.creatorId, 1, '"' + itemInfo.catalogName + '" has been Rejected', 'Hello,\nYour item, "' + itemInfo.catalogName + '", has been rejected by our moderation team. Please fully review our terms of service before uploading assets so that you dom\'t run into this issue again. Sorry for the inconvenience,\n\n-The Moderation Team');
+        if (numericState === model.catalog.moderatorStatus.Moderated && itemInfo.creatorType === model.catalog.creatorType.User) {
+            await this.notification.createMessage(itemInfo.creatorId, 1, '"' + itemInfo.catalogName + '" has been Rejected', 'Hello,\nYour item, "' + itemInfo.catalogName + '", has been rejected by our moderation team. Please fully review our terms of service before uploading assets so that you don\'t run into this issue again. Sorry for the inconvenience,\n\n-The Moderation Team');
         }
         return {
             'success': true,
@@ -612,6 +626,17 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, String]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "multiGetThumbnails", null);
+__decorate([
+    common_1.Patch('/ad/:adId/'),
+    swagger_1.Summary('Update ad item state'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('adId', Number)),
+    __param(2, common_1.BodyParams('state', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "updateAdState", null);
 __decorate([
     common_1.Patch('/catalog/:catalogId'),
     swagger_1.Summary('Update items moderation state'),
