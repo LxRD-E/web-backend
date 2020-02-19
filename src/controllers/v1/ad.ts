@@ -67,6 +67,8 @@ export default class AdController extends controller {
             url = `/catalog/`+ad.adRedirectId+'/--';
         }else if (ad.adType === model.ad.AdType.Group) {
             url = `/groups/`+ad.adRedirectId+`/--`;
+        }else if (ad.adType === model.ad.AdType.ForumThread) {
+            url = `/forum/thread/${ad.adRedirectId}?page=1`;
         }
         // increment
         await this.ad.incrementAdClickCount(adId);
@@ -153,6 +155,14 @@ export default class AdController extends controller {
             let groupInfo = await this.group.getInfo(adRedirectId);
             // if group is locked or authenticated user is not owner, return error
             if (groupInfo.groupStatus === model.group.groupStatus.locked || groupInfo.groupOwnerUserId !== userInfo.userId) {
+                throw new this.BadRequest('InvalidPermissions');
+            }
+        // else if adtype is for a forum thread
+        }else if (adType === model.ad.AdType.ForumThread) {
+            // grab thread info
+            let threadInfo = await this.forum.getThreadById(adRedirectId);
+            // if creator of thread is not authenticated user, deny
+            if (threadInfo.userId !== userInfo.userId || threadInfo.threadDeleted !== model.forum.threadDeleted.false) {
                 throw new this.BadRequest('InvalidPermissions');
             }
         // someone probably forgot to add the new adType to this code...

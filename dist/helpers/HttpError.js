@@ -124,6 +124,7 @@ var HttpErrors;
     HttpErrors[HttpErrors["InvalidAdType"] = 119] = "InvalidAdType";
     HttpErrors[HttpErrors["InvalidAdTitle"] = 120] = "InvalidAdTitle";
     HttpErrors[HttpErrors["ModerationStatusConflict"] = 121] = "ModerationStatusConflict";
+    HttpErrors[HttpErrors["InvalidPermissions"] = 122] = "InvalidPermissions";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 ;
 exports.ErrorTemplate = (title, body) => {

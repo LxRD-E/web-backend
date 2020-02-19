@@ -547,7 +547,7 @@ class UsersDAL extends _init {
         const usernames = await query;
         usernames.forEach((user: users.UserInfo) => {
             if (user.accountStatus === users.accountStatus.deleted) {
-                user.username = "[ Deleted Account "+user.userId+"]";
+                user.username = "[Deleted"+user.userId+"]";
             }
             delete user.accountStatus;
         });

@@ -53,6 +53,15 @@ let WWWCatalogController = class WWWCatalogController extends controller_1.defau
                 groupInfo: info,
             } });
     }
+    async createThreadAd(userInfo, threadId) {
+        let info = await this.forum.getThreadById(threadId);
+        if (info.userId !== userInfo.userId || info.threadDeleted !== model.forum.threadDeleted.false) {
+            throw new this.BadRequest('InvalidThreadId');
+        }
+        return new this.WWWTemplate({ title: 'Create Thread Ad', page: {
+                threadInfo: info,
+            } });
+    }
 };
 __decorate([
     common_1.Get('/ads'),
@@ -84,6 +93,16 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number]),
     __metadata("design:returntype", Promise)
 ], WWWCatalogController.prototype, "createGroupAd", null);
+__decorate([
+    common_1.Get('/ad/thread/create/:threadId'),
+    common_1.Render('ad/thread_create'),
+    common_1.Use(Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('threadId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number]),
+    __metadata("design:returntype", Promise)
+], WWWCatalogController.prototype, "createThreadAd", null);
 WWWCatalogController = __decorate([
     common_1.Controller("/"),
     __metadata("design:paramtypes", [])

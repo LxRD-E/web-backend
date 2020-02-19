@@ -17,14 +17,14 @@ class AdDAL extends _init_1.default {
         }
         let randomAdsArr = [];
         for (const ad of randomAds) {
-            let bid = ad.bitAmount;
+            let bid = ad.bidAmount;
             let curBid = 0;
             while (curBid <= bid) {
                 randomAdsArr.push(ad);
                 curBid++;
             }
         }
-        let adChosen = _.sample(randomAds);
+        let adChosen = _.sample(randomAdsArr);
         let modelToUse = new model.ad.Advertisment();
         modelToUse.adId = adChosen.adId;
         modelToUse.imageUrl = adChosen.imageUrl;
@@ -120,7 +120,7 @@ class AdDAL extends _init_1.default {
         });
     }
     async placeBidOnAd(adId, amount) {
-        await this.knex('user_ads').update({ 'bid_amount': amount, 'updated_at': this.knexTime() }).where({ 'id': adId });
+        await this.knex('user_ads').update({ 'bid_amount': amount, 'updated_at': this.knexTime(), 'views': 0, 'clicks': 0 }).where({ 'id': adId });
         await this.knex.raw(`UPDATE user_ads SET total_bid_amount = total_bid_amount + ? WHERE user_ads.id = ?`, [amount, adId]);
     }
     async incrementAdViewCount(adId) {

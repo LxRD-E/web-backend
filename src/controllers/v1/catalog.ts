@@ -659,7 +659,8 @@ export class CatalogController extends controller {
             catalogId = await this.catalog.createUserItem(creatorId, name, description, isForSale, category, price, currency, collectible, maxSales, moderationStatus);
         }
         if (!staffMode) {
-            await this.catalog.createItemForUserInventory(userInfo.userId, catalogId);
+            // disabled so users can buy their own stuff (for whatever reason...)
+            // await this.catalog.createItemForUserInventory(userInfo.userId, catalogId);
         }
         // Upload File(s)
         if (files.obj) {

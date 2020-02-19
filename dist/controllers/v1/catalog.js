@@ -502,7 +502,6 @@ let CatalogController = class CatalogController extends controller_1.default {
             catalogId = await this.catalog.createUserItem(creatorId, name, description, isForSale, category, price, currency, collectible, maxSales, moderationStatus);
         }
         if (!staffMode) {
-            await this.catalog.createItemForUserInventory(userInfo.userId, catalogId);
         }
         if (files.obj) {
             await this.catalog.upload('obj', catalogId, files.obj);

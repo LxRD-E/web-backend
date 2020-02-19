@@ -66,4 +66,20 @@ export class WWWCatalogController extends controller {
             groupInfo: info,
         }});
     }
+
+    @Get('/ad/thread/create/:threadId')
+    @Render('ad/thread_create')
+    @Use(YesAuth)
+    public async createThreadAd(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('threadId', Number) threadId: number
+    ) {
+        let info = await this.forum.getThreadById(threadId);
+        if (info.userId !== userInfo.userId || info.threadDeleted !== model.forum.threadDeleted.false) {
+            throw new this.BadRequest('InvalidThreadId');
+        }
+        return new this.WWWTemplate({title: 'Create Thread Ad', page: {
+            threadInfo: info,
+        }});
+    }
 }

@@ -25,6 +25,7 @@ var AdType;
 (function (AdType) {
     AdType[AdType["CatalogItem"] = 1] = "CatalogItem";
     AdType[AdType["Group"] = 2] = "Group";
+    AdType[AdType["ForumThread"] = 3] = "ForumThread";
 })(AdType = exports.AdType || (exports.AdType = {}));
 var AdDisplayType;
 (function (AdDisplayType) {

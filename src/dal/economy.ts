@@ -176,6 +176,17 @@ class EconomyDAL extends _init {
     }
 
     /**
+     * Get a Group's Transactions
+     * @param userId 
+     * @param offset 
+     */
+    public async getGroupTransactions(groupId: number, offset: number): Promise<economy.GroupTransactions[]> {
+        const results = await this.knex("transactions").select("id as transactionId","userid_from as userId","amount","currency","date","type as transactionType","description","catalogid as catalogId","user_inventoryid as userInventoryId").limit(25).offset(offset).orderBy('id', 'desc').where({"userid_to":groupId,"to_type":catalog.creatorType.Group});
+        return results as economy.GroupTransactions[];
+    }
+
+
+    /**
      * Convert a Currency to another currency. All this does is return a number; it doesn't actually convert currency for the user
      * @param amount Amount of Currency
      * @param currency Currency Type

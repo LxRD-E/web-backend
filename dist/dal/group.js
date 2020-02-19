@@ -45,7 +45,7 @@ class GroupsDAL extends _init_1.default {
     async getRoleSetByRank(groupId, rank) {
         const role = await this.knex("group_roles").select("id as roleSetId", "name", "description", "groupid as groupId", "rank", "permission_get_wall as getWall", "permission_post_wall as postWall", "permission_get_shout as getShout", "permission_post_shout as postShout", "permission_manage_group as manage").where({ "groupid": groupId, "rank": rank });
         if (!role[0]) {
-            throw false;
+            throw new Error('InvalidRankOrGroupId');
         }
         return this.formatRoleset(role[0]);
     }

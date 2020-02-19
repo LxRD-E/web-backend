@@ -24,6 +24,9 @@ request('/ad/my/created-ads', 'GET')
             adForText = 'Group';
             groupIds.push(ad.adRedirectId);
             spanText = '<a href="/groups/'+ad.adRedirectId+'"/<span data-groupid="'+ad.adRedirectId+'">Loading...</span></a>';
+        }else if (ad.adType === 3) {
+            adForText = 'Forum Thread';
+            spanText = '<a href="/forum/thread/'+ad.adRedirectId+'?page=1"><span data-threadid="'+ad.adRedirectId+'">Loading...</span></a>';
         }
         let running = '<p style="font-weight:500;cursor:pointer;" class="onClickRunAd" data-id="'+ad.adId+'">Status: <span style="color:red;">Not Running</span> (click me to run)</p>';
         if (ad.bidAmount !== 0 && moment(ad.updatedAt).add(24, 'hours').isSameOrAfter(moment())) {

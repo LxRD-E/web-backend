@@ -28,14 +28,14 @@ export default class AdDAL extends _init {
         // weighted random (lol this is so bad performance wise, but I hope someone can improve it in the future :D)
         let randomAdsArr = [];
         for (const ad of randomAds) {
-            let bid = ad.bitAmount;
+            let bid = ad.bidAmount;
             let curBid = 0;
             while (curBid <= bid) {
                 randomAdsArr.push(ad);
                 curBid++;
             }
         }
-        let adChosen = _.sample(randomAds);
+        let adChosen = _.sample(randomAdsArr);
         let modelToUse = new model.ad.Advertisment();
         modelToUse.adId = adChosen.adId;
         modelToUse.imageUrl = adChosen.imageUrl;
@@ -153,7 +153,7 @@ export default class AdDAL extends _init {
 
     public async placeBidOnAd(adId: number, amount: number): Promise<void> {
         // set bid amount
-        await this.knex('user_ads').update({'bid_amount': amount, 'updated_at': this.knexTime()}).where({'id': adId});
+        await this.knex('user_ads').update({'bid_amount': amount, 'updated_at': this.knexTime(),'views':0,'clicks':0}).where({'id': adId});
         // update total bid on ad
         await this.knex.raw(`UPDATE user_ads SET total_bid_amount = total_bid_amount + ? WHERE user_ads.id = ?`, [amount, adId]);
     }

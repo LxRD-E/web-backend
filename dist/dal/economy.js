@@ -145,6 +145,10 @@ class EconomyDAL extends _init_1.default {
         const results = await this.knex("transactions").select("id as transactionId", "userid_from as userId", "amount", "currency", "date", "type as transactionType", "description", "catalogid as catalogId", "user_inventoryid as userInventoryId").limit(25).offset(offset).orderBy('id', 'desc').where({ "userid_to": userId, "to_type": catalog.creatorType.User });
         return results;
     }
+    async getGroupTransactions(groupId, offset) {
+        const results = await this.knex("transactions").select("id as transactionId", "userid_from as userId", "amount", "currency", "date", "type as transactionType", "description", "catalogid as catalogId", "user_inventoryid as userInventoryId").limit(25).offset(offset).orderBy('id', 'desc').where({ "userid_to": groupId, "to_type": catalog.creatorType.Group });
+        return results;
+    }
     async convertCurrency(amount, currency) {
         if (currency === economy.currencyType.primary) {
             const newAmt = amount / 10;

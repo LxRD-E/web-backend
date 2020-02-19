@@ -109,6 +109,30 @@ export default class EconomyController extends controller {
         return transactions;
     }
 
+    @Get('/group/:groupId/transactions')
+    @Summary('Get transaction history for the group. User must have manage permission')
+    @UseBefore(YesAuth)
+    @ReturnsArray(200, {type: model.economy.GroupTransactions})
+    @Returns(400, {type: model.Error, description: 'InvalidGroupId: GroupID is not valid\n'})
+    @Returns(409, {type: model.Error, description: 'InvalidPermissions: User is not authorized to view transaction history\n'})
+    public async getGroupTransactions(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('groupId', Number) groupId: number,
+        @QueryParams('offset', Number) offset: number = 0
+    ): Promise<model.economy.GroupTransactions[]> {
+        let data;
+        try {
+            data  = await this.group.getUserRole(groupId, userInfo.userId);
+        }catch{
+            throw new this.BadRequest('InvalidGroupId');
+        }
+        if (data.permissions.manage !== 1) {
+            throw new this.Conflict('InvalidPermissions');
+        }
+        const transactions = await this.economy.getGroupTransactions(groupId, offset);
+        return transactions;
+    }
+
     @Put('/currency/convert')
     @Summary('Convert one currency to another')
     @UseBeforeEach(csrf)

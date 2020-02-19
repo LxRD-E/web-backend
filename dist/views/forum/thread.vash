@@ -158,6 +158,7 @@
                                             @if (model.userInfo && model.userInfo.staff >= 1) {
                                                 <a class="dropdown-item editThread" data-id="@model.page.threadId" href="#">Edit Thread</a>
                                             }
+                                            <a class="dropdown-item"  href="/ad/thread/create/@model.page.threadId/">Advertise</a>
                                         </div>
                                     </div>
                                     }

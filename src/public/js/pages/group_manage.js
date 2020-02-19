@@ -395,3 +395,54 @@ $(document).on('click', '#loadLessMembers', function() {
     window.membersOffset = window.membersOffset - 12;
     loadMembers(window.curId);
 });
+let transactionsLoading = false;
+let transactionsOffset = 0;
+const loadTransactions = () => {
+    if (transactionsLoading) {
+        return;
+    }
+    transactionsLoading = true;
+    request('/economy/group/'+groupid+'/transactions?offset='+transactionsOffset.toString(), 'GET')
+    .then(d => {
+        transactionsLoading = false;
+        if (d.length === 0) {
+            return $('#group-transactions').empty().append('<p>This group has not had any transactions.</p>');
+        }
+        $('#group-transactions').append(`
+        <table class="table">
+            <thead>
+                <tr>
+                <th scope="col">#</th>
+                <th scope="col">Amount</th>
+                <th scope="col">Description</th>
+                <th scope="col">Date</th>
+                </tr>
+            </thead>
+            <tbody>
+            
+            </tbody>
+        </table>`);
+        for (const value of d) {
+            let curDisplay = formatCurrency(value.currency);
+            let description = value.description;
+            if (value.catalogId !== 0) {
+                description += ' <a href="/catalog/'+value.catalogId+'">[link]</a>';
+            }
+            $('#group-transactions').find('tbody').append('<tr> <th scope="row">'+value.transactionId+'</th><td>'+curDisplay+value.amount+'</td><td>'+description+'</td><td>'+moment(value.date).local().format('MMMM Do YYYY, h:mm a')+'</td></tr><tr>')
+        }
+        if (d.length >= 25) {
+            transactionsOffset += 25;
+            $('.loadMoreTransactionsClick').css("display", "block");
+        }else{
+            $('.loadMoreTransactionsClick').hide();
+        }
+    })
+    .catch(e => {
+
+    });
+}
+loadTransactions();
+$(document).on('click', '.loadMoreTransactionsClick', function(e) {
+    e.preventDefault();
+    loadTransactions(transactionsOffset);
+});

@@ -18,6 +18,7 @@ function supportsWebSockets() {
 wsSupported = supportsWebSockets();
 function onInitialScriptLoad() {
     var newdate = Date.now() - pageLoadBegin;
+    /*
     request("/metrics/report", "POST", JSON.stringify({
         'metricId': 1,
         'features': {
@@ -32,7 +33,7 @@ function onInitialScriptLoad() {
     .catch(function(e) {
 
     });
-
+    */
 }
 
 document.addEventListener("DOMContentLoaded", function(){

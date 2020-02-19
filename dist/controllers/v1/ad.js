@@ -60,6 +60,9 @@ let AdController = class AdController extends controller_1.default {
         else if (ad.adType === model.ad.AdType.Group) {
             url = `/groups/` + ad.adRedirectId + `/--`;
         }
+        else if (ad.adType === model.ad.AdType.ForumThread) {
+            url = `/forum/thread/${ad.adRedirectId}?page=1`;
+        }
         await this.ad.incrementAdClickCount(adId);
         res.redirect(url);
     }
@@ -116,6 +119,12 @@ let AdController = class AdController extends controller_1.default {
         else if (adType === model.ad.AdType.Group) {
             let groupInfo = await this.group.getInfo(adRedirectId);
             if (groupInfo.groupStatus === model.group.groupStatus.locked || groupInfo.groupOwnerUserId !== userInfo.userId) {
+                throw new this.BadRequest('InvalidPermissions');
+            }
+        }
+        else if (adType === model.ad.AdType.ForumThread) {
+            let threadInfo = await this.forum.getThreadById(adRedirectId);
+            if (threadInfo.userId !== userInfo.userId || threadInfo.threadDeleted !== model.forum.threadDeleted.false) {
                 throw new this.BadRequest('InvalidPermissions');
             }
         }

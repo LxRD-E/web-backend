@@ -54,6 +54,9 @@ __decorate([
     __metadata("design:type", Number)
 ], userTransactions.prototype, "userInventoryId", void 0);
 exports.userTransactions = userTransactions;
+class GroupTransactions extends userTransactions {
+}
+exports.GroupTransactions = GroupTransactions;
 class TradeInfo {
 }
 __decorate([

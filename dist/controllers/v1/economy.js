@@ -91,6 +91,20 @@ let EconomyController = class EconomyController extends controller_1.default {
         const transactions = await this.economy.getUserTransactions(userInfo.userId, offset);
         return transactions;
     }
+    async getGroupTransactions(userInfo, groupId, offset = 0) {
+        let data;
+        try {
+            data = await this.group.getUserRole(groupId, userInfo.userId);
+        }
+        catch {
+            throw new this.BadRequest('InvalidGroupId');
+        }
+        if (data.permissions.manage !== 1) {
+            throw new this.Conflict('InvalidPermissions');
+        }
+        const transactions = await this.economy.getGroupTransactions(groupId, offset);
+        return transactions;
+    }
     async convertCurrency(userInfo, originCurrency, numericAmount) {
         if (numericAmount > 100000) {
             throw new this.BadRequest('InvalidAmount');
@@ -574,6 +588,20 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number]),
     __metadata("design:returntype", Promise)
 ], EconomyController.prototype, "getTransactions", null);
+__decorate([
+    common_1.Get('/group/:groupId/transactions'),
+    swagger_1.Summary('Get transaction history for the group. User must have manage permission'),
+    common_1.UseBefore(Auth_1.YesAuth),
+    swagger_1.ReturnsArray(200, { type: model.economy.GroupTransactions }),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidGroupId: GroupID is not valid\n' }),
+    swagger_1.Returns(409, { type: model.Error, description: 'InvalidPermissions: User is not authorized to view transaction history\n' }),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('groupId', Number)),
+    __param(2, common_1.QueryParams('offset', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
+    __metadata("design:returntype", Promise)
+], EconomyController.prototype, "getGroupTransactions", null);
 __decorate([
     common_1.Put('/currency/convert'),
     swagger_1.Summary('Convert one currency to another'),

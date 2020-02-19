@@ -39,6 +39,9 @@ export class userTransactions {
     userInventoryId: number|null;
 }
 
+export class GroupTransactions extends userTransactions {
+}
+
 export class TradeInfo {
     @Required()
     tradeId: number;

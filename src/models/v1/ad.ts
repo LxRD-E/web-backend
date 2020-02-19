@@ -9,6 +9,7 @@ export enum ModerationStatus {
 export enum AdType {
     'CatalogItem' = 1,
     'Group' = 2,
+    'ForumThread' = 3,
 }
 
 export enum AdDisplayType {
