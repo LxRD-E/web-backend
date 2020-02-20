@@ -787,7 +787,7 @@ export class StaffController extends controller {
             throw new this.BadRequest('InvalidRank');
         }
         if (newRank >= userInfo.staff) {
-            throw new this.BadRequest('RankCannotBeAboveCurrentUser')
+            throw new this.BadRequest('RankCannotBeAboveCurrentUser');
         }
         let UserToRankInfo;
         try {
@@ -912,6 +912,17 @@ export class StaffController extends controller {
     ) {
         this.validate(userInfo, 1);
         let tickets = this.support.getTicketsAwaitingSupportResponse();
+        return tickets;
+    }
+
+    @Get('/support/tickets-all')
+    @Summary('Get all support tickets, excluding ones that are closed')
+    @Use(YesAuth)
+    public async getAllTickets(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+    ) {
+        this.validate(userInfo, 1);
+        let tickets = this.support.getTicketsNotClosed();
         return tickets;
     }
 

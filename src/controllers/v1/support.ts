@@ -101,6 +101,9 @@ export default class SupportController extends controller {
         if (ticketInfo.userId !== userInfo.userId) {
             throw new this.BadRequest('InvalidTicketId');
         }
+        if (ticketInfo.ticketStatus !== model.support.TicketStatus.PendingCustomerResponse) {
+            throw new this.BadRequest('TicketStatusDoesNotAllowReply');
+        }
         // update status
         await this.support.updateTicketStatus(ticketId, model.support.TicketStatus.PendingSupportResponse);
         // insert body

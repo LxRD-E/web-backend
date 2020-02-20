@@ -38,6 +38,19 @@ export default class SupportDAL extends _init {
         return tickets;
     }
 
+    public async getTicketsNotClosed(): Promise<model.support.SupportTicket[]> {
+        let tickets = await this.knex('support_tickets').select(
+            'id as ticketId',
+            'ticket_status as ticketStatus',
+            'user_id as userId',
+            'created_at as createdAt',
+            'updated_at as updatedAt',
+            'ticket_title as ticketTitle',
+            'ticket_body as ticketBody',
+        ).where('ticket_status', '!=', model.support.TicketStatus.Closed).orderBy('id','asc');
+        return tickets;
+    }
+
     public async getTicketById(ticketId: number): Promise<model.support.SupportTicket> {
         let ticket = await this.knex('support_tickets').select(
             'id as ticketId',

@@ -9,6 +9,7 @@ import xss = require('xss');
 import Config from '../../helpers/config';
 // Models
 import * as UserModel from '../../models/v1/user';
+import * as model from '../../models/models';
 import { NoAuth, YesAuth } from "../../middleware/Auth";
 import {numberWithCommas} from '../../helpers/Filter';
 
@@ -17,14 +18,6 @@ import {numberWithCommas} from '../../helpers/Filter';
 export class WWWController extends controller {
     constructor() {
         super();
-    }
-
-
-    @Get('/play')
-    public gamesPage(
-        @Res() res: Res,
-    ) {
-        res.status(503).send('<p>Coming Soon!</p>').end();
     }
 
     @Get('/discord')
@@ -100,7 +93,7 @@ export class WWWController extends controller {
         @PathParams('ticketId', Number) ticketId: number,
     ) {
         let info = await this.support.getTicketById(ticketId);
-        if (info.userId !== userInfo.userId) {
+        if (info.userId !== userInfo.userId || info.ticketStatus !== model.support.TicketStatus.PendingCustomerResponse) {
             throw new this.BadRequest('InvalidTicketId');
         }
         info['createdAt'] = moment(info['createdAt']).fromNow();

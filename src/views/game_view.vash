@@ -1,8 +1,12 @@
 @html.extend('layouts/default', function(model) {
     @html.block('content', function(model) {
-            <div class="row">
+        <div class="row">
+        <div class="col-12">
+        <div class="card">
+        <div class="card-body" style="padding-top:0.5rem;">
+            <div class="row" style="margin-top:0;">
                 <div class="col-sm-12">
-                    <h1 style="white-space:pre-wrap;padding-top: 1rem;" class="text-left">@model.page.gameInfo.gameName</h1>
+                    <h1 style="white-space:pre-wrap;margin-top:0;" class="text-left">@model.page.gameInfo.gameName</h1>
                 </div>
                 <div class="col-12 col-lg-8">
                     <img src="@model.page.ThumbnailURL" style="width:100%;height:auto;" />
@@ -42,6 +46,10 @@
                     <p><span class="formatDate" data-date="@model.page.gameInfo.updatedAt"></span></p>
                 </div>
             </div>
+        </div>
+        </div>
+        </div>
+        </div>
     })
     @html.block('js', function(model) {
         @*

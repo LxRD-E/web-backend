@@ -18,7 +18,7 @@ request('/game/search').then((d) => {
             <div class="col-12 col-md-6">
             <div class="card">
                 <a href="/game/${game.gameId}" class="hidehover">
-                    <div class="card-body">
+                    <div class="card-body" style="cursor:pointer;">
                         <div class="row">
                             <div class="col-12">
                                 <h1 style="overflow: hidden;
@@ -55,7 +55,7 @@ request('/game/search').then((d) => {
             <div class="col-6 col-md-4 col-lg-3">
                 <div class="card">
                     <a href="/game/${game.gameId}" class="hidehover">
-                        <div class="card-body">
+                        <div class="card-body" style="cursor:pointer;">
                             <div class="row">
                                 <div class="col-12">
                                     <h1 style="overflow: hidden;

@@ -122,6 +122,14 @@ export enum HttpErrors {
     InvalidAdTitle,
     ModerationStatusConflict,
     InvalidPermissions,
+    TicketStatusDoesNotAllowReply,
+    InvalidGameId,
+    InvalidGameState,
+    InvalidScriptId,
+    TooManyScripts,
+    InvalidMaxPlayers,
+    InvalidNameOrDescription,
+    TooManyGames,
 };
 // @Locals('userInfo') userInfo: model.user.UserInfo,
 export const ErrorTemplate = (title: string, body: string): string => {

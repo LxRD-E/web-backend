@@ -1,4 +1,5 @@
 import * as Catalog from './catalog';
+import { PropertyType } from '@tsed/common';
 export enum GameState {
     'public' = 1,
     'private',
@@ -15,43 +16,81 @@ export enum GameClosed {
     true = 1,
 }
 
-export interface Map {
+export class Map {
+    @PropertyType(Number)
     mapId: number;
+    @PropertyType(Number)
     gameId: number;
+    @PropertyType(Number)
     scriptUrl: string;
+    @PropertyType(String)
     createdAt: string;
+    @PropertyType(String)
     updatedAt: string;
 }
 
-export interface Script {
+export class Script {
+    @PropertyType(Number)
     scriptId: number;
+    @PropertyType(Number)
     gameId: number;
+    @PropertyType(String)
     scriptUrl: string;
+    @PropertyType(String)
     createdAt: string;
+    @PropertyType(String)
     updatedAt: string;
     scriptType: ScriptType;
+    @PropertyType(String)
     scriptName: string;
 }
 
-export interface GameInfo {
+export class GameInfo {
+    @PropertyType(Number)
     gameId: number;
+
+    @PropertyType(String)
     gameName: string;
+
+    @PropertyType(String)
     gameDescription: string;
+
+    @PropertyType(Number)
     maxPlayers: number;
+
+    @PropertyType(Number)
     iconAssetId: number;
+
+    @PropertyType(Number)
     thumbnailAssetId: number;
+
+    @PropertyType(Number)
     visitCount: number;
+
+    @PropertyType(Number)
     playerCount: number;
+
+    @PropertyType(Number)
     likeCount: number;
+
+    @PropertyType(Number)
     dislikeCount: number;
+
     gameState: GameState;
+
+    @PropertyType(Number)
     creatorId: number;
+
     creatorType: Catalog.creatorType;
+
+    @PropertyType(String)
     createdAt: string;
+    
+    @PropertyType(String)
     updatedAt: string;
 }
 
-export interface GameSearchResult {
+export class GameSearchResult {
     gameId: number;
     gameName: string;
     gameDescription: string;
@@ -62,13 +101,13 @@ export interface GameSearchResult {
     creatorType: Catalog.creatorType;
 }
 
-export interface GameServerPlayer {
+export class GameServerPlayer {
     gameServerId: number;
     userId: number;
     createdAt: string;
 }
 
-export interface GameServer {
+export class GameServer {
     gameServerId: number;
     gameId: number;
     createdAt: string;

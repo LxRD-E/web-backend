@@ -1,6 +1,7 @@
 import config from './config';
 import knexLibrary = require('knex');
 let mysqlConfig = {
+    debug: false,
     client: 'mysql',
     connection: config["mysql"],
     /**

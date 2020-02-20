@@ -60,8 +60,9 @@ class GameDAL extends _init {
         });
         const gameInfo = await this.knex('game').select(specificColumns).where({ 'game.id': id });
         if (!gameInfo[0]) {
-            throw Error('The game specified does not exist.');
+            throw new Error('The game specified does not exist.');
         }
+        console.log("Query OK. Returning gameInfo...");
         return gameInfo[0] as Game.GameInfo;
     }
 
