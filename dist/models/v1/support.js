@@ -5,6 +5,7 @@ var TicketStatus;
     TicketStatus[TicketStatus["PendingSupportResponse"] = 1] = "PendingSupportResponse";
     TicketStatus[TicketStatus["PendingCustomerResponse"] = 2] = "PendingCustomerResponse";
     TicketStatus[TicketStatus["Closed"] = 3] = "Closed";
+    TicketStatus[TicketStatus["StaffNeedMoreTimeBeforeResponse"] = 4] = "StaffNeedMoreTimeBeforeResponse";
 })(TicketStatus = exports.TicketStatus || (exports.TicketStatus = {}));
 class SupportTicket {
 }

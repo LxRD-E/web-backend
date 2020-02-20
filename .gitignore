@@ -8,3 +8,5 @@
 /src/uploads
 /dist/uploads
 /dist_module/*
+/out.log
+/err.log

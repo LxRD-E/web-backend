@@ -24,13 +24,11 @@ const controller_1 = require("../controller");
 const moment = require("moment");
 const config_1 = require("../../helpers/config");
 const UserModel = require("../../models/v1/user");
+const model = require("../../models/models");
 const Auth_1 = require("../../middleware/Auth");
 let WWWController = class WWWController extends controller_1.default {
     constructor() {
         super();
-    }
-    gamesPage(res) {
-        res.status(503).send('<p>Coming Soon!</p>').end();
     }
     redirectToDiscord() { }
     async Index(userInfo) {
@@ -74,7 +72,7 @@ let WWWController = class WWWController extends controller_1.default {
     }
     async SupportTicketReply(userInfo, ticketId) {
         let info = await this.support.getTicketById(ticketId);
-        if (info.userId !== userInfo.userId) {
+        if (info.userId !== userInfo.userId || info.ticketStatus !== model.support.TicketStatus.PendingCustomerResponse) {
             throw new this.BadRequest('InvalidTicketId');
         }
         info['createdAt'] = moment(info['createdAt']).fromNow();
@@ -109,13 +107,6 @@ let WWWController = class WWWController extends controller_1.default {
         return wwwTemp;
     }
 };
-__decorate([
-    common_1.Get('/play'),
-    __param(0, common_1.Res()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", void 0)
-], WWWController.prototype, "gamesPage", null);
 __decorate([
     common_1.Get('/discord'),
     common_1.Redirect('https://discord.gg/CAjZfcZ'),

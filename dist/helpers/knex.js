@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const config_1 = require("./config");
 const knexLibrary = require("knex");
 let mysqlConfig = {
+    debug: false,
     client: 'mysql',
     connection: config_1.default["mysql"],
     propagateCreateError: false,

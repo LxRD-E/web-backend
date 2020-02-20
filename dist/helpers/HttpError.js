@@ -125,6 +125,14 @@ var HttpErrors;
     HttpErrors[HttpErrors["InvalidAdTitle"] = 120] = "InvalidAdTitle";
     HttpErrors[HttpErrors["ModerationStatusConflict"] = 121] = "ModerationStatusConflict";
     HttpErrors[HttpErrors["InvalidPermissions"] = 122] = "InvalidPermissions";
+    HttpErrors[HttpErrors["TicketStatusDoesNotAllowReply"] = 123] = "TicketStatusDoesNotAllowReply";
+    HttpErrors[HttpErrors["InvalidGameId"] = 124] = "InvalidGameId";
+    HttpErrors[HttpErrors["InvalidGameState"] = 125] = "InvalidGameState";
+    HttpErrors[HttpErrors["InvalidScriptId"] = 126] = "InvalidScriptId";
+    HttpErrors[HttpErrors["TooManyScripts"] = 127] = "TooManyScripts";
+    HttpErrors[HttpErrors["InvalidMaxPlayers"] = 128] = "InvalidMaxPlayers";
+    HttpErrors[HttpErrors["InvalidNameOrDescription"] = 129] = "InvalidNameOrDescription";
+    HttpErrors[HttpErrors["TooManyGames"] = 130] = "TooManyGames";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 ;
 exports.ErrorTemplate = (title, body) => {

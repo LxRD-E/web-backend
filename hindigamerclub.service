@@ -18,8 +18,8 @@ Restart=always
 RestartSec=0
 RemainAfterExit=yes
 # Output to null
-StandardOutput=null
-StandardError=file:/home/beak/sites/hindigamerclub/err.log
+StandardOutput=file:/home/beak/sites/hindigamerclub/www/err.log
+StandardError=file:/home/beak/sites/hindigamerclub/www/err.log
 SyslogIdentifier=hindigamerclub
 # obviously we dont wanna be running this on root
 User=beak

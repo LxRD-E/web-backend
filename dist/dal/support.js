@@ -11,6 +11,10 @@ class SupportDAL extends _init_1.default {
         let tickets = await this.knex('support_tickets').select('id as ticketId', 'ticket_status as ticketStatus', 'user_id as userId', 'created_at as createdAt', 'updated_at as updatedAt', 'ticket_title as ticketTitle', 'ticket_body as ticketBody').where({ 'ticket_status': model.support.TicketStatus.PendingSupportResponse }).orderBy('id', 'asc');
         return tickets;
     }
+    async getTicketsNotClosed() {
+        let tickets = await this.knex('support_tickets').select('id as ticketId', 'ticket_status as ticketStatus', 'user_id as userId', 'created_at as createdAt', 'updated_at as updatedAt', 'ticket_title as ticketTitle', 'ticket_body as ticketBody').where('ticket_status', '!=', model.support.TicketStatus.Closed).orderBy('id', 'asc');
+        return tickets;
+    }
     async getTicketById(ticketId) {
         let ticket = await this.knex('support_tickets').select('id as ticketId', 'ticket_status as ticketStatus', 'user_id as userId', 'created_at as createdAt', 'updated_at as updatedAt', 'ticket_title as ticketTitle', 'ticket_body as ticketBody').where({ 'id': ticketId }).limit(1);
         if (!ticket[0]) {

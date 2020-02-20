@@ -515,6 +515,11 @@ let StaffController = class StaffController extends controller_1.default {
         let tickets = this.support.getTicketsAwaitingSupportResponse();
         return tickets;
     }
+    async getAllTickets(userInfo) {
+        this.validate(userInfo, 1);
+        let tickets = this.support.getTicketsNotClosed();
+        return tickets;
+    }
     async getRepliesToTicket(userInfo, ticketId) {
         this.validate(userInfo, 1);
         let responses = await this.support.getTicketRepliesAll(ticketId);
@@ -880,6 +885,15 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "getTickets", null);
+__decorate([
+    common_1.Get('/support/tickets-all'),
+    swagger_1.Summary('Get all support tickets, excluding ones that are closed'),
+    common_1.Use(Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "getAllTickets", null);
 __decorate([
     common_1.Get('/support/ticket/:ticketId/replies'),
     swagger_1.Summary('Get replies to ticket'),

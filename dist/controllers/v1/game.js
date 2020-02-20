@@ -1,32 +1,35 @@
-/**
- * Imports
- */
-// libraries
-import jsObfuse = require('javascript-obfuscator');
-/**
- * **warning** this library is insecure. see issue #1
- * @deprecated
- */
-import SimpleCrypto from "simple-crypto-js";
-/**
- * this is purely used for typings. please access directly from dal instead of here
- */
-import { Redis } from 'ioredis';
-import { wss } from '../../start/websockets';
-
-import config from '../../helpers/config';
-const GAME_KEY = config.encryptionKeys.game;
-// models
-import * as model from '../../models/models';
-
-const allowedDomains = [] as string[];
+"use strict";
+/* istanbul ignore next */
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+/* istanbul ignore next */
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+/* istanbul ignore next */
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+/* istanbul ignore next */
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+/* istanbul ignore next */
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const jsObfuse = require("javascript-obfuscator");
+const simple_crypto_js_1 = require("simple-crypto-js");
+const websockets_1 = require("../../start/websockets");
+const config_1 = require("../../helpers/config");
+const GAME_KEY = config_1.default.encryptionKeys.game;
+const model = require("../../models/models");
+const allowedDomains = [];
 if (process.env.NODE_ENV === 'development') {
     allowedDomains.push('http://localhost/');
-} else {
+}
+else {
     allowedDomains.push('https://hindigamer.club/', 'https://www.hindigamer.club/');
 }
-
-
 const scriptOptions = {
     transformObjectKeys: true,
     debugProtection: true,
@@ -36,67 +39,31 @@ const scriptOptions = {
     rotateStringArray: true,
     selfDefending: true,
     stringArray: true,
-    stringArrayEncoding: 'rc4' as any, // eslint-disable-line
+    stringArrayEncoding: 'rc4',
     stringArrayThreshold: 1,
-
-    // these break stuff for some reason ... not really important anyway though (except the domainlock part ;-;)
-
-    // disableConsoleOutput: true,
-    // domainLock: allowedDomains,
 };
-import controller from '../controller';
-import { QueryParams, Get, Controller, PathParams, Use, Locals, Res, Post, BodyParams, Patch, Delete } from '@tsed/common';
-import { Summary, ReturnsArray, Returns } from '@tsed/swagger';
-import { YesAuth } from '../../middleware/Auth';
-import { csrf } from '../../dal/auth';
-/**
- * Game Controller
- */
-@Controller('/game')
-export default class GameController extends controller {
-
-    /**
-     * Search Games
-     * @param offset 
-     * @param limit 
-     * @param sort 
-     */
-    @Get('/search')
-    @Summary('Get all games')
-    @ReturnsArray(200, {type: model.game.GameSearchResult})
-    public async getGames(
-        @QueryParams('offset', Number) offset: number = 0, 
-        @QueryParams('limit', Number) limit: number = 25, 
-        @QueryParams('sort', String) sort: 'asc' | 'desc' = 'asc'
-    ) {
+const controller_1 = require("../controller");
+const common_1 = require("@tsed/common");
+const swagger_1 = require("@tsed/swagger");
+const Auth_1 = require("../../middleware/Auth");
+const auth_1 = require("../../dal/auth");
+let GameController = class GameController extends controller_1.default {
+    async getGames(offset = 0, limit = 25, sort = 'asc') {
         const games = await this.game.getGames(offset, limit, sort);
         return games;
     }
-
-    /**
-     * Get the Map of a Game ID
-     * @param gameId 
-     */
-    @Get('/:gameId/map')
-    @Summary('Get the map of a {gameId}. Authentication required')
-    @Returns(200, {type: String})
-    @Use(YesAuth)
-    public async getMap(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('gameId', Number) gameId: number
-    ) {
-        // Confirm Exists
+    async getMap(userInfo, gameId) {
         let gameInfo;
         try {
             gameInfo = await this.game.getInfo(gameId);
-        } catch (e) {
+        }
+        catch (e) {
             console.log(e);
             throw new this.BadRequest('InvalidGameId');
         }
         if (gameInfo.gameState !== model.game.GameState.public) {
             throw new this.Conflict('InvalidGameState');
         }
-        // Game Exists, so grab map/content
         const map = await this.game.getGameMap(gameId);
         const mapContent = await this.game.getMapContent(map.scriptUrl);
         const script = jsObfuse.obfuscate(`
@@ -108,31 +75,20 @@ export default class GameController extends controller {
                 // End Script
             })();
             `, scriptOptions);
-        return new SimpleCrypto(GAME_KEY).encrypt(script.getObfuscatedCode());
+        return new simple_crypto_js_1.default(GAME_KEY).encrypt(script.getObfuscatedCode());
     }
-
-    /**
-     * Get the Map of a Game ID
-     * @param gameId 
-     */
-    @Get('/:gameId/scripts')
-    @Summary('Get a game\'s client scripts.')
-    @Use(YesAuth)
-    public async getClientScripts(
-        @PathParams('gameId', Number) gameId: number
-    ): Promise<string> {
-        // Confirm Exists
+    async getClientScripts(gameId) {
         let gameInfo;
         try {
             gameInfo = await this.game.getInfo(gameId);
-        } catch (e) {
-            console.error('error grabbing game info: '+e);
+        }
+        catch (e) {
+            console.error('error grabbing game info: ' + e);
             throw new this.BadRequest('InvalidGameId');
         }
         if (gameInfo.gameState !== model.game.GameState.public) {
             throw new this.Conflict('InvalidGameState');
         }
-        // Game Exists, so grab map/content
         const scripts = await this.game.getGameScripts(gameId, model.game.ScriptType.client);
         let scriptString = '';
         for (const script of scripts) {
@@ -148,19 +104,9 @@ export default class GameController extends controller {
                 // End Script
             })();
             `, scriptOptions);
-        return new SimpleCrypto(GAME_KEY).encrypt(script.getObfuscatedCode());
+        return new simple_crypto_js_1.default(GAME_KEY).encrypt(script.getObfuscatedCode());
     }
-
-    /**
-     * Get Primary Client Script
-     */
-    @Get('/client.js')
-    @Summary('Get the primary game client.js')
-    @Use(YesAuth)
-    public async getClientScript(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @Res() res: Res,
-    ) {
+    async getClientScript(userInfo, res) {
         const script = jsObfuse.obfuscate(`
         /**
         * Game Data
@@ -349,49 +295,30 @@ export default class GameController extends controller {
                 engine.resize();
             });
         });`, scriptOptions);
-        res.set({'content-type': 'application/javascript'});
+        res.set({ 'content-type': 'application/javascript' });
         res.send(script.getObfuscatedCode());
     }
-
-    /**
-     * Create a Game
-     */
-    @Post('/create')
-    @Use(csrf, YesAuth)
-    @Summary('Create a game')
-    @Returns(409, {type: model.Error, description: 'InvalidPermissions: User must be staff rank 1 or higher\n'})
-    @Returns(400, {type: model.Error, description: 'TooManyGames User has created 5 games already\nInvalidNameOrDescription: Name must be between 1 and 32 characters; description must be less than 512 characters\n'})
-    @Use(csrf, YesAuth)
-    public async createGame(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @BodyParams('name', String) gameName: string, 
-        @BodyParams('description', String) gameDescription: string
-    ) {
-        // Verify has perms
+    async createGame(userInfo, gameName, gameDescription) {
         const info = await this.user.getInfo(userInfo.userId, ['staff']);
         if (info.staff >= 1 !== true) {
             throw new this.Conflict('InvalidPermissions');
         }
         const games = await this.game.countGames(userInfo.userId, model.catalog.creatorType.User);
         if (games >= 5) {
-            // Too many places
             throw new this.BadRequest('TooManyGames');
         }
         if (gameName.length >= 32 || gameName.length < 1 || gameDescription.length >= 512) {
             throw new this.BadRequest('InvalidNameOrDescription');
         }
-        // Create
         const gameId = await this.game.create(userInfo.userId, model.catalog.creatorType.User, gameName, gameDescription);
         return {
             success: true,
             gameId: gameId,
         };
     }
-
-    private async verifyOwnership(userInfo: model.user.UserInfo, gameId: number): Promise<model.game.GameInfo> {
+    async verifyOwnership(userInfo, gameId) {
         const gameInfo = await this.game.getInfo(gameId);
         if (gameInfo.creatorType === 1) {
-            // temporary
             throw new Error('Game is not of valid creator type');
         }
         if (gameInfo.creatorType === 0 && gameInfo.creatorId !== userInfo.userId) {
@@ -399,21 +326,7 @@ export default class GameController extends controller {
         }
         return gameInfo;
     }
-
-    /**
-     * Update a Game
-     */
-    @Patch('/:gameId')
-    @Summary('Update a game')
-    @Returns(400, {type: model.Error,description: 'InvalidNameOrDescription: Name must be between 1 and 32 characters; description can be at most 512 characters\nInvalidMaxPlayers: Must be between 1 and 10\n'})
-    @Use(csrf, YesAuth)
-    public async updateGame(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('gameId', Number) gameId: number, 
-        @BodyParams('name', String) gameName: string, 
-        @BodyParams('description', String) gameDescription: string, 
-        @BodyParams('maxPlayers', Number) maxPlayers: number
-    ): Promise<{ success: true }> {
+    async updateGame(userInfo, gameId, gameName, gameDescription, maxPlayers) {
         await this.verifyOwnership(userInfo, gameId);
         if (gameName.length >= 32 || gameName.length < 1 || gameDescription.length >= 512) {
             throw new this.BadRequest('InvalidNameOrDescription');
@@ -421,243 +334,249 @@ export default class GameController extends controller {
         if (maxPlayers < 1 || maxPlayers > 10) {
             throw new this.BadRequest('InvalidMaxPlayers');
         }
-        // Update
         await this.game.updateGameInfo(gameId, gameName, gameDescription, maxPlayers);
-        // OK
         return {
             success: true,
         };
     }
-
-    /**
-     * Update a Map Script
-     * @param gameId 
-     * @param newScriptContent 
-     */
-    @Patch('/:gameId/map')
-    @Summary('Update the map script of a {gameId}')
-    @Use(csrf, YesAuth)
-    public async updateMapScript(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('gameId', Number) gameId: number, 
-        @BodyParams('script', String) newScriptContent: string
-    ) {
-        // Verify Ownership
+    async updateMapScript(userInfo, gameId, newScriptContent) {
         const gameInfo = await this.verifyOwnership(userInfo, gameId);
-        // Grab Map Script
         const scriptName = await this.game.getGameMap(gameId);
-        // Upload It
         await this.game.uploadMap(newScriptContent, scriptName.scriptUrl);
-        // OK
         return {
             success: true,
         };
     }
-
-    /**
-     * Delete a Game's Script
-     * @param gameId 
-     * @param scriptId 
-     */
-    @Delete('/:gameId/script/:scriptId')
-    @Summary('Delete a game script')
-    @Use(csrf, YesAuth)
-    public async deleteScript(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('gameId', Number) gameId: number, 
-        @PathParams('scriptId', Number) scriptId: number
-    ): Promise<{ success: true }> {
-        // Verify Ownership
+    async deleteScript(userInfo, gameId, scriptId) {
         const gameInfo = await this.verifyOwnership(userInfo, gameId);
         const scriptInfo = await this.game.getGameScript(scriptId);
         if (!scriptInfo || scriptInfo.gameId !== gameInfo.gameId) {
             throw new this.BadRequest('InvalidScriptId');
         }
-        // Delete From DB
         await this.game.deleteGameScript(scriptId);
-        // Delete Actual File
         await this.game.deleteScript(scriptInfo.scriptUrl);
-        // Return OK
         return {
             success: true,
         };
     }
-
-    /**
-     * Create a Client Script
-     * @param gameId 
-     * @param scriptContent 
-     */
-    @Post('/:gameId/script/client')
-    @Summary('Create a client script')
-    @Use(csrf, YesAuth)
-    public async createClientScript(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('gameId', Number) gameId: number, 
-        @BodyParams('script', String) scriptContent: string
-    ): Promise<{ success: true }> {
-        // Verify Ownership
+    async createClientScript(userInfo, gameId, scriptContent) {
         const gameInfo = await this.verifyOwnership(userInfo, gameId);
         const existingScripts = await this.game.getGameScripts(gameId, model.game.ScriptType.client);
         if (existingScripts.length >= 10) {
             throw new this.BadRequest('TooManyScripts');
         }
-        // Add Content
         const scriptUrl = await this.game.uploadScript(scriptContent);
-        // Add to DB
         const scriptId = await this.game.createScript(gameId, model.game.ScriptType.client, scriptUrl);
-        // Ok
         return {
             success: true,
         };
     }
-
-    /**
-     * Create a Server Script
-     * @param gameId 
-     * @param scriptContent 
-     */
-    @Post('/:gameId/script/server')
-    @Summary('Create a server script')
-    @Use(csrf, YesAuth)
-    public async createServerScript(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('gameId', Number) gameId: number, 
-        @BodyParams('script', String) scriptContent: string
-    ): Promise<{ success: true }> {
-        // Verify Ownership
+    async createServerScript(userInfo, gameId, scriptContent) {
         const gameInfo = await this.verifyOwnership(userInfo, gameId);
         const existingScripts = await this.game.getAllGameScripts(gameId);
         if (existingScripts.length >= 10) {
             throw new this.BadRequest('TooManyScripts');
         }
-        // Add Content
         const scriptUrl = await this.game.uploadScript(scriptContent);
-        // Add to DB
         const scriptId = await this.game.createScript(gameId, model.game.ScriptType.server, scriptUrl);
-        // Ok
         return {
             success: true,
         };
     }
-
-    /**
-     * Update a Script Content
-     * @param gameId 
-     * @param scriptContent 
-     * @param scriptId 
-     */
-    @Patch('/:gameId/script/:scriptId')
-    @Summary('Update a script')
-    @Use(csrf, YesAuth)
-    public async updateScriptContent(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('gameId', Number) gameId: number, 
-        @BodyParams('script', String) scriptContent: string, 
-        @PathParams('scriptId', Number) scriptId: number
-    ): Promise<{ success: true }> {
-        // Verify Ownership
+    async updateScriptContent(userInfo, gameId, scriptContent, scriptId) {
         const gameInfo = await this.verifyOwnership(userInfo, gameId);
         const scriptInfo = await this.game.getGameScript(scriptId);
         if (!scriptInfo || scriptInfo.gameId !== gameInfo.gameId) {
             throw new Error('InvalidScriptId');
         }
-        // Update
         await this.game.uploadScript(scriptContent, scriptInfo.scriptUrl);
-        // OK
         return {
             success: true,
         };
     }
-
-    /**
-     * Join a Game
-     * @param gameId 
-     */
-    @Post('/:gameId/join')
-    @Summary('Join a game')
-    @Returns( 400, {type: model.Error, description: 'InvalidGameState: Game state does not allow joining\n'})
-    public async requestGameJoin(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('gameId', Number) gameId: number
-    ): Promise<{ success: true; serverId: number }> {
-        //  Check if game is valid
+    async requestGameJoin(userInfo, gameId) {
         const gameInfo = await this.game.getInfo(gameId, ['maxPlayers', 'gameState']);
         if (gameInfo.gameState !== model.game.GameState.public) {
             throw new this.BadRequest('InvalidGameState');
         }
         let gameServerId;
-        // Kick out of existing game (if any)
-        await this.game.leaveServer(userInfo.userId).catch((e) => { console.error(e) })
-        // Grab Servers
+        await this.game.leaveServer(userInfo.userId).catch((e) => { console.error(e); });
         const servers = await this.game.getOpenServersForGame(gameId, gameInfo.maxPlayers);
         if (servers.length === 0) {
-            // No servers, so create one
             gameServerId = await this.game.createGameServer(gameId);
-        } else {
+        }
+        else {
             const serverToJoin = servers[0];
-            // Return
             gameServerId = serverToJoin.gameServerId;
         }
-        // Join the Server
         await this.game.joinServer(userInfo.userId, gameServerId);
-        // Increment Visit Count
         await this.game.incrementVisitCount(gameId);
-        // Return Info
         return {
             success: true,
             serverId: gameServerId,
         };
     }
-
-    /**
-     * Grab Server Events Listener
-     * @param gameServerId 
-     */
-    public async listenForServerEvents(
-        gameServerId: number
-    ): Promise<Redis> {
+    async listenForServerEvents(gameServerId) {
         const listener = await this.game.listenForServerEvents(gameServerId);
         return listener;
     }
-
-    /**
-     * Leave all games
-     */
-    public async leaveAllGames(
-       userInfo: model.user.UserInfo,
-    ): Promise<{ success: true }> {
-        // Kick out of existing game (if any)
-        await this.game.leaveServer(userInfo.userId).catch((e) => { })
-        // OK
+    async leaveAllGames(userInfo) {
+        await this.game.leaveServer(userInfo.userId).catch((e) => { });
         return {
             success: true,
         };
     }
-}
-
-
-/**
- * yeah this is really fucking ugly but till someone has a better idea, its goin' here
- * -beak
- */
-/**
- * WSS Route
- */
-wss.on('connection', async function connection(ws, req: any) {
+};
+__decorate([
+    common_1.Get('/search'),
+    swagger_1.Summary('Get all games'),
+    swagger_1.ReturnsArray(200, { type: model.game.GameSearchResult }),
+    __param(0, common_1.QueryParams('offset', Number)),
+    __param(1, common_1.QueryParams('limit', Number)),
+    __param(2, common_1.QueryParams('sort', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, String]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "getGames", null);
+__decorate([
+    common_1.Get('/:gameId/map'),
+    swagger_1.Summary('Get the map of a {gameId}. Authentication required'),
+    swagger_1.Returns(200, { type: String }),
+    common_1.Use(Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('gameId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "getMap", null);
+__decorate([
+    common_1.Get('/:gameId/scripts'),
+    swagger_1.Summary('Get a game\'s client scripts.'),
+    common_1.Use(Auth_1.YesAuth),
+    __param(0, common_1.PathParams('gameId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "getClientScripts", null);
+__decorate([
+    common_1.Get('/client.js'),
+    swagger_1.Summary('Get the primary game client.js'),
+    common_1.Use(Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Res()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Object]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "getClientScript", null);
+__decorate([
+    common_1.Post('/create'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    swagger_1.Summary('Create a game'),
+    swagger_1.Returns(409, { type: model.Error, description: 'InvalidPermissions: User must be staff rank 1 or higher\n' }),
+    swagger_1.Returns(400, { type: model.Error, description: 'TooManyGames User has created 5 games already\nInvalidNameOrDescription: Name must be between 1 and 32 characters; description must be less than 512 characters\n' }),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.BodyParams('name', String)),
+    __param(2, common_1.BodyParams('description', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, String, String]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "createGame", null);
+__decorate([
+    common_1.Patch('/:gameId'),
+    swagger_1.Summary('Update a game'),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidNameOrDescription: Name must be between 1 and 32 characters; description can be at most 512 characters\nInvalidMaxPlayers: Must be between 1 and 10\n' }),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('gameId', Number)),
+    __param(2, common_1.BodyParams('name', String)),
+    __param(3, common_1.BodyParams('description', String)),
+    __param(4, common_1.BodyParams('maxPlayers', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String, String, Number]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "updateGame", null);
+__decorate([
+    common_1.Patch('/:gameId/map'),
+    swagger_1.Summary('Update the map script of a {gameId}'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('gameId', Number)),
+    __param(2, common_1.BodyParams('script', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "updateMapScript", null);
+__decorate([
+    common_1.Delete('/:gameId/script/:scriptId'),
+    swagger_1.Summary('Delete a game script'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('gameId', Number)),
+    __param(2, common_1.PathParams('scriptId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "deleteScript", null);
+__decorate([
+    common_1.Post('/:gameId/script/client'),
+    swagger_1.Summary('Create a client script'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('gameId', Number)),
+    __param(2, common_1.BodyParams('script', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "createClientScript", null);
+__decorate([
+    common_1.Post('/:gameId/script/server'),
+    swagger_1.Summary('Create a server script'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('gameId', Number)),
+    __param(2, common_1.BodyParams('script', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "createServerScript", null);
+__decorate([
+    common_1.Patch('/:gameId/script/:scriptId'),
+    swagger_1.Summary('Update a script'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('gameId', Number)),
+    __param(2, common_1.BodyParams('script', String)),
+    __param(3, common_1.PathParams('scriptId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String, Number]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "updateScriptContent", null);
+__decorate([
+    common_1.Post('/:gameId/join'),
+    swagger_1.Summary('Join a game'),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidGameState: Game state does not allow joining\n' }),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('gameId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "requestGameJoin", null);
+GameController = __decorate([
+    common_1.Controller('/game')
+], GameController);
+exports.default = GameController;
+websockets_1.wss.on('connection', async function connection(ws, req) {
     if (req.url !== '/game-sockets/websocket.aspx') {
-        // someone elses job
         return;
-    } 
+    }
     console.log('connection started');
-    // If no session, close
     const sess = req.session;
     if (!sess) {
         console.log('no session');
         ws.close();
         return;
     }
-    // Setup Listener
     const context = {
         'UserInfo': {
             'userId': sess.userdata.id,
@@ -671,45 +590,40 @@ wss.on('connection', async function connection(ws, req: any) {
         },
     };
     let listenerSetup = false;
-    let listener: Redis;
-    const setupListenForGameServerEvents = async (serverId: number): Promise<void> => {
+    let listener;
+    const setupListenForGameServerEvents = async (serverId) => {
         if (listenerSetup === true) {
-            ws.close(); // Double connection issue;
+            ws.close();
             return;
         }
         listenerSetup = true;
-        // Setup Listener
         listener = await new GameController().listenForServerEvents(serverId);
-        // Pub events to client
-        listener.on('message', (channel, message): void => {
+        listener.on('message', (channel, message) => {
             ws.send(message);
         });
-    }
+    };
     ws.on('close', async () => {
         console.log('Ws Closed');
-        // Disconnect
-        await new GameController().leaveAllGames(context.UserInfo as any);
+        await new GameController().leaveAllGames(context.UserInfo);
         if (listener) {
             listener.disconnect();
         }
     });
-    // On message
-    ws.on('message', async function incoming(ev: string) {
+    ws.on('message', async function incoming(ev) {
         console.log('ws messaged recieved');
         let data;
         try {
             data = JSON.parse(ev);
-        }catch{
-            // Error parsing data. Ignore for now...
+        }
+        catch {
             return;
         }
         if (data.cmd && data.cmd === 'join') {
             const id = data.gameId;
-            const serverId = await new GameController().requestGameJoin(context.UserInfo as any, id);
-            // Send ID
+            const serverId = await new GameController().requestGameJoin(context.UserInfo, id);
             ws.send(JSON.stringify(serverId));
-            // Setup Listener for Events
             setupListenForGameServerEvents(serverId.serverId);
         }
     });
 });
+

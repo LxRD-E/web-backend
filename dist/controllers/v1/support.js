@@ -70,6 +70,9 @@ let SupportController = class SupportController extends controller_1.default {
         if (ticketInfo.userId !== userInfo.userId) {
             throw new this.BadRequest('InvalidTicketId');
         }
+        if (ticketInfo.ticketStatus !== model.support.TicketStatus.PendingCustomerResponse) {
+            throw new this.BadRequest('TicketStatusDoesNotAllowReply');
+        }
         await this.support.updateTicketStatus(ticketId, model.support.TicketStatus.PendingSupportResponse);
         await this.support.replyToTicket(ticketId, userInfo.userId, body);
         return {
