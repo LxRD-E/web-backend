@@ -17,13 +17,18 @@ Restart=always
 # Restart service after 0 seconds if service crashes
 RestartSec=0
 RemainAfterExit=yes
-# Output to null
-StandardOutput=file:/home/beak/sites/hindigamerclub/www/err.log
+# Output to custom log files
+StandardOutput=file:/home/beak/sites/hindigamerclub/www/out.log
 StandardError=file:/home/beak/sites/hindigamerclub/www/err.log
 SyslogIdentifier=hindigamerclub
 # obviously we dont wanna be running this on root
 User=beak
 #Group=<alternate group>
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!! CONFIG SETUP REQUIRED !!!
+# MAKE SURE TO SET SECRET_ENCRYPTION_KEY AND SECRET_ENCRYPTION_IV ENVIRONMENTAL VARIABLES
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Environment=NODE_ENV=production PORT=3000
 
 [Install]

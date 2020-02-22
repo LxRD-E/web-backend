@@ -166,6 +166,7 @@ String.prototype.escapeAllowFormatting = function () {
             li: [],
             ol: [],
             code: [],
+            pre: [],
         }
     }
     var html = filterXSS(this, options);

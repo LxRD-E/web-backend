@@ -9,7 +9,7 @@ import * as Thumbnails from '../models/v1/thumnails';
 // Libs
 import Config from '../helpers/config';
 // AUTH-Stuff
-import {encrypt, decrypt} from './auth'
+import {encrypt, decrypt, encryptPasswordHash, decryptPasswordHash} from './auth'
 // Init
 import _init from './_init';
 import * as model from '../models/models';
@@ -266,9 +266,9 @@ class UsersDAL extends _init {
         const password = await this.knex('users').select('password').where({'users.id': userId });
         if (!password[0]) {
             // User doesn't exist
-            throw false;
+            throw new Error('InvalidUserId');
         }
-        const decryptedPassword = await decrypt(password[0]["password"], passwordEncryptionKey);
+        const decryptedPassword = await decryptPasswordHash(password[0]["password"]);
         return decryptedPassword as string;
     }
 
@@ -325,7 +325,7 @@ class UsersDAL extends _init {
      */
     public async createUser(username: string, hashedPassword: string, birthdate: string): Promise<number> {
         const date = this.moment().format('YYYY-MM-DD HH:mm:ss');
-        const encryptedHash = await encrypt(hashedPassword, passwordEncryptionKey);
+        const encryptedHash = await encryptPasswordHash(hashedPassword);
         const insert = await this.knex('users').insert({
             'username': username,
             'password': encryptedHash,
@@ -867,7 +867,7 @@ class UsersDAL extends _init {
      * @param newPasswordHash 
      */
     public async updatePassword(userId: number, newPasswordHash: string): Promise<void> {
-        const encryptedPasswordHash = encrypt(newPasswordHash, passwordEncryptionKey);
+        const encryptedPasswordHash = encryptPasswordHash(newPasswordHash);
         await this.knex('users').update({
             'password': encryptedPasswordHash,
         }).where({'id': userId});
@@ -885,7 +885,7 @@ class UsersDAL extends _init {
             "date_created as dateCreated",
         ).where({'code': code});
         if (!info[0]) {
-            throw false;
+            throw new Error('InvalidCode');
         }
         return info[0];
     }

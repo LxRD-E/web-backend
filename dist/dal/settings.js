@@ -11,16 +11,26 @@ class SettingsDAL extends _init_1.default {
         if (!bodyHTML) {
             bodyHTML = bodyText;
         }
-        const conf = {
-            user: config_1.default.email.user,
-            pass: config_1.default.email.pass,
-            to: recipient,
-            subject: subject,
-            text: bodyText,
-            html: bodyHTML,
-        };
-        const send = require('gmail-send')(conf);
-        await send();
+        const mailjet = require('node-mailjet').connect(config_1.default.mailJet.public, config_1.default.mailJet.private);
+        const request = await mailjet.post("send", { 'version': 'v3.1' }).request({
+            "Messages": [
+                {
+                    "From": {
+                        "Email": "support@hindigamer.club",
+                        "Name": "Hindi Gamer Club"
+                    },
+                    "To": [
+                        {
+                            "Email": recipient,
+                        }
+                    ],
+                    "Subject": subject,
+                    "TextPart": bodyText,
+                    "HTMLPart": bodyHTML
+                }
+            ]
+        });
+        console.log(request);
     }
     async insertNewEmail(userId, newEmail, emaiLVerificationCode) {
         const encryptedEmail = await auth_1.encrypt(newEmail, emailEncryptionKey);
@@ -52,7 +62,7 @@ class SettingsDAL extends _init_1.default {
         await this.knex("user_emails").where({ "userid": userId }).orderBy("id", "desc").limit(1).update({ "status": model.user.emailVerificationType.true });
     }
     async updateUserPassword(userId, newHash, newPasswordCount) {
-        const encryptedHash = await auth_1.encrypt(newHash, passwordEncryptionKey);
+        const encryptedHash = await auth_1.encryptPasswordHash(newHash);
         await this.knex("users").update({ "password_changed": newPasswordCount }).update("password", encryptedHash).where({ "id": userId }).limit(1);
     }
     async updateBlurb(userId, blurb) {

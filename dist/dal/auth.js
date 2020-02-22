@@ -171,9 +171,12 @@ exports.isAuthenticated = async (req) => {
         throw false;
     }
 };
-exports.encrypt = (text, key) => {
-    const iv = '0'.repeat(32);
-    const cipher = Crypto.createCipheriv('aes-256-cbc', key, Buffer.from(iv, 'hex'));
+exports.encrypt = (text, key, iv) => {
+    if (!iv) {
+        console.warn('[warning] no iv specified for auth.encrypt(), using default of NULL');
+        iv = Buffer.from('0'.repeat(32), 'hex');
+    }
+    const cipher = Crypto.createCipheriv('aes-256-cbc', key, iv);
     let encrypted = cipher.update(text);
     encrypted = Buffer.concat([
         encrypted,
@@ -181,15 +184,36 @@ exports.encrypt = (text, key) => {
     ]);
     return encrypted.toString('hex');
 };
-exports.decrypt = (encryptedString, key) => {
-    const iv = '0'.repeat(32);
-    const decipher = Crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(iv, 'hex'));
+exports.decrypt = (encryptedString, key, iv) => {
+    if (typeof iv !== 'string' && typeof iv !== 'object') {
+        console.warn('[warning] no iv specified for auth.decrypt(), using default of NULL');
+        iv = Buffer.from('0'.repeat(32), 'hex');
+    }
+    const decipher = Crypto.createDecipheriv('aes-256-cbc', key, iv);
     let decrypted = decipher.update(Buffer.from(encryptedString, 'hex'));
     decrypted = Buffer.concat([
         decrypted,
         decipher.final(),
     ]);
     return decrypted.toString();
+};
+exports.encryptPasswordHash = (passwordHash) => {
+    const PASSWORD_ENCRYPTION_KEY = config_1.default.encryptionKeys.password;
+    let ivForPassword = Crypto.randomBytes(16);
+    let result = exports.encrypt(passwordHash, PASSWORD_ENCRYPTION_KEY, ivForPassword);
+    let response = JSON.stringify([
+        result,
+        ivForPassword.toString('hex'),
+    ]);
+    return response;
+};
+exports.decryptPasswordHash = (passwordHash) => {
+    const PASSWORD_ENCRYPTION_KEY = config_1.default.encryptionKeys.password;
+    let decoded = JSON.parse(passwordHash);
+    let passString = decoded[0];
+    let passIv = Buffer.from(decoded[1], 'hex');
+    let result = exports.decrypt(passString, PASSWORD_ENCRYPTION_KEY, passIv);
+    return result;
 };
 exports.generateTOTPSecret = () => {
     return new Promise((res, rej) => {

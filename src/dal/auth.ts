@@ -194,13 +194,18 @@ export const isAuthenticated = async(req: Request): Promise<SessionOfLoggedInUse
     }
 }
 /**
- * Encrypt a string
+ * Encrypt a string. Not specifying an IV is deprecated and will be removed once we revise all database stuff
  * @param text 
  * @param key 
  */
-export const encrypt = (text: string, key: string): string => {
-    const iv = '0'.repeat(32);
-    const cipher = Crypto.createCipheriv('aes-256-cbc', key, Buffer.from(iv, 'hex'));
+export const encrypt = (text: string, key: string, iv?: Buffer|string): string => {
+    // for legacy purposes
+    // todo: remove
+    if (!iv) {
+        console.warn('[warning] no iv specified for auth.encrypt(), using default of NULL');
+        iv = Buffer.from('0'.repeat(32), 'hex');
+    }
+    const cipher = Crypto.createCipheriv('aes-256-cbc', key, iv);
     let encrypted = cipher.update(text);
     encrypted = Buffer.concat([
         encrypted,
@@ -208,20 +213,53 @@ export const encrypt = (text: string, key: string): string => {
     ]);
     return encrypted.toString('hex');
 }
+
 /**
- * Decrypt a string
+ * Decrypt a string. Not specifying an IV is deprecated and will be removed once we revise all database stuff
  * @param encryptedString 
  * @param key 
  */
-export const decrypt = (encryptedString: string, key: string): string => {
-    const iv = '0'.repeat(32);
-    const decipher = Crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(iv, 'hex'));
+export const decrypt = (encryptedString: string, key: string, iv?: Buffer|string): string => {
+    // for legacy purposes
+    // todo: remove
+    if (typeof iv !== 'string' && typeof iv !== 'object') {
+        console.warn('[warning] no iv specified for auth.decrypt(), using default of NULL');
+        iv = Buffer.from('0'.repeat(32), 'hex');
+    }
+    const decipher = Crypto.createDecipheriv('aes-256-cbc', key, iv);
     let decrypted = decipher.update(Buffer.from(encryptedString, 'hex'));
     decrypted = Buffer.concat([
         decrypted,
         decipher.final(),
     ]);
     return decrypted.toString();
+}
+
+/**
+ * special function for encrypting password hashes
+ * @param passwordHash 
+ */
+export const encryptPasswordHash = (passwordHash: string): string => {
+    const PASSWORD_ENCRYPTION_KEY = config.encryptionKeys.password;
+    let ivForPassword = Crypto.randomBytes(16);
+    let result = encrypt(passwordHash, PASSWORD_ENCRYPTION_KEY, ivForPassword);
+    let response = JSON.stringify([
+        result,
+        ivForPassword.toString('hex'),
+    ]);
+    return response;
+}
+/**
+ * special function for de-crypting password hashes
+ * @param encryptedString 
+ */
+export const decryptPasswordHash = (passwordHash: string): string => {
+    const PASSWORD_ENCRYPTION_KEY = config.encryptionKeys.password;
+    let decoded = JSON.parse(passwordHash);
+    let passString = decoded[0];
+    let passIv = Buffer.from(decoded[1], 'hex');
+    let result = decrypt(passString, PASSWORD_ENCRYPTION_KEY, passIv);
+    return result;
 }
 
 export const generateTOTPSecret = () => {

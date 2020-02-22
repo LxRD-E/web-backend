@@ -96,7 +96,9 @@ let SettingsController = class SettingsController extends controller_1.default {
         });
         await this.settings.insertNewEmail(userInfo.userId, newEmail, emailToken);
         try {
-            this.settings.sendEmail(newEmail, "Email Verification", "Thank you for adding a new email to your account. Visit this link to verify it: https://hindigamer.club/email/verify?code=" + emailToken, "<h5>Hello,</h5><p>Thank you for adding a new email to your account. Please click <a href=\"https://hindigamer.club/email/verify?code=" + emailToken + "\">here</a> to verify it.<br>Thanks!</p>").then().catch();
+            this.settings.sendEmail(newEmail, "Email Verification", "Thank you for adding a new email to your account. Visit this link to verify it: https://hindigamer.club/email/verify?code=" + emailToken, "<h5>Hello,</h5><p>Thank you for adding a new email to your account. Please click <a href=\"https://hindigamer.club/email/verify?code=" + emailToken + "\">here</a> to verify it. If you did not request this, you can ignore this email.<br>Thanks!</p>").then().catch(e => {
+                console.error('Error sending password verification email', e);
+            });
         }
         catch (e) {
         }
@@ -125,7 +127,7 @@ let SettingsController = class SettingsController extends controller_1.default {
     }
     async updatePassword(userInfo, session, oldPassword, newPassword) {
         let userData = await this.user.getInfo(userInfo.userId, ['passwordChanged']);
-        let userPassword = await this.user.getPassword(userData.userId);
+        let userPassword = await this.user.getPassword(userInfo.userId);
         const valid = await this.auth.verifyPassword(oldPassword, userPassword);
         if (!valid) {
             throw new this.BadRequest('InvalidOldPassword');
@@ -135,7 +137,7 @@ let SettingsController = class SettingsController extends controller_1.default {
         }
         let hash = await this.auth.hashPassword(newPassword);
         await this.settings.updateUserPassword(userInfo.userId, hash, userInfo.passwordChanged + 1);
-        session.userdata.passwordChanged = userInfo.passwordChanged + 1;
+        session.userdata.passwordChanged = userData.passwordChanged + 1;
         return { success: true };
     }
     async updateBlurb(userInfo, newBlurb) {

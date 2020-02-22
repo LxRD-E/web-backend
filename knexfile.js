@@ -1,9 +1,17 @@
 process.env.NODE_ENV = 'production';
 const fs = require('fs');
 const path = require('path');
-
-const config = require("fs").readFileSync('./config.json');
-let configJson = JSON.parse(config);
+const dotenv = require('dotenv');
+// check if config vars exist
+if (!process.env['SECRET_ENCRYPTION_KEY'] || !process.env['SECRET_ENCRYPTION_IV']) {
+    // probably dev environment. warn anyway
+    console.warn('[warning] reading SECRET_ENCRYPTION_KEY and SECRET_ENCRYPTION_IV for config.json directly from dev.env file. exit if you are not expecting this.');
+    let confResults = dotenv.config({
+        path: path.join(__dirname,'./env/development.env'),
+    });
+}
+// const config = require("fs").readFileSync('./config.json');
+let configJson = require('./dist/helpers/config').default;
 delete configJson.mysql.charset;
 let table;
 if (configJson.mysqlTLS.enabled) {

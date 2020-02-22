@@ -119,7 +119,9 @@ export default class SettingsController extends controller {
         // Send Verify Request
         try {
             // We don't await this since it can delay requests by a factor of many seconds, so it's better to just send of the request, tell the user it worked, then hope the email was valid.
-            this.settings.sendEmail(newEmail, "Email Verification", "Thank you for adding a new email to your account. Visit this link to verify it: https://hindigamer.club/email/verify?code=" + emailToken, "<h5>Hello,</h5><p>Thank you for adding a new email to your account. Please click <a href=\"https://hindigamer.club/email/verify?code=" + emailToken + "\">here</a> to verify it.<br>Thanks!</p>").then().catch();
+            this.settings.sendEmail(newEmail, "Email Verification", "Thank you for adding a new email to your account. Visit this link to verify it: https://hindigamer.club/email/verify?code=" + emailToken, "<h5>Hello,</h5><p>Thank you for adding a new email to your account. Please click <a href=\"https://hindigamer.club/email/verify?code=" + emailToken + "\">here</a> to verify it. If you did not request this, you can ignore this email.<br>Thanks!</p>").then().catch(e => {
+                console.error('Error sending password verification email', e);
+            });
         } catch (e) {
 
         }
@@ -175,7 +177,7 @@ export default class SettingsController extends controller {
 
         // Verify old password matches
         let userData = await this.user.getInfo(userInfo.userId, ['passwordChanged']);
-        let userPassword = await this.user.getPassword(userData.userId);
+        let userPassword = await this.user.getPassword(userInfo.userId);
         const valid = await this.auth.verifyPassword(oldPassword, userPassword);
         if (!valid) {
             throw new this.BadRequest('InvalidOldPassword');
@@ -189,7 +191,7 @@ export default class SettingsController extends controller {
         // Update
         await this.settings.updateUserPassword(userInfo.userId, hash, userInfo.passwordChanged + 1);
         // Update Cookie
-        session.userdata.passwordChanged = userInfo.passwordChanged + 1;
+        session.userdata.passwordChanged = userData.passwordChanged + 1;
         // Success
         return { success: true };
     }

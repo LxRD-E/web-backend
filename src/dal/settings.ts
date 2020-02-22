@@ -5,7 +5,7 @@
 import * as model from '../models/models';
 
 import Config from '../helpers/config';
-import {encrypt, decrypt} from './auth';
+import { encrypt, decrypt, encryptPasswordHash, decryptPasswordHash } from './auth';
 /**
  * Encryption Keys
  */
@@ -25,6 +25,31 @@ class SettingsDAL extends _init {
         if (!bodyHTML) {
             bodyHTML = bodyText;
         }
+        const mailjet = require('node-mailjet').connect(Config.mailJet.public, Config.mailJet.private)
+        const request = await mailjet.post("send", { 'version': 'v3.1' }).request({
+            "Messages": [
+                {
+                    "From": {
+                        "Email": "support@hindigamer.club",
+                        "Name": "Hindi Gamer Club"
+                    },
+                    "To": [
+                        {
+                            "Email": recipient,
+                            // "Name": "passenger 1"
+                        }
+                    ],
+                    "Subject": subject,
+                    "TextPart": bodyText,
+                    "HTMLPart": bodyHTML
+                }
+            ]
+        });
+        console.log(request);
+        /*
+        if (!bodyHTML) {
+            bodyHTML = bodyText;
+        }
         const conf = {
             user: Config.email.user,
             pass: Config.email.pass,
@@ -35,6 +60,7 @@ class SettingsDAL extends _init {
         };
         const send = require('gmail-send')(conf);
         await send();
+        */
     }
 
     /**
@@ -65,7 +91,7 @@ class SettingsDAL extends _init {
             "status",
             "date",
             'email',
-        ).where({"userid":userId}).orderBy("id","desc").limit(1);
+        ).where({ "userid": userId }).orderBy("id", "desc").limit(1);
         if (info[0] && info[0]["email"]) {
             info[0]["email"] = await decrypt(info[0]["email"], emailEncryptionKey);
         }
@@ -83,7 +109,7 @@ class SettingsDAL extends _init {
             "status",
             "date",
             'email',
-        ).where({"userid":userId}).orderBy("id","desc");
+        ).where({ "userid": userId }).orderBy("id", "desc");
         for (const email of info) {
             if (email['email']) {
                 email['email'] = await decrypt(email['email'], emailEncryptionKey);
@@ -96,7 +122,7 @@ class SettingsDAL extends _init {
      * Mark a user's email as verified
      */
     public async markEmailAsVerified(userId: number): Promise<void> {
-        await this.knex("user_emails").where({"userid":userId}).orderBy("id","desc").limit(1).update({"status": model.user.emailVerificationType.true});
+        await this.knex("user_emails").where({ "userid": userId }).orderBy("id", "desc").limit(1).update({ "status": model.user.emailVerificationType.true });
     }
 
     /**
@@ -106,61 +132,61 @@ class SettingsDAL extends _init {
      * @param newPasswordCount passwordChanged in session incremented by one 
      */
     public async updateUserPassword(userId: number, newHash: string, newPasswordCount: number): Promise<void> {
-        const encryptedHash = await encrypt(newHash, passwordEncryptionKey);
-        await this.knex("users").update({"password_changed": newPasswordCount}).update("password", encryptedHash).where({"id":userId}).limit(1);
+        const encryptedHash = await encryptPasswordHash(newHash);
+        await this.knex("users").update({ "password_changed": newPasswordCount }).update("password", encryptedHash).where({ "id": userId }).limit(1);
     }
 
     /**
      * Update a User's Blurb
      */
     public async updateBlurb(userId: number, blurb: string): Promise<void> {
-        await this.knex("users").update({"user_blurb":blurb}).where({"id":userId});
+        await this.knex("users").update({ "user_blurb": blurb }).where({ "id": userId });
     }
 
     /**
      * Update a User's Signature
      */
     public async updateSignature(userId: number, siggy: string): Promise<void> {
-        await this.knex("users").update({"forum_signature":siggy}).where({"id":userId});
+        await this.knex("users").update({ "forum_signature": siggy }).where({ "id": userId });
     }
 
     /**
      * Update a User's Signature
      */
     public async updateTheme(userId: number, newTheme: model.user.theme): Promise<void> {
-        await this.knex("users").update({"user_theme":newTheme}).where({"id":userId});
+        await this.knex("users").update({ "user_theme": newTheme }).where({ "id": userId });
     }
 
     /**
      * Update a User's Trading Status
      */
     public async updateTradingStatus(userId: number, isEnabled: model.user.tradingEnabled): Promise<void> {
-        await this.knex("users").update({"user_tradingenabled":isEnabled}).where({"id":userId});
+        await this.knex("users").update({ "user_tradingenabled": isEnabled }).where({ "id": userId });
     }
 
     /**
      * Enable 2fa and set secret
      */
     public async enable2fa(userId: number, secret: string): Promise<void> {
-        await this.knex('users').update({'2fa_enabled': true,'2fa_secret': secret}).where({'id':userId}).limit(1);
+        await this.knex('users').update({ '2fa_enabled': true, '2fa_secret': secret }).where({ 'id': userId }).limit(1);
     }
 
     /**
      * Disable 2fa
      */
     public async disable2fa(userId: number): Promise<void> {
-        await this.knex('users').update({'2fa_enabled': false,'2fa_secret':null}).where({'id': userId}).limit(1);
+        await this.knex('users').update({ '2fa_enabled': false, '2fa_secret': null }).where({ 'id': userId }).limit(1);
     }
 
     /**
      * Check if 2fa enabled. If enabled, secret is returned, otherwise it isnt
      */
-    public async is2faEnabled(userId: number): Promise<{enabled: false}|{enabled: true; secret: string}> {
-        let data = await this.knex('users').select('2fa_enabled','2fa_secret').where({'id': userId}).limit(1);
+    public async is2faEnabled(userId: number): Promise<{ enabled: false } | { enabled: true; secret: string }> {
+        let data = await this.knex('users').select('2fa_enabled', '2fa_secret').where({ 'id': userId }).limit(1);
         if (data[0]['2fa_enabled'] === 1) {
-            return {enabled: true, secret: data[0]['2fa_secret']};
-        }else{
-            return {enabled: false};
+            return { enabled: true, secret: data[0]['2fa_secret'] };
+        } else {
+            return { enabled: false };
         }
     }
 }

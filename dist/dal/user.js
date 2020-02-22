@@ -191,9 +191,9 @@ class UsersDAL extends _init_1.default {
     async getPassword(userId) {
         const password = await this.knex('users').select('password').where({ 'users.id': userId });
         if (!password[0]) {
-            throw false;
+            throw new Error('InvalidUserId');
         }
-        const decryptedPassword = await auth_1.decrypt(password[0]["password"], passwordEncryptionKey);
+        const decryptedPassword = await auth_1.decryptPasswordHash(password[0]["password"]);
         return decryptedPassword;
     }
     async userNameToId(username) {
@@ -228,7 +228,7 @@ class UsersDAL extends _init_1.default {
     }
     async createUser(username, hashedPassword, birthdate) {
         const date = this.moment().format('YYYY-MM-DD HH:mm:ss');
-        const encryptedHash = await auth_1.encrypt(hashedPassword, passwordEncryptionKey);
+        const encryptedHash = await auth_1.encryptPasswordHash(hashedPassword);
         const insert = await this.knex('users').insert({
             'username': username,
             'password': encryptedHash,
@@ -543,7 +543,7 @@ class UsersDAL extends _init_1.default {
         }).where({ 'id': userId });
     }
     async updatePassword(userId, newPasswordHash) {
-        const encryptedPasswordHash = auth_1.encrypt(newPasswordHash, passwordEncryptionKey);
+        const encryptedPasswordHash = auth_1.encryptPasswordHash(newPasswordHash);
         await this.knex('users').update({
             'password': encryptedPasswordHash,
         }).where({ 'id': userId });
@@ -551,7 +551,7 @@ class UsersDAL extends _init_1.default {
     async getPasswordResetInfo(code) {
         const info = await this.knex("password_resets").select("id as passwordResetId", "userid as userId", "code", "date_created as dateCreated").where({ 'code': code });
         if (!info[0]) {
-            throw false;
+            throw new Error('InvalidCode');
         }
         return info[0];
     }

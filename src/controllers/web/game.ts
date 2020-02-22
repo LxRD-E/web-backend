@@ -80,7 +80,7 @@ export class WWWGameController extends controller {
             ViewData.page.thumbnailId = creatorName.groupIconCatalogId;
         }
         if (gameInfo.thumbnailAssetId === 0) {
-            ViewData.page.ThumbnailURL = 'https://hindigamerclub-game.ewr1.vultrobjects.com/default_assets/Screenshot_5.png';
+            ViewData.page.ThumbnailURL = 'https://cdn.hindigamer.club/game/default_assets/Screenshot_5.png';
         }
         ViewData.title = gameInfo.gameName;
         return ViewData;

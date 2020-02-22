@@ -8,7 +8,7 @@
     "build:public": "babel src/public/ -d dist/public/ --copy-files",
     "build": "npm run build:server && npm run build:public",
     "build:production": "npm run build && node ./util/build_production.js",
-    "start:dev": "nodemon --ignore / --exec ts-node-dev src/server.ts",
+    "start:dev": "cross-env ENV_FILE=development nodemon -r ./env --ignore / --exec ts-node-dev src/server.ts",
     "start": "cross-env ENV_FILE=production node -r ./env -r module-alias/register ./dist/server.js",
     "test": "cross-env ENV_FILE=test nyc mocha dist/tests/**/*.test.js --exit"
   },
@@ -92,6 +92,7 @@
     "morgan": "^1.9.1",
     "multer": "^1.4.2",
     "mysql": "^2.17.1",
+    "node-mailjet": "^3.3.1",
     "nyc": "^15.0.0",
     "qrcode": "^1.4.4",
     "querystring": "^0.2.0",

@@ -9,7 +9,7 @@ request('/game/search').then((d) => {
             let thumbId = game.thumbnailAssetId;
             let img = '';
             if (thumbId === 0) {
-                img = `<img src="https://hindigamerclub-game.ewr1.vultrobjects.com/default_assets/Screenshot_5.png" style="width:100%;object-fit: fill;display:block;margin: 0 auto;height: 200px;" />`
+                img = `<img src="https://cdn.hindigamer.club/game/default_assets/Screenshot_5.png" style="width:100%;object-fit: fill;display:block;margin: 0 auto;height: 200px;" />`
             }else{
                 img = `<img data-catalogid="${thumbId}" style="width:100%;object-fit: fill;display:block;margin: 0 auto;height: 200px;" />`
                 catalogIds.push(thumbId);
@@ -46,7 +46,7 @@ request('/game/search').then((d) => {
             let thumbId = game.iconAssetId;
             let img = '';
             if (thumbId === 0) {
-                img = `<img src="https://hindigamerclub-game.ewr1.vultrobjects.com/default_assets/Screenshot_5.png" style="width:100%;object-fit: fill;display:block;margin: 0 auto;height: 150px;" />`
+                img = `<img src="https://cdn.hindigamer.club/game/default_assets/Screenshot_5.png" style="width:100%;object-fit: fill;display:block;margin: 0 auto;height: 150px;" />`
             }else{
                 img = `<img data-catalogid="${thumbId}" style="width:100%;object-fit: fill;display:block;margin: 0 auto;height: 150px;" />`
                 catalogIds.push(thumbId);

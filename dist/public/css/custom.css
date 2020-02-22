@@ -315,3 +315,12 @@ body {
 p.ad-alert-text {
     color: rgba(33, 37, 41, 0.75);
 }
+
+pre {
+    background-color: rgba(33, 37, 41, 0.75);
+}
+pre > code {
+    color: white;
+    background-color: none;
+    background: none;
+}
