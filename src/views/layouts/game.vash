@@ -12,7 +12,9 @@
     <script nonce="@model.nonce" src="https://code.jquery.com/pep/0.4.1/pep.js"></script>
     <script nonce="@model.nonce" src="https://cdn.babylonjs.com/cannon.js"></script>
     <script nonce="@model.nonce" src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+    @*
     <script nonce="@model.nonce" src="https://cdn.jsdelivr.net/npm/simple-crypto-js@@2.2.0/dist/SimpleCrypto.min.js"></script>
+    *@
 
     <script nonce="@model.nonce" src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
     <style>

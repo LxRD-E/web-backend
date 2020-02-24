@@ -97,7 +97,7 @@ request('/user/' + userid + '/groups', "GET")
 
             }
             if (index < 6) {
-                $('#profileGroupsDiv').append('<div class="' + extraClass + ' col-6 col-md-3 col-lg-2" style="padding-bottom: 1rem;"><div class="card"><img style="width:100%;" data-catalogid=' + value.groupIconCatalogId + ' /><div class="card-body" style="padding:0.25rem;"><div class="row" style="max-width: 100%;overflow: hidden;padding: 0;margin: 0;"></div><div class="card-title text-left" style="margin-bottom:0;"><a style="color:#212529;" href="/groups/' + value.groupId + '/"><h5 class="text-left text-truncate">' + value.groupName.escape() + '</h5></a><p class="text-left text-truncate">Members: ' + value.groupMemberCount + '</p><p class="text-left text-truncate">Rank: ' + value.userRolesetName.escape() + '</p></div></div></div>');
+                $('#profileGroupsDiv').append('<div class="' + extraClass + ' col-6 col-md-3 col-lg-2" style="padding-bottom: 1rem;padding-left:0.5rem;padding-right:0.5rem;"><div class="card"><img style="width:100%;" data-catalogid=' + value.groupIconCatalogId + ' /><div class="card-body" style="padding:0.25rem;"><div class="row" style="max-width: 100%;overflow: hidden;padding: 0;margin: 0;"></div><div class="card-title text-left" style="margin-bottom:0;"><a style="color:#212529;" href="/groups/' + value.groupId + '/"><h5 class="text-left text-truncate">' + value.groupName.escape() + '</h5></a><p class="text-left text-truncate">Members: ' + value.groupMemberCount + '</p><p class="text-left text-truncate">Rank: ' + value.userRolesetName.escape() + '</p></div></div></div>');
             }
             thumbIdsRequest.push(value.groupIconCatalogId);
         });

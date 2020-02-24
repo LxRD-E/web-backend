@@ -20,6 +20,42 @@ export default class EconomyController extends controller {
         super();
     }
 
+    @Get('/metadata/collectible-resale-fee')
+    @Summary('Get item resale fee percenatage for collectibles')
+    @Returns(200, {type: model.economy.FeeMetaData})
+    public getResellFeeCollectible() {
+        return {
+            fee: model.economy.RESELL_ITEM_FEE,
+        };
+    }
+
+    @Get('/metadata/sell-fee')
+    @Summary('Get item resale fee percenatage for normal items (shirts, pants, etc)')
+    @Returns(200, {type: model.economy.FeeMetaData})
+    public getSellFee() {
+        return {
+            fee: model.economy.SELL_ITEM_FEE,
+        };
+    }
+
+    @Get('/metadata/currency-conversion-rate')
+    @Summary('Get currency conversion metadata')
+    @Returns(200, {type: model.economy.CurrencyConversionMetadata})
+    public getCurrencyConversionMetadata() {
+        return {
+            primaryToSecondary: {
+                minimumAmount: model.economy.MINIMUM_CURRENCY_CONVERSION_PRIMARY_TO_SECONDARY,
+                rate: model.economy.CONVERSION_ONE_PRIMARY_TO_SECONDARY_RATE,
+                maxAmount: model.economy.CONVERSION_PRIMARY_TO_SECONDARY_MAX,
+            },
+            secondaryToPrimary: {
+                minimumAmount: model.economy.MINIMUM_CURRENCY_CONVERSION_SECONDARY_TO_PRIMARY,
+                rate: model.economy.CONVERSION_ONE_SECONDARY_TO_PRIMARY_RATE,
+                maxAmount: model.economy.CONVERSION_SECONDARY_TO_PRIMARY_MAX,
+            }
+        }
+    }
+
     @Get('/trades/:type')
     @Summary('Get user trades')
     @UseBefore(YesAuth)
@@ -145,7 +181,16 @@ export default class EconomyController extends controller {
         @Required()
         @BodyParams('amount', Number) numericAmount: number,
     ): Promise<{ success: true }> {
-        if (numericAmount > 100000) {
+        let maxCurrency = 0;
+        let minCurrency = 0;
+        if (originCurrency === model.economy.currencyType.primary) {
+            maxCurrency = model.economy.CONVERSION_PRIMARY_TO_SECONDARY_MAX;
+            minCurrency = model.economy.MINIMUM_CURRENCY_CONVERSION_PRIMARY_TO_SECONDARY;
+        }else if (originCurrency === model.economy.currencyType.secondary) {
+            maxCurrency = model.economy.CONVERSION_SECONDARY_TO_PRIMARY_MAX;
+            minCurrency = model.economy.MINIMUM_CURRENCY_CONVERSION_SECONDARY_TO_PRIMARY;
+        }
+        if (numericAmount > maxCurrency || maxCurrency < minCurrency) {
             throw new this.BadRequest('InvalidAmount');
         }
         if (originCurrency === model.economy.currencyType.primary) {

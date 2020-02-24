@@ -65,10 +65,17 @@ class BillingDAL extends _init {
         return product[0];
     }
 
+    /**
+     * Get all accepted crypto currencies
+     */
     public getAcceptedCurrencies() {
         return Config.coinpayments.currency;
     }
 
+    /**
+     * Check if currency id is valid (BTC, ETH, DOGE, etc)
+     * @param currency 
+     */
     public isCurrencyValid(currency: string): boolean {
         for (const acceptedCurrency of Config.coinpayments.currency) {
             if (acceptedCurrency.id === currency) {

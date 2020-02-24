@@ -16,7 +16,7 @@ function loadInventory(offset) {
         }else{
             var userIdsRequest = [];
             $.each(d["friends"], function(index, value) {
-                $('#userFriendsDiv').append('<div class="col-sm-4 col-md-3 col-lg-2 userFriend"><div class="card" style="display:none;margin: 1rem 0;"><img style="width:100%;" data-userid="'+value.userId+'" /> <div class="card-body"><div class="card-title text-left text-truncate" style="margin-bottom:0;"><a href="/users/'+value.userId+'/profile"><span data-userid="'+value.userId+'"></span></a></div></div></div></div>');
+                $('#userFriendsDiv').append('<div class="col-sm-4 col-md-3 col-lg-2 userFriend" style="padding:0.25rem;margin-bottom:0;"><div class="card" style="display:none;"><img style="width:100%;" data-userid="'+value.userId+'" /> <div class="card-body"><div class="card-title text-left text-truncate" style="margin-bottom:0;"><a href="/users/'+value.userId+'/profile"><span data-userid="'+value.userId+'"></span></a></div></div></div></div>');
                 userIdsRequest.push(value.userId);
             });
             setUserThumbs(userIdsRequest);

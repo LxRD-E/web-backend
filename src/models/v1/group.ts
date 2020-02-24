@@ -1,5 +1,23 @@
 import { Required } from "@tsed/common";
 
+// meta stuff
+export const MAX_GROUPS = 100;
+export const MAX_GROUP_ROLES = 18;
+export const MAX_RANK_VALUE = 255;
+export const MIN_RANK_VALUE = 1;
+
+export const ROLE_NAME_MAX_LENGTH = 32;
+export const ROLE_NAME_MIN_LENGTH = 1;
+
+export const ROLE_DESCRIPTION_MAX_LENGTH = 255;
+export const ROLE_DESCRIPTION_MIN_LENGTH = 0;
+
+export const GROUP_CREATION_COST = 50;
+
+export class GroupCreationFee {
+    @Required()
+    cost: number;
+}
 
 /**
  * Group Permissions Object

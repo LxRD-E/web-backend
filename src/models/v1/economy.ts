@@ -1,4 +1,42 @@
 import { Required, PropertyType } from "@tsed/common";
+import { Description } from "@tsed/swagger";
+
+export const RESELL_ITEM_FEE = 30;
+export const SELL_ITEM_FEE = 30;
+
+export class FeeMetaData {
+    @Required()
+    fee: number;
+}
+
+export const MINIMUM_CURRENCY_CONVERSION_PRIMARY_TO_SECONDARY = 1;
+export const MINIMUM_CURRENCY_CONVERSION_SECONDARY_TO_PRIMARY = 10;
+
+export const CONVERSION_ONE_PRIMARY_TO_SECONDARY_RATE = 10;
+export const CONVERSION_ONE_SECONDARY_TO_PRIMARY_RATE = 0.1;
+
+export const CONVERSION_SECONDARY_TO_PRIMARY_MAX = 100000;
+export const CONVERSION_PRIMARY_TO_SECONDARY_MAX = 100000;
+
+class CurrencyConversionMetadataPerCurrency {
+    @Required()
+    @Description('Minimum amount of currency that can be converted at once')
+    minimumAmount: number;
+
+    @Required()
+    @Description('The maximum amount of currency that can be converted at once')
+    maxAmount: number;
+    @Required()
+    @Description('The current rate of one currency to the other currency')
+    rate: number;
+}
+
+export class CurrencyConversionMetadata {
+    @Required()
+    primaryToSecondary: CurrencyConversionMetadataPerCurrency;
+    @Required()
+    secondaryToPrimary: CurrencyConversionMetadataPerCurrency;
+}
 
 /**
  * Transactions Interface

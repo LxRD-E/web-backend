@@ -16,8 +16,7 @@ import { Summary, Returns, ReturnsArray, Description } from '@tsed/swagger';
 import { YesAuth } from '../../middleware/Auth';
 import { csrf } from '../../dal/auth';
 
-// meta stuff we might increase in the future
-const MAX_GROUPS = 100;
+
 /**
  * Groups Controller
  */
@@ -43,6 +42,57 @@ export class GroupsController extends controller {
             throw new this.BadRequest('InvalidGroupId');
         }
         return groupInfo;
+    }
+
+    @Get('/metadata/creation-fee')
+    @Summary('Get the cost to create a group')
+    @Returns(200, {type: model.group.GroupCreationFee})
+    public getGroupCreationFee() {
+        return {
+            cost: model.group.GROUP_CREATION_COST,
+        };
+    }
+
+    @Get('/metadata/manage')
+    @Summary('Get group manage metadata')
+    public getGroupManageRules() {
+        return {
+            maxRoles: model.group.MAX_GROUP_ROLES,
+            rank: {
+                min: model.group.MIN_RANK_VALUE,
+                max: model.group.MAX_RANK_VALUE,
+            },
+            roleName: {
+                minLength: model.group.ROLE_NAME_MIN_LENGTH,
+                maxLength: model.group.ROLE_NAME_MAX_LENGTH,
+            },
+            roleDescription: {
+                minLength: model.group.ROLE_DESCRIPTION_MIN_LENGTH,
+                maxLength: model.group.ROLE_DESCRIPTION_MAX_LENGTH,
+            },
+            rolePermissions: [
+                {
+                    id: 'getWall',
+                    name: 'View Group Wall',
+                },
+                {
+                    id: 'postWall',
+                    name: 'Post to Group Wall',
+                },
+                {
+                    id: 'getShout',
+                    name: 'View Group Shout',
+                },
+                {
+                    id: 'postShout',
+                    name: 'Post to Group Shout',
+                },
+                {
+                    id: 'manage',
+                    name: 'Manage the Group',
+                }
+            ],
+        };
     }
 
     /**
@@ -178,8 +228,6 @@ export class GroupsController extends controller {
         const role = await this.group.getUserRole(groupId, userInfo.userId);
         return role;
     }
-
-
 
     /**
      * Get a Group's Members
@@ -406,7 +454,7 @@ export class GroupsController extends controller {
         }
         // Count current groups
         const groupCount = await this.user.countGroups(userInfo.userId);
-        if (groupCount >= MAX_GROUPS) {
+        if (groupCount >= model.group.MAX_GROUPS) {
             throw new this.BadRequest('TooManyGroups');
         }
         const roleset = await this.group.getRoleForNewMembers(groupId);
@@ -881,12 +929,12 @@ export class GroupsController extends controller {
         }
         // Verify groups count
         const groupCount = await this.user.countGroups(userData.userId);
-        if (groupCount >= MAX_GROUPS) {
+        if (groupCount >= model.group.MAX_GROUPS) {
             throw new this.BadRequest('TooManyGroups');
         }
         // Check balance
         const balance = userData.primaryBalance;
-        if (balance < 50) {
+        if (balance < model.group.GROUP_CREATION_COST) {
             throw new this.BadRequest('NotEnoughCurrency');
         }
         // Check files
@@ -947,9 +995,9 @@ export class GroupsController extends controller {
         await this.group.updateGroupIconId(groupId, groupIconCatalogId);
         // Complete Transaction
         // Subtract
-        await this.economy.subtractFromUserBalance(userData.userId, 50, model.economy.currencyType.primary);
+        await this.economy.subtractFromUserBalance(userData.userId, model.group.GROUP_CREATION_COST, model.economy.currencyType.primary);
         // Create Transaction
-        await this.economy.createTransaction(userData.userId, 1, -50, model.economy.currencyType.primary, model.economy.transactionType.PurchaseOfGroup, "Creation of Group", model.catalog.creatorType.User, model.catalog.creatorType.User);
+        await this.economy.createTransaction(userData.userId, 1, -model.group.GROUP_CREATION_COST, model.economy.currencyType.primary, model.economy.transactionType.PurchaseOfGroup, "Creation of Group", model.catalog.creatorType.User, model.catalog.creatorType.User);
         (async (): Promise<void> => {
             // Upload Icon
             try {
