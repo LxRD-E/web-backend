@@ -64,6 +64,7 @@
     "axios-cached-dns-resolve": "^0.5.2",
     "axios-with-dns": "^1.0.4",
     "bcrypt": "^3.0.8",
+    "blocked-at": "^1.2.0",
     "body-parser": "^1.19.0",
     "coinpayments": "^2.0.3",
     "coinpayments-ipn": "^1.0.0",

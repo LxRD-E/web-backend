@@ -32,7 +32,7 @@ if (process.env.NODE_ENV === 'development') {
         'https://hindigamer.club/', 
         'https://www.hindigamer.club/',
         'https://www.hindigamer.club',
-        'https://www.hindigamer.club',
+        'https://hindigamer.club',
     );
 }
 

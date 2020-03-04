@@ -324,3 +324,44 @@ pre > code {
     background-color: none;
     background: none;
 }
+
+@media only screen and (min-width: 1680px) {
+    div.staff-sidebar {
+        display: block!important;
+    }
+    a.staff-sidebar-button {
+        display: none!important;
+    }
+}
+
+a.staff-sidebar-button {
+    display: block;
+}
+
+div.staff-sidebar {
+    margin-top: -214px;
+    float: left;
+    position:absolute;
+    width:250px;
+    display: none;
+}
+
+p.staff-item {
+    font-size:0.75rem;
+    padding-left:1rem;
+    margin-bottom:0;
+    padding-bottom:0;
+}
+
+a.staff-item > p.staff-item:hover { 
+    color: rgba(255,255,255,0.45);
+}
+
+div.staff-sidebar > div.card > div.card-body > h3 {
+    margin-bottom:0;
+}
+
+div.seperator-staff {
+    margin-top:1rem;
+    margin-bottom:1rem;
+}

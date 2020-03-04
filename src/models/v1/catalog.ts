@@ -187,3 +187,8 @@ export interface ThumbnailResponse {
      */
     url: string;
 }
+
+export class LowestPriceCollectibleItems {
+    catalogId: number;
+    price: number|null;
+}

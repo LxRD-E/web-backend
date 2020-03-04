@@ -57,6 +57,10 @@ for (const file of walk('./dist_module/dist')) {
     if (file.slice(0,'./dist_module/dist/public/'.length) === './dist_module/dist/public/') {
         continue;
     }
+    // idk why but this file breaks it (not too important anyway so we can just skip it)
+    if (file === './dist_module/dist/models/v1/game.js') {
+        continue;
+    }
     console.log('Obfuscating ' + file + '...');
     let fileBuff = fs.readFileSync(file);
     let obj = JavaScriptObfuscator.obfuscate(fileBuff.toString(), {
@@ -98,9 +102,7 @@ for (const file of walk('./dist_module/dist')) {
     fs.writeFileSync(file, obj.getObfuscatedCode());
 }
 // add self xss warning
-fs.writeFileSync('./dist_module/dist/public/js/warning.js', `// Self-XSS Warning
-console.log("%cStop!", "color:red; font-size:80px;font-family:sans-serif;");
-console.log("%cThis is a browser feature intended for developers. If someone told you to copy-paste something here to enable a feature or \\"hack\\", it is a scam and will give them access to your account.", "color:black;font-size:25px;font-family:sans-serif;");`);
+fs.writeFileSync('./dist_module/dist/public/js/warning.js', `console.log("%cStop!", "color:red; font-size:80px;font-family:sans-serif;");console.log("%cThis is a browser feature intended for developers. If someone told you to copy-paste something here to enable a feature or \\"hack\\", it is a scam and will give them access to your account.", "color:black;font-size:25px;font-family:sans-serif;");`);
 // edit gitignore
 let ignore = fs.readFileSync('./dist_module/.gitignore').toString();
 if (ignore.match(/\/dist\//g)) {

@@ -28,6 +28,30 @@ let EconomyController = class EconomyController extends controller_1.default {
     constructor() {
         super();
     }
+    getResellFeeCollectible() {
+        return {
+            fee: model.economy.RESELL_ITEM_FEE,
+        };
+    }
+    getSellFee() {
+        return {
+            fee: model.economy.SELL_ITEM_FEE,
+        };
+    }
+    getCurrencyConversionMetadata() {
+        return {
+            primaryToSecondary: {
+                minimumAmount: model.economy.MINIMUM_CURRENCY_CONVERSION_PRIMARY_TO_SECONDARY,
+                rate: model.economy.CONVERSION_ONE_PRIMARY_TO_SECONDARY_RATE,
+                maxAmount: model.economy.CONVERSION_PRIMARY_TO_SECONDARY_MAX,
+            },
+            secondaryToPrimary: {
+                minimumAmount: model.economy.MINIMUM_CURRENCY_CONVERSION_SECONDARY_TO_PRIMARY,
+                rate: model.economy.CONVERSION_ONE_SECONDARY_TO_PRIMARY_RATE,
+                maxAmount: model.economy.CONVERSION_SECONDARY_TO_PRIMARY_MAX,
+            }
+        };
+    }
     async getTrades(userInfo, tradeType, offset = 0) {
         let tradeValue;
         if (tradeType !== 'inbound' && tradeType !== 'outbound' && tradeType !== 'completed' && tradeType !== 'inactive') {
@@ -106,7 +130,17 @@ let EconomyController = class EconomyController extends controller_1.default {
         return transactions;
     }
     async convertCurrency(userInfo, originCurrency, numericAmount) {
-        if (numericAmount > 100000) {
+        let maxCurrency = 0;
+        let minCurrency = 0;
+        if (originCurrency === model.economy.currencyType.primary) {
+            maxCurrency = model.economy.CONVERSION_PRIMARY_TO_SECONDARY_MAX;
+            minCurrency = model.economy.MINIMUM_CURRENCY_CONVERSION_PRIMARY_TO_SECONDARY;
+        }
+        else if (originCurrency === model.economy.currencyType.secondary) {
+            maxCurrency = model.economy.CONVERSION_SECONDARY_TO_PRIMARY_MAX;
+            minCurrency = model.economy.MINIMUM_CURRENCY_CONVERSION_SECONDARY_TO_PRIMARY;
+        }
+        if (numericAmount > maxCurrency || maxCurrency < minCurrency) {
             throw new this.BadRequest('InvalidAmount');
         }
         if (originCurrency === model.economy.currencyType.primary) {
@@ -564,6 +598,30 @@ let EconomyController = class EconomyController extends controller_1.default {
         }
     }
 };
+__decorate([
+    common_1.Get('/metadata/collectible-resale-fee'),
+    swagger_1.Summary('Get item resale fee percenatage for collectibles'),
+    swagger_1.Returns(200, { type: model.economy.FeeMetaData }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], EconomyController.prototype, "getResellFeeCollectible", null);
+__decorate([
+    common_1.Get('/metadata/sell-fee'),
+    swagger_1.Summary('Get item resale fee percenatage for normal items (shirts, pants, etc)'),
+    swagger_1.Returns(200, { type: model.economy.FeeMetaData }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], EconomyController.prototype, "getSellFee", null);
+__decorate([
+    common_1.Get('/metadata/currency-conversion-rate'),
+    swagger_1.Summary('Get currency conversion metadata'),
+    swagger_1.Returns(200, { type: model.economy.CurrencyConversionMetadata }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], EconomyController.prototype, "getCurrencyConversionMetadata", null);
 __decorate([
     common_1.Get('/trades/:type'),
     swagger_1.Summary('Get user trades'),

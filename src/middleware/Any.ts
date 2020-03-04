@@ -56,7 +56,25 @@ export const getCspString = (): string => {
  * Generate CSP with nonce middleware
  */
 export const generateCspWithNonce = async (req: Request, res: Response, next: NextFunction, randomBytesFunction = randomBytes): Promise<void> => {
+    // temp
+    if (process.env.NODE_ENV === 'development'  && !req.headers['cf-connecting-ip']) {
+        req.headers['cf-connecting-ip'] = '127.0.0.1';
+    }
     if (req.url === '/docs' || req.url === '/docs/') {
+        return next();
+    }
+    res.set({
+        'X-Frame-Options': 'DENY',
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+        'X-Content-Type-Options': 'nosniff',
+        'X-XSS-Protection': '1; mode=block',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'X-Environment': environment,
+        // 'X-Process-ID': processId,
+        // 'X-HostName': hostName,
+        'X-Permitted-Cross-Domain-Policies': 'none',
+    });
+    if (req.url.slice(0,'/api/'.length) === '/api/') {
         return next();
     }
     const nonceBuffer = await randomBytesFunction(48);
@@ -80,17 +98,6 @@ export const generateCspWithNonce = async (req: Request, res: Response, next: Ne
     res.set({
         // CSP Headers
         'Content-Security-Policy': headerString,
-        'X-Content-Security-Policy': headerString,
-        'X-Webkit-CSP': headerString,
-        'X-Frame-Options': 'DENY',
-        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-        'X-Content-Type-Options': 'nosniff',
-        'X-XSS-Protection': '1; mode=block',
-        'Referrer-Policy': 'origin-when-cross-origin',
-        'X-Environment': environment,
-        // 'X-Process-ID': processId,
-        // 'X-HostName': hostName,
-        'X-Permitted-Cross-Domain-Policies': 'none',
     });
     res.locals.nonce = nonce;
     next();

@@ -124,6 +124,7 @@
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">@model.userInfo.username</a>
                         <div class="dropdown-menu dropdown-menu-right fade" aria-labelledby="navbarDropdown">
                             <a class="dropdown-item" href="/dashboard"><i class="fas fa-home"></i> Home</a>
+                            @html.block('extraNavItemBelowHome')
                             <a class="dropdown-item" href="/users/@model.userInfo.userId/profile"><i class="fas fa-id-card"></i> My Profile</a>
                             <a class="dropdown-item" href="/avatar"><i class="fas fa-user-tag"></i> My Avatar</a>
                             <a class="dropdown-item" href="/trades"><i class="fas fa-exchange-alt"></i> My Trades</a>
@@ -311,6 +312,7 @@
             <script nonce="@model.nonce" src="/js/chat.js?v=@model.v"></script>
         }
         <!-- Page Specific JS -->
+        @html.block('jsInternal')
         @html.block('js')
     </body>
 </html>

@@ -15,6 +15,50 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@tsed/common");
+const swagger_1 = require("@tsed/swagger");
+exports.RESELL_ITEM_FEE = 30;
+exports.SELL_ITEM_FEE = 30;
+class FeeMetaData {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], FeeMetaData.prototype, "fee", void 0);
+exports.FeeMetaData = FeeMetaData;
+exports.MINIMUM_CURRENCY_CONVERSION_PRIMARY_TO_SECONDARY = 1;
+exports.MINIMUM_CURRENCY_CONVERSION_SECONDARY_TO_PRIMARY = 10;
+exports.CONVERSION_ONE_PRIMARY_TO_SECONDARY_RATE = 10;
+exports.CONVERSION_ONE_SECONDARY_TO_PRIMARY_RATE = 0.1;
+exports.CONVERSION_SECONDARY_TO_PRIMARY_MAX = 100000;
+exports.CONVERSION_PRIMARY_TO_SECONDARY_MAX = 100000;
+class CurrencyConversionMetadataPerCurrency {
+}
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('Minimum amount of currency that can be converted at once'),
+    __metadata("design:type", Number)
+], CurrencyConversionMetadataPerCurrency.prototype, "minimumAmount", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('The maximum amount of currency that can be converted at once'),
+    __metadata("design:type", Number)
+], CurrencyConversionMetadataPerCurrency.prototype, "maxAmount", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('The current rate of one currency to the other currency'),
+    __metadata("design:type", Number)
+], CurrencyConversionMetadataPerCurrency.prototype, "rate", void 0);
+class CurrencyConversionMetadata {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", CurrencyConversionMetadataPerCurrency)
+], CurrencyConversionMetadata.prototype, "primaryToSecondary", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", CurrencyConversionMetadataPerCurrency)
+], CurrencyConversionMetadata.prototype, "secondaryToPrimary", void 0);
+exports.CurrencyConversionMetadata = CurrencyConversionMetadata;
 class userTransactions {
 }
 __decorate([

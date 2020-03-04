@@ -6,7 +6,7 @@
                 <h1 style="white-space:pre-wrap;padding-top: 1rem;" class="text-left">@model.page.username's Groups <span id="groupCountDiv"></span></h1>
             </div>
         </div>
-        <div class="row" id="UserGroupsDiv">
+        <div class="row" id="UserGroupsDiv" style="padding-left:0.5rem;padding-right:0.5rem;">
         </div>
     })
     @html.block('js', function(model) {

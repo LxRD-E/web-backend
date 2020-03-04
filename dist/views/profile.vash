@@ -193,7 +193,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="row" id="profileGroupsDiv">
+                <div class="row" id="profileGroupsDiv" style="padding-left:0.5rem;padding-right:0.5rem;">
 
                 </div>
             </div>

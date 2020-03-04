@@ -10,7 +10,7 @@ export class MyGEHMiddleware extends GlobalErrorHandlerMiddleware {
         }
         try {
             // DO SOMETHING
-            console.log(error);
+            console.error(error);
             if (error.name === 'BAD_REQUEST') {
                 let fullErrorMessage;
                 if (error.errorMessage) {
@@ -39,7 +39,7 @@ export class MyGEHMiddleware extends GlobalErrorHandlerMiddleware {
             } else if (error.name === 'CONFLICT') {
                 let fullErrorMessage = {
                     code: HttpErrors[HttpErrors.InternalServerError],
-                }
+            }
                 if (error.message && HttpErrors[error.message]) {
                     fullErrorMessage.code = error.message;
                 }

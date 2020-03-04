@@ -5,10 +5,10 @@
 import * as model from '../../models/models';
 // Autoloads
 import controller from '../controller';
-import { BodyParams, Locals, UseBeforeEach, UseBefore, Patch, Controller, Get, Err, ModelStrict, PathParams, Post, Use, Res, Required } from '@tsed/common';
+import { BodyParams, Locals, UseBeforeEach, UseBefore, Patch, Controller, Get, Err, ModelStrict, PathParams, Post, Use, Res, Required, Status } from '@tsed/common';
 import { csrf } from '../../dal/auth';
 import { YesAuth } from '../../middleware/Auth';
-import { Summary, Returns, Description } from '@tsed/swagger';
+import { Summary, Returns, Description, ReturnsArray } from '@tsed/swagger';
 import { MultipartFile } from '@tsed/multipartfiles';
 import jimp = require('jimp');
 import crypto = require('crypto');
@@ -25,6 +25,7 @@ export default class AdController extends controller {
     @Get('/my/created-ads')
     @Summary('Get created ads by authenticated user')
     @Use(YesAuth)
+    @ReturnsArray(200, {type: model.ad.FullAdvertismentDetails})
     public async getCreatedAds(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ) {
@@ -34,8 +35,9 @@ export default class AdController extends controller {
 
     @Get('/random')
     @Summary('Get a semi-random advertisement to display to the user')
-    @Description('We do not target advertisments whatsoever. They are purely based off of user bid amounts, i.e, if one user bids 10 primary and another user bids 1, you have a 90% chance of seeing the first ad and a 10% chance of seeing the second ad.')
+    @Description('Advertisments are not targetted to comply with COPPA. Ads are purely based off of user bid amounts, i.e, if one user bids 10 primary and another user bids 1, you have a 90% chance of seeing the first ad and a 10% chance of seeing the second ad.')
     @Returns(200, {type: model.ad.Advertisment})
+    @Returns(409, {type: model.Error, description: 'NoAdvertismentAvailable: Account status does not permit advertisment, or no ads are available to display to the user\n'})
     public async getAdvertisment() {
         let ad: model.ad.Advertisment;
         try {
@@ -51,7 +53,9 @@ export default class AdController extends controller {
 
     @Get('/:adId/click')
     @Summary('Click an ad. Redirects to ad location')
-    @Returns(200, {type: model.ad.AdClickResponse})
+    @Returns(302, {description: 'See header value: location\n'})
+    @Status(302)
+    @Returns(400, {type: model.Error, description: 'InvalidAdId: adId is not currently running or is invalid\n'})
     public async clickAd(
         @PathParams('adId', Number) adId: number,
         @Res() res: Res,
@@ -79,14 +83,20 @@ export default class AdController extends controller {
     @Summary('Create an advertisment.')
     @Description('If group or group item, user must be owner of group. If catalog item, user must be creator')
     @Use(csrf, YesAuth)
+    @Returns(200, {description: 'Add Created'})
+    @Returns(400, {type: model.Error,description: 'NoFileSpecified: Please specify a body.uploadedFiles\nInvalidAdType: Ad Type is invalid\nInvalidAdTitle: Ad title is invalid, too long, or too short\nInvalidPermissions: You do not have permission to advertise this asset\n'})
+    @Returns(409, {type: model.Error, description: 'Cooldown: You cannot create an ad right now\n'})
     public async createAdvertisment(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
+        @Description('File can be a JPG, JPEG, or PNG. We may expand this in the future')
         @MultipartFile() uploadedFiles: Express.Multer.File[],
         @BodyParams('title', String) title: string = '',
         @Required()
+        @Description('The type of ad being advertised. 1 = CatalogItem, 2 = Group, 3 = ForumThread')
         @BodyParams('adType', Number) adType: number, 
         @Required()
+        @Description('The ID of the adType. For instance, if you want to advertise Forum Thread id 28, this value would be 28')
         @BodyParams('adRedirectId', Number) adRedirectId: number,
     ) {
         // Check if created ad recently
@@ -187,6 +197,8 @@ export default class AdController extends controller {
     @Summary('Bid money on an advertisment')
     @Description('User must be creator of ad')
     @Use(csrf, YesAuth)
+    @Returns(400, {type: model.Error, description: 'InvalidCurrencyAmount: Currency Amount must be between 1 and 100,000\nInvalidAdId: adId is invalid or not managed by authenticated user\nModerationStatusConflict: Ad moderation status does not allow it to run\n'})
+    @Returns(409, {type: model.Error,description: 'AdAlreadyRunning: This ad cannot be run since it is already running\nNotEnoughCurrency: Authenticated user does not have enough currency for this purchase\n'})
     public async bidAd(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('adId', Number) adId: number,

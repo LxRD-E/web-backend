@@ -64,4 +64,34 @@ __decorate([
     __metadata("design:type", Number)
 ], SignupResponseOK.prototype, "userId", void 0);
 exports.SignupResponseOK = SignupResponseOK;
+class LoginRequestOK {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], LoginRequestOK.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], LoginRequestOK.prototype, "username", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Boolean)
+], LoginRequestOK.prototype, "isTwoFactorRequied", void 0);
+__decorate([
+    common_1.PropertyType(String),
+    __metadata("design:type", String)
+], LoginRequestOK.prototype, "twoFactor", void 0);
+exports.LoginRequestOK = LoginRequestOK;
+class LoginTwoFactorResponseOK {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], LoginTwoFactorResponseOK.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], LoginTwoFactorResponseOK.prototype, "username", void 0);
+exports.LoginTwoFactorResponseOK = LoginTwoFactorResponseOK;
 

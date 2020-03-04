@@ -26,7 +26,6 @@ const controller_1 = require("../controller");
 const swagger_1 = require("@tsed/swagger");
 const Auth_1 = require("../../middleware/Auth");
 const auth_1 = require("../../dal/auth");
-const MAX_GROUPS = 100;
 let GroupsController = class GroupsController extends controller_1.default {
     constructor() {
         super();
@@ -43,6 +42,50 @@ let GroupsController = class GroupsController extends controller_1.default {
             throw new this.BadRequest('InvalidGroupId');
         }
         return groupInfo;
+    }
+    getGroupCreationFee() {
+        return {
+            cost: model.group.GROUP_CREATION_COST,
+        };
+    }
+    getGroupManageRules() {
+        return {
+            maxRoles: model.group.MAX_GROUP_ROLES,
+            rank: {
+                min: model.group.MIN_RANK_VALUE,
+                max: model.group.MAX_RANK_VALUE,
+            },
+            roleName: {
+                minLength: model.group.ROLE_NAME_MIN_LENGTH,
+                maxLength: model.group.ROLE_NAME_MAX_LENGTH,
+            },
+            roleDescription: {
+                minLength: model.group.ROLE_DESCRIPTION_MIN_LENGTH,
+                maxLength: model.group.ROLE_DESCRIPTION_MAX_LENGTH,
+            },
+            rolePermissions: [
+                {
+                    id: 'getWall',
+                    name: 'View Group Wall',
+                },
+                {
+                    id: 'postWall',
+                    name: 'Post to Group Wall',
+                },
+                {
+                    id: 'getShout',
+                    name: 'View Group Shout',
+                },
+                {
+                    id: 'postShout',
+                    name: 'Post to Group Shout',
+                },
+                {
+                    id: 'manage',
+                    name: 'Manage the Group',
+                }
+            ],
+        };
     }
     async multiGetNames(ids) {
         const idsArray = ids.split(',');
@@ -247,7 +290,7 @@ let GroupsController = class GroupsController extends controller_1.default {
             throw new this.Conflict('AlreadyGroupMember');
         }
         const groupCount = await this.user.countGroups(userInfo.userId);
-        if (groupCount >= MAX_GROUPS) {
+        if (groupCount >= model.group.MAX_GROUPS) {
             throw new this.BadRequest('TooManyGroups');
         }
         const roleset = await this.group.getRoleForNewMembers(groupId);
@@ -536,11 +579,11 @@ let GroupsController = class GroupsController extends controller_1.default {
             throw new this.BadRequest('InvalidGroupDescription');
         }
         const groupCount = await this.user.countGroups(userData.userId);
-        if (groupCount >= MAX_GROUPS) {
+        if (groupCount >= model.group.MAX_GROUPS) {
             throw new this.BadRequest('TooManyGroups');
         }
         const balance = userData.primaryBalance;
-        if (balance < 50) {
+        if (balance < model.group.GROUP_CREATION_COST) {
             throw new this.BadRequest('NotEnoughCurrency');
         }
         const files = await this.catalog.sortFileUploads(multerFiles);
@@ -590,8 +633,8 @@ let GroupsController = class GroupsController extends controller_1.default {
             await this.catalog.createCatalogAsset(groupIconCatalogId, userInfo.userId, model.catalog.assetType.Texture, groupIconCatalogId.toString(), 'jpg');
         }
         await this.group.updateGroupIconId(groupId, groupIconCatalogId);
-        await this.economy.subtractFromUserBalance(userData.userId, 50, model.economy.currencyType.primary);
-        await this.economy.createTransaction(userData.userId, 1, -50, model.economy.currencyType.primary, model.economy.transactionType.PurchaseOfGroup, "Creation of Group", model.catalog.creatorType.User, model.catalog.creatorType.User);
+        await this.economy.subtractFromUserBalance(userData.userId, model.group.GROUP_CREATION_COST, model.economy.currencyType.primary);
+        await this.economy.createTransaction(userData.userId, 1, -model.group.GROUP_CREATION_COST, model.economy.currencyType.primary, model.economy.transactionType.PurchaseOfGroup, "Creation of Group", model.catalog.creatorType.User, model.catalog.creatorType.User);
         (async () => {
             try {
                 const json = await this.catalog.generateAvatarJsonFromCatalogIds(groupIconCatalogId, [groupIconCatalogId]);
@@ -696,6 +739,21 @@ let GroupsController = class GroupsController extends controller_1.default {
         });
     }
 };
+__decorate([
+    common_1.Get('/metadata/creation-fee'),
+    swagger_1.Summary('Get the cost to create a group'),
+    swagger_1.Returns(200, { type: model.group.GroupCreationFee }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], GroupsController.prototype, "getGroupCreationFee", null);
+__decorate([
+    common_1.Get('/metadata/manage'),
+    swagger_1.Summary('Get group manage metadata'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], GroupsController.prototype, "getGroupManageRules", null);
 __decorate([
     common_1.Get('/names'),
     swagger_1.Summary('Multi-get group names'),

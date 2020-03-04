@@ -48,12 +48,12 @@ let AuthController = class AuthController extends controller_1.default {
         }
         if (moment(decoded.iat * 1000).subtract(5, 'minutes').isSameOrAfter(moment())) {
             console.log('expired');
-            throw new this.BadRequest('InvalidTwoFactorCode');
+            throw new this.Conflict('TwoFactorCodeExpired');
         }
         let userId = decoded.userId;
         let twoFactorInfo = await this.settings.is2faEnabled(userId);
         if (!twoFactorInfo || !twoFactorInfo.enabled) {
-            throw new Error('2fa is not enabled for the specified account.');
+            throw new this.Conflict('TwoFactorNotRequired');
         }
         let result;
         try {
@@ -73,7 +73,6 @@ let AuthController = class AuthController extends controller_1.default {
         return {
             userId: userId,
             username: userData.username,
-            isTwoFactorRequied: false,
         };
     }
     async login(username, password, userIp, userInfo, session) {
@@ -96,12 +95,7 @@ let AuthController = class AuthController extends controller_1.default {
             const dbPasswordHashed = await this.user.getPassword(userId);
             const compare = await auth_1.verifyPassword(password, dbPasswordHashed);
             if (compare) {
-                try {
-                    await this.user.logUserIp(userId, userIp, model.user.ipAddressActions.Login);
-                }
-                catch (e) {
-                    throw new Error('Unable to log user ip address');
-                }
+                await this.user.logUserIp(userId, userIp, model.user.ipAddressActions.Login);
                 let twoFactorEnabled = await this.settings.is2faEnabled(userId);
                 if (twoFactorEnabled.enabled) {
                     let jwtInfo = this.auth.generateTwoFactorJWT(userId, userIp);
@@ -442,9 +436,11 @@ let AuthController = class AuthController extends controller_1.default {
 __decorate([
     common_1.Post('/login/two-factor'),
     swagger_1.Summary('Login to an account using the two-factor JWT generated from /auth/login'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.NoAuth),
-    common_1.Use(RateLimit_1.RateLimiterMiddleware('loginAttempt')),
+    common_1.Use(auth_1.csrf, Auth_1.NoAuth, RateLimit_1.RateLimiterMiddleware('loginAttempt')),
+    swagger_1.Returns(200, { type: model.auth.LoginTwoFactorResponseOK, description: 'User session cookie will be set' }),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidTwoFactorCode: Token is not valid\n' }),
+    swagger_1.Returns(409, { type: model.Error, description: 'TwoFactorNotRequired: Two factor authentication was disabled for this account. Please login normally.\nTwoFactorCodeExpired: Two-Factor JWT code has expired. Please login again.\n' }),
+    swagger_1.Returns(429, { type: model.Error, description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n' }),
     __param(0, common_1.BodyParams('code', String)),
     __param(1, common_1.BodyParams('token', String)),
     __param(2, common_1.HeaderParams('cf-connecting-ip')),
@@ -457,11 +453,12 @@ __decorate([
 __decorate([
     common_1.Post('/login'),
     swagger_1.Summary('Login to an account'),
+    swagger_1.Description('Note that there is a limit of 25 attempts per hour, per IP address'),
+    swagger_1.Returns(200, { type: model.auth.LoginRequestOK, description: 'Session will be set, unless "isTwoFactorRequired" is true. "twoFactor" is only defined if "isTwoFactorRequied" is true. If "twoFactor" is not undefined, the user will be required to grab their TOTP token and enter it, then the "twoFactor" string and TOTP token should be POSTed to /login/two-factor to complete the login flow' }),
     swagger_1.Returns(400, { description: 'InvalidUsernameOrPassword: Invalid Credentials\n', type: model.Error }),
     swagger_1.Returns(409, { description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.NoAuth),
-    common_1.Use(RateLimit_1.RateLimiterMiddleware('loginAttempt')),
+    swagger_1.Returns(429, { type: model.Error, description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n' }),
+    common_1.Use(auth_1.csrf, Auth_1.NoAuth, RateLimit_1.RateLimiterMiddleware('loginAttempt')),
     __param(0, common_1.BodyParams('username', String)),
     __param(1, common_1.BodyParams('password', String)),
     __param(2, common_1.HeaderParams('cf-connecting-ip')),

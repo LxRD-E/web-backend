@@ -15,6 +15,22 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@tsed/common");
+exports.MAX_GROUPS = 100;
+exports.MAX_GROUP_ROLES = 18;
+exports.MAX_RANK_VALUE = 255;
+exports.MIN_RANK_VALUE = 1;
+exports.ROLE_NAME_MAX_LENGTH = 32;
+exports.ROLE_NAME_MIN_LENGTH = 1;
+exports.ROLE_DESCRIPTION_MAX_LENGTH = 255;
+exports.ROLE_DESCRIPTION_MIN_LENGTH = 0;
+exports.GROUP_CREATION_COST = 50;
+class GroupCreationFee {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GroupCreationFee.prototype, "cost", void 0);
+exports.GroupCreationFee = GroupCreationFee;
 class groupPermissions {
 }
 __decorate([

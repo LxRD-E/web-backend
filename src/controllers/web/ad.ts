@@ -15,7 +15,7 @@ import { NoAuth, YesAuth } from "../../middleware/Auth";
 import {numberWithCommas} from '../../helpers/Filter';
 
 @Controller("/")
-export class WWWCatalogController extends controller {
+export class WWWAdsController extends controller {
     constructor() {
         super();
     }

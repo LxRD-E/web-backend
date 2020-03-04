@@ -32,3 +32,21 @@ export class SignupResponseOK {
     @Required()
     userId: number;
 }
+
+export class LoginRequestOK {
+    @Required()
+    userId: number;
+    @Required()
+    username: string;
+    @Required()
+    isTwoFactorRequied: boolean;
+    @PropertyType(String)
+    twoFactor: string;
+}
+
+export class LoginTwoFactorResponseOK {
+    @Required()
+    userId: number;
+    @Required()
+    username: string;
+}

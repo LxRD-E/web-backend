@@ -141,6 +141,28 @@ class CatalogDAL extends _init {
         return catalogResults as catalog.SearchResults[];
     }
 
+    public async getLowestPriceOfCollectibleCatalogItems(catalogIds: number[]): Promise<catalog.LowestPriceCollectibleItems[]> {
+        let lowestPriceQuery = this.knex('user_inventory').select('catalog_id as catalogId','price').orderBy('price','asc');
+        for (const item of catalogIds) {
+            lowestPriceQuery = lowestPriceQuery.orWhere('catalog_id','=',item).andWhere('price','>',0);
+        }
+        let queryCompleted = await lowestPriceQuery;
+        for (const catalogId of catalogIds) {
+            let good = false;
+            for (const completed of queryCompleted) {
+                if (completed.catalogId === catalogId) {
+                    good = true;
+                }
+            }
+            if (good) {
+                continue;
+            }else{
+                queryCompleted.push({catalogId: catalogId, price: null});
+            }
+        }
+        return queryCompleted;
+    }
+
     /**
      * Update a catalog item's info
      * @param catalogId Catalog Item's ID

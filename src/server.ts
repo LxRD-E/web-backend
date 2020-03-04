@@ -28,6 +28,12 @@ if (process.env.NODE_ENV === 'production') {
 }
 let multerMemStore = multer.memoryStorage();
 
+/*
+require('blocked-at')((time, stack) => {
+    console.log(`Blocked for ${time}ms, operation started here:`, stack)
+})
+*/
+
 @ServerSettings({
     rootDir: Path.resolve(__dirname),
     viewsDir: "${rootDir}/views",
@@ -50,7 +56,7 @@ let multerMemStore = multer.memoryStorage();
             cssPath: '${rootDir}/public/css/swagger.css',
             jsPath: '${rootDir}/public/js/swagger.js',
             operationIdFormat: 'HindiGamerClub.%c.%m',
-        }
+        },
     ],
     logger: {
         logStart: false,

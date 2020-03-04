@@ -133,6 +133,8 @@ var HttpErrors;
     HttpErrors[HttpErrors["InvalidMaxPlayers"] = 128] = "InvalidMaxPlayers";
     HttpErrors[HttpErrors["InvalidNameOrDescription"] = 129] = "InvalidNameOrDescription";
     HttpErrors[HttpErrors["TooManyGames"] = 130] = "TooManyGames";
+    HttpErrors[HttpErrors["TwoFactorCodeExpired"] = 131] = "TwoFactorCodeExpired";
+    HttpErrors[HttpErrors["TwoFactorNotRequired"] = 132] = "TwoFactorNotRequired";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 ;
 exports.ErrorTemplate = (title, body) => {

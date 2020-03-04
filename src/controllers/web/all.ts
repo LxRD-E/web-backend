@@ -130,6 +130,7 @@ export class WWWController extends controller {
         try {
             count = await this.catalog.countAllItemsForSale();
         }catch(e) {
+            // lol
             count = 1500;
         }
         let wwwTemp = new WWWTemplate({

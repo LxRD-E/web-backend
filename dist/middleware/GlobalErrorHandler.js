@@ -25,7 +25,7 @@ let MyGEHMiddleware = class MyGEHMiddleware extends common_1.GlobalErrorHandlerM
             return response.redirect('/');
         }
         try {
-            console.log(error);
+            console.error(error);
             if (error.name === 'BAD_REQUEST') {
                 let fullErrorMessage;
                 if (error.errorMessage) {

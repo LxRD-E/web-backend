@@ -1,5 +1,7 @@
 import { Unauthorized, Conflict } from 'ts-httpexceptions';
 import { Request, Response, Middleware, Req, Res } from '@tsed/common';
+import { Returns } from '@tsed/swagger';
+import * as model from '../models/models';
 
 @Middleware()
 export class YesAuth {

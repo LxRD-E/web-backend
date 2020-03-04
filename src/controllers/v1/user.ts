@@ -257,6 +257,15 @@ export class UsersController extends controller {
         return thumbnails;
     }
 
+    @Get('/friend/metadata')
+    @Summary('Get friendship metadata')
+    @Returns(200, {type: model.user.FriendshipMetadata})
+    public getFriendshipMetadata() {
+        let metaInfo = new model.user.FriendshipMetadata();
+        metaInfo.maxFriendships = model.user.MAX_FRIENDS;
+        return metaInfo;
+    }
+
     @Get('/:userId/friend')
     @Summary('Get the friendship status between the authenticated user and another user')
     @Returns(200, { type: model.user.FriendshipStatus })
@@ -284,9 +293,8 @@ export class UsersController extends controller {
     @Summary('Send a friend request to a user')
     @Returns(200, { description: 'Request Sent' })
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nCannotSendRequest: You cannot send a friend request right now\n' })
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
-    @Use(RateLimiterMiddleware('sendFriendRequest'))
+    @Returns(409, {type: model.Error, description: 'AuthenticatedUserIsAtMaxFriends: Authenticated user is at the maximum amount of friends\nOtherUserIsAtMaxFriends: The user you are trying to friend is at the maximum amount of friends\n'})
+    @Use(csrf, YesAuth, RateLimiterMiddleware('sendFriendRequest'))
     public async sendFriendRequest(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number
@@ -295,10 +303,20 @@ export class UsersController extends controller {
         try {
             const info = await this.user.getInfo(userId, ["accountStatus"]);
             if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw false;
+                throw new Error('User is terminated');
             }
         } catch (e) {
             throw new this.BadRequest('InvalidUserId');
+        }
+        // Check if authenticated user is at max friends 
+        let friendCount = await this.user.countFriends(userInfo.userId);
+        if (friendCount >= model.user.MAX_FRIENDS) {
+            throw new this.Conflict('AuthenticatedUserIsAtMaxFriends');
+        }
+        // Check if user to send request to is at max friends
+        let friendsCountForOtherUser = await this.user.countFriends(userId);
+        if (friendsCountForOtherUser >= model.user.MAX_FRIENDS) {
+            throw new this.Conflict('OtherUserIsAtMaxFriends');
         }
         let canSend = await this.user.getFriendshipStatus(userInfo.userId, userId);
         if (canSend.canSendFriendRequest) {
@@ -311,8 +329,8 @@ export class UsersController extends controller {
     @Put('/:userId/friend')
     @Summary('Accept a friend request')
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nNoPendingRequest: There is no friend request to accept\n' })
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Returns(409, {type: model.Error, description: 'AuthenticatedUserIsAtMaxFriends: Authenticated user is at the maximum amount of friends\nOtherUserIsAtMaxFriends: The user you are trying to friend is at the maximum amount of friends\n'})
+    @Use(csrf, YesAuth)
     public async acceptFriendRequest(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number
@@ -321,11 +339,21 @@ export class UsersController extends controller {
         try {
             const info = await this.user.getInfo(userId, ["accountStatus"]);
             if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw false;
+                throw new Error('User is terminated');
             }
         } catch (e) {
             throw new this.BadRequest('InvalidUserId');
         }
+         // Check if authenticated user is at max friends 
+         let friendCount = await this.user.countFriends(userInfo.userId);
+         if (friendCount >= model.user.MAX_FRIENDS) {
+             throw new this.Conflict('AuthenticatedUserIsAtMaxFriends');
+         }
+         // Check if user to send request to is at max friends
+         let friendsCountForOtherUser = await this.user.countFriends(userId);
+         if (friendsCountForOtherUser >= model.user.MAX_FRIENDS) {
+             throw new this.Conflict('OtherUserIsAtMaxFriends');
+         }
         let canSend = await this.user.getFriendshipStatus(userInfo.userId, userId);
         if (canSend.canAcceptFriendRequest) {
             await this.user.createFriendship(userInfo.userId, userId);
@@ -432,16 +460,22 @@ export class UsersController extends controller {
         @PathParams('userId', Number) userId: number,
         @PathParams('catalogId', Number) catalogId: number
     ) {
-        const info = await this.user.getInfo(userId, ['accountStatus']);
-        if (info.accountStatus === model.user.accountStatus.deleted) {
-            throw new this.BadRequest('InvalidUserId')
+        console.log('check if owns');
+        let info;
+        try {
+            info = await this.user.getInfo(userId, ['accountStatus']);
+            if (info.accountStatus === model.user.accountStatus.deleted) {
+                throw new this.BadRequest('InvalidUserId')
+            }
+        }catch(e) {
+            throw new this.BadRequest('InvalidUserId');
         }
         const ownedItems = await this.user.getUserInventoryByCatalogId(userId, catalogId);
         return ownedItems;
     }
 
     @Patch('/market/:userInventoryId')
-    @Summary('Sell an item that the authenticated user has permission to sell. If price set to 0, the item will be delisted')
+    @Summary('Sell an item that the authenticated user has permission to sell. If price set to 0, the item will be de-listed')
     @Returns(400, { type: model.Error, description: 'InvalidPrice: Price must be between 0 and 1,000,000\nCannotBeSold: Item cannot be listed for sale\n' })
     @Use(csrf, YesAuth, TwoStepMiddleware('ListItem'))
     public async sellItem(

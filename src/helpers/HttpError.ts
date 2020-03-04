@@ -130,6 +130,8 @@ export enum HttpErrors {
     InvalidMaxPlayers,
     InvalidNameOrDescription,
     TooManyGames,
+    TwoFactorCodeExpired,
+    TwoFactorNotRequired,
 };
 // @Locals('userInfo') userInfo: model.user.UserInfo,
 export const ErrorTemplate = (title: string, body: string): string => {

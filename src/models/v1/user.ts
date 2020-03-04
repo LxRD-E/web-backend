@@ -2,6 +2,17 @@ import * as Catalog from './catalog';
 import * as Groups from './group';
 import { Required, PropertyType } from '@tsed/common';
 import { Example, Description } from '@tsed/swagger';
+
+export const MAX_FRIENDS = 100;
+
+/**
+ * Friendship Metadata Interface
+ */
+export class FriendshipMetadata {
+    @Required()
+    maxFriendships: number;
+}
+
 /**
  * Interfaces
  */

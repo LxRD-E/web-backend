@@ -3,7 +3,7 @@
  */
 // TSed
 import { Controller, Get, All, Next, Req, Res, UseBefore, Render, QueryParams, PathParams, Redirect, Response, Request, Locals, UseAfter, Required, Use, Err, Post, BodyParams, HeaderParams, Session, UseBeforeEach, PropertyType, MinItems, MaxItems, Maximum, Minimum, Patch, Delete } from "@tsed/common";
-import { Description, Summary, Returns, ReturnsArray } from "@tsed/swagger"; // import swagger Ts.ED module
+import { Description, Summary, Returns, ReturnsArray, Hidden } from "@tsed/swagger"; // import swagger Ts.ED module
 import moment = require('moment');
 import { RateLimiterMiddleware } from '../../middleware/RateLimit';
 // Models
@@ -27,9 +27,11 @@ export default class AuthController extends controller {
 
     @Post('/login/two-factor')
     @Summary('Login to an account using the two-factor JWT generated from /auth/login')
-    @UseBeforeEach(csrf)
-    @UseBefore(NoAuth)
-    @Use(RateLimiterMiddleware('loginAttempt'))
+    @Use(csrf, NoAuth, RateLimiterMiddleware('loginAttempt'))
+    @Returns(200, {type: model.auth.LoginTwoFactorResponseOK, description: 'User session cookie will be set'})
+    @Returns(400, {type: model.Error, description: 'InvalidTwoFactorCode: Token is not valid\n'})
+    @Returns(409, {type: model.Error, description: 'TwoFactorNotRequired: Two factor authentication was disabled for this account. Please login normally.\nTwoFactorCodeExpired: Two-Factor JWT code has expired. Please login again.\n'})
+    @Returns(429, {type: model.Error, description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n'})
     public async loginWithTwoFactor(
         @BodyParams('code', String) code: string,
         @BodyParams('token', String) token: string,
@@ -56,12 +58,12 @@ export default class AuthController extends controller {
         // Expired
         if (moment(decoded.iat * 1000).subtract(5, 'minutes').isSameOrAfter(moment())) {
             console.log('expired');
-            throw new this.BadRequest('InvalidTwoFactorCode');
+            throw new this.Conflict('TwoFactorCodeExpired');
         }
         let userId = decoded.userId;
         let twoFactorInfo = await this.settings.is2faEnabled(userId);
         if (!twoFactorInfo || !twoFactorInfo.enabled) {
-            throw new Error('2fa is not enabled for the specified account.');
+            throw new this.Conflict('TwoFactorNotRequired');
         }
         // Validate secret
         let result: boolean;
@@ -82,17 +84,17 @@ export default class AuthController extends controller {
         return {
             userId: userId,
             username: userData.username,
-            isTwoFactorRequied: false,
         };
     }
 
     @Post('/login')
     @Summary('Login to an account')
+    @Description('Note that there is a limit of 25 attempts per hour, per IP address')
+    @Returns(200, { type: model.auth.LoginRequestOK, description: 'Session will be set, unless "isTwoFactorRequired" is true. "twoFactor" is only defined if "isTwoFactorRequied" is true. If "twoFactor" is not undefined, the user will be required to grab their TOTP token and enter it, then the "twoFactor" string and TOTP token should be POSTed to /login/two-factor to complete the login flow'})
     @Returns(400, { description: 'InvalidUsernameOrPassword: Invalid Credentials\n', type: model.Error })
     @Returns(409, { description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error })
-    @UseBeforeEach(csrf)
-    @UseBefore(NoAuth)
-    @Use(RateLimiterMiddleware('loginAttempt'))
+    @Returns(429, {type: model.Error, description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n'})
+    @Use(csrf, NoAuth, RateLimiterMiddleware('loginAttempt'))
     public async login(
         @BodyParams('username', String) username: string,
         @BodyParams('password', String) password: string,
@@ -121,11 +123,7 @@ export default class AuthController extends controller {
             const compare = await verifyPassword(password, dbPasswordHashed);
             if (compare) {
                 // Record Login
-                try {
-                    await this.user.logUserIp(userId, userIp, model.user.ipAddressActions.Login);
-                } catch (e) {
-                    throw new Error('Unable to log user ip address');
-                }
+                await this.user.logUserIp(userId, userIp, model.user.ipAddressActions.Login);
                 // Check if 2fa required
                 let twoFactorEnabled = await this.settings.is2faEnabled(userId);
                 if (twoFactorEnabled.enabled) {

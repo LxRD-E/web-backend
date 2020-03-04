@@ -15,6 +15,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@tsed/common");
+const swagger_1 = require("@tsed/swagger");
 var ModerationStatus;
 (function (ModerationStatus) {
     ModerationStatus[ModerationStatus["Pending"] = 0] = "Pending";
@@ -58,5 +59,71 @@ __decorate([
 exports.AdClickResponse = AdClickResponse;
 class FullAdvertismentDetails {
 }
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], FullAdvertismentDetails.prototype, "adId", void 0);
+__decorate([
+    common_1.AllowTypes('string', 'null'),
+    common_1.PropertyType(String),
+    swagger_1.Description('This value will be null if moderation has declined the image or it is pending approval'),
+    __metadata("design:type", String)
+], FullAdvertismentDetails.prototype, "imageUrl", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], FullAdvertismentDetails.prototype, "title", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], FullAdvertismentDetails.prototype, "adType", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], FullAdvertismentDetails.prototype, "adRedirectId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], FullAdvertismentDetails.prototype, "moderationStatus", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], FullAdvertismentDetails.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], FullAdvertismentDetails.prototype, "bidAmount", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], FullAdvertismentDetails.prototype, "totalBidAmount", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Boolean)
+], FullAdvertismentDetails.prototype, "hasRunBefore", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], FullAdvertismentDetails.prototype, "updatedAt", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], FullAdvertismentDetails.prototype, "createdAt", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], FullAdvertismentDetails.prototype, "views", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], FullAdvertismentDetails.prototype, "totalViews", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], FullAdvertismentDetails.prototype, "clicks", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], FullAdvertismentDetails.prototype, "totalClicks", void 0);
 exports.FullAdvertismentDetails = FullAdvertismentDetails;
 
