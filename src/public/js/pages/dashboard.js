@@ -106,9 +106,9 @@ $(function(){
     function getFeed(offset) {
         $('#feedLoader').show();
         isLoading = true;
-    request("/auth/feed?offset="+offset, "GET")
+    request("/auth/feed?limit=10&offset="+offset, "GET")
         .then((data)=>{
-            feedOffset += 25;
+            feedOffset += 10;
             // Has Feed
             var userIdsRequest = [];
             data.forEach(function(k,v) {

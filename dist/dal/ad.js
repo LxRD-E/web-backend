@@ -6,12 +6,13 @@ const aws = require("aws-sdk");
 const config_1 = require("../helpers/config");
 const _init_1 = require("./_init");
 class AdDAL extends _init_1.default {
-    async getRandomAd() {
+    async getRandomAd(adDisplayType) {
         let randomAds = await this.knex('user_ads')
             .select('id as adId', 'bid_amount as bidAmount', 'updated_at as updatedAt', 'image_url as imageUrl', 'title')
             .where('updated_at', '>=', this.knexTime(this.moment().subtract(24, 'hours')))
             .andWhere('moderation_status', '=', model.ad.ModerationStatus.Approved)
-            .andWhere('bid_amount', '>', 0);
+            .andWhere('bid_amount', '>', 0)
+            .andWhere('ad_displaytype', '=', adDisplayType);
         if (randomAds.length === 0) {
             throw new Error('NoAdvertismentsAvailable');
         }

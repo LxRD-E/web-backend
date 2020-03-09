@@ -192,6 +192,22 @@ a.navbar-brand:hover {
     color: rgba(71,195,91,1)!important;
     transition: all .1s ease-in;
 }
+a.navbar-brand {
+    color: #16181b;
+    font-size: 0.95rem;
+    font-weight: 400;
+    margin-top: -1px;
+    margin-bottom: 0.15rem;
+    /*
+                    background: linear-gradient(90deg, rgba(71,195,91,1) 0%, rgba(105,222,124,1) 100%);
+                    color: white;
+                    padding-left: 8px;
+                    padding-right: 8px;
+                    border-bottom: 1px solid #28a745;
+                    margin-bottom: 0.25rem;
+                    transform: rotate(-1deg);
+    */
+}
 .navbar-nav> .nav-item > .nav-link {
     transition: all .2s ease-in;
     color: rgba(255,255,255,1);

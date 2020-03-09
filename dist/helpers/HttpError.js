@@ -119,7 +119,7 @@ var HttpErrors;
     HttpErrors[HttpErrors["InvalidTwoFactorCode"] = 114] = "InvalidTwoFactorCode";
     HttpErrors[HttpErrors["TwoStepVerificationRequired"] = 115] = "TwoStepVerificationRequired";
     HttpErrors[HttpErrors["TwoStepRequiredVerificationFailed"] = 116] = "TwoStepRequiredVerificationFailed";
-    HttpErrors[HttpErrors["NoAdvertismentAvailable"] = 117] = "NoAdvertismentAvailable";
+    HttpErrors[HttpErrors["NoAdvertisementAvailable"] = 117] = "NoAdvertisementAvailable";
     HttpErrors[HttpErrors["InvalidAdId"] = 118] = "InvalidAdId";
     HttpErrors[HttpErrors["InvalidAdType"] = 119] = "InvalidAdType";
     HttpErrors[HttpErrors["InvalidAdTitle"] = 120] = "InvalidAdTitle";
@@ -135,6 +135,7 @@ var HttpErrors;
     HttpErrors[HttpErrors["TooManyGames"] = 130] = "TooManyGames";
     HttpErrors[HttpErrors["TwoFactorCodeExpired"] = 131] = "TwoFactorCodeExpired";
     HttpErrors[HttpErrors["TwoFactorNotRequired"] = 132] = "TwoFactorNotRequired";
+    HttpErrors[HttpErrors["InvalidAdDisplayType"] = 133] = "InvalidAdDisplayType";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 ;
 exports.ErrorTemplate = (title, body) => {

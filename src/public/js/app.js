@@ -1446,13 +1446,13 @@ $(document).on('click', '.onClickShowTabs', function (e) {
 /**
  *  load ads
  */
-request('/ad/random', 'GET')
+request('/ad/random/1', 'GET')
 .then(d => {
     $('#leaderboard-ad-one').append(`
     <div class="col-12" style="margin-top:1rem;">
         <div style="display:block;margin:0 auto;max-width:728px;">
             <a href="/api/v1/ad/${d.adId}/click">
-                <img style="width:100%;" src="${d.imageUrl}" title="${d.title.escape()}" />
+                <img style="width:100%;" src="${d.imageUrl}" title="${xss(d.title)}" />
                 <p class="ad-alert-text" style="color: rgba(33, 37, 41, 0.95);"><i class="fas fa-ad"></i></p>
             </a>
         </div>

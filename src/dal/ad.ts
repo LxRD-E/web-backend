@@ -16,12 +16,13 @@ export default class AdDAL extends _init {
      * Get a semi-random ad. Will prefer ads with higher bid
      * @throws {e.message.NoAdvertismentsAvailable} - No advertisment was available
      */
-    public async getRandomAd(): Promise<model.ad.Advertisment> {
+    public async getRandomAd(adDisplayType: model.ad.AdType): Promise<model.ad.Advertisment> {
         let randomAds = await this.knex('user_ads')
             .select('id as adId','bid_amount as bidAmount','updated_at as updatedAt','image_url as imageUrl','title')
             .where('updated_at','>=', this.knexTime(this.moment().subtract(24, 'hours')))
             .andWhere('moderation_status','=',model.ad.ModerationStatus.Approved)
             .andWhere('bid_amount','>',0)
+            .andWhere('ad_displaytype', '=',adDisplayType);
         if (randomAds.length === 0) {
             throw new Error('NoAdvertismentsAvailable');
         }

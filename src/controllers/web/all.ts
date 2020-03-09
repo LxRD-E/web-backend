@@ -28,7 +28,11 @@ export class WWWController extends controller {
     @Render('index')
     public async Index(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
+        @Res() res: Res,
     ) {
+        if (userInfo) {
+            return res.redirect(302, '/dashboard');
+        }
         return new WWWTemplate({
             title: "Homepage",
             userInfo: userInfo,

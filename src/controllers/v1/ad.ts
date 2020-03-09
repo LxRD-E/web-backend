@@ -5,13 +5,14 @@
 import * as model from '../../models/models';
 // Autoloads
 import controller from '../controller';
-import { BodyParams, Locals, UseBeforeEach, UseBefore, Patch, Controller, Get, Err, ModelStrict, PathParams, Post, Use, Res, Required, Status } from '@tsed/common';
-import { csrf } from '../../dal/auth';
-import { YesAuth } from '../../middleware/Auth';
-import { Summary, Returns, Description, ReturnsArray } from '@tsed/swagger';
-import { MultipartFile } from '@tsed/multipartfiles';
+import {BodyParams, Controller, Get, Locals, PathParams, Post, Required, Res, Status, Use} from '@tsed/common';
+import {csrf} from '../../dal/auth';
+import {YesAuth} from '../../middleware/Auth';
+import {Description, Returns, ReturnsArray, Summary} from '@tsed/swagger';
+import {MultipartFile} from '@tsed/multipartfiles';
 import jimp = require('jimp');
 import crypto = require('crypto');
+
 /**
  * Ad Controller
  */
@@ -29,21 +30,27 @@ export default class AdController extends controller {
     public async getCreatedAds(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ) {
-        let userAds = await this.ad.getUserAds(userInfo.userId);
-        return userAds;
+        return await this.ad.getUserAds(userInfo.userId);
     }
 
-    @Get('/random')
+    @Get('/random/:adDisplayType')
     @Summary('Get a semi-random advertisement to display to the user')
-    @Description('Advertisments are not targetted to comply with COPPA. Ads are purely based off of user bid amounts, i.e, if one user bids 10 primary and another user bids 1, you have a 90% chance of seeing the first ad and a 10% chance of seeing the second ad.')
+    @Description('Advertisements are not targeted to comply with COPPA. Ads are purely based off of user bid amounts, i.e, if one user bids 10 primary and another user bids 1, you have a 90% chance of seeing the first ad and a 10% chance of seeing the second ad.')
     @Returns(200, {type: model.ad.Advertisment})
-    @Returns(409, {type: model.Error, description: 'NoAdvertismentAvailable: Account status does not permit advertisment, or no ads are available to display to the user\n'})
-    public async getAdvertisment() {
+    @Returns(409, {type: model.Error, description: 'NoAdvertisementAvailable: Account status does not permit advertisement, or no ads are available to display to the user\n'})
+    @Returns(400, {type: model.Error, description: 'InvalidAdDisplayType: AdDisplayId is invalid\n'})
+    public async getAdvertisement(
+        @Description('The type of ad to grab')
+        @PathParams('adDisplayType', Number) adDisplayType: number,
+    ) {
+        if (!model.ad.AdDisplayType[adDisplayType])  {
+            throw new this.BadRequest('InvalidAdDisplayType');
+        }
         let ad: model.ad.Advertisment;
         try {
-            ad = await this.ad.getRandomAd();
+            ad = await this.ad.getRandomAd(adDisplayType);
         }catch(e){
-            throw new this.Conflict('NoAdvertismentAvailable');
+            throw new this.Conflict('NoAdvertisementAvailable');
         }
         // Increment
         await this.ad.incrementAdViewCount(ad.adId);
@@ -80,13 +87,13 @@ export default class AdController extends controller {
     }
 
     @Post('/create')
-    @Summary('Create an advertisment.')
+    @Summary('Create an advertisement.')
     @Description('If group or group item, user must be owner of group. If catalog item, user must be creator')
     @Use(csrf, YesAuth)
     @Returns(200, {description: 'Add Created'})
     @Returns(400, {type: model.Error,description: 'NoFileSpecified: Please specify a body.uploadedFiles\nInvalidAdType: Ad Type is invalid\nInvalidAdTitle: Ad title is invalid, too long, or too short\nInvalidPermissions: You do not have permission to advertise this asset\n'})
     @Returns(409, {type: model.Error, description: 'Cooldown: You cannot create an ad right now\n'})
-    public async createAdvertisment(
+    public async createAdvertisement(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
         @Description('File can be a JPG, JPEG, or PNG. We may expand this in the future')
@@ -98,7 +105,14 @@ export default class AdController extends controller {
         @Required()
         @Description('The ID of the adType. For instance, if you want to advertise Forum Thread id 28, this value would be 28')
         @BodyParams('adRedirectId', Number) adRedirectId: number,
+        @Required()
+        @Description('The type of ad to create')
+        @BodyParams('adDisplayType', Number) adDisplayType: number,
     ) {
+        // Check if adDisplayType is valid
+        if (!model.ad.AdDisplayType[adDisplayType]) {
+            throw new this.BadRequest('InvalidAdDisplayType');
+        }
         // Check if created ad recently
         let canMakeAd = await this.ad.canUserCreateAd(userInfo.userId);
         if (!canMakeAd) {
@@ -126,7 +140,11 @@ export default class AdController extends controller {
         let imageInfo = await jimp.read(file);
         // Resize (to leaderboard)
         // currently hard-coded for leaderboard, but we may add more types of ads in the future, so update this code accordingly
-        await imageInfo.resize(728,90);
+        if (adDisplayType === model.ad.AdDisplayType.Leaderboard) {
+            await imageInfo.resize(728,90);
+        }else{
+            throw new Error('NotImplemented');
+        }
         // Grab edited buffer
         let imageData = await imageInfo.getBufferAsync(mime);
         if (!model.ad.AdType[adType]) {
@@ -183,8 +201,7 @@ export default class AdController extends controller {
         // generate random name for ad image
         let randomName = crypto.randomBytes(32).toString('hex')+fileEnding;
         // insert data
-        // note: we currently hardcode banner (since its the only ad type, but we may add more types in the future. make sure to update this code to fit them!)
-        let adId = await this.ad.createAd(userInfo.userId, 'https://cdn.hindigamer.club/thumbnails/'+randomName, title, adType, adRedirectId, model.ad.AdDisplayType.Leaderboard);
+        let adId = await this.ad.createAd(userInfo.userId, 'https://cdn.hindigamer.club/thumbnails/'+randomName, title, adType, adRedirectId, adDisplayType);
         // upload image
         await this.ad.uploadAdImage(randomName, imageData, mime);
         // return success 
@@ -194,7 +211,7 @@ export default class AdController extends controller {
     }
 
     @Post('/:adId/bid')
-    @Summary('Bid money on an advertisment')
+    @Summary('Bid money on an advertisement')
     @Description('User must be creator of ad')
     @Use(csrf, YesAuth)
     @Returns(400, {type: model.Error, description: 'InvalidCurrencyAmount: Currency Amount must be between 1 and 100,000\nInvalidAdId: adId is invalid or not managed by authenticated user\nModerationStatusConflict: Ad moderation status does not allow it to run\n'})
@@ -237,7 +254,7 @@ export default class AdController extends controller {
         // subtract balance
         await this.economy.subtractFromUserBalance(userInfo.userId, amount, model.economy.currencyType.primary);
         // create transaction
-        await this.economy.createTransaction(userInfo.userId, 1, amount, model.economy.currencyType.primary, model.economy.transactionType.PurchaseOfAdvertisment, 'Purchase of Advertisment', model.catalog.creatorType.User, model.catalog.creatorType.User);
+        await this.economy.createTransaction(userInfo.userId, 1, amount, model.economy.currencyType.primary, model.economy.transactionType.PurchaseOfAdvertisment, 'Purchase of Advertisement', model.catalog.creatorType.User, model.catalog.creatorType.User);
         // update ad
         await this.ad.placeBidOnAd(adId, amount);
         // return success

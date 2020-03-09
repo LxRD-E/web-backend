@@ -141,8 +141,13 @@ class CatalogDAL extends _init {
         return catalogResults as catalog.SearchResults[];
     }
 
+    /**
+     * Given an array of catalogIds, this method will return a catalog.LowestPriceCollectibleItems[] containing the lowest sales price
+     * of each catalogId. If there is no lowest price (i.e. nobody is selling it), then the price will be set as "null"
+     * @param catalogIds 
+     */
     public async getLowestPriceOfCollectibleCatalogItems(catalogIds: number[]): Promise<catalog.LowestPriceCollectibleItems[]> {
-        let lowestPriceQuery = this.knex('user_inventory').select('catalog_id as catalogId','price').orderBy('price','asc');
+        let lowestPriceQuery = this.knex('user_inventory').select('catalog_id as catalogId','price').orderBy('price','desc');
         for (const item of catalogIds) {
             lowestPriceQuery = lowestPriceQuery.orWhere('catalog_id','=',item).andWhere('price','>',0);
         }

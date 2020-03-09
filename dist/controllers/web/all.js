@@ -31,7 +31,10 @@ let WWWController = class WWWController extends controller_1.default {
         super();
     }
     redirectToDiscord() { }
-    async Index(userInfo) {
+    async Index(userInfo, res) {
+        if (userInfo) {
+            return res.redirect(302, '/dashboard');
+        }
         return new Www_1.WWWTemplate({
             title: "Homepage",
             userInfo: userInfo,
@@ -118,8 +121,9 @@ __decorate([
     common_1.Get("/"),
     common_1.Render('index'),
     __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Res()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [UserModel.SessionUserInfo]),
+    __metadata("design:paramtypes", [UserModel.SessionUserInfo, Object]),
     __metadata("design:returntype", Promise)
 ], WWWController.prototype, "Index", null);
 __decorate([

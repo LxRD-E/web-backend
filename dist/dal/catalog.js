@@ -102,7 +102,7 @@ class CatalogDAL extends _init_1.default {
         return catalogResults;
     }
     async getLowestPriceOfCollectibleCatalogItems(catalogIds) {
-        let lowestPriceQuery = this.knex('user_inventory').select('catalog_id as catalogId', 'price').orderBy('price', 'asc');
+        let lowestPriceQuery = this.knex('user_inventory').select('catalog_id as catalogId', 'price').orderBy('price', 'desc');
         for (const item of catalogIds) {
             lowestPriceQuery = lowestPriceQuery.orWhere('catalog_id', '=', item).andWhere('price', '>', 0);
         }

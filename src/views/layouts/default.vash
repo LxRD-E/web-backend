@@ -95,25 +95,7 @@
         <nav class="navbar navbar-expand-lg sticky-top @model._extraCssClass">
             <div class="container">
                 <h3 style="margin:0;padding:0;">
-                    <a class="navbar-brand" href="/" style="
-                    
-                    
-                    font-size: 0.95rem;
-                    font-weight: 400;
-                    
-                    margin-top: -1px;
-                    margin-bottom: 0.15rem;
-                    /*
-                    background: linear-gradient(90deg, rgba(71,195,91,1) 0%, rgba(105,222,124,1) 100%);
-                    color: white;
-                    padding-left: 8px;
-                    padding-right: 8px;
-                    border-bottom: 1px solid #28a745;
-                    margin-bottom: 0.25rem;
-                    transform: rotate(-1deg);
-                    */
-                    
-                    ">HINDIGAMER.CLUB
+                    <a class="navbar-brand" href="/">HINDIGAMER.CLUB
                     </a>
                 </h3>
 
@@ -247,7 +229,7 @@
         <div class="row" style="display:none;margin:0;" id="systemWideStatsArea"></div>
         @if (model.bannerText) {
             <div class="row" style="margin:0;" id="bannerText">
-                <div class="col-12 bg-warning text-white">
+                <div class="col-12" style="background-color: #23282d;color: white;">
                     <div class="container">
                         <h6 style="margin-top:1rem;margin-bottom:1rem;">@html.raw(model.bannerText)</h6>
                     </div>

@@ -197,7 +197,7 @@ class ForumDAL extends _init {
             "forum_posts.threadid": threadId
         }).orderBy("forum_posts.id", sort).limit(limit).offset(offset);
         for (const post of posts) {
-            if (post.postDeleted === Forum.postDeleted.true) {
+            if (post.postDeleted !== Forum.postDeleted.false) {
                 post.body = "[ Deleted ]";
             }
         }

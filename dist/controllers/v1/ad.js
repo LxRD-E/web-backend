@@ -31,16 +31,18 @@ let AdController = class AdController extends controller_1.default {
         super();
     }
     async getCreatedAds(userInfo) {
-        let userAds = await this.ad.getUserAds(userInfo.userId);
-        return userAds;
+        return await this.ad.getUserAds(userInfo.userId);
     }
-    async getAdvertisment() {
+    async getAdvertisement(adDisplayType) {
+        if (!model.ad.AdDisplayType[adDisplayType]) {
+            throw new this.BadRequest('InvalidAdDisplayType');
+        }
         let ad;
         try {
-            ad = await this.ad.getRandomAd();
+            ad = await this.ad.getRandomAd(adDisplayType);
         }
         catch (e) {
-            throw new this.Conflict('NoAdvertismentAvailable');
+            throw new this.Conflict('NoAdvertisementAvailable');
         }
         await this.ad.incrementAdViewCount(ad.adId);
         return ad;
@@ -66,7 +68,10 @@ let AdController = class AdController extends controller_1.default {
         await this.ad.incrementAdClickCount(adId);
         res.redirect(url);
     }
-    async createAdvertisment(userInfo, uploadedFiles, title = '', adType, adRedirectId) {
+    async createAdvertisement(userInfo, uploadedFiles, title = '', adType, adRedirectId, adDisplayType) {
+        if (!model.ad.AdDisplayType[adDisplayType]) {
+            throw new this.BadRequest('InvalidAdDisplayType');
+        }
         let canMakeAd = await this.ad.canUserCreateAd(userInfo.userId);
         if (!canMakeAd) {
             throw new this.Conflict('Cooldown');
@@ -91,7 +96,12 @@ let AdController = class AdController extends controller_1.default {
             file = sortedFiles.jpg;
         }
         let imageInfo = await jimp.read(file);
-        await imageInfo.resize(728, 90);
+        if (adDisplayType === model.ad.AdDisplayType.Leaderboard) {
+            await imageInfo.resize(728, 90);
+        }
+        else {
+            throw new Error('NotImplemented');
+        }
         let imageData = await imageInfo.getBufferAsync(mime);
         if (!model.ad.AdType[adType]) {
             throw new this.BadRequest('InvalidAdType');
@@ -132,7 +142,7 @@ let AdController = class AdController extends controller_1.default {
             throw new Error('Invalid adType: ' + adType);
         }
         let randomName = crypto.randomBytes(32).toString('hex') + fileEnding;
-        let adId = await this.ad.createAd(userInfo.userId, 'https://cdn.hindigamer.club/thumbnails/' + randomName, title, adType, adRedirectId, model.ad.AdDisplayType.Leaderboard);
+        let adId = await this.ad.createAd(userInfo.userId, 'https://cdn.hindigamer.club/thumbnails/' + randomName, title, adType, adRedirectId, adDisplayType);
         await this.ad.uploadAdImage(randomName, imageData, mime);
         return {
             success: true,
@@ -171,7 +181,7 @@ let AdController = class AdController extends controller_1.default {
             throw new this.Conflict('NotEnoughCurrency');
         }
         await this.economy.subtractFromUserBalance(userInfo.userId, amount, model.economy.currencyType.primary);
-        await this.economy.createTransaction(userInfo.userId, 1, amount, model.economy.currencyType.primary, model.economy.transactionType.PurchaseOfAdvertisment, 'Purchase of Advertisment', model.catalog.creatorType.User, model.catalog.creatorType.User);
+        await this.economy.createTransaction(userInfo.userId, 1, amount, model.economy.currencyType.primary, model.economy.transactionType.PurchaseOfAdvertisment, 'Purchase of Advertisement', model.catalog.creatorType.User, model.catalog.creatorType.User);
         await this.ad.placeBidOnAd(adId, amount);
         return {
             success: true,
@@ -189,15 +199,18 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AdController.prototype, "getCreatedAds", null);
 __decorate([
-    common_1.Get('/random'),
+    common_1.Get('/random/:adDisplayType'),
     swagger_1.Summary('Get a semi-random advertisement to display to the user'),
-    swagger_1.Description('Advertisments are not targetted to comply with COPPA. Ads are purely based off of user bid amounts, i.e, if one user bids 10 primary and another user bids 1, you have a 90% chance of seeing the first ad and a 10% chance of seeing the second ad.'),
+    swagger_1.Description('Advertisements are not targeted to comply with COPPA. Ads are purely based off of user bid amounts, i.e, if one user bids 10 primary and another user bids 1, you have a 90% chance of seeing the first ad and a 10% chance of seeing the second ad.'),
     swagger_1.Returns(200, { type: model.ad.Advertisment }),
-    swagger_1.Returns(409, { type: model.Error, description: 'NoAdvertismentAvailable: Account status does not permit advertisment, or no ads are available to display to the user\n' }),
+    swagger_1.Returns(409, { type: model.Error, description: 'NoAdvertisementAvailable: Account status does not permit advertisement, or no ads are available to display to the user\n' }),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidAdDisplayType: AdDisplayId is invalid\n' }),
+    __param(0, swagger_1.Description('The type of ad to grab')),
+    __param(0, common_1.PathParams('adDisplayType', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
-], AdController.prototype, "getAdvertisment", null);
+], AdController.prototype, "getAdvertisement", null);
 __decorate([
     common_1.Get('/:adId/click'),
     swagger_1.Summary('Click an ad. Redirects to ad location'),
@@ -212,7 +225,7 @@ __decorate([
 ], AdController.prototype, "clickAd", null);
 __decorate([
     common_1.Post('/create'),
-    swagger_1.Summary('Create an advertisment.'),
+    swagger_1.Summary('Create an advertisement.'),
     swagger_1.Description('If group or group item, user must be owner of group. If catalog item, user must be creator'),
     common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     swagger_1.Returns(200, { description: 'Add Created' }),
@@ -229,13 +242,16 @@ __decorate([
     __param(4, common_1.Required()),
     __param(4, swagger_1.Description('The ID of the adType. For instance, if you want to advertise Forum Thread id 28, this value would be 28')),
     __param(4, common_1.BodyParams('adRedirectId', Number)),
+    __param(5, common_1.Required()),
+    __param(5, swagger_1.Description('The type of ad to create')),
+    __param(5, common_1.BodyParams('adDisplayType', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Array, String, Number, Number]),
+    __metadata("design:paramtypes", [model.user.UserInfo, Array, String, Number, Number, Number]),
     __metadata("design:returntype", Promise)
-], AdController.prototype, "createAdvertisment", null);
+], AdController.prototype, "createAdvertisement", null);
 __decorate([
     common_1.Post('/:adId/bid'),
-    swagger_1.Summary('Bid money on an advertisment'),
+    swagger_1.Summary('Bid money on an advertisement'),
     swagger_1.Description('User must be creator of ad'),
     common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidCurrencyAmount: Currency Amount must be between 1 and 100,000\nInvalidAdId: adId is invalid or not managed by authenticated user\nModerationStatusConflict: Ad moderation status does not allow it to run\n' }),

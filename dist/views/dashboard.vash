@@ -64,7 +64,7 @@
                             <h5 class="card-title">Status</h5>
                             <div class="row">
                                 <div class="col-md-8 col-sm-12">
-                                    <input type="text" class="form-control" id="newStatusValue" value="" placeholder="Your Status">
+                                    <input type="text" class="form-control" id="newStatusValue" value="" placeholder="Your Status" maxlength="255">
                                     <small id="newStatusValueHelp" class="form-text text-muted">Max 255 Characters</small>
                                 </div>
                                 <div class="col-md-4 col-sm-12">
