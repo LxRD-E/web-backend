@@ -197,8 +197,12 @@ $(document).on("click", "#updateThemeClick", function() {
             if (theme === 1) {
                 $('head').append('<link href="/css/dark.css" rel="stylesheet">');
             }else{
-                console.log("eval(sudo rm -rf /);");
-                $('link[rel=stylesheet][href~="/css/dark.css"]').remove();
+                let allStyles = $('link[rel=stylesheet]');
+                for (const style of allStyles) {
+                    if ($(style).attr('href').slice(0,'/css/dark.css'.length) === '/css/dark.css') {
+                        $(style).remove();
+                    }
+                }
             }
             setTimeout(function() {
                 success("Your theme has been updated!", function() {

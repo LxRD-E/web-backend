@@ -142,3 +142,11 @@ div.groupChangeBgOnHover:hover {
 p.ad-alert-text {
     color: rgba(255,255,255,0.5)
 }
+
+a.navbar-brand {
+    color: white!important;
+}
+
+.navbar-nav> .nav-item > .nav-link {
+    color: rgba(255,255,255,1);
+}

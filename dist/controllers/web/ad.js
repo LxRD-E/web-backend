@@ -22,7 +22,7 @@ const swagger_1 = require("@tsed/swagger");
 const model = require("../../models/models");
 const controller_1 = require("../controller");
 const Auth_1 = require("../../middleware/Auth");
-let WWWCatalogController = class WWWCatalogController extends controller_1.default {
+let WWWAdsController = class WWWAdsController extends controller_1.default {
     constructor() {
         super();
     }
@@ -72,7 +72,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [model.user.UserInfo]),
     __metadata("design:returntype", Promise)
-], WWWCatalogController.prototype, "adsDashboard", null);
+], WWWAdsController.prototype, "adsDashboard", null);
 __decorate([
     common_1.Get('/ad/catalog/create/:catalogId'),
     common_1.Render('ad/catalog_create'),
@@ -82,7 +82,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [model.user.UserInfo, Number]),
     __metadata("design:returntype", Promise)
-], WWWCatalogController.prototype, "createCatalogAd", null);
+], WWWAdsController.prototype, "createCatalogAd", null);
 __decorate([
     common_1.Get('/ad/group/create/:groupId'),
     common_1.Render('ad/group_create'),
@@ -92,7 +92,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [model.user.UserInfo, Number]),
     __metadata("design:returntype", Promise)
-], WWWCatalogController.prototype, "createGroupAd", null);
+], WWWAdsController.prototype, "createGroupAd", null);
 __decorate([
     common_1.Get('/ad/thread/create/:threadId'),
     common_1.Render('ad/thread_create'),
@@ -102,10 +102,10 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [model.user.UserInfo, Number]),
     __metadata("design:returntype", Promise)
-], WWWCatalogController.prototype, "createThreadAd", null);
-WWWCatalogController = __decorate([
+], WWWAdsController.prototype, "createThreadAd", null);
+WWWAdsController = __decorate([
     common_1.Controller("/"),
     __metadata("design:paramtypes", [])
-], WWWCatalogController);
-exports.WWWCatalogController = WWWCatalogController;
+], WWWAdsController);
+exports.WWWAdsController = WWWAdsController;
 

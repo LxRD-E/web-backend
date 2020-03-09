@@ -1,4 +1,4 @@
-@html.extend('layouts/default', function(model) {
+@html.extend('layouts/banned', function(model) {
     @html.block('content', function(model) {
         <input type="hidden" id="ticketid" value="@model.page.ticket.ticketId">
         <div class="row">

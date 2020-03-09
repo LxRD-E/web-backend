@@ -49,51 +49,54 @@
         </div>
         <div class="row">
 
-            <div class="col-4 col-md-2" id="catalogSortFiltersDiv">
-                <div class="row">
-                    <div class="col-sm-12">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-12">
-                        <h5>Search Categories</h5>
-                    </div>
-                    <div class="col-sm-12">
-                        <a id="featured" href="#"><i class="fas fa-star"></i> Featured</a>
-                    </div>
-                    <div class="col-sm-12">
-                        <a id="all" href="#"><i class="fas fa-shopping-basket"></i> All</a>
-                        <div class="row">
-                            <div class="col-2">
-                            </div>
-                            <div class="col-10">
-                                <a id="all_hats" href="#"><i class="fas fa-hat-wizard"></i> Hats</a> <br>
-                                <a id="all_tshirts" href="#"><i class="fas fa-images"></i> TShirts</a> <br>
-                                <a id="all_shirts" href="#"><i class="fas fa-tshirt"></i> Shirts</a> <br>
-                                <a id="all_pants" href="#"><i class="fas fa-child"></i> Pants</a> <br>
-                                <a id="all_faces" href="#"><i class="fas fa-grin-stars"></i> Faces</a> <br>
-                                <a id="all_gears" href="#"><i class="fas fa-wrench"></i> Gears</a> <br>
-                                <a id="all_shoes" href="#"><i class="fas fa-shoe-prints"></i> Shoes</a>
-                            </div>
+            <div class="col-12 col-sm-4 col-md-2" id="catalogSortFiltersDiv">
+                <div class="">
+                    <div class="row">
+                        <div class="col-sm-12">
                         </div>
                     </div>
-                    <div class="col-sm-12">
-                        <a id="collectibles" href="#"><i class="gradient-fa fas fa-award"></i> Collectibles</a>
+                    <div class="row">
+                        <div class="col-12">
+                            <h5>Search Categories</h5>
+                        </div>
+                        <div class="col-sm-12">
+                            <a id="featured" href="#"><i class="fas fa-star"></i> Featured</a>
+                        </div>
+                        <div class="col-sm-12">
+                            <a id="all" href="#"><i class="fas fa-shopping-basket"></i> All</a>
+                            <div class="row">
+                                <div class="col-2">
+                                </div>
+                                <div class="col-10">
+                                    <a id="all_hats" href="#"><i class="fas fa-hat-wizard"></i> Hats</a> <br>
+                                    <a id="all_tshirts" href="#"><i class="fas fa-images"></i> TShirts</a> <br>
+                                    <a id="all_shirts" href="#"><i class="fas fa-tshirt"></i> Shirts</a> <br>
+                                    <a id="all_pants" href="#"><i class="fas fa-child"></i> Pants</a> <br>
+                                    <a id="all_faces" href="#"><i class="fas fa-grin-stars"></i> Faces</a> <br>
+                                    <a id="all_gears" href="#"><i class="fas fa-wrench"></i> Gears</a> <br>
+                                    <a id="all_shoes" href="#"><i class="fas fa-shoe-prints"></i> Shoes</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-12">
+                            <a id="collectibles" href="#"><i class="gradient-fa fas fa-award"></i> Collectibles</a>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-8 col-md-10">
+            <div class="col-12 col-sm-8 col-md-10">
                 <div class="row" id="catalogItemsDiv">
 
                 </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-sm-2">
+        <div class="row" id="loadingMoreItems" style="margin-top:2rem;">
+            <div class="col-2">
+
             </div>
-            <div class="col-sm-10" style="margin-bottom:1rem;">
-                <button type="button" class="btn btn-small btn-success loadMoreItems" style="margin:0 auto;display: none;width:100%;">Load More Items</button>
+            <div class="col-10" style="margin-bottom:1rem;">
+                <div style="margin: 0 auto;display: block;" class="spinner-border" role="status"></div>
             </div>
         </div>
     })

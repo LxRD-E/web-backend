@@ -107,7 +107,9 @@ class ForumDAL extends _init {
             'date_edited as dateEdited',
             'thread_locked as threadLocked',
             'thread_pinned as threadPinned',
-        ).orderBy('id','desc').limit(limit);
+        ).where({
+            'thread_deleted': Forum.threadDeleted.false
+        }).orderBy('id','desc').limit(limit);
         return threads;
     }
 

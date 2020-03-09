@@ -1,0 +1,1 @@
+"use strict";$(document).on("click",".staff-sidebar-button",function(){"block"===$(".staff-sidebar").first().css("display")?(void 0,$(".staff-sidebar").first().css("display","none"),$(".staff-sidebar").first().css("margin-top","-214px")):(void 0,$(".staff-sidebar").first().css("display","block"),$(".staff-sidebar").first().css("margin-top","-170px"))});

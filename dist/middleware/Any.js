@@ -15,7 +15,7 @@ const model = require("../models/models");
 const auth_1 = require("../dal/auth");
 const ts_httpexceptions_2 = require("ts-httpexceptions");
 exports.csp = {
-    '': `'self' https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.0/showdown.min.js https://cdnjs.cloudflare.com/ajax/libs/canvasjs/1.7.0/canvasjs.js https://kit.fontawesome.com/983cb40861.js https://www.google.com/recaptcha/api.js https://kit.fontawesome.com/ https://www.gstatic.com/recaptcha/api2/ https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js https://cdn.jsdelivr.net/gh/moment/moment@2.2.1/min/moment.min.js https://cdn.jsdelivr.net/npm/popper.js@1.14.4/dist/umd/popper.min.js https://cdn.jsdelivr.net/npm/sweetalert2@8.17.1/dist/sweetalert2.all.min.js https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js`,
+    '': ';',
     'form-action': `'self'`,
     'media-src': `'none'`,
     'frame-ancestors': `'self'`,
@@ -35,7 +35,22 @@ exports.getCspString = () => {
     return cspString;
 };
 exports.generateCspWithNonce = async (req, res, next, randomBytesFunction = randomBytes) => {
+    if (process.env.NODE_ENV === 'development' && !req.headers['cf-connecting-ip']) {
+        req.headers['cf-connecting-ip'] = '127.0.0.1';
+    }
     if (req.url === '/docs' || req.url === '/docs/') {
+        return next();
+    }
+    res.set({
+        'X-Frame-Options': 'DENY',
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+        'X-Content-Type-Options': 'nosniff',
+        'X-XSS-Protection': '1; mode=block',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'X-Environment': exports.environment,
+        'X-Permitted-Cross-Domain-Policies': 'none',
+    });
+    if (req.url.slice(0, '/api/'.length) === '/api/') {
         return next();
     }
     const nonceBuffer = await randomBytesFunction(48);
@@ -55,19 +70,10 @@ exports.generateCspWithNonce = async (req, res, next, randomBytesFunction = rand
         headerString = 'script-src \'nonce-' + nonce + '\' ' + "'unsafe-eval' " + exports.getCspString();
     }
     else {
-        headerString = 'script-src \'nonce-' + nonce + '\' ' + exports.getCspString();
+        headerString = 'script-src \'nonce-' + nonce + '\' ' + exports.getCspString() + ';';
     }
     res.set({
         'Content-Security-Policy': headerString,
-        'X-Content-Security-Policy': headerString,
-        'X-Webkit-CSP': headerString,
-        'X-Frame-Options': 'DENY',
-        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-        'X-Content-Type-Options': 'nosniff',
-        'X-XSS-Protection': '1; mode=block',
-        'Referrer-Policy': 'origin-when-cross-origin',
-        'X-Environment': exports.environment,
-        'X-Permitted-Cross-Domain-Policies': 'none',
     });
     res.locals.nonce = nonce;
     next();

@@ -50,103 +50,13 @@
     }else{
         <div id="userdata" data-authenticated="false" data-csrf="@model.csrf"></div>
     }
-        <nav class="navbar navbar-expand-lg navbar-dark bg-success fixed-top">
-            <div class="container">
-            <h3 style="margin-top: 0.25rem;"><a class="navbar-brand" href="/">@*<img src="https://cdn.hindigamer.club/static/homosexual.svg" style="height:1rem;width:1rem;margin-bottom:0.05rem;"/> *@HINDI GAMER CLUB</a></h3>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav mr-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/play">Play</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/catalog">Catalog</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/groups">Groups</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/users">Users</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/forum">Forum</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/currency">Shop</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/discord">Discord</a>
-                    </li>
-                    <!--
-                    <li class="nav-item">
-                        <a class="nav-link" href="/membership">Membership</a>
-                    </li>
-                    -->
-                </ul>
-                @if (typeof model.userInfo !== 'undefined' && typeof model.userInfo.userId !== "undefined" && model.userInfo.userId !== null) {
-                 <ul class="navbar-nav ml-auto">
-                    <li class="nav-item displayCurrency">
-                        <a class="nav-link" href="/notifications">
-                            <i class="far fa-envelope-open"></i>
-                            <span id="notificationCount">0</span>
-                        </a>
-                    </li>
-                    <li class="nav-item displayCurrency">
-
-                    <a class="nav-link" href="/transactions">
-                                    <img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/money-white-2.svg"/>                                    
-                                    <span data-toggle="currency" data-placement="bottom" title="$ @model.userInfo.primaryBalance" id="currencyBalanceOne" data-amt="@model.userInfo.primaryBalance">@model.userInfo.primaryBalance</span>
-                                </a>
-                            </li>
-                            <li class="nav-item displayCurrency">
-                                <a class="nav-link" href="/transactions"> 
-                                    <img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/coin-stack-white.svg"/>
-                                    <span data-toggle="currency" data-placement="bottom" title="$ @model.userInfo.secondaryBalance" id="currencyBalanceTwo" data-amt="@model.userInfo.secondaryBalance">@model.userInfo.secondaryBalance</span>
-                                </a>
-                    <!--
-                                <a class="nav-link" href="/transactions">
-                                    <i class="far fa-money-bill-alt"></i> 
-                                    <span id="currencyBalanceOne"></span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="/transactions"> 
-                                    <i class="fas fa-coins"></i> 
-                                    <span id="currencyBalanceTwo"></span>
-                                </a>
-                                -->
-                    </li>
-
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">@model.userInfo.username</a>
-                        <div class="dropdown-menu dropdown-menu-right fade" aria-labelledby="navbarDropdown">
-                            <a class="dropdown-item" href="/dashboard"><i class="fas fa-home"></i> Home</a>
-                            <a class="dropdown-item" href="/users/@model.userInfo.userId/profile"><i class="fas fa-id-card"></i> My Profile</a>
-                            <a class="dropdown-item" href="/avatar"><i class="fas fa-user-tag"></i> My Avatar</a>
-                            <a class="dropdown-item" href="/trades"><i class="fas fa-exchange-alt"></i> My Trades</a>
-                            <a class="dropdown-item" href="/transactions"><i class="fas fa-money-bill-alt"></i> My Transactions</a>
-                            <a class="dropdown-item" href="/ads"><i class="fas fa-ad"></i> My Ads</a>
-                            <a class="dropdown-item" href="/settings"><i class="fas fa-sliders-h"></i> My Settings</a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" id="logoutAClick" href="#"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
-                        </div>
-                    </li>
-                </ul>
-                }else{
-                    <ul class="navbar-nav ml-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/login">Sign In</a>
-                    </li>
-                </ul>
-                }
-            </div>
-            </div>
-        </nav>
-        <div class="row paddingForStickyNav" style="margin-top: 52px;"></div>
-        @if (typeof model.userInfo !== "undefined") {
+    @{
+        model._extraCssClass = 'signedout sticky-top';
+    }
+    @if (typeof model.userInfo !== "undefined") {
+        @{
+            model._extraCssClass = '';
+        }
         <div class="row secondaryNavBar">
             <div class="container">
                 <div class="row">
@@ -182,6 +92,140 @@
             </div>
         </div>
         }
+        <nav class="navbar navbar-expand-lg sticky-top @model._extraCssClass">
+            <div class="container">
+                <h3 style="margin:0;padding:0;">
+                    <a class="navbar-brand" href="/" style="
+                    
+                    
+                    font-size: 0.95rem;
+                    font-weight: 400;
+                    
+                    margin-top: -1px;
+                    margin-bottom: 0.15rem;
+                    /*
+                    background: linear-gradient(90deg, rgba(71,195,91,1) 0%, rgba(105,222,124,1) 100%);
+                    color: white;
+                    padding-left: 8px;
+                    padding-right: 8px;
+                    border-bottom: 1px solid #28a745;
+                    margin-bottom: 0.25rem;
+                    transform: rotate(-1deg);
+                    */
+                    
+                    ">HINDIGAMER.CLUB
+                    </a>
+                </h3>
+
+            <button class="navbar-toggler collapsed" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarSupportedContent" style="padding:0;">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/play">Play</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/catalog">Catalog</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/groups">Groups</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/users">Users</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/forum">Forum</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/currency">Shop</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/discord">Discord</a>
+                    </li>
+                    <!--
+                    <li class="nav-item">
+                        <a class="nav-link" href="/membership">Membership</a>
+                    </li>
+                    -->
+                </ul>
+                @if (typeof model.userInfo !== 'undefined' && typeof model.userInfo.userId !== "undefined" && model.userInfo.userId !== null) {
+                 <ul class="navbar-nav ml-auto">
+                    <li class="nav-item displayCurrency">
+                        <a class="nav-link" href="/notifications">
+                            @if (!model.userInfo || model.userInfo.theme !== 1) {
+                                <i class="far fa-envelope-open" style="padding-right:4px;"></i>
+                            }else{
+                                <i class="far fa-envelope-open" style="color:white;padding-right:4px;"></i>
+                            }
+                            <span id="notificationCount">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item displayCurrency">
+
+                    <a class="nav-link" href="/transactions">
+                                    @if (!model.userInfo || model.userInfo.theme !== 1) {
+                                        <img alt="$" style="height: 1rem;padding-right:4px;" src="/img/money-grey.svg"/>    
+                                    }else{
+                                        <img alt="$" style="height: 1rem;padding-right:4px;" src="/img/money-white.svg"/>    
+                                    }
+                                    <span data-toggle="currency" data-placement="bottom" title="$ @model.userInfo.primaryBalance" id="currencyBalanceOne" data-amt="@model.userInfo.primaryBalance">@model.userInfo.primaryBalance</span>
+                                </a>
+                            </li>
+                            <li class="nav-item displayCurrency">
+                                <a class="nav-link" href="/transactions"> 
+                                    @if (!model.userInfo || model.userInfo.theme !== 1) {
+                                        <img alt="$" style="height: 1rem;padding-right:4px;" src="/img/coin-stack-grey.svg"/>    
+                                    }else{
+                                        <img alt="$" style="height: 1rem;padding-right:4px;" src="/img/coin-stack-white.svg"/>    
+                                    }
+                                    <span data-toggle="currency" data-placement="bottom" title="$ @model.userInfo.secondaryBalance" id="currencyBalanceTwo" data-amt="@model.userInfo.secondaryBalance">@model.userInfo.secondaryBalance</span>
+                                </a>
+                    <!--
+                                <a class="nav-link" href="/transactions">
+                                    <i class="far fa-money-bill-alt"></i> 
+                                    <span id="currencyBalanceOne"></span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/transactions"> 
+                                    <i class="fas fa-coins"></i> 
+                                    <span id="currencyBalanceTwo"></span>
+                                </a>
+                                -->
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">@model.userInfo.username</a>
+                        <div class="dropdown-menu dropdown-menu-right fade" aria-labelledby="navbarDropdown">
+                            <a class="dropdown-item" href="/dashboard"><i class="fas fa-home"></i> Home</a>
+                            @html.block('extraNavItemBelowHome')
+                            <a class="dropdown-item" href="/users/@model.userInfo.userId/profile"><i class="fas fa-id-card"></i> My Profile</a>
+                            <a class="dropdown-item" href="/avatar"><i class="fas fa-user-tag"></i> My Avatar</a>
+                            <a class="dropdown-item" href="/trades"><i class="fas fa-exchange-alt"></i> My Trades</a>
+                            <a class="dropdown-item" href="/transactions"><i class="fas fa-money-bill-alt"></i> My Transactions</a>
+                            <a class="dropdown-item" href="/ads"><i class="fas fa-ad"></i> My Ads</a>
+                            <a class="dropdown-item" href="/settings"><i class="fas fa-sliders-h"></i> My Settings</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" id="logoutAClick" href="#"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
+                        </div>
+                    </li>
+                </ul>
+                }else{
+                    <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">Sign In</a>
+                    </li>
+                </ul>
+                }
+            </div>
+            </div>
+        </nav>
+        @*
+        <div class="row paddingForStickyNav" style="margin-top: 52px;"></div>
+        *@
+        
         <!-- Scripts Disabled -->
         <noscript>
             <div class="row" style="margin: 0;">
@@ -215,7 +259,7 @@
 
         <div class="row" id="leaderboard-ad-one">
             <!-- whitespace so that when the ad loads, the user doesnt accidentally click it -->
-            <div style="padding-top:100px;" class="whitespace-ad"></div>
+            <div style="padding-top:130px;" class="whitespace-ad"></div>
         </div>
 
         <!-- Nav -->
@@ -311,6 +355,7 @@
             <script nonce="@model.nonce" src="/js/chat.js?v=@model.v"></script>
         }
         <!-- Page Specific JS -->
+        @html.block('jsInternal')
         @html.block('js')
     </body>
 </html>

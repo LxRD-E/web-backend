@@ -1,4 +1,4 @@
-@html.extend('layouts/default', function(model) {
+@html.extend('layouts/banned', function(model) {
     @html.block('content', function(model) {
         @if (typeof model.userInfo === 'undefined') {
             <div class="row">

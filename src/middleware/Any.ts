@@ -30,7 +30,7 @@ import { Unauthorized } from 'ts-httpexceptions';
  * Pre-Generated CSP
  */
 export const csp = {
-    '': `'self' https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.0/showdown.min.js https://cdnjs.cloudflare.com/ajax/libs/canvasjs/1.7.0/canvasjs.js https://kit.fontawesome.com/983cb40861.js https://www.google.com/recaptcha/api.js https://kit.fontawesome.com/ https://www.gstatic.com/recaptcha/api2/ https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js https://cdn.jsdelivr.net/gh/moment/moment@2.2.1/min/moment.min.js https://cdn.jsdelivr.net/npm/popper.js@1.14.4/dist/umd/popper.min.js https://cdn.jsdelivr.net/npm/sweetalert2@8.17.1/dist/sweetalert2.all.min.js https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js`,
+    '': ';',
     'form-action': `'self'`,
     'media-src': `'none'`,
     'frame-ancestors': `'self'`,
@@ -93,7 +93,7 @@ export const generateCspWithNonce = async (req: Request, res: Response, next: Ne
     if (req.originalUrl.match(/\/game\/(\d+)\/play/g)) {
         headerString = 'script-src \'nonce-' + nonce + '\' ' + "'unsafe-eval' " + getCspString();
     }else{
-        headerString = 'script-src \'nonce-' + nonce + '\' ' + getCspString();
+        headerString = 'script-src \'nonce-' + nonce + '\' ' + getCspString() + ';';
     }
     res.set({
         // CSP Headers

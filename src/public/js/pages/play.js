@@ -23,7 +23,9 @@ request('/game/search').then((d) => {
                             <div class="col-12">
                                 <h1 style="overflow: hidden;
                                 white-space: nowrap;
-                                text-overflow: ellipsis;">${filterXSS(game.gameName)}</h1>
+                                text-overflow: ellipsis;
+                                font-size:1.15rem;
+                                padding-bottom:1rem;">${filterXSS(game.gameName)}</h1>
                             </div>
                             <div class="col-6 col-md-8">
                                 ${img}
@@ -60,7 +62,7 @@ request('/game/search').then((d) => {
                                 <div class="col-12">
                                     <h1 style="overflow: hidden;
                                     white-space: nowrap;
-                                    text-overflow: ellipsis;font-size:1rem;">${filterXSS(game.gameName)}</h1>
+                                    text-overflow: ellipsis;font-size:0.85rem;">${filterXSS(game.gameName)}</h1>
                                 </div>
                                 <div class="col-12">
                                     ${img}

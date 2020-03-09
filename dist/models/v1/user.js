@@ -18,6 +18,14 @@ const Catalog = require("./catalog");
 const Groups = require("./group");
 const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
+exports.MAX_FRIENDS = 100;
+class FriendshipMetadata {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], FriendshipMetadata.prototype, "maxFriendships", void 0);
+exports.FriendshipMetadata = FriendshipMetadata;
 ;
 class UserInfo {
 }
@@ -102,6 +110,25 @@ __decorate([
     __metadata("design:type", Number)
 ], UserInfo.prototype, "2faEnabled", void 0);
 exports.UserInfo = UserInfo;
+class PastUsernames {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], PastUsernames.prototype, "userNameId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], PastUsernames.prototype, "username", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], PastUsernames.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], PastUsernames.prototype, "dateCreated", void 0);
+exports.PastUsernames = PastUsernames;
 class UserAvatarItem {
 }
 __decorate([
@@ -517,4 +544,15 @@ __decorate([
     __metadata("design:type", Number)
 ], SearchResult.prototype, "staff", void 0);
 exports.SearchResult = SearchResult;
+class PastUsernamesItem {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], PastUsernamesItem.prototype, "username", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], PastUsernamesItem.prototype, "date", void 0);
+exports.PastUsernamesItem = PastUsernamesItem;
 

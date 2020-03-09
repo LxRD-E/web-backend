@@ -131,10 +131,14 @@ export class UserInfo {
     '2faEnabled': 0|1;
 }
 
-export interface PastUsernames {
+export class PastUsernames {
+    @Required()
     userNameId: number;
+    @Required()
     username: string;
+    @Required()
     userId: number;
+    @Required()
     dateCreated: string;
 }
 
@@ -583,4 +587,11 @@ export class SearchResult {
     lastOnline: string;
     @Required()
     staff: staff;
+}
+
+export class PastUsernamesItem {
+    @Required()
+    username: string;
+    @Required()
+    date: string;
 }

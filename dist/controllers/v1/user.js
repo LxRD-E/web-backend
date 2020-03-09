@@ -189,6 +189,11 @@ let UsersController = class UsersController extends controller_1.default {
         const thumbnails = await this.user.multiGetThumbnailsFromIds(safeIds);
         return thumbnails;
     }
+    getFriendshipMetadata() {
+        let metaInfo = new model.user.FriendshipMetadata();
+        metaInfo.maxFriendships = model.user.MAX_FRIENDS;
+        return metaInfo;
+    }
     async getFriendshipStatus(userInfo, userId) {
         try {
             const info = await this.user.getInfo(userId, ["accountStatus"]);
@@ -206,11 +211,19 @@ let UsersController = class UsersController extends controller_1.default {
         try {
             const info = await this.user.getInfo(userId, ["accountStatus"]);
             if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw false;
+                throw new Error('User is terminated');
             }
         }
         catch (e) {
             throw new this.BadRequest('InvalidUserId');
+        }
+        let friendCount = await this.user.countFriends(userInfo.userId);
+        if (friendCount >= model.user.MAX_FRIENDS) {
+            throw new this.Conflict('AuthenticatedUserIsAtMaxFriends');
+        }
+        let friendsCountForOtherUser = await this.user.countFriends(userId);
+        if (friendsCountForOtherUser >= model.user.MAX_FRIENDS) {
+            throw new this.Conflict('OtherUserIsAtMaxFriends');
         }
         let canSend = await this.user.getFriendshipStatus(userInfo.userId, userId);
         if (canSend.canSendFriendRequest) {
@@ -223,11 +236,19 @@ let UsersController = class UsersController extends controller_1.default {
         try {
             const info = await this.user.getInfo(userId, ["accountStatus"]);
             if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw false;
+                throw new Error('User is terminated');
             }
         }
         catch (e) {
             throw new this.BadRequest('InvalidUserId');
+        }
+        let friendCount = await this.user.countFriends(userInfo.userId);
+        if (friendCount >= model.user.MAX_FRIENDS) {
+            throw new this.Conflict('AuthenticatedUserIsAtMaxFriends');
+        }
+        let friendsCountForOtherUser = await this.user.countFriends(userId);
+        if (friendsCountForOtherUser >= model.user.MAX_FRIENDS) {
+            throw new this.Conflict('OtherUserIsAtMaxFriends');
         }
         let canSend = await this.user.getFriendshipStatus(userInfo.userId, userId);
         if (canSend.canAcceptFriendRequest) {
@@ -259,6 +280,19 @@ let UsersController = class UsersController extends controller_1.default {
             }
         }
         throw new this.BadRequest('NoPendingRequest');
+    }
+    async getPastUsernames(userId) {
+        try {
+            const info = await this.user.getInfo(userId, ["accountStatus"]);
+            if (info.accountStatus === model.user.accountStatus.deleted) {
+                throw false;
+            }
+        }
+        catch (e) {
+            throw new this.BadRequest('InvalidUserId');
+        }
+        let pastUsernames = await this.user.getPastUsernames(userId);
+        return pastUsernames;
     }
     async getInventory(id, category, offset = 0, limit = 100, sort = 'asc') {
         try {
@@ -295,8 +329,15 @@ let UsersController = class UsersController extends controller_1.default {
         };
     }
     async getOwnedItemsByCatalogId(userId, catalogId) {
-        const info = await this.user.getInfo(userId, ['accountStatus']);
-        if (info.accountStatus === model.user.accountStatus.deleted) {
+        console.log('check if owns');
+        let info;
+        try {
+            info = await this.user.getInfo(userId, ['accountStatus']);
+            if (info.accountStatus === model.user.accountStatus.deleted) {
+                throw new this.BadRequest('InvalidUserId');
+            }
+        }
+        catch (e) {
             throw new this.BadRequest('InvalidUserId');
         }
         const ownedItems = await this.user.getUserInventoryByCatalogId(userId, catalogId);
@@ -528,6 +569,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "multiGetThumbnails", null);
 __decorate([
+    common_1.Get('/friend/metadata'),
+    swagger_1.Summary('Get friendship metadata'),
+    swagger_1.Returns(200, { type: model.user.FriendshipMetadata }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "getFriendshipMetadata", null);
+__decorate([
     common_1.Get('/:userId/friend'),
     swagger_1.Summary('Get the friendship status between the authenticated user and another user'),
     swagger_1.Returns(200, { type: model.user.FriendshipStatus }),
@@ -544,9 +593,8 @@ __decorate([
     swagger_1.Summary('Send a friend request to a user'),
     swagger_1.Returns(200, { description: 'Request Sent' }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nCannotSendRequest: You cannot send a friend request right now\n' }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
-    common_1.Use(RateLimit_1.RateLimiterMiddleware('sendFriendRequest')),
+    swagger_1.Returns(409, { type: model.Error, description: 'AuthenticatedUserIsAtMaxFriends: Authenticated user is at the maximum amount of friends\nOtherUserIsAtMaxFriends: The user you are trying to friend is at the maximum amount of friends\n' }),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, RateLimit_1.RateLimiterMiddleware('sendFriendRequest')),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
@@ -557,8 +605,8 @@ __decorate([
     common_1.Put('/:userId/friend'),
     swagger_1.Summary('Accept a friend request'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nNoPendingRequest: There is no friend request to accept\n' }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    swagger_1.Returns(409, { type: model.Error, description: 'AuthenticatedUserIsAtMaxFriends: Authenticated user is at the maximum amount of friends\nOtherUserIsAtMaxFriends: The user you are trying to friend is at the maximum amount of friends\n' }),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
@@ -577,6 +625,16 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "deleteFriendship", null);
+__decorate([
+    common_1.Get('/:userId/past-usernames'),
+    swagger_1.Summary('Get the past usernames of the {userId}'),
+    swagger_1.ReturnsArray(200, { type: model.user.PastUsernames }),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is invalid\n' }),
+    __param(0, common_1.PathParams('userId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getPastUsernames", null);
 __decorate([
     common_1.Get('/:userId/inventory'),
     swagger_1.Summary('Get a user\'s inventory'),
@@ -618,7 +676,7 @@ __decorate([
 ], UsersController.prototype, "getOwnedItemsByCatalogId", null);
 __decorate([
     common_1.Patch('/market/:userInventoryId'),
-    swagger_1.Summary('Sell an item that the authenticated user has permission to sell. If price set to 0, the item will be delisted'),
+    swagger_1.Summary('Sell an item that the authenticated user has permission to sell. If price set to 0, the item will be de-listed'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidPrice: Price must be between 0 and 1,000,000\nCannotBeSold: Item cannot be listed for sale\n' }),
     common_1.Use(auth_1.csrf, Auth_1.YesAuth, TwoStepCheck_1.default('ListItem')),
     __param(0, common_1.Locals('userInfo')),

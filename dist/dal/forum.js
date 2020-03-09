@@ -61,7 +61,9 @@ class ForumDAL extends _init_1.default {
         return post[0];
     }
     async getLatestThreads(limit) {
-        const threads = await this.knex('forum_threads').select('id as threadId', 'category as categoryId', 'sub_category as subCategoryId', 'title', 'userid as userId', 'date_created as dateCreated', 'date_edited as dateEdited', 'thread_locked as threadLocked', 'thread_pinned as threadPinned').orderBy('id', 'desc').limit(limit);
+        const threads = await this.knex('forum_threads').select('id as threadId', 'category as categoryId', 'sub_category as subCategoryId', 'title', 'userid as userId', 'date_created as dateCreated', 'date_edited as dateEdited', 'thread_locked as threadLocked', 'thread_pinned as threadPinned').where({
+            'thread_deleted': Forum.threadDeleted.false
+        }).orderBy('id', 'desc').limit(limit);
         return threads;
     }
     async getThreads(subCategoryId, offset, limit, sort) {

@@ -45,4 +45,7 @@ var creatorType;
     creatorType[creatorType["User"] = 0] = "User";
     creatorType[creatorType["Group"] = 1] = "Group";
 })(creatorType = exports.creatorType || (exports.creatorType = {}));
+class LowestPriceCollectibleItems {
+}
+exports.LowestPriceCollectibleItems = LowestPriceCollectibleItems;
 

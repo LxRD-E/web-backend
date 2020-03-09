@@ -394,6 +394,28 @@ export class UsersController extends controller {
         throw new this.BadRequest('NoPendingRequest');
     }
 
+    @Get('/:userId/past-usernames')
+    @Summary('Get the past usernames of the {userId}')
+    @ReturnsArray(200, {type: model.user.PastUsernames})
+    @Returns(400, {type: model.Error, description: 'InvalidUserId: UserId is invalid\n'})
+    public async getPastUsernames(
+        @PathParams('userId', Number) userId: number,
+    ) {
+        // Verify User Exists
+        try {
+            const info = await this.user.getInfo(userId, ["accountStatus"]);
+            if (info.accountStatus === model.user.accountStatus.deleted) {
+                throw false;
+            }
+        } catch (e) {
+            throw new this.BadRequest('InvalidUserId');
+        }
+        // Grab past usernames
+        let pastUsernames = await this.user.getPastUsernames(userId);
+        // Return them
+        return pastUsernames;
+    }
+
     @Get('/:userId/inventory')
     @Summary('Get a user\'s inventory')
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\n' })

@@ -101,6 +101,28 @@ class CatalogDAL extends _init_1.default {
         const catalogResults = await selectQuery;
         return catalogResults;
     }
+    async getLowestPriceOfCollectibleCatalogItems(catalogIds) {
+        let lowestPriceQuery = this.knex('user_inventory').select('catalog_id as catalogId', 'price').orderBy('price', 'asc');
+        for (const item of catalogIds) {
+            lowestPriceQuery = lowestPriceQuery.orWhere('catalog_id', '=', item).andWhere('price', '>', 0);
+        }
+        let queryCompleted = await lowestPriceQuery;
+        for (const catalogId of catalogIds) {
+            let good = false;
+            for (const completed of queryCompleted) {
+                if (completed.catalogId === catalogId) {
+                    good = true;
+                }
+            }
+            if (good) {
+                continue;
+            }
+            else {
+                queryCompleted.push({ catalogId: catalogId, price: null });
+            }
+        }
+        return queryCompleted;
+    }
     async updateCatalogItemInfo(catalogId, name, description, price, currency, stock, collectible, isForSale, moderation) {
         await this.knex("catalog").update({ "name": name, "description": description, "price": price, "currency": currency, "max_sales": stock, "is_collectible": collectible, "is_for_sale": isForSale, "is_pending": moderation }).where({ "id": catalogId }).limit(1);
     }

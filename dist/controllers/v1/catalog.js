@@ -168,6 +168,22 @@ let CatalogController = class CatalogController extends controller_1.default {
             throw new this.BadRequest('InvalidCategory');
         }
         let SearchResults = await this.catalog.getCatalog(offset, categoryEnum, orderBy, orderByType, query);
+        if (category === model.catalog.searchCategory.Collectibles) {
+            let arrayOfCatalogIds = [];
+            for (const item of SearchResults) {
+                item.currency = model.economy.currencyType.primary;
+                arrayOfCatalogIds.push(item.catalogId);
+            }
+            let lowestPrices = await this.catalog.getLowestPriceOfCollectibleCatalogItems(arrayOfCatalogIds);
+            for (const item of lowestPrices) {
+                for (const result of SearchResults) {
+                    if (result.catalogId === item.catalogId) {
+                        result.price = item.price;
+                        break;
+                    }
+                }
+            }
+        }
         return SearchResults;
     }
     async updateItemInfo(userInfo, catalogId, newName, newDescription, isForSale, newPrice, currency, stock, collectible, moderation) {
