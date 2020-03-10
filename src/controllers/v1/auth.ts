@@ -583,8 +583,7 @@ export default class AuthController extends controller {
     @Description('User will be charged 1,000 Primary if succesful. User will not have to log in again since their session will update. The authenticated user will be logged out of all sessions other than the one that made this request')
     @Returns(200, { description: 'OK', type: model.auth.UsernameChangedResponseOK })
     @Returns(400, { description: 'InvalidUsername: Username is taken or unavailable\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nCooldown: You cannot change your username right now\nNotEnoughCurrency: User does not have 1,000+ Primary' })
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     public async changeUsername(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
@@ -628,5 +627,65 @@ export default class AuthController extends controller {
             success: true,
             newUsername: newUserName,
         };
+    }
+
+    @Post('/authenticate-to-service')
+    @Summary('Generate an auth code required to sign into a service')
+    @Use(csrf, YesAuth)
+    @Returns(200, {type: model.auth.GenerateAuthenticationCodeResponse})
+    @Returns(400, {type:model.Error, description: 'InvalidReturnUrl: Return URL is not valid\nAuthenticationServiceConstraintHTTPSRequired: The returnUrl must use the HTTPS protocol\n'})
+    @Returns(409, {type: model.Error, description: 'AuthenticationServiceBlacklisted: The returnUrl is blacklisted and cannot be used\n'})
+    public async startAuthenticationFlowToService(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Required()
+        @BodyParams('returnUrl', String) returnUrl: string,
+    ) {
+        // Skip HTTPs check in development to make testing stuff easier
+        if (process.env.NODE_ENV === 'production') {
+            // Make sure URL is using HTTPS
+            if (returnUrl.slice(0,'https://'.length) !== 'https://') {
+                throw new this.BadRequest('AuthenticationServiceConstraintHTTPSRequired');
+            }
+        }
+        // Make sure URL contains at least one "."
+        if (!returnUrl.slice('https://'.length).match(/\./g)) {
+            throw new this.BadRequest('InvalidReturnUrl');
+        }
+        // Make sure URL is not hindigamer.club
+        // www.hindigamer.club
+        if (returnUrl.slice(0,'https://www.hindigamer.club'.length) === 'https://www.hindigamer.club') {
+            throw new this.Conflict('AuthenticationServiceBlacklisted');
+        }
+        // hindigamer.club
+        if (returnUrl.slice(0,'https://hindigamer.club'.length) === 'https://hindigamer.club') {
+            throw new this.Conflict('AuthenticationServiceBlacklisted');
+        }
+        // Ok, so now we can generate the JWT
+        let generatedJwt = await this.auth.generateAuthServiceJWT(userInfo.userId, userInfo.username);
+        return {
+            code: generatedJwt,
+        };
+    }
+
+    @Post('/validate-authentication-code')
+    @Summary('Validate an authentication code generated from /api/v1/auth/authenticate-to-service')
+    @Description('No CSRF validation or authentication requirement as this is meant for external services. Note that codes can be redeemed multiple times, by multiple parties. Codes expire after 5 minutes, so you are advised to save the results to a session or something depending on what you are using the code for.\n\nNote: You should always validate the code through this endpoint instead of manually decoding the JWT yourself. If you do not verify it here, the code can very easily be spoofed. View a full tutorial here: https://hindigamer.club/forum/thread/244?page=1')
+    @Returns(200, {type: model.auth.ValidateAuthenticationCodeResponse})
+    @Returns(400, {type: model.Error, description: 'InvalidCode: The code is invalid or has expired\n'})
+    public async validateAuthenticationCode(
+        @Required()
+        @BodyParams('code', String) code: string,
+    ) {
+        // try to validate it
+        let result;
+        try {
+            result = await this.auth.decodeAuthServiceJWT(code);
+            if (moment().isSameOrAfter(moment(result.iat * 1000).add(5, 'minutes'))) {
+                throw new this.BadRequest('InvalidCode');
+            }
+        }catch(e) {
+            throw new this.BadRequest('InvalidCode');
+        }
+        return result;
     }
 }

@@ -316,3 +316,24 @@ export const decodeTwoFactorJWT = (code: string): {userId: number; expectedIp: s
     let val = jwt.verify(code, config.jwt.twoFactor);
     return val as any;
 }
+
+export const generateAuthServiceJWT = async (userId: number, username: string) => {
+    if (!config.jwt || !config.jwt.authenticationService) {
+        console.error('No jwt.authenticationService specified in config.json');
+        process.exit(1);
+    }
+    let obj = {
+        userId: userId,
+        username: username,
+    };
+    return jwt.sign(obj, config.jwt.authenticationService);
+}
+
+export const decodeAuthServiceJWT = (code: string): {userId: number; username: string; iat: number} => {
+    if (!config.jwt || !config.jwt.twoFactor) {
+        console.error('No jwt.twoFactor specified in config.json');
+        process.exit(1);
+    }
+    let val = jwt.verify(code, config.jwt.authenticationService);
+    return val as any;
+}

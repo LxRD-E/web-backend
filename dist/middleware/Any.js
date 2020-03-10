@@ -15,7 +15,6 @@ const model = require("../models/models");
 const auth_1 = require("../dal/auth");
 const ts_httpexceptions_2 = require("ts-httpexceptions");
 exports.csp = {
-    '': ';',
     'form-action': `'self'`,
     'media-src': `'none'`,
     'frame-ancestors': `'self'`,
@@ -67,10 +66,13 @@ exports.generateCspWithNonce = async (req, res, next, randomBytesFunction = rand
     }
     let headerString;
     if (req.originalUrl.match(/\/game\/(\d+)\/play/g)) {
-        headerString = 'script-src \'nonce-' + nonce + '\' ' + "'unsafe-eval' " + exports.getCspString();
+        headerString = 'script-src \'nonce-' + nonce + '\'; ' + "'unsafe-eval' " + exports.getCspString();
     }
     else {
-        headerString = 'script-src \'nonce-' + nonce + '\' ' + exports.getCspString() + ';';
+        headerString = 'script-src \'nonce-' + nonce + '\'; ' + exports.getCspString();
+    }
+    if (req.url.slice(0, '/v1/authenticate-to-service'.length) === '/v1/authenticate-to-service') {
+        headerString = headerString.replace(/form-action 'self'; /g, '');
     }
     res.set({
         'Content-Security-Policy': headerString,

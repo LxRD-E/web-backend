@@ -129,4 +129,30 @@ export class WWWAuthController extends controller {
             userInfo: userInfo,
         });
     }
+
+    // Dashboard
+    @Get('/v1/authenticate-to-service')
+    @Use(YesAuth)
+    @Render('authenticate-to-service')
+    public V1AuthenticationFlow(
+        @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
+        @QueryParams('returnUrl', String) returnUrl: string,
+    ) {
+        // Try to parse the URL, removing any weird characters
+        let parsedUrl = returnUrl.replace(/https:\/\//g, '');
+        parsedUrl = parsedUrl.replace(/http:\/\//g, '');
+        let positionOfFirstSlash = parsedUrl.indexOf('/');
+        if (positionOfFirstSlash !== -1) {
+            parsedUrl = parsedUrl.slice(0, positionOfFirstSlash);
+        }
+        return new WWWTemplate({
+            title: "Sign Into "+parsedUrl,
+            userInfo: userInfo,
+            page: {
+                url: returnUrl,
+                parsedUrl: parsedUrl,
+            }
+        });
+    }
+
 }

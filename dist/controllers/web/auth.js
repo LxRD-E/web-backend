@@ -86,6 +86,22 @@ let WWWAuthController = class WWWAuthController extends controller_1.default {
             userInfo: userInfo,
         });
     }
+    V1AuthenticationFlow(userInfo, returnUrl) {
+        let parsedUrl = returnUrl.replace(/https:\/\//g, '');
+        parsedUrl = parsedUrl.replace(/http:\/\//g, '');
+        let positionOfFirstSlash = parsedUrl.indexOf('/');
+        if (positionOfFirstSlash !== -1) {
+            parsedUrl = parsedUrl.slice(0, positionOfFirstSlash);
+        }
+        return new Www_1.WWWTemplate({
+            title: "Sign Into " + parsedUrl,
+            userInfo: userInfo,
+            page: {
+                url: returnUrl,
+                parsedUrl: parsedUrl,
+            }
+        });
+    }
 };
 __decorate([
     common_1.Get('/membership/notapproved.aspx'),
@@ -159,6 +175,16 @@ __decorate([
     __metadata("design:paramtypes", [UserModel.SessionUserInfo]),
     __metadata("design:returntype", Promise)
 ], WWWAuthController.prototype, "loadNotifications", null);
+__decorate([
+    common_1.Get('/v1/authenticate-to-service'),
+    common_1.Use(Auth_1.YesAuth),
+    common_1.Render('authenticate-to-service'),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.QueryParams('returnUrl', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [UserModel.SessionUserInfo, String]),
+    __metadata("design:returntype", void 0)
+], WWWAuthController.prototype, "V1AuthenticationFlow", null);
 WWWAuthController = __decorate([
     common_1.Controller("/"),
     __metadata("design:paramtypes", [])

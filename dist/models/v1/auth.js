@@ -94,4 +94,30 @@ __decorate([
     __metadata("design:type", String)
 ], LoginTwoFactorResponseOK.prototype, "username", void 0);
 exports.LoginTwoFactorResponseOK = LoginTwoFactorResponseOK;
+class GenerateAuthenticationCodeResponse {
+}
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('The JWT that should be POSTed to /v1/auth/validate-authentication-code'),
+    __metadata("design:type", String)
+], GenerateAuthenticationCodeResponse.prototype, "code", void 0);
+exports.GenerateAuthenticationCodeResponse = GenerateAuthenticationCodeResponse;
+class ValidateAuthenticationCodeResponse {
+}
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('The userId of the user'),
+    __metadata("design:type", Number)
+], ValidateAuthenticationCodeResponse.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('The username of the user'),
+    __metadata("design:type", String)
+], ValidateAuthenticationCodeResponse.prototype, "username", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('The timestamp of when the code was created at'),
+    __metadata("design:type", Number)
+], ValidateAuthenticationCodeResponse.prototype, "iat", void 0);
+exports.ValidateAuthenticationCodeResponse = ValidateAuthenticationCodeResponse;
 

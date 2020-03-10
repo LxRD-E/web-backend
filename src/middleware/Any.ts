@@ -30,7 +30,6 @@ import { Unauthorized } from 'ts-httpexceptions';
  * Pre-Generated CSP
  */
 export const csp = {
-    '': ';',
     'form-action': `'self'`,
     'media-src': `'none'`,
     'frame-ancestors': `'self'`,
@@ -91,9 +90,12 @@ export const generateCspWithNonce = async (req: Request, res: Response, next: Ne
     }
     let headerString;
     if (req.originalUrl.match(/\/game\/(\d+)\/play/g)) {
-        headerString = 'script-src \'nonce-' + nonce + '\' ' + "'unsafe-eval' " + getCspString();
+        headerString = 'script-src \'nonce-' + nonce + '\'; ' + "'unsafe-eval' " + getCspString();
     }else{
-        headerString = 'script-src \'nonce-' + nonce + '\' ' + getCspString() + ';';
+        headerString = 'script-src \'nonce-' + nonce + '\'; ' + getCspString();
+    }
+    if (req.url.slice(0,'/v1/authenticate-to-service'.length) === '/v1/authenticate-to-service') {
+        headerString = headerString.replace(/form-action 'self'; /g, '');
     }
     res.set({
         // CSP Headers

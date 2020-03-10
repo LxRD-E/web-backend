@@ -133,6 +133,9 @@ export enum HttpErrors {
     TwoFactorCodeExpired,
     TwoFactorNotRequired,
     InvalidAdDisplayType,
+    AuthenticationServiceConstraintHTTPSRequired,
+    AuthenticationServiceBlacklisted,
+    InvalidReturnUrl,
 };
 // @Locals('userInfo') userInfo: model.user.UserInfo,
 export const ErrorTemplate = (title: string, body: string): string => {

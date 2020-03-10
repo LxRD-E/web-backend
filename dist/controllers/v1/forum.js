@@ -152,7 +152,7 @@ let ForumController = class ForumController extends controller_1.default {
         if (isPinned !== 0 && isPinned !== 1) {
             isPinned = 0;
         }
-        if (!title || title.length > 32) {
+        if (!title || title.length > 64) {
             throw new this.BadRequest('InvalidTitle');
         }
         if (!body || body.length > 4096) {

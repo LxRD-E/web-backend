@@ -267,4 +267,23 @@ exports.decodeTwoFactorJWT = (code) => {
     let val = jwt.verify(code, config_1.default.jwt.twoFactor);
     return val;
 };
+exports.generateAuthServiceJWT = async (userId, username) => {
+    if (!config_1.default.jwt || !config_1.default.jwt.authenticationService) {
+        console.error('No jwt.authenticationService specified in config.json');
+        process.exit(1);
+    }
+    let obj = {
+        userId: userId,
+        username: username,
+    };
+    return jwt.sign(obj, config_1.default.jwt.authenticationService);
+};
+exports.decodeAuthServiceJWT = (code) => {
+    if (!config_1.default.jwt || !config_1.default.jwt.twoFactor) {
+        console.error('No jwt.twoFactor specified in config.json');
+        process.exit(1);
+    }
+    let val = jwt.verify(code, config_1.default.jwt.authenticationService);
+    return val;
+};
 

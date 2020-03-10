@@ -432,6 +432,39 @@ let AuthController = class AuthController extends controller_1.default {
             newUsername: newUserName,
         };
     }
+    async startAuthenticationFlowToService(userInfo, returnUrl) {
+        if (process.env.NODE_ENV === 'production') {
+            if (returnUrl.slice(0, 'https://'.length) !== 'https://') {
+                throw new this.BadRequest('AuthenticationServiceConstraintHTTPSRequired');
+            }
+        }
+        if (!returnUrl.slice('https://'.length).match(/\./g)) {
+            throw new this.BadRequest('InvalidReturnUrl');
+        }
+        if (returnUrl.slice(0, 'https://www.hindigamer.club'.length) === 'https://www.hindigamer.club') {
+            throw new this.Conflict('AuthenticationServiceBlacklisted');
+        }
+        if (returnUrl.slice(0, 'https://hindigamer.club'.length) === 'https://hindigamer.club') {
+            throw new this.Conflict('AuthenticationServiceBlacklisted');
+        }
+        let generatedJwt = await this.auth.generateAuthServiceJWT(userInfo.userId, userInfo.username);
+        return {
+            code: generatedJwt,
+        };
+    }
+    async validateAuthenticationCode(code) {
+        let result;
+        try {
+            result = await this.auth.decodeAuthServiceJWT(code);
+            if (moment().isSameOrAfter(moment(result.iat * 1000).add(5, 'minutes'))) {
+                throw new this.BadRequest('InvalidCode');
+            }
+        }
+        catch (e) {
+            throw new this.BadRequest('InvalidCode');
+        }
+        return result;
+    }
 };
 __decorate([
     common_1.Post('/login/two-factor'),
@@ -620,8 +653,7 @@ __decorate([
     swagger_1.Description('User will be charged 1,000 Primary if succesful. User will not have to log in again since their session will update. The authenticated user will be logged out of all sessions other than the one that made this request'),
     swagger_1.Returns(200, { description: 'OK', type: model.auth.UsernameChangedResponseOK }),
     swagger_1.Returns(400, { description: 'InvalidUsername: Username is taken or unavailable\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nCooldown: You cannot change your username right now\nNotEnoughCurrency: User does not have 1,000+ Primary' }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.BodyParams('username', String)),
@@ -629,6 +661,32 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, String]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "changeUsername", null);
+__decorate([
+    common_1.Post('/authenticate-to-service'),
+    swagger_1.Summary('Generate an auth code required to sign into a service'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    swagger_1.Returns(200, { type: model.auth.GenerateAuthenticationCodeResponse }),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidReturnUrl: Return URL is not valid\nAuthenticationServiceConstraintHTTPSRequired: The returnUrl must use the HTTPS protocol\n' }),
+    swagger_1.Returns(409, { type: model.Error, description: 'AuthenticationServiceBlacklisted: The returnUrl is blacklisted and cannot be used\n' }),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Required()),
+    __param(1, common_1.BodyParams('returnUrl', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "startAuthenticationFlowToService", null);
+__decorate([
+    common_1.Post('/validate-authentication-code'),
+    swagger_1.Summary('Validate an authentication code generated from /api/v1/auth/authenticate-to-service'),
+    swagger_1.Description('No CSRF validation or authentication requirement as this is meant for external services. Note that codes can be redeemed multiple times, by multiple parties. Codes expire after 5 minutes, so you are advised to save the results to a session or something depending on what you are using the code for.\n\nNote: You should always validate the code through this endpoint instead of manually decoding the JWT yourself. If you do not verify it here, the code can very easily be spoofed. View a full tutorial here: https://hindigamer.club/forum/thread/244?page=1'),
+    swagger_1.Returns(200, { type: model.auth.ValidateAuthenticationCodeResponse }),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidCode: The code is invalid or has expired\n' }),
+    __param(0, common_1.Required()),
+    __param(0, common_1.BodyParams('code', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "validateAuthenticationCode", null);
 AuthController = __decorate([
     common_1.Controller('/auth'),
     swagger_1.Description('Endpoints that deal directly with user authentication, authorization, credentials, and account creation'),

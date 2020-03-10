@@ -50,3 +50,21 @@ export class LoginTwoFactorResponseOK {
     @Required()
     username: string;
 }
+
+export class GenerateAuthenticationCodeResponse {
+    @Required()
+    @Description('The JWT that should be POSTed to /v1/auth/validate-authentication-code')
+    code: string;
+}
+
+export class ValidateAuthenticationCodeResponse {
+    @Required()
+    @Description('The userId of the user')
+    userId: number;
+    @Required()
+    @Description('The username of the user')
+    username: string;
+    @Required()
+    @Description('The timestamp of when the code was created at')
+    iat: number;
+}
