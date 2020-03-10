@@ -54,6 +54,11 @@ __decorate([
     __metadata("design:type", Number)
 ], groupPermissions.prototype, "manage", void 0);
 exports.groupPermissions = groupPermissions;
+var GroupMemberApprovalStatus;
+(function (GroupMemberApprovalStatus) {
+    GroupMemberApprovalStatus[GroupMemberApprovalStatus["true"] = 1] = "true";
+    GroupMemberApprovalStatus[GroupMemberApprovalStatus["false"] = 0] = "false";
+})(GroupMemberApprovalStatus = exports.GroupMemberApprovalStatus || (exports.GroupMemberApprovalStatus = {}));
 class groupDetails {
 }
 __decorate([
@@ -84,6 +89,10 @@ __decorate([
     common_1.Required(),
     __metadata("design:type", Number)
 ], groupDetails.prototype, "groupStatus", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], groupDetails.prototype, "groupMembershipApprovalRequired", void 0);
 exports.groupDetails = groupDetails;
 class MultiGetNames {
 }
@@ -128,4 +137,15 @@ var groupStatus;
     groupStatus[groupStatus["locked"] = 1] = "locked";
     groupStatus[groupStatus["ok"] = 0] = "ok";
 })(groupStatus = exports.groupStatus || (exports.groupStatus = {}));
+class GroupJoinRequest {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GroupJoinRequest.prototype, "groupId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GroupJoinRequest.prototype, "userId", void 0);
+exports.GroupJoinRequest = GroupJoinRequest;
 

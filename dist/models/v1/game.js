@@ -14,6 +14,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const Catalog = require("./catalog");
 const common_1 = require("@tsed/common");
 const crypto = require("crypto");
 const _ = require("lodash");
@@ -140,12 +141,76 @@ __decorate([
 exports.GameInfo = GameInfo;
 class GameSearchResult {
 }
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameSearchResult.prototype, "gameId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], GameSearchResult.prototype, "gameName", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], GameSearchResult.prototype, "gameDescription", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameSearchResult.prototype, "iconAssetId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameSearchResult.prototype, "thumbnailAssetId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameSearchResult.prototype, "playerCount", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameSearchResult.prototype, "creatorId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameSearchResult.prototype, "creatorType", void 0);
 exports.GameSearchResult = GameSearchResult;
 class GameServerPlayer {
 }
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameServerPlayer.prototype, "gameServerId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameServerPlayer.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], GameServerPlayer.prototype, "createdAt", void 0);
 exports.GameServerPlayer = GameServerPlayer;
 class GameServer {
 }
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameServer.prototype, "gameServerId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameServer.prototype, "gameId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], GameServer.prototype, "createdAt", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameServer.prototype, "playerCount", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameServer.prototype, "isClosed", void 0);
 exports.GameServer = GameServer;
 exports.SIMPLE_CRYPTO_JS = `
 

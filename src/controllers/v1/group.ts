@@ -9,7 +9,7 @@ import util = require('util');
 import * as model from '../../models/models';
 // Misc models
 // Autoload
-import { Controller, Get, QueryParams, PathParams, Locals, BodyParams, UseBeforeEach, UseBefore, Put, Required, Patch, Post, Delete, Err } from '@tsed/common';
+import { Controller, Get, QueryParams, PathParams, Locals, BodyParams, UseBeforeEach, UseBefore, Put, Required, Patch, Post, Delete, Err, Enum, Use } from '@tsed/common';
 import {MulterOptions, MultipartFile} from "@tsed/multipartfiles";
 import controller from '../controller';
 import { Summary, Returns, ReturnsArray, Description } from '@tsed/swagger';
@@ -262,10 +262,10 @@ export class GroupsController extends controller {
         try {
             const members = await this.group.getMembers(groupId, roleSetId, offset, limit, sort);
             const membersCount = await this.group.countMembers(groupId, roleSetId);
-            return ({
+            return {
                 "total": membersCount,
                 "members": members,
-            });
+            };
         } catch (e) {
             throw new this.BadRequest('InvalidGroupId');
         }
@@ -386,6 +386,33 @@ export class GroupsController extends controller {
         return results;
     }
 
+    @Patch('/:groupId/approval-required')
+    @Summary('Set a group\'s approval required status')
+    @Description('Currently requires ownership permission but may be downgraded to Manage in the future')
+    @Returns(400, {type: model.Error,description: 'InvalidGroupPermissions: You must be owner to apply this change\nInvalidApprovalStatus: approvalStatus must be 0 or 1\n'})
+    public async updateGroupApprovalStatus(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('groupId', Number) groupId: number,
+        @Required()
+        @BodyParams('approvalStatus', Number) approvalStatus: number,
+    ) {
+        // Verify Group Exists
+        const groupInfo = await this.getGroupInfo(groupId);
+        if (groupInfo.groupOwnerUserId !== userInfo.userId) {
+            throw new this.BadRequest('InvalidGroupPermissions');
+        }
+        // Verify approvalStatus is valid
+        if (approvalStatus !== 1 && approvalStatus !== 0) {
+            throw new this.BadRequest('InvalidApprovalStatus');
+        }
+        // Update group approval status
+        await this.group.updateGroupApprovalRequiredStatus(groupId, approvalStatus);
+        // Return success
+        return {
+            success: true,
+        };
+    }
+
     /**
      * Claim ownership of a Group with no owner.
      * @param groupId 
@@ -462,9 +489,25 @@ export class GroupsController extends controller {
         if (roleset.rank >= 255) {
             throw new this.BadRequest('InvalidRolesetId');
         }
+        // Check if user is a pending member
+        let isPendingMember = await this.group.isUserPendingToJoinGroup(groupId, userInfo.userId);
+        if (isPendingMember) {
+            throw new this.Conflict('GroupJoinRequestPending');
+        }
+        // Check if group approval is required
+        let isApprovalRequired = await this.group.doesGroupRequireApprovalForNewMembers(groupId);
+        if (isApprovalRequired) {
+            // Insert user to pending table
+            await this.group.insertPendingGroupMember(groupId, userInfo.userId);
+            // Return success, with approval required
+            return {
+                success: true,
+                doesUserRequireApproval: true,
+            };
+        }
         // Role is valid
         await this.group.addUserToGroup(groupId, userInfo.userId, roleset.roleSetId);
-        return { success: true };
+        return { success: true, doesUserRequireApproval: false };
     }
 
     /**
@@ -472,7 +515,7 @@ export class GroupsController extends controller {
      * @param groupId 
      */
     @Delete('/:groupId/membership')
-    @Summary('Leave a group')
+    @Summary('Leave a group, or remove yourself from a group join request')
     @UseBeforeEach(csrf)
     @UseBefore(YesAuth)
     public async leave(
@@ -489,6 +532,16 @@ export class GroupsController extends controller {
         const role = await this.getAuthRole(userInfo, groupId);
         // Must not be a guest
         if (role.rank === 0) {
+            // Maybe user is pending in group? Lets check
+            let pendingUser = await this.group.isUserPendingToJoinGroup(groupId, userInfo.userId);
+            if (pendingUser) {
+                // Delete pending request
+                await this.group.removeUserFromPendingGroupJoins(groupId, userInfo.userId);
+                // Return success
+                return {
+                    success: true,
+                };
+            }
             throw new this.BadRequest('InvalidGroupPermissions');
         }
         // Remove from group
@@ -498,6 +551,171 @@ export class GroupsController extends controller {
         }
         await this.group.removeUserFromGroup(groupId, userInfo.userId);
         return { success: true };
+    }
+    
+    @Get('/:groupId/join-requests')
+    @Summary('Get a page of group join requests')
+    @Description('Requester must have manage permission')
+    @Use(YesAuth)
+    @ReturnsArray(200, {type: model.group.GroupJoinRequest})
+    public async getJoinRequests(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('groupId', Number) groupId: number, 
+        @QueryParams('limit', Number) limit: number = 100,
+        @QueryParams('offset', Number) offset: number = 0,
+    ) {
+        // First, make sure requester has manage permissions
+        // Validate Group
+        await this.getGroupInfo(groupId);
+        // Grab role of requester
+        const role = await this.getAuthRole(userInfo, groupId);
+        if (!role.permissions.manage) {
+            // user is not authorized
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        // Grab result
+        let results = await this.group.getPendingMembers(groupId, offset, limit);
+        return results;
+    }
+
+    /**
+     * Accept a join request
+     * @param userInfo 
+     * @param groupId the groupId of the group
+     * @param userId the userId to accept into the group
+     */
+    @Post('/:groupId/join-request')
+    @Summary('Approve a join request')
+    @Description('This will give the {userId} the lowest rank possible in the {groupId}. Requester must have manage permission')
+    @Returns(400, {type: model.Error, description: 'InvalidPermissions: Requester must have manage permission\nInvalidJoinRequest: Join request does not exist\nTooManyGroups: userId is in too many groups. Request has been deleted\nInvalidRolesetId: Unknown\n'})
+    @Use(csrf, YesAuth)
+    public async approveJoinRequest(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('groupId', Number) groupId: number, 
+        @BodyParams('userId', Number) userId: number,
+    ) {
+        // First, make sure requester has manage permissions
+        // Validate Group
+        await this.getGroupInfo(groupId);
+        // Grab role of requester
+        const role = await this.getAuthRole(userInfo, groupId);
+        if (!role.permissions.manage) {
+            // user is not authorized
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        // Make sure join request exists
+        let joinRequestExists = await this.group.isUserPendingToJoinGroup(groupId, userId);
+        if (!joinRequestExists) {
+            // Error
+            throw new this.BadRequest('InvalidJoinRequest');
+        }
+
+        // Grab role of user to approve
+        const roleOfMemberToApprove = await this.group.getUserRole(groupId, userId);
+        // Must be a guest in this group to join it
+        if (roleOfMemberToApprove.rank !== 0) {
+            // Somehow user is already in group? Delete request and return success
+            await this.group.removeUserFromPendingGroupJoins(groupId, userId);
+            return {
+                success: true,
+            };
+        }
+        // Count current groups
+        const groupCount = await this.user.countGroups(userId);
+        if (groupCount >= model.group.MAX_GROUPS) {
+            // Too many groups, so remove join request
+            await this.group.removeUserFromPendingGroupJoins(groupId, userId);
+            throw new this.BadRequest('TooManyGroups');
+        }
+        // Get the roleset for new members
+        const roleSetForNewMembers = await this.group.getRoleForNewMembers(groupId);
+        // Basic exploit checking
+        if (roleSetForNewMembers.rank >= 255) {
+            throw new this.BadRequest('InvalidRolesetId');
+        }
+        // Role is valid, so add to group
+        await this.group.addUserToGroup(groupId, userId, roleSetForNewMembers.roleSetId);
+        // Delete join request
+        await this.group.removeUserFromPendingGroupJoins(groupId, userId);
+        // Return success
+        return {
+            success: true,
+        };
+    }
+
+    @Delete('/:groupId/join-request')
+    @Summary('Decline a join request')
+    @Description('Requester must have manage permisison')
+    @Use(csrf, YesAuth)
+    @Returns(400, {type: model.Error,description:'InvalidGroupId: Group Id is invalid\nInvalidPermissions: Requester must have manage permission\nInvalidJoinRequest: Join request does not exist\n'})
+    @Returns(409, {type: model.Error, description: 'UserAlreadyInGroup: User is already a member of the group. Request has been deleted, but they will not be removed from the group\n'})
+    public async declineJoinRequest(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('groupId', Number) groupId: number, 
+        @BodyParams('userId', Number) userId: number,
+    ) {
+        // First, make sure requester has manage permissions
+        // Validate Group
+        await this.getGroupInfo(groupId);
+        // Grab role of requester
+        const role = await this.getAuthRole(userInfo, groupId);
+        if (!role.permissions.manage) {
+            // user is not authorized
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        // Make sure join request exists
+        let joinRequestExists = await this.group.isUserPendingToJoinGroup(groupId, userId);
+        if (!joinRequestExists) {
+            // Error
+            throw new this.BadRequest('InvalidJoinRequest');
+        }
+
+        // Grab role of user to decline
+        const roleOfMemberToDecline = await this.group.getUserRole(groupId, userId);
+        // Must be a guest in this group to join it
+        if (roleOfMemberToDecline.rank !== 0) {
+            // Somehow user is already in group? Delete request and error
+            await this.group.removeUserFromPendingGroupJoins(groupId, userId);
+            throw new this.Conflict('UserAlreadyInGroup');
+        }
+        // Delete join request
+        await this.group.removeUserFromPendingGroupJoins(groupId, userId);
+        // Return success
+        return {
+            success: true,
+        };
+    }
+
+    @Delete('/:groupId/member/:userId')
+    @Summary('Remove a user from a group')
+    @Description('Requester must be owner of group')
+    @Returns(400, {type: model.Error, description: 'CannotKickOwner: The owner cannot kick theirself\nInvalidGroupPermissions: Only the owner can kick members\nUserNotInGroup: User is not a member of this group\n'})
+    @Use(csrf, YesAuth)
+    public async removeUserFromGroup(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('groupId', Number) groupId: number,
+        @PathParams('userId', Number) userId: number,
+    ) {
+        // Verify Group Exists & requester is owner
+        const groupInfo = await this.getGroupInfo(groupId);
+        if (groupInfo.groupOwnerUserId !== userInfo.userId) {
+            throw new this.BadRequest('InvalidGroupPermissions');
+        }
+        // Confirm user is not owner
+        if (userId === userInfo.userId) {
+            throw new this.BadRequest('CannotKickOwner');
+        }
+        // Confirm user is in group
+        let inGroup = await this.group.getUserRole(groupId, userId);
+        if (inGroup.rank === 0) {
+            throw new this.BadRequest('UserNotInGroup');
+        }
+        // Delete user
+        await this.group.removeUserFromGroup(groupId, userId);
+        // Return success
+        return {
+            success: true,
+        }
     }
 
     /**

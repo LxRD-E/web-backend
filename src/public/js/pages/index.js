@@ -1,3 +1,4 @@
+/*
 $.fn.isOnScreen = function(){
 
     var win = $(window);
@@ -24,3 +25,4 @@ $(window).scroll(function(){
         
     }
 });
+*/

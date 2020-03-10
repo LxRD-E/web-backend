@@ -1,6 +1,13 @@
 @html.extend('layouts/default', function(model) {
     @html.block('content', function(model) {
-        <div id="groupdata" data-groupid ="@model.page.groupId" data-groupowner="@model.page.groupOwnerUserId" data-encoded-name="@model.page.groupEncodedName"></div>
+        @{
+            if (model.page.groupOwnerUserId === model.userInfo.userId) {
+                model.page.isGroupOwner = true;
+            }else{
+                model.page.isGroupOwner = false;
+            }
+        }
+        <div id="groupdata" data-groupid ="@model.page.groupId" data-groupowner="@model.page.groupOwnerUserId" data-encoded-name="@model.page.groupEncodedName" data-isowner="@model.page.isGroupOwner" data-approvalrequired="@model.page.groupMembershipApprovalRequired"></div>
         <div class="row" style="margin-top:1rem;">
             <div class="col-12">
                 <h1><a href="/groups/@model.page.groupId/@model.page.groupEncodedName">@model.page.groupName</a></h1>
@@ -47,6 +54,34 @@
                     </div>
                 </div>
             </div>
+             <div class="col-12" style="margin-top:1rem;">
+                <div class="card">
+                    <div class="card-body">
+                        <form>
+                            <div class="form-group">
+                                <h5 class="card-title">Approval Required</h5>
+                                <p style="font-size:0.85rem;margin-bottom:1rem;">Weather or not group members will have to be approved before joining this group.</p>
+                                <div class="row">
+                                    <div class="col-md-8 col-sm-12">
+                                        <select class="form-control" id="groupApprovalRequired">
+                                            @if (model.page.groupMembershipApprovalRequired) {
+                                                <option value="0">Disabled</option>
+                                                <option value="1" selected="selected">Enabled</option>
+                                            }else{
+                                                <option value="0" selected="selected">Disabled</option>
+                                                <option value="1">Enabled</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 col-sm-12">
+                                        <button type="button" class="btn btn-small btn-success" id="updateGroupApprovalRequiredStatus" style="margin:0 auto;display: block;">Update Status</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
             <div class="col-12" style="margin-top:1rem;">
                 <div class="card">
                     <div class="card-body">
@@ -68,7 +103,7 @@
                 </div>
             </div>
             @if (model.userInfo.userId === model.page.groupOwnerUserId) {
-                <div class="col-12 col-md-6" style="margin-top:1rem;">
+                <div class="col-12" style="margin-top:1rem;">
                     <div class="card">
                         <div class="card-body">
                             <form>
@@ -113,7 +148,7 @@
                     </div>
                 </div>
             }
-            <div class="col-12" style="margin-top:1rem;">
+                        <div class="col-12" style="margin-top:1rem;">
                             <div class="row">
                                 <div class="col-sm-12">
                                     <div class="card">
@@ -147,6 +182,40 @@
                                 </div>
                             </div>
                         </div>
+
+                        @if (model.page.groupMembershipApprovalRequired === 1) {
+                            <div class="col-12" style="margin-top:1rem;">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <h3>Pending Members</h3>
+                                                </div>
+                                            </div>
+                                            <div class="row" id="noMembersPendingDisplay" style="display:none;">
+                                                <div class="col-12">
+                                                    <p>This group has no pending members.</p>
+                                                </div>
+                                            </div>
+                                            <div class="row" id="hasMembersPendingDisplay" style="">
+                                                
+                                            </div>
+                                            <div class="row" style="padding-top: 1rem;">
+                                                <div class="col-3">
+                                                    <button type="button" class="btn btn-small btn-success" id="loadLessMembersPending" style="width:100%;margin: 0px auto;display:none;">Previous Page</button>
+                                                </div>
+                                                <div class="col-3 offset-6">
+                                                    <button type="button" class="btn btn-small btn-success" id="loadMoreMembersPending" style="width:100%;margin: 0px auto;display:none;">Next Page</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        }
 
 
 

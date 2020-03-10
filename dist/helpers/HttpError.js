@@ -139,6 +139,10 @@ var HttpErrors;
     HttpErrors[HttpErrors["AuthenticationServiceConstraintHTTPSRequired"] = 134] = "AuthenticationServiceConstraintHTTPSRequired";
     HttpErrors[HttpErrors["AuthenticationServiceBlacklisted"] = 135] = "AuthenticationServiceBlacklisted";
     HttpErrors[HttpErrors["InvalidReturnUrl"] = 136] = "InvalidReturnUrl";
+    HttpErrors[HttpErrors["InvalidApprovalStatus"] = 137] = "InvalidApprovalStatus";
+    HttpErrors[HttpErrors["GroupJoinRequestPending"] = 138] = "GroupJoinRequestPending";
+    HttpErrors[HttpErrors["InvalidJoinRequest"] = 139] = "InvalidJoinRequest";
+    HttpErrors[HttpErrors["UserAlreadyInGroup"] = 140] = "UserAlreadyInGroup";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 ;
 exports.ErrorTemplate = (title, body) => {

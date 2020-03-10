@@ -35,6 +35,10 @@ export class groupPermissions {
     manage: 1|0;
 }
 
+export enum GroupMemberApprovalStatus {
+    'true' = 1,
+    'false' = 0
+}
 
 /**
  * Info about a group
@@ -54,6 +58,8 @@ export class groupDetails {
     groupMemberCount: number;
     @Required()
     groupStatus: groupStatus;
+    @Required()
+    groupMembershipApprovalRequired: GroupMemberApprovalStatus;
 }
 
 /**
@@ -139,4 +145,11 @@ export interface wall {
 export enum groupStatus {
     locked = 1,
     ok = 0,
+}
+
+export class GroupJoinRequest {
+    @Required()
+    groupId: number;
+    @Required()
+    userId: number;
 }

@@ -81,9 +81,15 @@ const loadGoup = () => {
         if ($('#userdata').attr("data-authenticated") === "true") {
             request("/group/"+groupid+"/membership", "PUT")
                 .then(function(d) {
-                    success("You have joined this group.", function() {
-                        window.location.reload();
-                    });
+                    if (d.doesUserRequireApproval) {
+                        success("You have requested to join this group. This group requires members to be approved by an admin.", function() {
+                            window.location.reload();
+                        });
+                    }else{
+                        success("You have joined this group.", function() {
+                            window.location.reload();
+                        });
+                    }
                 })
                 .catch(function(e) {
                     console.log(e);
@@ -153,7 +159,7 @@ const loadGoup = () => {
                     if (!k.wallPost) {
                         k.wallPost = "";
                     }
-                    $('#hasGroupWallPostsDisplay').append('<div class="row"><div style="" class="col-6 col-sm-3 col-lg-2"><img style="width:100%;" data-userid="'+k.userId+'"><a style="color:#212529;" href="/users/'+k.userId+'/profile"><h6 class="text-center" data-userid="'+k.userId+'"></h6></a><p class="text-center" style="font-size: small;">'+moment(k["date"]).format('MMMM Do YYYY, h:mm a')+'</p><button type="button" class="btn btn-success deletePost" data-id="'+k.wallPostId+'" '+customstyle+'>Delete</button></div><div class="col-6 col-sm-9 col-lg-10"><p>'+k.wallPost.escapeAllowFormattingBasic()+'</p></div><div class="col-12"><hr /></div></div>');
+                    $('#hasGroupWallPostsDisplay').append('<div class="row"><div style="" class="col-6 col-sm-3 col-lg-2"><img style="width:100%;" data-userid="'+k.userId+'"><a style="color:#212529;" href="/users/'+k.userId+'/profile"><h6 class="text-center text-truncate" data-userid="'+k.userId+'"></h6></a><p class="text-center text-truncate" style="font-size: small;">'+moment(k["date"]).fromNow()+'</p><button type="button" class="btn btn-success deletePost" data-id="'+k.wallPostId+'" '+customstyle+'>Delete</button></div><div class="col-6 col-sm-9 col-lg-10"><p>'+k.wallPost.escapeAllowFormattingBasic()+'</p></div><div class="col-12"><hr /></div></div>');
                 });
                 setUserThumbs(userids);
                 setUserNames(userids);

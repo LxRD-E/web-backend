@@ -1,5 +1,24 @@
 var groupdata = $('#groupdata');
 var groupid = groupdata.attr("data-groupid");
+/**
+ * @type {boolean}
+ */
+var isOwner = groupdata.attr('data-isowner');
+if (isOwner === 'true') {
+    isOwner = true;
+}else{
+    isOwner = false;
+}
+
+/**
+ * @type {boolean}
+ */
+var groupMemberApprovalRequired = groupdata.attr('data-approvalrequired');
+if (groupMemberApprovalRequired === '1') {
+    groupMemberApprovalRequired = true;
+}else{
+    groupMemberApprovalRequired = false;
+}
 window.membersOffset = 0;
 
 window.history.replaceState(null, null, "/groups/"+groupid+"/"+groupdata.attr("data-encoded-name")+"/manage");
@@ -339,6 +358,37 @@ $(document).on('change', '.rankUser', function() {
             toast(false, e.responseJSON.message);
         })
 });
+
+$(document).on('click', '.kick-user', function(e) {
+    e.preventDefault();
+    let userId = $(this).attr('data-userid-to-kick');
+    questionYesNo('Are you sure you\'d like to kick this user?', () => {
+        loading();
+        request('/group/'+groupid+'/member/'+userId, 'DELETE', {}).then(d => {
+            loadMembers(window.curId);
+            toast(true, 'User has been kicked.');
+        })
+        .catch(e => {
+            warning(e.responseJSON.message);
+        })
+    });
+});
+
+$(document).on('click', '#updateGroupApprovalRequiredStatus', function(e) {
+    e.preventDefault();
+    loading();
+    request('/group/'+groupid+'/approval-required', 'PATCH', {
+        approvalStatus: parseInt($('#groupApprovalRequired').val(), 10),
+    }).then(d => {
+        success('Member approval status has been updated for this group.', () => {
+            window.location.reload();
+        });
+    })
+    .catch(e => {
+        warning(e.responseJSON.message);
+    })
+});
+
 function loadMembers(id) {
     window.curId = id;
     $('#noMembersDisplay').hide();
@@ -363,7 +413,11 @@ function loadMembers(id) {
                         }
                     }
                 });
-                $('#hasMembersDisplay').append('<div class="col-4 col-md-3 col-lg-2"><a href="/users/'+k.userId+'/profile"><img data-userid="'+k.userId+'" style="width:100%;" /><p class="text-center text-truncate" data-userid="'+k.userId+'"></p></a><select data-userid="'+k.userId+'" class="form-control rankUser">'+selects+'</select></div>');
+                let kickButton = '';
+                if (isOwner) {
+                    kickButton = '<p style="font-size: 0.75rem;color:red;cursor:pointer;" data-userid-to-kick="'+k.userId+'" class="kick-user">Kick</p>';
+                }
+                $('#hasMembersDisplay').append('<div class="col-4 col-md-3 col-lg-2">'+kickButton+'<a href="/users/'+k.userId+'/profile"><img data-userid="'+k.userId+'" style="width:100%;" /><p class="text-center text-truncate" data-userid="'+k.userId+'"></p></a><select data-userid="'+k.userId+'" class="form-control rankUser">'+selects+'</select></div>');
                 userIdsForReq.push(k.userId);
             });
             setUserThumbs(userIdsForReq);
@@ -446,3 +500,71 @@ $(document).on('click', '.loadMoreTransactionsClick', function(e) {
     e.preventDefault();
     loadTransactions(transactionsOffset);
 });
+
+
+
+if (groupMemberApprovalRequired) {
+
+    let pendingMembersOffset = 0;
+    let pendingMembersLoading = false;
+    function loadMembersAwaitingApproval() {
+        if (pendingMembersLoading) {
+            return;
+        }
+        $('#hasMembersPendingDisplay').empty();
+        pendingMembersLoading = true;
+        request('/group/'+groupid+'/join-requests?limit=12&offset='+pendingMembersOffset)
+        .then(d => {
+
+            if (pendingMembersOffset === 0 && d.length === 0) {
+                return $('#noMembersPendingDisplay').show();
+            }
+            $('#hasMembersPendingDisplay').show();
+
+            let userIdsToSetThumbsFor = [];
+            for (const user of d) {
+                userIdsToSetThumbsFor.push(user.userId);
+                $('#hasMembersPendingDisplay').append(`
+                <div class="col-4 col-md-3 col-lg-2">
+                <a href="/users/${user.userId}/profile"><img data-userid="${user.userId}" style="width:100%;" />
+                    <p class="text-center text-truncate" data-userid="${user.userId}"></p>
+                </a>
+                
+                    <button type="button" class="btn btn-success approveMemberJoinRequest" data-usertoapprove="${user.userId}" style="margin:0auto;display:block;width: 100%;">Approve</button>
+                    <button type="button" class="btn btn-danger declineMemberJoinRequest" data-usertodecline="${user.userId}" style="margin:0auto;display:block;width: 100%;">Decline</button>
+                
+                </div>
+                
+                
+                `);
+            }
+            setUserNames(userIdsToSetThumbsFor);
+            setUserThumbs(userIdsToSetThumbsFor);
+        })
+        .catch(e => {
+            warning(e.responseJSON.message);
+        })
+        .finally(() => {
+            pendingMembersLoading = false;
+        })
+    }
+    loadMembersAwaitingApproval();
+
+    $(document).on('click', '.approveMemberJoinRequest', function(e) {
+        e.preventDefault();
+        loading();
+        request('/group/'+groupid+'/join-request', 'POST', {
+            userId: parseInt($(this).attr('data-usertoapprove'), 10),
+        })
+        .then(d => {
+            toast(true, 'Member approved.');
+            loadMembersAwaitingApproval();
+        }).catch(e => {
+            warning(e.responseJSON.message);
+            loadMembersAwaitingApproval();
+        });
+    });
+
+
+
+}

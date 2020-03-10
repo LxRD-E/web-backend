@@ -1,5 +1,5 @@
 import * as Catalog from './catalog';
-import { PropertyType } from '@tsed/common';
+import { PropertyType, Required } from '@tsed/common';
 import crypto = require('crypto');
 import _ = require('lodash');
 
@@ -94,27 +94,43 @@ export class GameInfo {
 }
 
 export class GameSearchResult {
+    @Required()
     gameId: number;
+    @Required()
     gameName: string;
+    @Required()
     gameDescription: string;
+    @Required()
     iconAssetId: number;
+    @Required()
     thumbnailAssetId: number;
+    @Required()
     playerCount: number;
+    @Required()
     creatorId: number;
+    @Required()
     creatorType: Catalog.creatorType;
 }
 
 export class GameServerPlayer {
+    @Required()
     gameServerId: number;
+    @Required()
     userId: number;
+    @Required()
     createdAt: string;
 }
 
 export class GameServer {
+    @Required()
     gameServerId: number;
+    @Required()
     gameId: number;
+    @Required()
     createdAt: string;
+    @Required()
     playerCount: number;
+    @Required()
     isClosed: GameClosed;
 }
 

@@ -142,6 +142,7 @@ let WWWGroupController = class WWWGroupController extends controller_1.default {
         viewData.page.groupMemberCount = groupData.groupMemberCount;
         viewData.page.groupDescription = groupData.groupDescription;
         viewData.page.groupIconCatalogId = groupData.groupIconCatalogId;
+        viewData.page.groupMembershipApprovalRequired = groupData.groupMembershipApprovalRequired;
         viewData.title = groupData.groupName;
         return viewData;
     }

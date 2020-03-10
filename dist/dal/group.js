@@ -21,7 +21,7 @@ class GroupsDAL extends _init_1.default {
         };
     }
     async getInfo(groupId) {
-        const info = await this.knex("groups").select("groups.id as groupId", "groups.name as groupName", "groups.description as groupDescription", "groups.owner_userid as groupOwnerUserId", "groups.membercount as groupMemberCount", "groups.thumbnail_catalogid as groupIconCatalogId", "groups.status as groupStatus").where({ "groups.id": groupId }).limit(1);
+        const info = await this.knex("groups").select("groups.id as groupId", "groups.name as groupName", "groups.description as groupDescription", "groups.owner_userid as groupOwnerUserId", "groups.membercount as groupMemberCount", "groups.thumbnail_catalogid as groupIconCatalogId", "groups.status as groupStatus", 'groups.approval_required as groupMembershipApprovalRequired').where({ "groups.id": groupId }).limit(1);
         if (!info[0]) {
             throw false;
         }
@@ -213,6 +213,46 @@ class GroupsDAL extends _init_1.default {
     async updateGroupOwner(groupId, userId) {
         await this.knex("groups").update({
             'owner_userid': userId,
+        }).where({ 'id': groupId });
+    }
+    async doesGroupRequireApprovalForNewMembers(groupId) {
+        let status = await this.knex('groups').select('approval_required').where({
+            'id': groupId,
+        }).limit(1);
+        if (status[0]['approval_required'] === 1) {
+            return true;
+        }
+        return false;
+    }
+    async insertPendingGroupMember(groupId, userId) {
+        await this.knex('group_members_pending').insert({
+            'group_id': groupId,
+            'user_id': userId,
+        });
+    }
+    async isUserPendingToJoinGroup(groupId, userId) {
+        let result = await this.knex('group_members_pending').select('id').where({
+            'group_id': groupId,
+            'user_id': userId,
+        }).limit(1);
+        if (result[0] && result[0]['id']) {
+            return true;
+        }
+        return false;
+    }
+    async removeUserFromPendingGroupJoins(groupId, userId) {
+        await this.knex('group_members_pending').delete().where({
+            'group_id': groupId,
+            'user_id': userId,
+        });
+    }
+    async getPendingMembers(groupId, offset, limit) {
+        let page = await this.knex('group_members_pending').select('group_id as groupId', 'user_id as userId').limit(limit).offset(offset);
+        return page;
+    }
+    async updateGroupApprovalRequiredStatus(groupId, approvalRequired) {
+        await this.knex("groups").update({
+            'approval_required': approvalRequired,
         }).where({ 'id': groupId });
     }
     async getGroupItems(groupId, offset, limit, sort) {

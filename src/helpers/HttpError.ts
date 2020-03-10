@@ -136,6 +136,10 @@ export enum HttpErrors {
     AuthenticationServiceConstraintHTTPSRequired,
     AuthenticationServiceBlacklisted,
     InvalidReturnUrl,
+    InvalidApprovalStatus,
+    GroupJoinRequestPending,
+    InvalidJoinRequest,
+    UserAlreadyInGroup,
 };
 // @Locals('userInfo') userInfo: model.user.UserInfo,
 export const ErrorTemplate = (title: string, body: string): string => {

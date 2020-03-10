@@ -1266,6 +1266,9 @@ const errorTransform = (errCode) => {
         case 'TooManyRequests': {
             return 'You have been making too many requests. Try again later.';
         }
+        case 'GroupJoinRequestPending': {
+            return 'You are already awaiting approval by an admin. Check back later.';
+        }
     }
     return 'An unknown error has ocurred. Please try again later, or contact support.';
 }

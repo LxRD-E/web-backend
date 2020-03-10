@@ -182,6 +182,7 @@ export class WWWGroupController extends controller {
         viewData.page.groupMemberCount = groupData.groupMemberCount;
         viewData.page.groupDescription = groupData.groupDescription;
         viewData.page.groupIconCatalogId = groupData.groupIconCatalogId;
+        viewData.page.groupMembershipApprovalRequired = groupData.groupMembershipApprovalRequired;
 
         viewData.title = groupData.groupName;
         return viewData;

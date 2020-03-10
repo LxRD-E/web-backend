@@ -4,6 +4,7 @@
 import * as groups from '../models/v1/group';
 import * as catalog from '../models/v1/catalog';
 import _init from './_init';
+import { group } from '../models/models';
 
 class GroupsDAL extends _init {
     /**
@@ -30,7 +31,7 @@ class GroupsDAL extends _init {
      * Get a Group's Info
      */
     public async getInfo(groupId: number): Promise<groups.groupDetails> {
-        const info = await this.knex("groups").select("groups.id as groupId","groups.name as groupName","groups.description as groupDescription","groups.owner_userid as groupOwnerUserId","groups.membercount as groupMemberCount","groups.thumbnail_catalogid as groupIconCatalogId","groups.status as groupStatus").where({"groups.id":groupId}).limit(1);
+        const info = await this.knex("groups").select("groups.id as groupId","groups.name as groupName","groups.description as groupDescription","groups.owner_userid as groupOwnerUserId","groups.membercount as groupMemberCount","groups.thumbnail_catalogid as groupIconCatalogId","groups.status as groupStatus", 'groups.approval_required as groupMembershipApprovalRequired').where({"groups.id":groupId}).limit(1);
         if (!info[0]) {
             throw false;
         }
@@ -371,6 +372,80 @@ class GroupsDAL extends _init {
     public async updateGroupOwner(groupId: number, userId: number): Promise<void> {
         await this.knex("groups").update({
             'owner_userid': userId,
+        }).where({'id': groupId});
+    }
+
+    /**
+     * Given a groupId, this method checks weather or not new members will have to be approved before joining
+     * @param groupId 
+     */
+    public async doesGroupRequireApprovalForNewMembers(groupId: number): Promise<boolean> {
+        let status = await this.knex('groups').select('approval_required').where({
+            'id': groupId,
+        }).limit(1);
+        if (status[0]['approval_required'] === 1) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Insert a user into a group_members_pending
+     * @param groupId 
+     * @param userId 
+     */
+    public async insertPendingGroupMember(groupId: number, userId: number): Promise<void> {
+        await this.knex('group_members_pending').insert({
+            'group_id': groupId,
+            'user_id': userId, 
+        });
+    }
+
+    /**
+     * Given a groupId and userId, this method will check weather or not the user is pending to join a group
+     * @param groupId 
+     * @param userId 
+     */
+    public async isUserPendingToJoinGroup(groupId: number, userId: number): Promise<boolean> {
+        let result = await this.knex('group_members_pending').select('id').where({
+            'group_id': groupId,
+            'user_id': userId,
+        }).limit(1);
+        if (result[0] && result[0]['id']) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Given a groupId and userId, this method will delete the user from pending group joins involving that groupId
+     * @param groupId 
+     * @param userId 
+     */
+    public async removeUserFromPendingGroupJoins(groupId: number, userId: number): Promise<void> {
+        await this.knex('group_members_pending').delete().where({
+            'group_id': groupId,
+            'user_id': userId,
+        });
+    }
+
+    /**
+     * Given a groupId, this method will grab members waiting to join a group
+     * @param groupId 
+     */
+    public async getPendingMembers(groupId: number, offset: number, limit: number): Promise<group.GroupJoinRequest[]> {
+        let page = await this.knex('group_members_pending').select('group_id as groupId','user_id as userId').limit(limit).offset(offset);
+        return page;
+    }
+
+    /**
+     * Update groups.approval_required status
+     * @param groupId The groupId to update
+     * @param approvalRequired Weather or not the group will require approval
+     */
+    public async updateGroupApprovalRequiredStatus(groupId: number, approvalRequired: number): Promise<void> {
+        await this.knex("groups").update({
+            'approval_required': approvalRequired,
         }).where({'id': groupId});
     }
 
