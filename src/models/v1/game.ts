@@ -1,5 +1,5 @@
 import * as Catalog from './catalog';
-import { PropertyType, Required } from '@tsed/common';
+import { PropertyType, Required, AllowTypes } from '@tsed/common';
 import crypto = require('crypto');
 import _ = require('lodash');
 
@@ -17,6 +17,44 @@ export enum ScriptType {
 export enum GameClosed {
     false = 0,
     true = 1,
+}
+
+export enum GameThumbnailModerationStatus {
+    'AwaitingApproval' = 0,
+    'Approved' = 1,
+    'Declined' = 2,
+}
+
+export enum GameSortOptions {
+    'Featured' = 1,
+    'Top Players' = 2,
+}
+
+export enum GameGenres {
+    'Any' = 1,
+    'Building',
+    'Town & City',
+    'Military',
+    'Comedy',
+    'Medieval',
+    'Adventure',
+    'Sci-Fi',
+    'Naval',
+    'FPS',
+    'RPG',
+    'Sports',
+    'Fighting',
+    'Western',
+}
+
+export class GameThumbnail {
+    @Required()
+    @AllowTypes('string','null')
+    url: string|null;
+    @Required()
+    moderationStatus: GameThumbnailModerationStatus;
+    @Required()
+    gameId: number;
 }
 
 export class Map {
@@ -100,10 +138,6 @@ export class GameSearchResult {
     gameName: string;
     @Required()
     gameDescription: string;
-    @Required()
-    iconAssetId: number;
-    @Required()
-    thumbnailAssetId: number;
     @Required()
     playerCount: number;
     @Required()

@@ -143,6 +143,7 @@ var HttpErrors;
     HttpErrors[HttpErrors["GroupJoinRequestPending"] = 138] = "GroupJoinRequestPending";
     HttpErrors[HttpErrors["InvalidJoinRequest"] = 139] = "InvalidJoinRequest";
     HttpErrors[HttpErrors["UserAlreadyInGroup"] = 140] = "UserAlreadyInGroup";
+    HttpErrors[HttpErrors["Cooldown"] = 141] = "Cooldown";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 ;
 exports.ErrorTemplate = (title, body) => {

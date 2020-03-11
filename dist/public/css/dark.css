@@ -150,3 +150,20 @@ a.navbar-brand {
 .navbar-nav> .nav-item > .nav-link {
     color: rgba(255,255,255,1);
 }
+a.normal {
+    color: #ffffff;
+    transition: all 0.1s;
+}
+a.normal:hover {
+    color: #afb7be!important;
+    transition: all 0.1s;
+    text-decoration: none;
+}
+a.normal:hover > p {
+    color: #afb7be!important;
+    transition: all 0.1s;
+    text-decoration: none;
+}
+a.normal > p {
+    transition: all 0.1s;
+}

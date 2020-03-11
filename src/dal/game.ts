@@ -11,6 +11,7 @@ import { Redis } from 'ioredis';
 import { VM } from 'vm2';
 import CP = require('child_process');
 import _init from './_init';
+import { game } from '../models/models';
 
 class GameDAL extends _init {
 
@@ -20,10 +21,10 @@ class GameDAL extends _init {
      * @param specificColumns 
      */
     public async getInfo(id: number, specificColumns?: Array<
-        'gameId' | 'gameName' | 'gameDescription' | 'maxPlayers' | 'iconAssetId' | 'thumbnailAssetId' | 'visitCount' | 'playerCount' | 'likeCount' | 'dislikeCount' | 'gameState' | 'creatorId' | 'creatorType' | 'createdAt' | 'updatedAt'
+        'gameId' | 'gameName' | 'gameDescription' | 'maxPlayers'  | 'visitCount' | 'playerCount' | 'likeCount' | 'dislikeCount' | 'gameState' | 'creatorId' | 'creatorType' | 'createdAt' | 'updatedAt'
     >): Promise<Game.GameInfo> {
         if (!specificColumns) {
-            specificColumns = ['gameId', 'gameName', 'gameDescription', 'iconAssetId', 'thumbnailAssetId', 'visitCount', 'playerCount', 'likeCount', 'dislikeCount', 'gameState', 'creatorId', 'creatorType'];
+            specificColumns = ['gameId', 'gameName', 'gameDescription', 'visitCount', 'playerCount', 'likeCount', 'dislikeCount', 'gameState', 'creatorId', 'creatorType'];
         }
         specificColumns.forEach((element: string, index: number, array: Array<string>): void => {
             if (element === 'gameId') {
@@ -34,10 +35,6 @@ class GameDAL extends _init {
                 array[index] = 'description as gameDescription';
             } else if (element === 'maxPlayers') {
                 array[index] = 'max_players as maxPlayers';
-            } else if (element === 'iconAssetId') {
-                array[index] = 'icon_assetid as iconAssetId';
-            } else if (element === 'thumbnailAssetId') {
-                array[index] = 'thumbnail_assetid as thumbnailAssetId';
             } else if (element === 'visitCount') {
                 array[index] = 'visit_count as visitCount';
             } else if (element === 'playerCount') {
@@ -72,19 +69,32 @@ class GameDAL extends _init {
      * @param limit 
      * @param sortMode 
      */
-    public async getGames(offset: number, limit: number, sortMode: 'asc'|'desc'): Promise<Game.GameSearchResult[]> {
-        const games = await this.knex('game').select([
-            'id as gameId',
-            'name as gameName',
-            'description as gameDescription',
-            'icon_assetid as iconAssetId',
-            'thumbnail_assetid as thumbnailAssetId',
-            'player_count as playerCount',
-            'creator_type as creatorType',
-            'creator_id as creatorId',
-        ]).limit(limit).offset(offset).orderBy('player_count',sortMode).where({
-            'game_state': Game.GameState.public,
-        });
+    public async getGames(offset: number, limit: number, sortMode: 'asc'|'desc', sortByColumn: string, genre: number): Promise<Game.GameSearchResult[]> {
+        let games;
+        if (genre === Game.GameGenres.Any) {
+            games = await this.knex('game').select([
+                'id as gameId',
+                'name as gameName',
+                'description as gameDescription',
+                'player_count as playerCount',
+                'creator_type as creatorType',
+                'creator_id as creatorId',
+            ]).limit(limit).offset(offset).orderBy(sortByColumn,sortMode).where({
+                'game_state': Game.GameState.public,
+            });
+        }else{
+            games = await this.knex('game').select([
+                'id as gameId',
+                'name as gameName',
+                'description as gameDescription',
+                'player_count as playerCount',
+                'creator_type as creatorType',
+                'creator_id as creatorId',
+            ]).limit(limit).offset(offset).orderBy(sortByColumn,sortMode).where({
+                'game_state': Game.GameState.public,
+                'genre': genre,
+            });
+        }
 
         return games;
     }
@@ -526,6 +536,58 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
      */
     public async incrementVisitCount(gameId: number): Promise<void> {
         await this.knex.raw(`UPDATE game SET visit_count = visit_count + 1 WHERE id = ?`, [gameId]);
+    }
+
+    /**
+     * Create a thumbnail for the specified gameId
+     * @param gameId 
+     * @param url 
+     */
+    public async createGameThumbnail(gameId: number, url: string, moderationStatus: game.GameThumbnailModerationStatus): Promise<void> {
+        await this.knex('game_thumbnails').insert({
+            'thumbnail_url': url,
+            'moderation_status': moderationStatus,
+            'game_id': gameId,
+        });
+    }
+
+    /**
+     * Get the thumbnail for a game. Returns default thumbnail if pending/declined/not available
+     */
+    public async getGameThumbnail(gameId: number): Promise<game.GameThumbnail> {
+        let thumbnail = await this.knex('game_thumbnails').select('thumbnail_url','id').where({'game_id': gameId,'moderation_status': game.GameThumbnailModerationStatus.Approved}).orderBy('id','desc');
+        if (thumbnail[0] && thumbnail[0]['thumbnail_url']) {
+            return {
+                url: thumbnail[0]['thumbnail_url'],
+                moderationStatus: game.GameThumbnailModerationStatus.Approved,
+                gameId: gameId,
+            };
+        }
+        return {
+            url: 'https://cdn.hindigamer.club/game/default_assets/Screenshot_5.png',
+            moderationStatus: game.GameThumbnailModerationStatus.Approved,
+            gameId: gameId,
+        };
+    }
+
+    /**
+     * Multi-get game thumbnails by an array of gameIds. 
+     * @param gameIds 
+     */
+    public async multiGetGameThumbnails(gameIds: number[], ignoreModerationState: boolean = false): Promise<game.GameThumbnail[]> {
+        let object = this.knex('game_thumbnails').select('thumbnail_url as url','moderation_status as moderationStatus', 'game_id as gameId');
+        for (const item of gameIds) {
+            object = object.orWhere('game_id','=',item);
+        }
+        let results = await object;
+        for (const item of results) {
+            if (!ignoreModerationState) {
+                if (item.moderationStatus !== game.GameThumbnailModerationStatus.Approved) {
+                    item.url = null;
+                }
+            }
+        }
+        return results;
     }
 }
 

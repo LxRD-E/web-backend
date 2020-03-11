@@ -91,16 +91,110 @@ function setCatalogThumbsIgnoreModeration(idsUnInit)
             })
     }
 }
+
+function setGameThumbsIgnoreModeration(idsUnInit)
+{
+    var type = "game";
+    function setThumb(id, src) {
+        $("img[data-" + type + "id='" + id + "']").attr("src", src);
+        // TODO: Remove this and possible return a promise or something to tell the calling function when to show it's parent (or parent's parent, or parent's parent's parent, etc [you can see how this doesn't work well])
+        $("img[data-" + type + "id='" + id + "']").parent().show();
+    }
+    // Setup Subsitution URL
+    var sub = window.subsitutionimageurl;
+    // Only supports catalog and user for now
+    if (type !== "user" && type !== "catalog") {
+        return false;
+    }
+    // Setup Globals
+    if (window["thumbArray" + type] === undefined) {
+        window["thumbArray" + type] = {};
+    }
+    if (window["pendingThumbArray" + type] === undefined) {
+        window["pendingThumbArray" + type] = {};
+    }
+    // Global to Variable
+    var global = window["thumbArray" + type];
+    var pending = window["pendingThumbArray" + type];
+    // Filter duplicates
+    var ids = [...new Set(idsUnInit)];
+    // Duplicate Array
+    var pendingIds = JSON.parse(JSON.stringify(ids));
+    // If larger than 25
+    if (pendingIds.length > 25) {
+        // Break it up into multiple requests
+        setThumbs(type, pendingIds.slice(25));
+        pendingIds = pendingIds.slice(0, 25);
+    }
+    ids.forEach(function (k, v, object) {
+        if (typeof global[k] !== "undefined" && global[k] !== null || pending[k] !== undefined) {
+            pendingIds.forEach(function (num, index, obj) {
+                if (num === k) {
+                    pendingIds.splice(index, 1)
+                }
+            });
+        } else {
+            pending[k] = true;
+        }
+        if (global[k] !== undefined) {
+            setThumb(k, global[k]);
+        }else{
+            setThumb(k, window.subsitutionimageurl);
+        }
+    });
+    if (pendingIds.length > 0) {
+        pendingIds = arrayToCsv(pendingIds);
+        request("/staff/game/thumbnails?ids=" + pendingIds, "GET")
+            .then(function (pics) {
+                $.each(pics, function (index, value) {
+                    if (value.userId) {
+                        if (value.url) {
+                            global[value.userId] = value.url;
+                            setThumb(value.userId, value.url);
+                        } else {
+                            setThumb(value.userId, sub);
+                        }
+                        $("img[data-" + type + "id='" + value.userId + "']").parent().show();
+                    } else if (value.gameId) {
+                        if (value.url) {
+                            global[value.gameId] = value.url;
+                            setThumb(value.gameId, value.url);
+                        } else {
+                            setThumb(value.gameId, sub);
+                        }
+                        $("img[data-" + type + "id='" + value.gameId + "']").parent().show();
+                    }
+                });
+                // Repair any broken images
+                $('img[data-' + type + 'id]').each(function () {
+                    if (typeof $(this).attr("src") === "undefined") {
+                        $(this).attr("src", sub);
+                        $(this).parent().show();
+                    }
+                });
+            })
+            .catch(function (e) {
+                // Reset
+                $('img[data-' + type + 'id]').each(function () {
+                    if (typeof $(this).attr("src") === "undefined") {
+                        $(this).attr("src", sub);
+                        $(this).parent().show();
+                    }
+                });
+            })
+    }
+}
 loadItems();
 function loadItems() {
     $('#pendingAssetsDiv').empty();
     request("/staff/catalog/pending")
         .then((d) => {
             if(d.length >=1) {
-                var ids = [];
+                var catalogIds = [];
+                var gameIds = [];
                 d.forEach(function(k) {
                     if (k.type ==='CatalogItem') {
-                    ids.push(k.catalogId);
+                        catalogIds.push(k.catalogId);
                     if (k.catalogName) {
                         k.catalogName = k.catalogName.escape();
                     }
@@ -162,9 +256,27 @@ function loadItems() {
                         </div>
                     </div>
                     `);
+                }else if (k.type === 'GameThumbnail') {
+                    $('#pendingAssetsDiv').append(`
+                    <div class="col-sm-12 col-md-6 col-lg-4" style="margin-top:1rem;">
+                        <div class="card">
+                            <div class="card-body">
+                                <img style="width:100%;" src="${k.url}" />
+                                <div class="card-title text-center">
+                                    <h6 style="margin-bottom:1rem;" class="text-truncate">&emsp;</h6>
+                                    <button type="button" class="btn btn-success approveGameThumbnail" data-id="`+k.gameThumbnailId+`" style="width:100%;margin-bottom:1rem;">Approve</button>
+                                    <!-- Example split danger button -->
+                                    <div class="btn-group dropup" style="width:100%;">
+                                        <button type="button" data-id="`+k.gameThumbnailId+`" class="btn btn-danger declineGameThumbnail">Decline</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    `);
                 }
                 });
-                setCatalogThumbsIgnoreModeration(ids);
+                setCatalogThumbsIgnoreModeration(catalogIds);
             }else{
                 $('#pendingAssetsDiv').append('<div class="col-12"><h3>There are no pending assets at this time.</h3></div>')
             }
@@ -178,11 +290,11 @@ $(document).on('click', '.approveCatalogItem', function() {
     request("/staff/catalog/"+parseInt($(this).attr("data-id"))+"/", "PATCH", JSON.stringify({"state":0}))
         .then(function(d) {
             console.log(d);
-            toast(true, "The specified catalog item has been approved.");
+            toast(true, "The specified item has been approved.");
             loadItems();
         })
         .catch(function(e) {
-            toast(false, "The specified catalog item could not be approved. Please try again.");
+            toast(false, "The specified item could not be approved. Please try again.");
             loadItems();
         });
 
@@ -199,6 +311,30 @@ $(document).on('click', '.approveAdvertisment', function() {
             loadItems();
         });
 
+});
+$(document).on('click', '.approveGameThumbnail', function() {
+    request("/staff/game-thumbnail/"+parseInt($(this).attr("data-id"))+"/", "PATCH", JSON.stringify({"state":1}))
+        .then(function(d) {
+            console.log(d);
+            toast(true, "The specified ad item has been approved.");
+            loadItems();
+        })
+        .catch(function(e) {
+            toast(false, "The specified ad item could not be approved. Please try again.");
+            loadItems();
+        });
+});
+$(document).on('click', '.declineGameThumbnail', function() {
+    request("/staff/game-thumbnail/"+$(this).attr("data-id")+"/", "PATCH", JSON.stringify({"state":2}))
+        .then(function(d) {
+            console.log(d);
+            toast(true, "The specified item has been declined.");
+            loadItems();
+        })
+        .catch(function(e) {
+            toast(false, "The specified item could not be declined. Please try again.");
+            loadItems();
+        });
 });
 function decline(catalogid) {
     request("/staff/catalog/"+catalogid+"/", "PATCH", JSON.stringify({"state":2}))

@@ -34,6 +34,50 @@ var GameClosed;
     GameClosed[GameClosed["false"] = 0] = "false";
     GameClosed[GameClosed["true"] = 1] = "true";
 })(GameClosed = exports.GameClosed || (exports.GameClosed = {}));
+var GameThumbnailModerationStatus;
+(function (GameThumbnailModerationStatus) {
+    GameThumbnailModerationStatus[GameThumbnailModerationStatus["AwaitingApproval"] = 0] = "AwaitingApproval";
+    GameThumbnailModerationStatus[GameThumbnailModerationStatus["Approved"] = 1] = "Approved";
+    GameThumbnailModerationStatus[GameThumbnailModerationStatus["Declined"] = 2] = "Declined";
+})(GameThumbnailModerationStatus = exports.GameThumbnailModerationStatus || (exports.GameThumbnailModerationStatus = {}));
+var GameSortOptions;
+(function (GameSortOptions) {
+    GameSortOptions[GameSortOptions["Featured"] = 1] = "Featured";
+    GameSortOptions[GameSortOptions["Top Players"] = 2] = "Top Players";
+})(GameSortOptions = exports.GameSortOptions || (exports.GameSortOptions = {}));
+var GameGenres;
+(function (GameGenres) {
+    GameGenres[GameGenres["Any"] = 1] = "Any";
+    GameGenres[GameGenres["Building"] = 2] = "Building";
+    GameGenres[GameGenres["Town & City"] = 3] = "Town & City";
+    GameGenres[GameGenres["Military"] = 4] = "Military";
+    GameGenres[GameGenres["Comedy"] = 5] = "Comedy";
+    GameGenres[GameGenres["Medieval"] = 6] = "Medieval";
+    GameGenres[GameGenres["Adventure"] = 7] = "Adventure";
+    GameGenres[GameGenres["Sci-Fi"] = 8] = "Sci-Fi";
+    GameGenres[GameGenres["Naval"] = 9] = "Naval";
+    GameGenres[GameGenres["FPS"] = 10] = "FPS";
+    GameGenres[GameGenres["RPG"] = 11] = "RPG";
+    GameGenres[GameGenres["Sports"] = 12] = "Sports";
+    GameGenres[GameGenres["Fighting"] = 13] = "Fighting";
+    GameGenres[GameGenres["Western"] = 14] = "Western";
+})(GameGenres = exports.GameGenres || (exports.GameGenres = {}));
+class GameThumbnail {
+}
+__decorate([
+    common_1.Required(),
+    common_1.AllowTypes('string', 'null'),
+    __metadata("design:type", String)
+], GameThumbnail.prototype, "url", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameThumbnail.prototype, "moderationStatus", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameThumbnail.prototype, "gameId", void 0);
+exports.GameThumbnail = GameThumbnail;
 class Map {
 }
 __decorate([
@@ -153,14 +197,6 @@ __decorate([
     common_1.Required(),
     __metadata("design:type", String)
 ], GameSearchResult.prototype, "gameDescription", void 0);
-__decorate([
-    common_1.Required(),
-    __metadata("design:type", Number)
-], GameSearchResult.prototype, "iconAssetId", void 0);
-__decorate([
-    common_1.Required(),
-    __metadata("design:type", Number)
-], GameSearchResult.prototype, "thumbnailAssetId", void 0);
 __decorate([
     common_1.Required(),
     __metadata("design:type", Number)

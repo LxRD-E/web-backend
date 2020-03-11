@@ -468,8 +468,8 @@ export default class AuthController extends controller {
         @Required()
         @BodyParams("status", String) newStatus: string
     ) {
-        if (newStatus.length > 255 || newStatus.length < 3) {
-            throw new this.BadRequest('InvalidStatus');;
+        if (newStatus.length > 255 || newStatus.length < 1) {
+            throw new this.BadRequest('InvalidStatus');
         }
         const latestUpdate = await this.user.getUserLatestStatus(userInfo.userId);
         if (latestUpdate && !moment().isSameOrAfter(moment(latestUpdate.date).add(5, "minutes"))) {

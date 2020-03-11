@@ -442,3 +442,31 @@ button.navbar-toggler.collapsed{
 button.navbar-toggler{
     opacity: 0.5;
 }
+
+a.normal {
+    color: #212529;
+    transition: all 0.1s;
+}
+a.normal:hover {
+    color: #81878d;
+    transition: all 0.1s;
+    text-decoration: none;
+}
+
+div#bannerText {
+    font-size: 0.85rem;
+}
+
+div.on-hover-show-game-info-tooltip:hover > div.game-info-tooltip {
+    display: block;
+    position: absolute;
+    z-index: 999;
+    margin: -1rem auto 0 auto;
+    padding: 0;
+    width: calc(100% - 0.5rem);
+    box-shadow: -1px 20px 28px -10px rgba(0,0,0,0.44);
+}
+
+div.on-hover-show-game-info-tooltip > div.game-info-tooltip {
+    display: none;
+}

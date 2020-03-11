@@ -11,7 +11,7 @@ import { filterOffset, filterId } from '../../helpers/Filter';
 // Autoload
 import controller from '../controller';
 import { Controller, Post, Get, Patch, Delete, Put, QueryParams, BodyParams, PathParams, UseBeforeEach, UseBefore, Locals, Use, MaxLength, MinLength, Required } from '@tsed/common';
-import { Summary } from '@tsed/swagger';
+import { Summary, Description, ReturnsArray } from '@tsed/swagger';
 import { YesAuth } from '../../middleware/Auth';
 import { csrf } from '../../dal/auth';
 /**
@@ -473,6 +473,38 @@ export class StaffController extends controller {
         return thumbnails;
     }
 
+    @Get('/thumbnails')
+    @Summary('Multi-get thumbnails by CSV of gameIds, ignoring moderation')
+    @Description('Invalid IDs will be filtered out')
+    @ReturnsArray(200, {type: model.game.GameThumbnail})
+    public async multiGetGameThumbnails(
+        @Required()
+        @QueryParams('ids', String) gameIds: string,
+    ) {
+        if (!gameIds) {
+            throw new this.BadRequest('InvalidIds');
+        }
+        const idsArray = gameIds.split(',');
+        if (idsArray.length < 1) {
+            throw new this.BadRequest('InvalidIds');
+        }
+        const filteredIds: Array<number> = [];
+        let allIdsValid = true;
+        idsArray.forEach((id) => {
+            const gameId = parseInt(id, 10) as number;
+            if (!Number.isInteger(gameId)) {
+                allIdsValid = false
+            }
+            filteredIds.push(gameId);
+        });
+        const safeIds = Array.from(new Set(filteredIds));
+        if (safeIds.length > 25) {
+            throw new this.BadRequest('TooManyIds');
+        }
+        let results = await this.game.multiGetGameThumbnails(safeIds, true);
+        return results;
+    }
+
     /**
      * Update ad item state
      * @param userInfo 
@@ -497,6 +529,30 @@ export class StaffController extends controller {
             // Send Message
             await this.notification.createMessage(adInfo.userId, 1, 'Ad "' + adInfo.title + '" has been Rejected', 'Hello,\nYour ad, "' + adInfo.title + '", has been rejected by our moderation team. Please fully review our terms of service before uploading assets so that you don\'t run into this issue again. Sorry for the inconvenience,\n\n-The Moderation Team');
         }
+        return {
+            success: true,
+        };
+    }
+
+    /**
+     * Update a game thumbnail
+     * @param userInfo 
+     * @param catalogId 
+     * @param moderationStatus 
+     */
+    @Patch('/game-thumbnail/:gameThumbnailId/')
+    @Summary('Update a game thumbnail item state')
+    @Use(csrf, YesAuth)
+    public async updateGameThumbnailState(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('gameThumbnailId', Number) gameThumbnailId: number,
+        @BodyParams('state', Number) moderationStatus: number
+    ) {
+        this.validate(userInfo, 1);
+        if (moderationStatus !== 1 && moderationStatus !== 2) {
+            throw new this.BadRequest('InvalidState');
+        }
+        await this.staff.updateGameThumbnailState(gameThumbnailId, moderationStatus);
         return {
             success: true,
         };

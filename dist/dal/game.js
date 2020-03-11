@@ -6,10 +6,11 @@ const aws = require("aws-sdk");
 const config_1 = require("../helpers/config");
 const crypto = require("crypto");
 const _init_1 = require("./_init");
+const models_1 = require("../models/models");
 class GameDAL extends _init_1.default {
     async getInfo(id, specificColumns) {
         if (!specificColumns) {
-            specificColumns = ['gameId', 'gameName', 'gameDescription', 'iconAssetId', 'thumbnailAssetId', 'visitCount', 'playerCount', 'likeCount', 'dislikeCount', 'gameState', 'creatorId', 'creatorType'];
+            specificColumns = ['gameId', 'gameName', 'gameDescription', 'visitCount', 'playerCount', 'likeCount', 'dislikeCount', 'gameState', 'creatorId', 'creatorType'];
         }
         specificColumns.forEach((element, index, array) => {
             if (element === 'gameId') {
@@ -23,12 +24,6 @@ class GameDAL extends _init_1.default {
             }
             else if (element === 'maxPlayers') {
                 array[index] = 'max_players as maxPlayers';
-            }
-            else if (element === 'iconAssetId') {
-                array[index] = 'icon_assetid as iconAssetId';
-            }
-            else if (element === 'thumbnailAssetId') {
-                array[index] = 'thumbnail_assetid as thumbnailAssetId';
             }
             else if (element === 'visitCount') {
                 array[index] = 'visit_count as visitCount';
@@ -65,19 +60,33 @@ class GameDAL extends _init_1.default {
         console.log("Query OK. Returning gameInfo...");
         return gameInfo[0];
     }
-    async getGames(offset, limit, sortMode) {
-        const games = await this.knex('game').select([
-            'id as gameId',
-            'name as gameName',
-            'description as gameDescription',
-            'icon_assetid as iconAssetId',
-            'thumbnail_assetid as thumbnailAssetId',
-            'player_count as playerCount',
-            'creator_type as creatorType',
-            'creator_id as creatorId',
-        ]).limit(limit).offset(offset).orderBy('player_count', sortMode).where({
-            'game_state': Game.GameState.public,
-        });
+    async getGames(offset, limit, sortMode, sortByColumn, genre) {
+        let games;
+        if (genre === Game.GameGenres.Any) {
+            games = await this.knex('game').select([
+                'id as gameId',
+                'name as gameName',
+                'description as gameDescription',
+                'player_count as playerCount',
+                'creator_type as creatorType',
+                'creator_id as creatorId',
+            ]).limit(limit).offset(offset).orderBy(sortByColumn, sortMode).where({
+                'game_state': Game.GameState.public,
+            });
+        }
+        else {
+            games = await this.knex('game').select([
+                'id as gameId',
+                'name as gameName',
+                'description as gameDescription',
+                'player_count as playerCount',
+                'creator_type as creatorType',
+                'creator_id as creatorId',
+            ]).limit(limit).offset(offset).orderBy(sortByColumn, sortMode).where({
+                'game_state': Game.GameState.public,
+                'genre': genre,
+            });
+        }
         return games;
     }
     async countGames(creatorId, creatorType) {
@@ -391,6 +400,43 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
     }
     async incrementVisitCount(gameId) {
         await this.knex.raw(`UPDATE game SET visit_count = visit_count + 1 WHERE id = ?`, [gameId]);
+    }
+    async createGameThumbnail(gameId, url, moderationStatus) {
+        await this.knex('game_thumbnails').insert({
+            'thumbnail_url': url,
+            'moderation_status': moderationStatus,
+            'game_id': gameId,
+        });
+    }
+    async getGameThumbnail(gameId) {
+        let thumbnail = await this.knex('game_thumbnails').select('thumbnail_url', 'id').where({ 'game_id': gameId, 'moderation_status': models_1.game.GameThumbnailModerationStatus.Approved }).orderBy('id', 'desc');
+        if (thumbnail[0] && thumbnail[0]['thumbnail_url']) {
+            return {
+                url: thumbnail[0]['thumbnail_url'],
+                moderationStatus: models_1.game.GameThumbnailModerationStatus.Approved,
+                gameId: gameId,
+            };
+        }
+        return {
+            url: 'https://cdn.hindigamer.club/game/default_assets/Screenshot_5.png',
+            moderationStatus: models_1.game.GameThumbnailModerationStatus.Approved,
+            gameId: gameId,
+        };
+    }
+    async multiGetGameThumbnails(gameIds, ignoreModerationState = false) {
+        let object = this.knex('game_thumbnails').select('thumbnail_url as url', 'moderation_status as moderationStatus', 'game_id as gameId');
+        for (const item of gameIds) {
+            object = object.orWhere('game_id', '=', item);
+        }
+        let results = await object;
+        for (const item of results) {
+            if (!ignoreModerationState) {
+                if (item.moderationStatus !== models_1.game.GameThumbnailModerationStatus.Approved) {
+                    item.url = null;
+                }
+            }
+        }
+        return results;
     }
 }
 exports.default = GameDAL;

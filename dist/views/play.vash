@@ -1,26 +1,70 @@
 @html.extend('layouts/default', function(model) {
     @html.block('content', function(model) {
-        <div class="row" style="padding-top:1rem;">
-            <div class="col-8 col-md-10">
-                <h4>Top Free Games</h4>
-                <p>Experience thousands of user-created 3D games designed for all ages, all for free! No download required.</p>
+        <div class="row">
+            <div class="col-12 col-lg-2">
+                <div class="card">
+                    <div class="card-body">
+                        <h3 style="font-size:1.15rem;margin-bottom:0.25rem;">Games</h3>
+                        <p style="font-size:0.75rem;margin-top:0;">Explore tons of user-created games.</p>
+                        <!-- start sort by options -->
+                        <p style="font-size:0.85rem;line-height:1;margin-top:1.5rem;font-weight:600;margin-bottom:0.5rem;">Sorted By</p>
+                        <ul style="padding-left:1.25rem;list-style: none;font-size:0.85rem;">
+                            @for (const sort in model.page.sorts) {
+                                @if (sort === '1') {
+                                    <li style="cursor:pointer;margin-bottom:0.25rem;font-weight:600;" data-id="1" class="sortoption" data-title="Featured Free Games">Featured</li>
+                                }else{
+                                    @if (!isNaN(Number(sort))) {
+                                        <li style="cursor:pointer;opacity:0.5;margin-bottom:0.25rem;" data-id="@sort" class="sortoption" data-title="@model.page.sorts[sort]">@model.page.sorts[sort]</li>
+                                    }
+                                }
+                            }
+                        </ul>
+                        <!-- end sort by options -->
+                        <!-- start genre options -->
+                        <p style="font-size:0.85rem;line-height:1;margin-top:1.5rem;font-weight:600;margin-bottom:0.5rem;">Genres</p>
+                        <ul style="padding-left:1.25rem;list-style: none;font-size:0.85rem;">
+                            @for (const genre in model.page.genres) {
+                                @if (genre === '1') {
+                                    <li style="cursor:pointer;margin-bottom:0.25rem;font-weight:600;" data-id="1" class="genreoption">Any</li>
+                                }else{
+                                    @if (!isNaN(Number(genre))) {
+                                        <li style="cursor:pointer;margin-bottom:0.25rem;opacity:0.5;" data-id="@genre" class="genreoption">@model.page.genres[genre]</li>
+                                    }
+                                }
+                            }
+                        </ul>
+                    </div>
+                </div>
             </div>
-            <div class="col-4 col-md-2">
-                <div class='form-group'>
-                <a style="margin-top: 1rem;width:100%;color:white;" href="/game/create" class="btn btn-success">Create</a>
+            <div class="col-12 col-lg-10">
+                <div class="row" style="padding-top:1rem;">
+                    <div class="col-8 col-md-10">
+                        <h4 id="title">Featured Free Games</h4>
+                        <p>Experience thousands of user-created 3D games designed for all ages, all for free! No download required.</p>
+                    </div>
+                    <div class="col-4 col-md-2">
+                        <div class='form-group'>
+                        <a style="margin-top: 1rem;width:100%;color:white;" href="/game/create" class="btn btn-success">Create</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="padding-top:1rem;" id="topTwoGames">
+                    
+                </div>
+                <div class="row" style="padding-top:1rem;padding-bottom:1rem;" id="header-when-top-two-games-are-visible">
+                    <div class="col-12">
+                        <h4>Top Free Games</h4>
+                    </div>
+                </div>
+                <div class="row" id="popularGamesList" style="padding-left: 0.5rem;padding-right: 0.5rem;">
+                        
                 </div>
             </div>
         </div>
-        <div class="row" style="padding-top:1rem;" id="topTwoGames">
-                
-        </div>
-        <div class="row" style="padding-top:1rem;padding-bottom:1rem;">
-            <div class="col-12">
-                <h4>Popular Free Games</h4>
+        <div class="row" style="margin-top:1rem;">
+            <div class="col-12 col-lg-10 offset-lg-2">
+                <p style="font-size:0.75rem;">We're proud to offer the web's best collection of free online games and 3D virtual worlds. We are committed to making sure that all of our free games are fun and safe. Users can create their own virtual world online games; customize their avatar character with the best virtual goods like hats, shirts and gear; and play free online games with their friends while also meeting new friends. Whether you are interested in Comedy games, Action games, Adventure games, Car games, or even Tycoon games, count on us to deliver the best free online games for you to play.</p>
             </div>
-        </div>
-        <div class="row" id="popularGamesList">
-                
         </div>
     })
     @html.block('js', function(model) {

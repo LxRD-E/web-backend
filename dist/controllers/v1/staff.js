@@ -306,6 +306,30 @@ let StaffController = class StaffController extends controller_1.default {
         const thumbnails = await this.staff.multiGetThumbnailsFromIdsIgnoreModeration(safeIds);
         return thumbnails;
     }
+    async multiGetGameThumbnails(gameIds) {
+        if (!gameIds) {
+            throw new this.BadRequest('InvalidIds');
+        }
+        const idsArray = gameIds.split(',');
+        if (idsArray.length < 1) {
+            throw new this.BadRequest('InvalidIds');
+        }
+        const filteredIds = [];
+        let allIdsValid = true;
+        idsArray.forEach((id) => {
+            const gameId = parseInt(id, 10);
+            if (!Number.isInteger(gameId)) {
+                allIdsValid = false;
+            }
+            filteredIds.push(gameId);
+        });
+        const safeIds = Array.from(new Set(filteredIds));
+        if (safeIds.length > 25) {
+            throw new this.BadRequest('TooManyIds');
+        }
+        let results = await this.game.multiGetGameThumbnails(safeIds, true);
+        return results;
+    }
     async updateAdState(userInfo, adId, moderationStatus) {
         this.validate(userInfo, 1);
         if (moderationStatus !== 1 && moderationStatus !== 2) {
@@ -316,6 +340,16 @@ let StaffController = class StaffController extends controller_1.default {
         if (moderationStatus === model.catalog.moderatorStatus.Moderated) {
             await this.notification.createMessage(adInfo.userId, 1, 'Ad "' + adInfo.title + '" has been Rejected', 'Hello,\nYour ad, "' + adInfo.title + '", has been rejected by our moderation team. Please fully review our terms of service before uploading assets so that you don\'t run into this issue again. Sorry for the inconvenience,\n\n-The Moderation Team');
         }
+        return {
+            success: true,
+        };
+    }
+    async updateGameThumbnailState(userInfo, gameThumbnailId, moderationStatus) {
+        this.validate(userInfo, 1);
+        if (moderationStatus !== 1 && moderationStatus !== 2) {
+            throw new this.BadRequest('InvalidState');
+        }
+        await this.staff.updateGameThumbnailState(gameThumbnailId, moderationStatus);
         return {
             success: true,
         };
@@ -674,6 +708,17 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "multiGetThumbnails", null);
 __decorate([
+    common_1.Get('/thumbnails'),
+    swagger_1.Summary('Multi-get thumbnails by CSV of gameIds, ignoring moderation'),
+    swagger_1.Description('Invalid IDs will be filtered out'),
+    swagger_1.ReturnsArray(200, { type: model.game.GameThumbnail }),
+    __param(0, common_1.Required()),
+    __param(0, common_1.QueryParams('ids', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "multiGetGameThumbnails", null);
+__decorate([
     common_1.Patch('/ad/:adId/'),
     swagger_1.Summary('Update ad item state'),
     common_1.Use(auth_1.csrf, Auth_1.YesAuth),
@@ -684,6 +729,17 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "updateAdState", null);
+__decorate([
+    common_1.Patch('/game-thumbnail/:gameThumbnailId/'),
+    swagger_1.Summary('Update a game thumbnail item state'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('gameThumbnailId', Number)),
+    __param(2, common_1.BodyParams('state', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "updateGameThumbnailState", null);
 __decorate([
     common_1.Patch('/catalog/:catalogId'),
     swagger_1.Summary('Update items moderation state'),

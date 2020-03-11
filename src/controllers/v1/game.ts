@@ -58,8 +58,8 @@ const scriptOptions = {
     domainLock: allowedDomains,
 };
 import controller from '../controller';
-import { QueryParams, Get, Controller, PathParams, Use, Locals, Res, Post, BodyParams, Patch, Delete } from '@tsed/common';
-import { Summary, ReturnsArray, Returns } from '@tsed/swagger';
+import { QueryParams, Get, Controller, PathParams, Use, Locals, Res, Post, BodyParams, Patch, Delete, Required } from '@tsed/common';
+import { Summary, ReturnsArray, Returns, Description } from '@tsed/swagger';
 import { YesAuth } from '../../middleware/Auth';
 import { csrf } from '../../dal/auth';
 /**
@@ -80,10 +80,70 @@ export default class GameController extends controller {
     public async getGames(
         @QueryParams('offset', Number) offset: number = 0, 
         @QueryParams('limit', Number) limit: number = 25, 
-        @QueryParams('sort', String) sort: 'asc' | 'desc' = 'asc'
+        @QueryParams('sortBy', Number) sortBy: number = 1,
+        @QueryParams('genre', Number) genre: number = 1,
     ) {
-        const games = await this.game.getGames(offset, limit, sort);
+        if (!model.game.GameSortOptions[sortBy]) {
+            throw new this.BadRequest('InvalidSortBy');
+        }
+        let games: model.game.GameSearchResult[];
+        // Filter through sort options, seeing which one was chosen
+
+        // Featured sort (subject to change at any time)
+        if (sortBy === model.game.GameSortOptions.Featured) {
+            // TODO: revise this to something more specific
+            games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
+        // Top players sort (pretty easy; sorted by most to least players)
+        }else if (sortBy === model.game.GameSortOptions['Top Players']) {
+            games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
+        // No sort specified, so error
+        }else{
+            throw new this.BadRequest('InvalidSortBy');
+        }
+        // Return results
         return games;
+    }
+
+    @Get('/:gameId/thumbnail')
+    @Summary('Get a game thumbnail')
+    @Description('If no thumbnail available, a placeholder will be provided')
+    @Returns(200, {type: model.game.GameThumbnail})
+    public async getGameThumbnail(
+        @PathParams('gameId', Number) gameId: number,
+    ) {
+        return await this.game.getGameThumbnail(gameId);
+    }
+
+    @Get('/thumbnails')
+    @Summary('Multi-get thumbnails by CSV of gameIds')
+    @Description('Invalid IDs will be filtered out')
+    @ReturnsArray(200, {type: model.game.GameThumbnail})
+    public async multiGetGameThumbnails(
+        @Required()
+        @QueryParams('ids', String) gameIds: string,
+    ) {
+        if (!gameIds) {
+            throw new this.BadRequest('InvalidIds');
+        }
+        const idsArray = gameIds.split(',');
+        if (idsArray.length < 1) {
+            throw new this.BadRequest('InvalidIds');
+        }
+        const filteredIds: Array<number> = [];
+        let allIdsValid = true;
+        idsArray.forEach((id) => {
+            const gameId = parseInt(id, 10) as number;
+            if (!Number.isInteger(gameId)) {
+                allIdsValid = false
+            }
+            filteredIds.push(gameId);
+        });
+        const safeIds = Array.from(new Set(filteredIds));
+        if (safeIds.length > 25) {
+            throw new this.BadRequest('TooManyIds');
+        }
+        let results = await this.game.multiGetGameThumbnails(safeIds);
+        return results;
     }
 
     /**
@@ -408,8 +468,11 @@ export default class GameController extends controller {
         if (gameName.length >= 32 || gameName.length < 1 || gameDescription.length >= 512) {
             throw new this.BadRequest('InvalidNameOrDescription');
         }
-        // Create
+        // Create game
         const gameId = await this.game.create(userInfo.userId, model.catalog.creatorType.User, gameName, gameDescription);
+        // Create thumbnail
+        await this.game.createGameThumbnail(gameId, 'https://cdn.hindigamer.club/game/default_assets/Screenshot_5.png', model.game.GameThumbnailModerationStatus.Approved);
+        // Return success
         return {
             success: true,
             gameId: gameId,

@@ -44,19 +44,19 @@ export class WWWGameController extends controller {
         @PathParams('gameId', Number) gameId: number,
     ) {
         let gameInfo: model.game.GameInfo;
+        let gameThumb: model.game.GameThumbnail;
         try {
             gameInfo = await this.game.getInfo(gameId, [
                 'gameId',
                 'gameName',
                 'gameDescription',
                 'updatedAt',
-                'thumbnailAssetId',
-                'iconAssetId',
                 'playerCount',
                 'visitCount',
                 'creatorType',
                 'creatorId',
             ]);
+            gameThumb = await this.game.getGameThumbnail(gameId);
         }catch(e) {
             // Invalid ID
             throw new this.BadRequest('InvalidGameId');
@@ -79,9 +79,7 @@ export class WWWGameController extends controller {
             ViewData.page.creatorName = creatorName.groupName;
             ViewData.page.thumbnailId = creatorName.groupIconCatalogId;
         }
-        if (gameInfo.thumbnailAssetId === 0) {
-            ViewData.page.ThumbnailURL = 'https://cdn.hindigamer.club/game/default_assets/Screenshot_5.png';
-        }
+        ViewData.page.ThumbnailURL = gameThumb.url;
         ViewData.title = gameInfo.gameName;
         return ViewData;
     }
@@ -91,7 +89,13 @@ export class WWWGameController extends controller {
     @Get('/play')
     @Render('play')
     public async play() {
-        let ViewData = new this.WWWTemplate({title: 'Free 3D Games'})
+        let ViewData = new this.WWWTemplate({
+            title: 'Free 3D Games',
+            page: {
+                genres: model.game.GameGenres,
+                sorts: model.game.GameSortOptions,
+            }
+        })
         return ViewData;
     }
     /**
@@ -139,8 +143,6 @@ export class WWWGameController extends controller {
                 'gameName',
                 'gameDescription',
                 'updatedAt',
-                'thumbnailAssetId',
-                'iconAssetId',
                 'playerCount',
                 'visitCount',
                 'creatorType',

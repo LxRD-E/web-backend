@@ -39,7 +39,9 @@ let AvatarController = class AvatarController extends controller_1.default {
         let Pants = body.Pants;
         let canEdit = await this.avatar.canUserModifyAvatar(userInfo.userId);
         if (!canEdit) {
-            throw new this.BadRequest('AvatarCooldown');
+            if (process.env.NODE_ENV === 'production') {
+                throw new this.BadRequest('AvatarCooldown');
+            }
         }
         const LegArray = Filter_1.filterRGB([...LegRGB]);
         const TorsoArray = Filter_1.filterRGB([...TorsoRGB]);

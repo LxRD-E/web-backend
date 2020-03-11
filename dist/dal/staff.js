@@ -109,15 +109,20 @@ class StaffDAL extends _init_1.default {
     }
     async getItems() {
         let fullArr = [];
-        const info = await this.knex("catalog").select("catalog.id as catalogId", "catalog.name as catalogName", "catalog.price", "catalog.currency", "catalog.creator as userId", "catalog.is_collectible as collectible", "catalog.max_sales as maxSales").limit(25).orderBy('id', 'desc').where({ 'catalog.is_pending': model.catalog.moderatorStatus.Pending });
+        const info = await this.knex("catalog").select("catalog.id as catalogId", "catalog.name as catalogName", "catalog.price", "catalog.currency", "catalog.creator as userId", "catalog.is_collectible as collectible", "catalog.max_sales as maxSales").limit(25).orderBy('id', 'desc').where({ 'catalog.is_pending': model.catalog.moderatorStatus.Pending }).limit(100);
         for (const item of info) {
             item['type'] = 'CatalogItem';
             fullArr.push(item);
         }
-        let pendingAds = await this.knex('user_ads').select('id as adId', 'user_id as userId', 'image_url as imageUrl', 'title').where({ 'moderation_status': model.ad.ModerationStatus.Pending });
+        let pendingAds = await this.knex('user_ads').select('id as adId', 'user_id as userId', 'image_url as imageUrl', 'title').where({ 'moderation_status': model.ad.ModerationStatus.Pending }).limit(100);
         for (const ad of pendingAds) {
             ad['type'] = 'Advertisment';
             fullArr.push(ad);
+        }
+        let pendingGameThumbnails = await this.knex('game_thumbnails').select('id as gameThumbnailId', 'thumbnail_url as url').where({ 'moderation_status': model.game.GameThumbnailModerationStatus.AwaitingApproval }).limit(100);
+        for (const item of pendingGameThumbnails) {
+            item['type'] = 'GameThumbnail';
+            fullArr.push(item);
         }
         return fullArr;
     }
@@ -137,6 +142,9 @@ class StaffDAL extends _init_1.default {
     }
     async updateAdState(adId, state) {
         await this.knex('user_ads').update({ 'moderation_status': state }).where({ 'id': adId }).limit(1);
+    }
+    async updateGameThumbnailState(gameThumbnailId, state) {
+        await this.knex('game_thumbnails').update({ "moderation_status": state }).where({ 'id': gameThumbnailId }).limit(1);
     }
 }
 exports.default = StaffDAL;

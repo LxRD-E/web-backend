@@ -197,7 +197,14 @@
                 }else{
                     <ul class="navbar-nav ml-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/login">Sign In</a>
+                        <div class="row" style="margin:0;padding:0;">
+                            <div class="col-12" style="margin:0;padding:0;line-height: 1;width:100%;">
+                                <a style="margin:0;width:100%;color:white;padding:0;padding-left:1rem;padding-right:1rem;font-weight:700;" href="/signup" class="btn btn-success">JOIN</a>
+                            </div>
+                            <div class="col-12" style="margin:0;padding:0;line-height: 1;text-align:center;">
+                                <a href="/login" style="font-size:0.5rem;padding-top:0;padding-bottom:0;text-align:center;color: #16181b;opacity:1;font-weight:600;    line-height: 1;">Sign In</a>
+                            </div>
+                        </div>
                     </li>
                 </ul>
                 }
@@ -231,7 +238,7 @@
             <div class="row" style="margin:0;" id="bannerText">
                 <div class="col-12" style="background-color: #23282d;color: white;">
                     <div class="container">
-                        <h6 style="margin-top:1rem;margin-bottom:1rem;">@html.raw(model.bannerText)</h6>
+                        <h6 style="margin-top:1rem;margin-bottom:1rem;font-size:0.85rem;">@html.raw(model.bannerText)</h6>
                     </div>
                 </div>
             </div>

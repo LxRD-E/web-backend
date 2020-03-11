@@ -40,19 +40,19 @@ let WWWGameController = class WWWGameController extends controller_1.default {
     }
     async gamePage(gameId) {
         let gameInfo;
+        let gameThumb;
         try {
             gameInfo = await this.game.getInfo(gameId, [
                 'gameId',
                 'gameName',
                 'gameDescription',
                 'updatedAt',
-                'thumbnailAssetId',
-                'iconAssetId',
                 'playerCount',
                 'visitCount',
                 'creatorType',
                 'creatorId',
             ]);
+            gameThumb = await this.game.getGameThumbnail(gameId);
         }
         catch (e) {
             throw new this.BadRequest('InvalidGameId');
@@ -75,14 +75,18 @@ let WWWGameController = class WWWGameController extends controller_1.default {
             ViewData.page.creatorName = creatorName.groupName;
             ViewData.page.thumbnailId = creatorName.groupIconCatalogId;
         }
-        if (gameInfo.thumbnailAssetId === 0) {
-            ViewData.page.ThumbnailURL = 'https://cdn.hindigamer.club/game/default_assets/Screenshot_5.png';
-        }
+        ViewData.page.ThumbnailURL = gameThumb.url;
         ViewData.title = gameInfo.gameName;
         return ViewData;
     }
     async play() {
-        let ViewData = new this.WWWTemplate({ title: 'Free 3D Games' });
+        let ViewData = new this.WWWTemplate({
+            title: 'Free 3D Games',
+            page: {
+                genres: model.game.GameGenres,
+                sorts: model.game.GameSortOptions,
+            }
+        });
         return ViewData;
     }
     async gamePlay(userData, gameId) {
@@ -107,8 +111,6 @@ let WWWGameController = class WWWGameController extends controller_1.default {
                 'gameName',
                 'gameDescription',
                 'updatedAt',
-                'thumbnailAssetId',
-                'iconAssetId',
                 'playerCount',
                 'visitCount',
                 'creatorType',

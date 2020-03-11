@@ -50,7 +50,9 @@ export default class AvatarController extends controller {
         // Perform a rate-limit check
         let canEdit = await this.avatar.canUserModifyAvatar(userInfo.userId);
         if (!canEdit) {
-            throw new this.BadRequest('AvatarCooldown');
+            if (process.env.NODE_ENV === 'production') {
+                throw new this.BadRequest('AvatarCooldown');
+            }
         }
         // Filter RGB Values
         // Array is duplicated since direct RGB values have to be saved in the database, not color3 (which this converts rgb to if its valid)

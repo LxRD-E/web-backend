@@ -52,9 +52,48 @@ const swagger_1 = require("@tsed/swagger");
 const Auth_1 = require("../../middleware/Auth");
 const auth_1 = require("../../dal/auth");
 let GameController = class GameController extends controller_1.default {
-    async getGames(offset = 0, limit = 25, sort = 'asc') {
-        const games = await this.game.getGames(offset, limit, sort);
+    async getGames(offset = 0, limit = 25, sortBy = 1, genre = 1) {
+        if (!model.game.GameSortOptions[sortBy]) {
+            throw new this.BadRequest('InvalidSortBy');
+        }
+        let games;
+        if (sortBy === model.game.GameSortOptions.Featured) {
+            games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
+        }
+        else if (sortBy === model.game.GameSortOptions['Top Players']) {
+            games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
+        }
+        else {
+            throw new this.BadRequest('InvalidSortBy');
+        }
         return games;
+    }
+    async getGameThumbnail(gameId) {
+        return await this.game.getGameThumbnail(gameId);
+    }
+    async multiGetGameThumbnails(gameIds) {
+        if (!gameIds) {
+            throw new this.BadRequest('InvalidIds');
+        }
+        const idsArray = gameIds.split(',');
+        if (idsArray.length < 1) {
+            throw new this.BadRequest('InvalidIds');
+        }
+        const filteredIds = [];
+        let allIdsValid = true;
+        idsArray.forEach((id) => {
+            const gameId = parseInt(id, 10);
+            if (!Number.isInteger(gameId)) {
+                allIdsValid = false;
+            }
+            filteredIds.push(gameId);
+        });
+        const safeIds = Array.from(new Set(filteredIds));
+        if (safeIds.length > 25) {
+            throw new this.BadRequest('TooManyIds');
+        }
+        let results = await this.game.multiGetGameThumbnails(safeIds);
+        return results;
     }
     async getMap(userInfo, gameId) {
         let gameInfo;
@@ -330,6 +369,7 @@ let GameController = class GameController extends controller_1.default {
             throw new this.BadRequest('InvalidNameOrDescription');
         }
         const gameId = await this.game.create(userInfo.userId, model.catalog.creatorType.User, gameName, gameDescription);
+        await this.game.createGameThumbnail(gameId, 'https://cdn.hindigamer.club/game/default_assets/Screenshot_5.png', model.game.GameThumbnailModerationStatus.Approved);
         return {
             success: true,
             gameId: gameId,
@@ -452,11 +492,33 @@ __decorate([
     swagger_1.ReturnsArray(200, { type: model.game.GameSearchResult }),
     __param(0, common_1.QueryParams('offset', Number)),
     __param(1, common_1.QueryParams('limit', Number)),
-    __param(2, common_1.QueryParams('sort', String)),
+    __param(2, common_1.QueryParams('sortBy', Number)),
+    __param(3, common_1.QueryParams('genre', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number, String]),
+    __metadata("design:paramtypes", [Number, Number, Number, Number]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "getGames", null);
+__decorate([
+    common_1.Get('/:gameId/thumbnail'),
+    swagger_1.Summary('Get a game thumbnail'),
+    swagger_1.Description('If no thumbnail available, a placeholder will be provided'),
+    swagger_1.Returns(200, { type: model.game.GameThumbnail }),
+    __param(0, common_1.PathParams('gameId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "getGameThumbnail", null);
+__decorate([
+    common_1.Get('/thumbnails'),
+    swagger_1.Summary('Multi-get thumbnails by CSV of gameIds'),
+    swagger_1.Description('Invalid IDs will be filtered out'),
+    swagger_1.ReturnsArray(200, { type: model.game.GameThumbnail }),
+    __param(0, common_1.Required()),
+    __param(0, common_1.QueryParams('ids', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "multiGetGameThumbnails", null);
 __decorate([
     common_1.Get('/:gameId/map'),
     swagger_1.Summary('Get the map of a {gameId}. Authentication required'),

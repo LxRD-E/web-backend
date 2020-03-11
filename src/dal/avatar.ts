@@ -106,7 +106,7 @@ class AvatarDAL extends _init {
      */
     public async renderAvatar(type: 'avatar'|'item'|'face'|'group', jsonArray: Avatar.JsonArrayInterfaceWithAssets): Promise<string> {
         const url = config.render.url;
-        const jsonString = JSON.stringify(jsonArray);
+        const jsonString = jsonArray;
         if (type === 'item') {
             type = 'avatar';
         }

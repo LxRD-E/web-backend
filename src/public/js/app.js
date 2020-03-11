@@ -759,7 +759,8 @@ function setThumbs(type, idsUnInit) {
     // Setup Subsitution URL
     var sub = window.subsitutionimageurl;
     // Only supports catalog and user for now
-    if (type !== "user" && type !== "catalog") {
+    if (type !== "user" && type !== "catalog" && type !== 'game') {
+        console.warn('warning: invalid type passed to setThumbs: '+type);
         return false;
     }
     // Setup Globals
@@ -819,6 +820,14 @@ function setThumbs(type, idsUnInit) {
                             setThumb(value.catalogId, sub);
                         }
                         $("img[data-" + type + "id='" + value.catalogId + "']").parent().show();
+                    } else if (value.gameId) {
+                        if (value.url) {
+                            global[value.gameId] = value.url;
+                            setThumb(value.gameId, value.url);
+                        } else {
+                            setThumb(value.gameId, sub);
+                        }
+                        $("img[data-" + type + "id='" + value.gameId + "']").parent().show();
                     }
                 });
                 // Repair any broken images
@@ -859,6 +868,11 @@ function setGroupThumbs(ids) {
 
 function setCatalogThumbs(ids) {
     setThumbs("catalog", ids);
+}
+
+function setGameThumbs(ids) {
+    console.log('set game thumbs');
+    setThumbs("game", ids);
 }
 
 function doSwalStuff(call) {

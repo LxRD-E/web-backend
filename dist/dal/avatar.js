@@ -55,7 +55,7 @@ class AvatarDAL extends _init_1.default {
     }
     async renderAvatar(type, jsonArray) {
         const url = config_1.default.render.url;
-        const jsonString = JSON.stringify(jsonArray);
+        const jsonString = jsonArray;
         if (type === 'item') {
             type = 'avatar';
         }
