@@ -444,7 +444,8 @@ export default class AuthController extends controller {
     @UseBeforeEach(YesAuth)
     public async getFeed(
         @Locals('userInfo') userInfo: model.user.UserInfo,
-        @QueryParams('offset') offset: number = 0
+        @QueryParams('offset') offset: number = 0,
+        @QueryParams('limit', Number) limit = 100,
     ) {
         let friends = await this.user.getFriends(userInfo.userId, 0, 200, 'asc');
         const arrayOfIds: Array<number> = [];
@@ -454,7 +455,7 @@ export default class AuthController extends controller {
         if (arrayOfIds.length === 0) {
             return [];
         }
-        let feed = await this.user.multiGetStatus(arrayOfIds, offset, 25);
+        let feed = await this.user.multiGetStatus(arrayOfIds, offset, limit);
         return feed;
     }
 

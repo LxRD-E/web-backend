@@ -55,6 +55,7 @@ export class WWWGameController extends controller {
                 'visitCount',
                 'creatorType',
                 'creatorId',
+                'genre',
             ]);
             gameThumb = await this.game.getGameThumbnail(gameId);
         }catch(e) {
@@ -81,6 +82,7 @@ export class WWWGameController extends controller {
         }
         ViewData.page.ThumbnailURL = gameThumb.url;
         ViewData.title = gameInfo.gameName;
+        ViewData.page.gameGenreString = model.game.GameGenres[gameInfo.genre];
         return ViewData;
     }
     /**
@@ -148,6 +150,7 @@ export class WWWGameController extends controller {
                 'creatorType',
                 'creatorId',
                 'maxPlayers',
+                'genre',
             ]);
         }catch(e) {
             // Invalid ID
@@ -185,6 +188,7 @@ export class WWWGameController extends controller {
         console.log('returning view');
         ViewData.page.gameInfo = gameInfo;
         ViewData.title = 'Edit: ' + gameInfo.gameName;
+        ViewData.page.genres = model.game.GameGenres;
         return ViewData;
     }
 }

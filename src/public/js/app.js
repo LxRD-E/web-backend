@@ -1283,6 +1283,18 @@ const errorTransform = (errCode) => {
         case 'GroupJoinRequestPending': {
             return 'You are already awaiting approval by an admin. Check back later.';
         }
+        case 'RankAlreadyExists': {
+            return 'Each roleset must have a unique rank, and this rank is already in use by another roleset.';
+        }
+        case 'InvalidMaxPlayers': {
+            return 'The maximum amount of players you can have in a game server at once is 10.';
+        }
+        case 'InvalidGenre': {
+            return 'The genre specified is invalid.';
+        }
+        case 'InvalidNameOrDescription': {
+            return 'Please specify a valid name and description.';
+        }
     }
     return 'An unknown error has ocurred. Please try again later, or contact support.';
 }
@@ -1299,8 +1311,9 @@ function request(url, method, body) {
                 data: body,
                 url: "/api/v1" + url,
                 headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-Token": csrf,
+                    "content-type": "application/json",
+                    "x-csrf-token": csrf,
+                    "accept": "application/json",
                 },
                 dataType: "json",
                 contentType: "application/json",  // what you are sending

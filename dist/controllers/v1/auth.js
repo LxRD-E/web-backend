@@ -310,7 +310,7 @@ let AuthController = class AuthController extends controller_1.default {
             username: username,
         };
     }
-    async getFeed(userInfo, offset = 0) {
+    async getFeed(userInfo, offset = 0, limit = 100) {
         let friends = await this.user.getFriends(userInfo.userId, 0, 200, 'asc');
         const arrayOfIds = [];
         friends.forEach((obj) => {
@@ -319,13 +319,12 @@ let AuthController = class AuthController extends controller_1.default {
         if (arrayOfIds.length === 0) {
             return [];
         }
-        let feed = await this.user.multiGetStatus(arrayOfIds, offset, 25);
+        let feed = await this.user.multiGetStatus(arrayOfIds, offset, limit);
         return feed;
     }
     async updateStatus(userInfo, newStatus) {
-        if (newStatus.length > 255 || newStatus.length < 3) {
+        if (newStatus.length > 255 || newStatus.length < 1) {
             throw new this.BadRequest('InvalidStatus');
-            ;
         }
         const latestUpdate = await this.user.getUserLatestStatus(userInfo.userId);
         if (latestUpdate && !moment().isSameOrAfter(moment(latestUpdate.date).add(5, "minutes"))) {
@@ -592,8 +591,9 @@ __decorate([
     common_1.UseBeforeEach(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.QueryParams('offset')),
+    __param(2, common_1.QueryParams('limit', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number]),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "getFeed", null);
 __decorate([

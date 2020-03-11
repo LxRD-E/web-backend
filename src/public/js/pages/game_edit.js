@@ -11,8 +11,9 @@ $(document).on('click', '#updateDescAndTitleOnClick', function() {
         'name': $('#assetName').val(),
         'description': $('#assetDescription').val(),
         'maxPlayers': parseInt($('#assetMaxPlayers').val(), 10),
+        'genre': parseInt($('#game-genre-selection').val(), 10),
     })).then((d) => {
-        success('This game\'s description and title have been updated.');
+        success('This game\'s info has been updated.');
     }).catch((e) => {
         warning(e.responseJSON.message);
     })

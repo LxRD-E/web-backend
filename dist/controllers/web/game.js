@@ -51,6 +51,7 @@ let WWWGameController = class WWWGameController extends controller_1.default {
                 'visitCount',
                 'creatorType',
                 'creatorId',
+                'genre',
             ]);
             gameThumb = await this.game.getGameThumbnail(gameId);
         }
@@ -77,6 +78,7 @@ let WWWGameController = class WWWGameController extends controller_1.default {
         }
         ViewData.page.ThumbnailURL = gameThumb.url;
         ViewData.title = gameInfo.gameName;
+        ViewData.page.gameGenreString = model.game.GameGenres[gameInfo.genre];
         return ViewData;
     }
     async play() {
@@ -116,6 +118,7 @@ let WWWGameController = class WWWGameController extends controller_1.default {
                 'creatorType',
                 'creatorId',
                 'maxPlayers',
+                'genre',
             ]);
         }
         catch (e) {
@@ -151,6 +154,7 @@ let WWWGameController = class WWWGameController extends controller_1.default {
         console.log('returning view');
         ViewData.page.gameInfo = gameInfo;
         ViewData.title = 'Edit: ' + gameInfo.gameName;
+        ViewData.page.genres = model.game.GameGenres;
         return ViewData;
     }
 };

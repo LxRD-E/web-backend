@@ -45,10 +45,11 @@ function loadGames(addTopTwoGamesToHeader = false) {
                             <img data-gameid="${game.gameId}" class="card-img-top" alt="Game Thumbnail">
                             <div class="card-body">
                                 <h5 class="card-title">${xss(game.gameName)}</h5>
-                                <p class="card-text" style="margin-top:0.5rem;">
-                                Created By <span data-userid="${game.creatorId}"></span>
+                                <p class="card-text" style="margin-top:0.5rem;font-size:0.85rem;">
+
+                                Created By: <span data-userid="${game.creatorId}"></span>
                                 <br>
-                                ${game.playerCount} Playing
+                                <span class="font-weight-bold">${game.playerCount}</span> Playing
                                 
                                 </p>
                                 <a href="/game/${game.gameId}" class="btn btn-success" style="margin-top:1rem;width:100%;"><i class="fas fa-play"></i></a>
@@ -94,16 +95,16 @@ function loadGames(addTopTwoGamesToHeader = false) {
                 $('#popularGamesList').append(`
                 <div class="col-6 col-md-4 col-lg-3 on-hover-show-game-info-tooltip" style="padding: 0 0.25rem  0.25rem 0.25rem;">
                     <div class="card">
-                        ${img}
-                        <a href="/game/${game.gameId}" class="hidehover">
+                        <a href="/game/${game.gameId}" class="normal">
+                            ${img}
                             <div class="card-body" style="cursor:pointer;">
                                 <div class="row">
                                     <div class="col-12">
                                         <h1 style="overflow: hidden;
-                                        white-space: nowrap;
-                                        text-overflow: ellipsis;
                                         font-size:0.85rem;
                                         margin-bottom:0;
+                                        line-height:1rem;
+                                        height: 2rem;
                                         ">${filterXSS(game.gameName)}</h1>
                                     </div>
 
@@ -117,16 +118,19 @@ function loadGames(addTopTwoGamesToHeader = false) {
                         </a>
                     </div>
                     <div class="game-info-tooltip">
-                    
-                    <div class="card" style="width:100%;padding:0;">
-                        <div class="card-body" style="width:100%;padding:1rem;">
-                            <p style="line-height:1;font-size:0.75rem;">
-                                Created By: <a href="/users/${game.creatorId}/profile"><span data-userid="${game.creatorId}"></span></a>
-                            </p>
-                            <a href="/game/${game.gameId}" class="btn btn-success" style="margin-top:1rem;width:100%;"><i class="fas fa-play"></i></a>
+                        <div class="card" style="width:100%;padding:0;">
+                            <div class="card-body" style="width:100%;padding:0 1rem 1rem 1rem;">
+                                <div style="padding-left:0.25rem;">
+                                    <p style="line-height:1;font-size:0.65rem;">
+                                        <span class="font-weight-bold">Creator</span>: <a href="/users/${game.creatorId}/profile"><span data-userid="${game.creatorId}"></span></a>
+                                    </p>
+                                    <p style="line-height:1;font-size:0.65rem;margin-top:0.25rem;">
+                                        <span class="font-weight-bold">Last Updated</span>: ${moment(game.updatedAt).fromNow()}</a>
+                                    </p>
+                                </div>
+                                <a href="/game/${game.gameId}" class="btn btn-success" style="margin-top:1rem;width:100%;"><i class="fas fa-play"></i></a>
+                            </div>
                         </div>
-                    </div>
-                    
                     </div>
                 </div>
                 

@@ -142,6 +142,8 @@ export enum HttpErrors {
     UserAlreadyInGroup,
     Cooldown,
     InvalidStatus,
+    RankAlreadyExists,
+    InvalidGenre,
 };
 // @Locals('userInfo') userInfo: model.user.UserInfo,
 export const ErrorTemplate = (title: string, body: string): string => {

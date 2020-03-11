@@ -44,6 +44,7 @@ var GameSortOptions;
 (function (GameSortOptions) {
     GameSortOptions[GameSortOptions["Featured"] = 1] = "Featured";
     GameSortOptions[GameSortOptions["Top Players"] = 2] = "Top Players";
+    GameSortOptions[GameSortOptions["Recently Updated"] = 3] = "Recently Updated";
 })(GameSortOptions = exports.GameSortOptions || (exports.GameSortOptions = {}));
 var GameGenres;
 (function (GameGenres) {
@@ -182,6 +183,10 @@ __decorate([
     common_1.PropertyType(String),
     __metadata("design:type", String)
 ], GameInfo.prototype, "updatedAt", void 0);
+__decorate([
+    common_1.PropertyType(Number),
+    __metadata("design:type", Number)
+], GameInfo.prototype, "genre", void 0);
 exports.GameInfo = GameInfo;
 class GameSearchResult {
 }
@@ -209,6 +214,10 @@ __decorate([
     common_1.Required(),
     __metadata("design:type", Number)
 ], GameSearchResult.prototype, "creatorType", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], GameSearchResult.prototype, "updatedAt", void 0);
 exports.GameSearchResult = GameSearchResult;
 class GameServerPlayer {
 }

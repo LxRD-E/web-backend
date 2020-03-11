@@ -197,6 +197,10 @@ function getGroupRoleManageHtml(arr) {
     if (perms.manage === 0) {
         manage = 'selected="selected"';
     }
+    let deleteHtml = '';
+    if (!create) {
+        deleteHtml = `<button type="button" class="btn btn-small btn-danger" id="deleteRoleset" data-id=`+arr.roleSetId+`>Delete</button>`;
+    }
     $('#groupRolesOptionsDisplay').empty();
     $('#groupRolesOptionsDisplay').html(`
 <div class="col-6">
@@ -204,7 +208,7 @@ function getGroupRoleManageHtml(arr) {
                                                     <input type="text" class="form-control" id="newRoleName" placeholder="" value="`+arr.name.escape()+`">
                                                 </div>
                                                 <div class="col-6">
-                                                    <small class="form-text text-muted">Role Value (between 1-254)</small>
+                                                    <small class="form-text text-muted">Rank Value (between 1-254)</small>
                                                     <input type="text" class="form-control" id="newRoleValue" placeholder="" value="`+arr.rank+`">
                                                 </div>
                                                 <div class="col-12">
@@ -246,9 +250,11 @@ function getGroupRoleManageHtml(arr) {
                                                         <option value="0" `+manage+`>No</option>
                                                     </select>
                                                 </div>
-                                                <div class="col-6 col-md-4">
-                                                    <small class="form-text text-muted">Submit</small>
-                                                    <button type="button" class="btn btn-small btn-success" id="updateRoleset" data-create="`+create+`" style="margin:0 auto;display: block;" data-id=`+arr.roleSetId+`>Submit</button>
+                                                <div class="col-6 col-md-4" style="margin-top:1rem;">
+                                                    
+                                                    <button type="button" class="btn btn-small btn-success" id="updateRoleset" data-create="`+create+`" data-id=`+arr.roleSetId+`>Submit</button>
+
+                                                    ${deleteHtml}
                                                 </div>
 `);
 }
@@ -568,3 +574,31 @@ if (groupMemberApprovalRequired) {
 
 
 }
+
+
+$(document).on('click', '.group-settings-option', function(e) {
+    e.preventDefault();
+    
+    $('.group-settings-option').css('opacity','0.5');
+    $(this).css('opacity','1');
+
+    $('.group-settings-panel').hide();
+
+    $('.'+$(this).attr('data-class-to-toggle')).show();
+});
+
+$(document).on('click', '#deleteRoleset', function(e) {
+    e.preventDefault();
+    questionYesNo('Are you sure you\'d like to delete this role?', () => {
+        loading();
+        request('/group/'+groupid+'/roleset/'+$(this).attr('data-id'), 'DELETE')
+        .then(d => {
+            success('This role has been deleted.', () => {
+                window.location.reload();
+            })
+        })
+        .catch(e => {
+            warning(e.responseJSON.message);
+        })
+    });
+});

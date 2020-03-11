@@ -144,6 +144,9 @@ var HttpErrors;
     HttpErrors[HttpErrors["InvalidJoinRequest"] = 139] = "InvalidJoinRequest";
     HttpErrors[HttpErrors["UserAlreadyInGroup"] = 140] = "UserAlreadyInGroup";
     HttpErrors[HttpErrors["Cooldown"] = 141] = "Cooldown";
+    HttpErrors[HttpErrors["InvalidStatus"] = 142] = "InvalidStatus";
+    HttpErrors[HttpErrors["RankAlreadyExists"] = 143] = "RankAlreadyExists";
+    HttpErrors[HttpErrors["InvalidGenre"] = 144] = "InvalidGenre";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 ;
 exports.ErrorTemplate = (title, body) => {

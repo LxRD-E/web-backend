@@ -63,6 +63,9 @@ let GameController = class GameController extends controller_1.default {
         else if (sortBy === model.game.GameSortOptions['Top Players']) {
             games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
         }
+        else if (sortBy === model.game.GameSortOptions['Recently Updated']) {
+            games = await this.game.getGames(offset, limit, 'desc', 'updated_at', genre);
+        }
         else {
             throw new this.BadRequest('InvalidSortBy');
         }
@@ -385,7 +388,7 @@ let GameController = class GameController extends controller_1.default {
         }
         return gameInfo;
     }
-    async updateGame(userInfo, gameId, gameName, gameDescription, maxPlayers) {
+    async updateGame(userInfo, gameId, gameName, gameDescription, maxPlayers, genre) {
         await this.verifyOwnership(userInfo, gameId);
         if (gameName.length >= 32 || gameName.length < 1 || gameDescription.length >= 512) {
             throw new this.BadRequest('InvalidNameOrDescription');
@@ -393,7 +396,10 @@ let GameController = class GameController extends controller_1.default {
         if (maxPlayers < 1 || maxPlayers > 10) {
             throw new this.BadRequest('InvalidMaxPlayers');
         }
-        await this.game.updateGameInfo(gameId, gameName, gameDescription, maxPlayers);
+        if (!model.game.GameGenres[genre]) {
+            throw new this.BadRequest('InvalidGenre');
+        }
+        await this.game.updateGameInfo(gameId, gameName, gameDescription, maxPlayers, genre);
         return {
             success: true,
         };
@@ -566,15 +572,16 @@ __decorate([
 __decorate([
     common_1.Patch('/:gameId'),
     swagger_1.Summary('Update a game'),
-    swagger_1.Returns(400, { type: model.Error, description: 'InvalidNameOrDescription: Name must be between 1 and 32 characters; description can be at most 512 characters\nInvalidMaxPlayers: Must be between 1 and 10\n' }),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidNameOrDescription: Name must be between 1 and 32 characters; description can be at most 512 characters\nInvalidMaxPlayers: Must be between 1 and 10\nInvalidGenre: Please specify a valid model.game.GameGenres\n' }),
     common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('gameId', Number)),
     __param(2, common_1.BodyParams('name', String)),
     __param(3, common_1.BodyParams('description', String)),
     __param(4, common_1.BodyParams('maxPlayers', Number)),
+    __param(5, common_1.BodyParams('genre', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, String, String, Number]),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String, String, Number, Number]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "updateGame", null);
 __decorate([

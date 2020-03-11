@@ -28,6 +28,7 @@ export enum GameThumbnailModerationStatus {
 export enum GameSortOptions {
     'Featured' = 1,
     'Top Players' = 2,
+    'Recently Updated',
 }
 
 export enum GameGenres {
@@ -129,6 +130,9 @@ export class GameInfo {
     
     @PropertyType(String)
     updatedAt: string;
+
+    @PropertyType(Number)
+    genre: GameGenres;
 }
 
 export class GameSearchResult {
@@ -144,6 +148,8 @@ export class GameSearchResult {
     creatorId: number;
     @Required()
     creatorType: Catalog.creatorType;
+    @Required()
+    updatedAt: string;
 }
 
 export class GameServerPlayer {

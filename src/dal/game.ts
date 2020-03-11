@@ -21,10 +21,10 @@ class GameDAL extends _init {
      * @param specificColumns 
      */
     public async getInfo(id: number, specificColumns?: Array<
-        'gameId' | 'gameName' | 'gameDescription' | 'maxPlayers'  | 'visitCount' | 'playerCount' | 'likeCount' | 'dislikeCount' | 'gameState' | 'creatorId' | 'creatorType' | 'createdAt' | 'updatedAt'
+        'gameId' | 'gameName' | 'gameDescription' | 'maxPlayers'  | 'visitCount' | 'playerCount' | 'likeCount' | 'dislikeCount' | 'gameState' | 'creatorId' | 'creatorType' | 'createdAt' | 'updatedAt' | 'genre'
     >): Promise<Game.GameInfo> {
         if (!specificColumns) {
-            specificColumns = ['gameId', 'gameName', 'gameDescription', 'visitCount', 'playerCount', 'likeCount', 'dislikeCount', 'gameState', 'creatorId', 'creatorType'];
+            specificColumns = ['gameId', 'gameName', 'gameDescription', 'visitCount', 'playerCount', 'likeCount', 'dislikeCount', 'gameState', 'creatorId', 'creatorType', 'genre'];
         }
         specificColumns.forEach((element: string, index: number, array: Array<string>): void => {
             if (element === 'gameId') {
@@ -53,6 +53,8 @@ class GameDAL extends _init {
                 array[index] = 'created_at as createdAt';
             } else if (element === 'updatedAt') {
                 array[index] = 'updated_at as updatedAt';
+            } else if (element === 'genre') {
+                array[index] = 'genre';
             }
         });
         const gameInfo = await this.knex('game').select(specificColumns).where({ 'game.id': id });
@@ -79,6 +81,7 @@ class GameDAL extends _init {
                 'player_count as playerCount',
                 'creator_type as creatorType',
                 'creator_id as creatorId',
+                'updated_at as updatedAt',
             ]).limit(limit).offset(offset).orderBy(sortByColumn,sortMode).where({
                 'game_state': Game.GameState.public,
             });
@@ -90,6 +93,7 @@ class GameDAL extends _init {
                 'player_count as playerCount',
                 'creator_type as creatorType',
                 'creator_id as creatorId',
+                'updated_at as updatedAt',
             ]).limit(limit).offset(offset).orderBy(sortByColumn,sortMode).where({
                 'game_state': Game.GameState.public,
                 'genre': genre,
@@ -221,12 +225,13 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
     /**
      * Update a Game's Name and Desc
      */
-    public async updateGameInfo(gameId: number, newName: string, newDesc: string, maxPlayers: number): Promise<void> {
+    public async updateGameInfo(gameId: number, newName: string, newDesc: string, maxPlayers: number, genre: game.GameGenres): Promise<void> {
         await this.knex('game').update({
             'name': newName,
             'description': newDesc,
             'max_players': maxPlayers,
             'updated_at': this.moment().format('YYYY-MM-DD HH:mm:ss'),
+            'genre': genre,
         }).where({'id': gameId}).limit(1);
     }
 

@@ -43,7 +43,12 @@ let MyGEHMiddleware = class MyGEHMiddleware extends common_1.GlobalErrorHandlerM
                 if (error.message && HttpError_1.HttpErrors[error.message]) {
                     fullErrorMessage.code = error.message;
                 }
-                return response.status(400).json({ success: false, error: fullErrorMessage });
+                if (request.accepts('json') && !request.accepts('html')) {
+                    return response.status(400).json({ success: false, error: fullErrorMessage });
+                }
+                else {
+                    return response.status(400).send(HttpError_1.ErrorTemplate('400: Bad Request', 'You or your browser sent an invalid request.')).end();
+                }
             }
             else if (error.name === 'NOT_FOUND') {
                 if (request.accepts('html')) {
@@ -94,17 +99,15 @@ let MyGEHMiddleware = class MyGEHMiddleware extends common_1.GlobalErrorHandlerM
                     return response.status(415).json({ success: false, error: { code: HttpError_1.HttpErrors[HttpError_1.HttpErrors.InvalidAcceptHeader] } });
                 }
             }
-            else {
-            }
         }
         catch (e) {
             console.log(e);
         }
+        if (request.accepts('json') && !request.accepts('html')) {
+            return response.status(500).json({ success: false, message: 'An internal server error has ocurred.', error: { code: HttpError_1.HttpErrors[HttpError_1.HttpErrors.InternalServerError] } });
+        }
         if (request.accepts('html')) {
             return response.status(500).send(HttpError_1.ErrorTemplate('500: Internal Server Error', 'Hindi Gamer Club seems to be experiencing some issues right now. Please try again later.')).end();
-        }
-        else if (request.accepts('json')) {
-            return response.status(500).json({ success: false, message: 'An internal server error has ocurred.', error: { code: HttpError_1.HttpErrors[HttpError_1.HttpErrors.InternalServerError] } });
         }
         else {
             return response.status(415).json({ success: false, error: { code: HttpError_1.HttpErrors[HttpError_1.HttpErrors.InvalidAcceptHeader] } });

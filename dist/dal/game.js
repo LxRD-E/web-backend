@@ -10,7 +10,7 @@ const models_1 = require("../models/models");
 class GameDAL extends _init_1.default {
     async getInfo(id, specificColumns) {
         if (!specificColumns) {
-            specificColumns = ['gameId', 'gameName', 'gameDescription', 'visitCount', 'playerCount', 'likeCount', 'dislikeCount', 'gameState', 'creatorId', 'creatorType'];
+            specificColumns = ['gameId', 'gameName', 'gameDescription', 'visitCount', 'playerCount', 'likeCount', 'dislikeCount', 'gameState', 'creatorId', 'creatorType', 'genre'];
         }
         specificColumns.forEach((element, index, array) => {
             if (element === 'gameId') {
@@ -52,6 +52,9 @@ class GameDAL extends _init_1.default {
             else if (element === 'updatedAt') {
                 array[index] = 'updated_at as updatedAt';
             }
+            else if (element === 'genre') {
+                array[index] = 'genre';
+            }
         });
         const gameInfo = await this.knex('game').select(specificColumns).where({ 'game.id': id });
         if (!gameInfo[0]) {
@@ -70,6 +73,7 @@ class GameDAL extends _init_1.default {
                 'player_count as playerCount',
                 'creator_type as creatorType',
                 'creator_id as creatorId',
+                'updated_at as updatedAt',
             ]).limit(limit).offset(offset).orderBy(sortByColumn, sortMode).where({
                 'game_state': Game.GameState.public,
             });
@@ -82,6 +86,7 @@ class GameDAL extends _init_1.default {
                 'player_count as playerCount',
                 'creator_type as creatorType',
                 'creator_id as creatorId',
+                'updated_at as updatedAt',
             ]).limit(limit).offset(offset).orderBy(sortByColumn, sortMode).where({
                 'game_state': Game.GameState.public,
                 'genre': genre,
@@ -158,12 +163,13 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
             'id': scriptId,
         }).limit(1);
     }
-    async updateGameInfo(gameId, newName, newDesc, maxPlayers) {
+    async updateGameInfo(gameId, newName, newDesc, maxPlayers, genre) {
         await this.knex('game').update({
             'name': newName,
             'description': newDesc,
             'max_players': maxPlayers,
             'updated_at': this.moment().format('YYYY-MM-DD HH:mm:ss'),
+            'genre': genre,
         }).where({ 'id': gameId }).limit(1);
     }
     getMapContent(mapName) {

@@ -115,7 +115,7 @@ $(function(){
                 //if (v < 5) {
                     userIdsRequest.push(k.userId);
                     var dateDisplay = moment(k["date"]).format('MMMM Do YYYY, h:mm a');
-                    $('#userFeedDiv').append('<div class="col-sm-12"><hr /></div><div style="" class="col-4 col-lg-2"><img style="width:100%;" data-userid="'+k.userId+'" src="'+window.subsitutionimageurl+'" /></div><div class="col-8 col-lg-10"><div class="row"><div class="col-12"><h6 class="text-left" style="margin-bottom: 0;"><a style="color:#212529;" href="/users/'+k.userId+'/profile"><span data-userid="'+k.userId+'"></span></a> <span style="font-size:0.65rem;font-weight:400;opacity:1;cursor:pointer;" title="'+dateDisplay+'">('+ moment(k["date"]).fromNow()+')</span></h6></div><div class="col-12"></div><div class="col-12 col-sm-9 col-lg-10"><p style="font-size:0.85rem;">'+xss(k["status"])+'</p></div></div></div>');
+                    $('#userFeedDiv').append('<div class="col-sm-12"><hr /></div><div style="" class="col-4 col-lg-2"><img style="width:100%;display:block;margin:0 auto;" data-userid="'+k.userId+'" src="'+window.subsitutionimageurl+'" /></div><div class="col-8 col-lg-10" style="padding-left: 0;"><div class="row"><div class="col-12"><h6 class="text-left" style="margin-bottom: 0;"><a style="color:#212529;" href="/users/'+k.userId+'/profile"><span data-userid="'+k.userId+'"></span></a> <span style="font-size:0.65rem;font-weight:400;opacity:1;cursor:pointer;" title="'+dateDisplay+'">('+ moment(k["date"]).fromNow()+')</span></h6></div><div class="col-12"></div><div class="col-12 col-sm-9 col-lg-10"><p style="font-size:0.85rem;">'+xss(k["status"])+'</p></div></div></div>');
                 //}
             });
             setUserThumbs(userIdsRequest);

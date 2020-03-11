@@ -96,6 +96,9 @@ export default class GameController extends controller {
         // Top players sort (pretty easy; sorted by most to least players)
         }else if (sortBy === model.game.GameSortOptions['Top Players']) {
             games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
+        // Sort by most recently updated
+        }else if (sortBy === model.game.GameSortOptions['Recently Updated']) {
+            games = await this.game.getGames(offset, limit, 'desc', 'updated_at', genre);
         // No sort specified, so error
         }else{
             throw new this.BadRequest('InvalidSortBy');
@@ -496,14 +499,15 @@ export default class GameController extends controller {
      */
     @Patch('/:gameId')
     @Summary('Update a game')
-    @Returns(400, {type: model.Error,description: 'InvalidNameOrDescription: Name must be between 1 and 32 characters; description can be at most 512 characters\nInvalidMaxPlayers: Must be between 1 and 10\n'})
+    @Returns(400, {type: model.Error,description: 'InvalidNameOrDescription: Name must be between 1 and 32 characters; description can be at most 512 characters\nInvalidMaxPlayers: Must be between 1 and 10\nInvalidGenre: Please specify a valid model.game.GameGenres\n'})
     @Use(csrf, YesAuth)
     public async updateGame(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('gameId', Number) gameId: number, 
         @BodyParams('name', String) gameName: string, 
         @BodyParams('description', String) gameDescription: string, 
-        @BodyParams('maxPlayers', Number) maxPlayers: number
+        @BodyParams('maxPlayers', Number) maxPlayers: number,
+        @BodyParams('genre', Number) genre: number,
     ): Promise<{ success: true }> {
         await this.verifyOwnership(userInfo, gameId);
         if (gameName.length >= 32 || gameName.length < 1 || gameDescription.length >= 512) {
@@ -512,8 +516,12 @@ export default class GameController extends controller {
         if (maxPlayers < 1 || maxPlayers > 10) {
             throw new this.BadRequest('InvalidMaxPlayers');
         }
+        // verify genre
+        if (!model.game.GameGenres[genre]) {
+            throw new this.BadRequest('InvalidGenre');
+        }
         // Update
-        await this.game.updateGameInfo(gameId, gameName, gameDescription, maxPlayers);
+        await this.game.updateGameInfo(gameId, gameName, gameDescription, maxPlayers, genre);
         // OK
         return {
             success: true,

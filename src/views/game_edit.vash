@@ -26,11 +26,27 @@
                         <input type="text" class="form-control" id="assetMaxPlayers" placeholder="Max Players" value="@model.page.gameInfo.maxPlayers">
                     </div>
                 </div>
+                <div class="col-sm-12 col-md-6">
+                    <div class="form-group">
+                        <label>Genre</label>
+                        <select class="form-control" id="game-genre-selection">
+                            @for (const genre in model.page.genres) {
+                                @if (!isNaN(Number(genre))) {
+                                    @if (genre == model.page.gameInfo.genre) {
+                                        <option value="@genre" selected="selected">@model.page.genres[genre]</option>
+                                    }else{
+                                        <option value="@genre">@model.page.genres[genre]</option>
+                                    }
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
             </div>
             <div class="row">
                 <div class="col-sm-12">
                     <div class="form-group">
-                        <button type="button" class="btn btn-success" style="width: 100%;" id="updateDescAndTitleOnClick">Update Title & Description</button>
+                        <button type="button" class="btn btn-success" style="width: 100%;" id="updateDescAndTitleOnClick">Update Info</button>
                     </div>
                 </div>
             </div>
