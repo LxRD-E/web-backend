@@ -181,6 +181,17 @@ export default class EconomyController extends controller {
         @Required()
         @BodyParams('amount', Number) numericAmount: number,
     ): Promise<{ success: true }> {
+        try {
+            // Lock economy
+            await this.economy.lockUserEconomy(userInfo.userId);
+        }catch(e) {
+            console.error(e);
+            throw new this.Conflict('Cooldown');
+        }
+        // Define unlock function
+        const unlockEconomy = async () => {
+            await this.economy.unlockUserEconomy(userInfo.userId);
+        }
         let maxCurrency = 0;
         let minCurrency = 0;
         if (originCurrency === model.economy.currencyType.primary) {
@@ -191,15 +202,21 @@ export default class EconomyController extends controller {
             minCurrency = model.economy.MINIMUM_CURRENCY_CONVERSION_SECONDARY_TO_PRIMARY;
         }
         if (numericAmount > maxCurrency || maxCurrency < minCurrency) {
+            // Unlock economy
+            await unlockEconomy();
             throw new this.BadRequest('InvalidAmount');
         }
         if (originCurrency === model.economy.currencyType.primary) {
             if (numericAmount < 0) {
+                // Unlock economy
+                await unlockEconomy();
                 throw new this.BadRequest('InvalidAmount');
             }
             // Convert
             const newAmount = await this.economy.convertCurrency(numericAmount, model.economy.currencyType.secondary);
             if (userInfo.primaryBalance < numericAmount) {
+                // Unlock economy
+                await unlockEconomy();
                 throw new this.BadRequest('NotEnoughCurrency');
             }
             // Subtract Transaction w/ Rollback
@@ -207,9 +224,13 @@ export default class EconomyController extends controller {
                 await this.economy.subtractFromUserBalance(userInfo.userId, numericAmount, model.economy.currencyType.primary);
             } catch (e) {
                 if (e === model.economy.userBalanceErrors.NotEnoughCurrency) {
+                    // Unlock economy
+                    await unlockEconomy();
                     throw new this.BadRequest('NotEnoughCurrency');
                 }
                 await this.economy.addToUserBalance(userInfo.userId, numericAmount, model.economy.currencyType.primary);
+                // Unlock economy
+                await unlockEconomy();
                 throw e;
             }
             // Give Currency
@@ -219,22 +240,31 @@ export default class EconomyController extends controller {
                 // E
                 // Refund initial purchase
                 await this.economy.addToUserBalance(userInfo.userId, numericAmount, model.economy.currencyType.primary);
+                // Unlock economy
+                await unlockEconomy();
                 throw e;
             }
             // Create Transactions
             await this.economy.createTransaction(userInfo.userId, userInfo.userId, -numericAmount, model.economy.currencyType.secondary, model.economy.transactionType.CurrencyConversionOfPrimaryToSecondary, "Currency Conversion", model.catalog.creatorType.User, model.catalog.creatorType.User);
             await this.economy.createTransaction(userInfo.userId, userInfo.userId, newAmount, model.economy.currencyType.primary, model.economy.transactionType.CurrencyConversionOfPrimaryToSecondary, "Currency Conversion", model.catalog.creatorType.User, model.catalog.creatorType.User);
 
+            // Unlock economy
+            await unlockEconomy();
+
             // Return success
             return { success: true };
         } else if (originCurrency === model.economy.currencyType.secondary) {
             if (numericAmount < 10) {
+                // Unlock economy
+                await unlockEconomy();
                 throw new this.BadRequest('InvalidAmount');
             }
             if (numericAmount % 10 === 0) {
                 // Convert
                 const newAmount = await this.economy.convertCurrency(numericAmount, model.economy.currencyType.primary);
                 if (userInfo.secondaryBalance < numericAmount) {
+                    // Unlock economy
+                    await unlockEconomy();
                     throw new this.BadRequest('NotEnoughCurrency');
                 }
                 // Subtract Transaction w/ Rollback
@@ -242,9 +272,13 @@ export default class EconomyController extends controller {
                     await this.economy.subtractFromUserBalance(userInfo.userId, numericAmount, model.economy.currencyType.secondary);
                 } catch (e) {
                     if (e === model.economy.userBalanceErrors.NotEnoughCurrency) {
+                        // Unlock economy
+                    await unlockEconomy();
                         throw new this.BadRequest('NotEnoughCurrency');
                     }
                     await this.economy.addToUserBalance(userInfo.userId, numericAmount, model.economy.currencyType.secondary);
+                    // Unlock economy
+                    await unlockEconomy();
                     throw e;
                 }
                 // Give Currency
@@ -253,17 +287,25 @@ export default class EconomyController extends controller {
                 } catch (e) {
                     // E
                     await this.economy.addToUserBalance(userInfo.userId, numericAmount, model.economy.currencyType.secondary);
+                    // Unlock economy
+                    await unlockEconomy();
                     throw e;
                 }
                 // Create Transactions
                 await this.economy.createTransaction(userInfo.userId, userInfo.userId, -numericAmount, model.economy.currencyType.secondary, model.economy.transactionType.CurrencyConversionOfSecondaryToPrimary, "Currency Conversion", model.catalog.creatorType.User, model.catalog.creatorType.User);
                 await this.economy.createTransaction(userInfo.userId, userInfo.userId, newAmount, model.economy.currencyType.primary, model.economy.transactionType.CurrencyConversionOfSecondaryToPrimary, "Currency Conversion", model.catalog.creatorType.User, model.catalog.creatorType.User);
+                // Unlock economy
+                await unlockEconomy();
                 // Return success
                 return { success: true };
             } else {
+                // Unlock economy
+                await unlockEconomy();
                 throw new this.BadRequest('NotEnoughCurrency');
             }
         } else {
+            // Unlock economy
+            await unlockEconomy();
             throw new this.BadRequest('InvalidCurrency');
         }
     }
@@ -296,10 +338,13 @@ export default class EconomyController extends controller {
         const sellerUserId = parseInt(sellerUserIdStr);
         const expectedPrice = parseInt(expectedPriceStr);
         const expectedCurrency = parseInt(expectedCurrencyStr);
+        const unlockEconomy = async () => {
+            await this.economy.unlockUserEconomy(userInfo.userId);
+        }
         // If buying new...
         if (userInventoryId === 0) {
             // Buying New
-            let catalogItemInfo;
+            let catalogItemInfo: model.catalog.CatalogInfo;
             try {
                 catalogItemInfo = await this.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'creatorId', 'creatorType', 'price', 'currency', 'maxSales', 'collectible', 'catalogName']);
             } catch (e) {
@@ -321,6 +366,13 @@ export default class EconomyController extends controller {
                 // Currency has changed
                 throw new this.BadRequest('CurrencyHasChanged');
             }
+            // Lock economy
+            try {
+                await this.economy.lockUserEconomy(userInfo.userId);
+            }catch(e) {
+                console.error(e);
+                throw new this.Conflict('Cooldown');
+            }
             let serial = null;
             if (catalogItemInfo.collectible === model.catalog.collectible.true && catalogItemInfo.maxSales !== 0) {
                 // Unique. Verify some stuff and grab serial
@@ -328,6 +380,8 @@ export default class EconomyController extends controller {
                 if (sales >= catalogItemInfo.maxSales) {
                     // Update is_for_sale status
                     await this.catalog.updateIsForSale(catalogItemInfo.catalogId, model.catalog.isForSale.false);
+                    // Unlock
+                    await unlockEconomy();
                     // No longer for sale
                     throw new this.BadRequest('NoLongerForSale');
                 } else {
@@ -341,21 +395,33 @@ export default class EconomyController extends controller {
             // Check if owns
             let owns = await this.user.getUserInventoryByCatalogId(userInfo.userId, catalogItemInfo.catalogId);
             if (owns[0]) {
+                // Unlock
+                await unlockEconomy();
                 // Owns item already
                 throw new this.Conflict('AlreadyOwns');
             }
+            // Define expected balance once complete
+            let expectedBalanceAfterTransaction = 0;
             // Get balance and check if has enough
             if (catalogItemInfo.currency === model.economy.currencyType.primary) {
                 const balance = userInfo.primaryBalance as number;
                 if (catalogItemInfo.price > balance) {
+                    // Unlock
+                    await unlockEconomy();
                     throw new this.BadRequest('NotEnoughCurrency')
                 }
+                expectedBalanceAfterTransaction = userInfo.primaryBalance - catalogItemInfo.price;
             } else if (catalogItemInfo.currency === model.economy.currencyType.secondary) {
                 const balance = userInfo.secondaryBalance as number;
                 if (catalogItemInfo.price > balance) {
+                    // Unlock
+                    await unlockEconomy();
                     throw new this.BadRequest('NotEnoughCurrency');
                 }
+                expectedBalanceAfterTransaction = userInfo.secondaryBalance - catalogItemInfo.price;
             } else {
+                // Unlock
+                await unlockEconomy();
                 throw new this.BadRequest('InvalidCurrencySpecified');
             }
             // Create and Give item
@@ -365,21 +431,58 @@ export default class EconomyController extends controller {
             const amtToSeller = catalogItemInfo.price - amtToSubtractFromSeller;
             // Subtract balance
             // Take money from buyer
+            let transactionIdForBuyer: number = 0;
+            let transactionIdForSeller: number = 0;
             try {
                 // Subtract Balance
                 await this.economy.subtractFromUserBalance(userInfo.userId, catalogItemInfo.price, catalogItemInfo.currency);
                 // Create Transaction
                 if (catalogItemInfo.creatorType === model.catalog.creatorType.User) {
                     // Give to user seller
-                    await this.economy.createTransaction(userInfo.userId, catalogItemInfo.creatorId, -catalogItemInfo.price, catalogItemInfo.currency, model.economy.transactionType.PurchaseOfItem, "Purchase of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
+                    transactionIdForSeller = await this.economy.createTransaction(userInfo.userId, catalogItemInfo.creatorId, -catalogItemInfo.price, catalogItemInfo.currency, model.economy.transactionType.PurchaseOfItem, "Purchase of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
                 } else {
                     // Give to group seller
-                    await this.economy.createTransaction(userInfo.userId, catalogItemInfo.creatorId, -catalogItemInfo.price, catalogItemInfo.currency, model.economy.transactionType.PurchaseOfItem, "Purchase of " + catalogItemInfo.catalogName, model.catalog.creatorType.Group, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
+                    transactionIdForSeller = await this.economy.createTransaction(userInfo.userId, catalogItemInfo.creatorId, -catalogItemInfo.price, catalogItemInfo.currency, model.economy.transactionType.PurchaseOfItem, "Purchase of " + catalogItemInfo.catalogName, model.catalog.creatorType.Group, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
                 }
             } catch (e) {
-                await this.catalog.deleteUserInventoryId(inventoryId);
+                let currentError = e;
+                // If it was a balance error, 
                 if (e === model.economy.userBalanceErrors.NotEnoughCurrency) {
+                    let deletionError = e;
+                    // While deleting the item fails, keep retrying until successful
+                    while (typeof deletionError !== 'undefined') {
+                        try {
+                            // Delete the inventory item
+                            await this.catalog.deleteUserInventoryId(inventoryId);
+                            // Delete transaction
+                            if (transactionIdForSeller) {
+                                await this.economy.deleteTransaction(transactionIdForSeller);
+                            }
+                            // Set the deletion error checking to undefined, breaking out of the while loop
+                            deletionError = undefined;
+                        }catch(_anotherDeletionError) {
+                            deletionError = _anotherDeletionError;
+                        }
+                    }
+                    // Unlock
+                    await unlockEconomy();
+                    // Throw not enough currency error
                     throw new this.BadRequest('NotEnoughCurrency');
+                }
+                // While current error is undefined,
+                while (typeof currentError !== 'undefined') {
+                    try {
+                        // Delete Item
+                        await this.catalog.deleteUserInventoryId(inventoryId);
+                        // Delete transaction
+                        if (transactionIdForSeller) {
+                            await this.economy.deleteTransaction(transactionIdForSeller);
+                        }
+                        // Set to undefined
+                        currentError = undefined;
+                    }catch(moreErrors) {
+                        currentError = moreErrors;
+                    }
                 }
                 // Likely some form of db exception
                 throw e;
@@ -389,32 +492,120 @@ export default class EconomyController extends controller {
                 if (catalogItemInfo.creatorType === model.catalog.creatorType.User) {
                     // Give to user
                     await this.economy.addToUserBalance(catalogItemInfo.creatorId, amtToSeller, catalogItemInfo.currency);
-                    await this.economy.createTransaction(catalogItemInfo.creatorId, userInfo.userId, amtToSeller, catalogItemInfo.currency, model.economy.transactionType.SaleOfItem, "Sale of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
+                    // Create transaction
+                    try {
+                        transactionIdForBuyer = await this.economy.createTransaction(catalogItemInfo.creatorId, userInfo.userId, amtToSeller, catalogItemInfo.currency, model.economy.transactionType.SaleOfItem, "Sale of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
+                    }catch(e) {
+                        // Rollback addToUserBalance
+                        let transactionError = e;
+                        while (typeof transactionError !== 'undefined' && typeof transactionError !== 'number') {
+                            try {
+                                // Subtract
+                                await this.economy.subtractFromUserBalance(catalogItemInfo.creatorId, amtToSeller, catalogItemInfo.currency)
+                            }catch(_internalError) {
+                                // F
+                                transactionError = _internalError;
+                            }
+                        }
+
+                        throw e;
+                    }
                 } else if (catalogItemInfo.creatorType === model.catalog.creatorType.Group) {
                     // Give to Group
                     await this.economy.addToGroupBalance(catalogItemInfo.creatorId, amtToSeller, catalogItemInfo.currency);
-                    await this.economy.createTransaction(catalogItemInfo.creatorId, userInfo.userId, amtToSeller, catalogItemInfo.currency, model.economy.transactionType.SaleOfItem, "Sale of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.Group, catalogItemInfo.catalogId, inventoryId);
+                    // Create transaction
+                    try {
+                        transactionIdForBuyer = await this.economy.createTransaction(catalogItemInfo.creatorId, userInfo.userId, amtToSeller, catalogItemInfo.currency, model.economy.transactionType.SaleOfItem, "Sale of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.Group, catalogItemInfo.catalogId, inventoryId);
+                    }catch(e) {
+                        // Rollback addToGroupBalance
+                        let transactionError = e;
+                        while (typeof transactionError !== 'undefined' && typeof transactionError !== 'number') {
+                            try {
+                                // Subtract
+                                await this.economy.subtractFromGroupBalance(catalogItemInfo.creatorId, amtToSeller, catalogItemInfo.currency)
+                            }catch(_internalError) {
+                                // F
+                                transactionError = _internalError;
+                            }
+                        }
+                        throw e;
+                    }
                 }
             } catch (e) {
-                // Delete Item
-                await this.catalog.deleteUserInventoryId(inventoryId);
-                // Refund buyer
-                await this.economy.addToUserBalance(userInfo.userId, catalogItemInfo.price, catalogItemInfo.currency);
-                if (catalogItemInfo.creatorType === model.catalog.creatorType.User) {
-                    // User Seller
-                    await this.economy.createTransaction(userInfo.userId, catalogItemInfo.creatorId, catalogItemInfo.price, catalogItemInfo.currency, model.economy.transactionType.Refund, "Refund", model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
-                } else if (catalogItemInfo.creatorType === model.catalog.creatorType.Group) {
-                    // Group Seller
-                    await this.economy.createTransaction(userInfo.userId, catalogItemInfo.creatorId, catalogItemInfo.price, catalogItemInfo.currency, model.economy.transactionType.Refund, "Refund", model.catalog.creatorType.Group, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
+                let generalRollbackError = e;
+                while (typeof generalRollbackError !== 'undefined') {
+                    try {
+                        // Delete Item
+                        await this.catalog.deleteUserInventoryId(inventoryId);
+                        // Delete transaction
+                        await this.economy.deleteTransaction(transactionIdForBuyer);
+                        // Refund buyer
+                        await this.economy.addToUserBalance(userInfo.userId, catalogItemInfo.price, catalogItemInfo.currency);
+                    }catch(_internalRollbackError) {
+                        generalRollbackError = _internalRollbackError;
+                    }
                 }
+                // Unlock
+                await unlockEconomy();
                 throw e;
             }
             // Log Purchase
             try {
                 await this.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem);
             } catch (e) {
-
+                // We don't really care if this fails; if it fails, it shouldnt affect anything (in fact, this shouldn't even be awaited)
             }
+            const reverseTransaction = async () => {
+                // Reverse transaction
+                let generalRollbackError = new Error('UnexpectedBalanceChange');
+                while (typeof generalRollbackError !== 'undefined') {
+                    try {
+                        // Delete Item
+                        await this.catalog.deleteUserInventoryId(inventoryId);
+                        // Delete transaction for buyer
+                        await this.economy.deleteTransaction(transactionIdForBuyer);
+                        // Delete transaction for seller
+                        await this.economy.deleteTransaction(transactionIdForSeller);
+                        // Refund buyer
+                        await this.economy.addToUserBalance(userInfo.userId, catalogItemInfo.price, catalogItemInfo.currency);
+                        // Subtract amount given from seller
+                        if (catalogItemInfo.creatorType === model.catalog.creatorType.Group) {
+                            await this.economy.subtractFromGroupBalance(catalogItemInfo.creatorId, amtToSeller, catalogItemInfo.currency);
+                        }else if (catalogItemInfo.creatorType === model.catalog.creatorType.User) {
+                            await this.economy.subtractFromUserBalance(catalogItemInfo.creatorId, amtToSeller, catalogItemInfo.currency);
+                        }else{
+                            throw new Error('NotImplemented');
+                        }
+                        generalRollbackError = undefined;
+                    }catch(_internalRollbackError) {
+                        generalRollbackError = _internalRollbackError;
+                    }
+                }
+            }
+            // Confirm transaction was valid
+            if (catalogItemInfo.currency === model.economy.currencyType.primary) {
+                let userBalanceFinal = await this.user.getInfo(userInfo.userId, ['primaryBalance']);
+                if (userBalanceFinal.primaryBalance !== expectedBalanceAfterTransaction) {
+                    // Reverse transaction
+                    await reverseTransaction();
+                    // Unlock
+                    await unlockEconomy();
+                    // Error
+                    throw new Error('UnexpectedBalanceChange');
+                }
+            }else if (catalogItemInfo.currency === model.economy.currencyType.secondary) {
+                let userBalanceFinal = await this.user.getInfo(userInfo.userId, ['secondaryBalance']);
+                if (userBalanceFinal.secondaryBalance !== expectedBalanceAfterTransaction) {
+                    // Reverse transaction
+                    await reverseTransaction();
+                    // Unlock
+                    await unlockEconomy();
+                    // Error
+                    throw new Error('UnexpectedBalanceChange');
+                }
+            }
+            // Unlock economy
+            await unlockEconomy();
             // Return Success
             return { success: true };
             // Buying Used
@@ -459,6 +650,13 @@ export default class EconomyController extends controller {
                 // You can't buy your own item ;-;
                 throw new this.BadRequest('InvalidUserId');
             }
+            // Lock economy
+            try {
+                await this.economy.lockUserEconomy(userInfo.userId);
+            }catch(e) {
+                console.error(e);
+                throw new this.Conflict('Cooldown');
+            }
             let sellerInfo;
             try {
                 sellerInfo = await this.user.getInfo(usedItemInfo.userId);
@@ -466,14 +664,19 @@ export default class EconomyController extends controller {
                     throw false;
                 }
             } catch (e) {
+                // Unlock economy
+                await unlockEconomy();
                 // Take off sale
                 await this.user.editItemPrice(userInventoryId, 0);
                 // Return error
-                throw new this.BadRequest('nItemNoLongerForSale');
+                throw new this.BadRequest('ItemNoLongerForSale');
             }
             // Check if Has Enough
             const balance = userInfo.primaryBalance as number;
             if (usedItemInfo.price > balance) {
+                // Unlock economy
+                await unlockEconomy();
+                // User does not have enough currency, so error
                 throw new this.BadRequest('NotEnoughCurrency');
             }
             // Give ownership
@@ -488,6 +691,9 @@ export default class EconomyController extends controller {
                 // Give ownership back to old owner
                 await this.catalog.updateUserInventoryIdOwner(usedItemInfo.userInventoryId, usedItemInfo.userId);
                 if (e === model.economy.userBalanceErrors.NotEnoughCurrency) {
+                    // Unlock economy
+                    await unlockEconomy();
+                    // Requester does not have enough currency
                     throw new this.BadRequest('NotEnoughCurrency');
                 }
                 // Likely db exception
@@ -508,12 +714,18 @@ export default class EconomyController extends controller {
                 // Refund buyer
                 await this.economy.addToUserBalance(userInfo.userId, usedItemInfo.price, model.economy.currencyType.primary);
                 await this.economy.createTransaction(userInfo.userId, usedItemInfo.userId, usedItemInfo.price, model.economy.currencyType.primary, model.economy.transactionType.Refund, "Refund", model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, usedItemInfo.userInventoryId);
+                // Unlock economy
+                await unlockEconomy();
+                // Throw (what is likely a DB error)
                 throw e;
             }
             // Take Item Off Sale
             try {
                 await this.user.editItemPrice(usedItemInfo.userInventoryId, 0);
             } catch (e) {
+                // Unlock economy
+                await unlockEconomy();
+                // Throw exception
                 throw e;
             }
             // Additional Background Tasks
@@ -533,6 +745,8 @@ export default class EconomyController extends controller {
             }).catch(e => {
                 console.error(e);
             })
+            // Unlock economy
+            await unlockEconomy();
             // Return success
             return { success: true };
         }
@@ -598,11 +812,11 @@ export default class EconomyController extends controller {
         }
     }
 
-    @Post('/trades/:id')
+    @Post('/trades/:tradeId')
     @Summary('Accept a trade')
     @Returns(400, {type: model.Error, description: 'InvalidTradeId: TradeId is invalid\nInvalidPartnerId: Trade cannot be completed due to an internal error\nNotAuthorized: User is not authorized to modify this trade (ex: didnt create the trade, already accepted, already declined, etc)'})
     @Returns(500, {type: model.Error, description: 'InternalServerError: Trade cannot be completed due to an internal error\n'})
-    @Returns(409, {type: model.Error, description: 'OneOrMoreItemsNotAvailable: One or more of the items involved in the trade are no longer available\n'})
+    @Returns(409, {type: model.Error, description: 'OneOrMoreItemsNotAvailable: One or more of the items involved in the trade are no longer available\nCooldown: Try again later\n'})
     @UseBeforeEach(csrf)
     @UseBefore(YesAuth)
     public async acceptTrade(
@@ -612,7 +826,7 @@ export default class EconomyController extends controller {
         if (!numericTradeId) {
             throw new this.BadRequest('InvalidTradeId');
         }
-        let tradeInfo;
+        let tradeInfo: model.economy.ExtendedTradeInfo;
         try {
             tradeInfo = await this.economy.getTradeById(numericTradeId);
         } catch (e) {
@@ -623,19 +837,61 @@ export default class EconomyController extends controller {
         }
         // Continue
         if (tradeInfo.userIdTwo === userInfo.userId) {
+            const unlockEconomy = async () => {
+                let _internalErrors = undefined;
+                try {
+                    await this.economy.unlockUserEconomy(userInfo.userId);
+                }catch(e) {
+                    _internalErrors = e;
+                }
+                try {
+                    await this.economy.unlockUserEconomy(tradeInfo.userIdOne);
+                }catch(e) {
+                    if (_internalErrors) {
+                        throw _internalErrors;
+                    }
+                    throw e;
+                }
+            }
+            try {
+                // Try to lock economy for both users
+                await this.economy.lockUserEconomy(userInfo.userId);
+                try {
+                    await this.economy.lockUserEconomy(tradeInfo.userIdOne);
+                }catch(e) {
+                    try {
+                        // Unlock economy
+                        await unlockEconomy();
+                    }catch(e) {
+                        throw e;
+                    }
+                    throw e;
+                }
+            }catch(e) {
+                console.error(e);
+                throw new this.Conflict('Cooldown');
+            }
             // Verify Partner isn't terminated
             let partnerInfo = await this.user.getInfo(tradeInfo.userIdOne, ['accountStatus']);
             if (partnerInfo.accountStatus === model.user.accountStatus.deleted || partnerInfo.accountStatus === model.user.accountStatus.terminated) {
+                // Unlock economy
+                await unlockEconomy();
                 throw new this.BadRequest('InvalidPartnerId');
             }
             // requestedTradeItems = items authentiocated user will recieve
             const requestedTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requester, numericTradeId);
             if (requestedTradeItems.length < 1) {
+                // Unlock economy
+                await unlockEconomy();
+                // Throw error
                 throw new Error('Internal');
             }
             // requesteeTradeItems = items authenticated user will give
             const requesteeTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requested, numericTradeId);
             if (requesteeTradeItems.length < 1) {
+                // Unlock economy
+                await unlockEconomy();
+                // Throw error
                 throw new Error('Internal');
             }
             // Verify Ownership of Items
@@ -744,6 +1000,8 @@ export default class EconomyController extends controller {
                         console.log(e);
                     }
                 })();
+                // Unlock economy
+                await unlockEconomy();
                 // Return success
                 return { success: true };
             } catch (e) {
@@ -753,6 +1011,8 @@ export default class EconomyController extends controller {
                 } catch (e) {
                     throw e;
                 }
+                // Unlock economy
+                await unlockEconomy();
                 // Return error
                 throw new this.Conflict('OneOrMoreItemsNotAvailable');
             }

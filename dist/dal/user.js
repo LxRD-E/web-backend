@@ -591,6 +591,12 @@ class UsersDAL extends _init_1.default {
             }
         }
     }
+    async getModerationHistory(userId) {
+        let response = await this.knex('user_moderation').select(['id as moderationActionId', 'userid as userId', 'reason', 'date as createdAt', 'until_unbanned as until', 'is_terminated as terminated']).orderBy('id', 'desc').where({
+            'userid': userId,
+        });
+        return response;
+    }
 }
 exports.default = UsersDAL;
 

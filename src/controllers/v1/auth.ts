@@ -14,6 +14,7 @@ import { setSession, isAuthenticated, verifyPassword, saveSession, hashPassword,
 import controller from '../controller';
 import { NoAuth, YesAuth } from "../../middleware/Auth";
 import RecaptchaV2 from '../../middleware/RecaptchaV2';
+import { UserInfo } from "../../models/v1/user";
 /**
  * Auth Controller
  */
@@ -688,5 +689,16 @@ export default class AuthController extends controller {
             throw new this.BadRequest('InvalidCode');
         }
         return result;
+    }
+
+    @Get('/moderation/history')
+    @Summary('Get a page of moderationHistory for the authenticated user')
+    @Use(YesAuth)
+    @ReturnsArray(200, {type: model.user.UserModerationAction})
+    public async getModerationHistory(
+        @Locals('userInfo') userInfo: model.UserSession,
+    ) {
+        let history = await this.user.getModerationHistory(userInfo.userId);
+        return history;
     }
 }

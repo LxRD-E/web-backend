@@ -938,6 +938,17 @@ class UsersDAL extends _init {
             }
         }
     }
+
+    /**
+     * Get the full moderation history of a {userId}
+     * @param userId 
+     */
+    public async getModerationHistory(userId: number): Promise<model.user.UserModerationAction[]> {
+        let response = await this.knex('user_moderation').select(['id as moderationActionId','userid as userId','reason','date as createdAt','until_unbanned as until','is_terminated as terminated']).orderBy('id','desc').where({
+            'userid': userId,
+        });
+        return response;
+    }
 }
 
 export default UsersDAL;

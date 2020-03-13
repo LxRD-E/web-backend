@@ -555,4 +555,32 @@ __decorate([
     __metadata("design:type", String)
 ], PastUsernamesItem.prototype, "date", void 0);
 exports.PastUsernamesItem = PastUsernamesItem;
+class UserModerationAction {
+}
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('Internal Identifier'),
+    __metadata("design:type", Number)
+], UserModerationAction.prototype, "moderationActionId", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('The userid affected'),
+    __metadata("design:type", Number)
+], UserModerationAction.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('Date the action was taken'),
+    __metadata("design:type", String)
+], UserModerationAction.prototype, "createdAt", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('Date the action expired, or same as createdAt if warning'),
+    __metadata("design:type", String)
+], UserModerationAction.prototype, "until", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('Weather or not the account was terminated'),
+    __metadata("design:type", Number)
+], UserModerationAction.prototype, "terminated", void 0);
+exports.UserModerationAction = UserModerationAction;
 

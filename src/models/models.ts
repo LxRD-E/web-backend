@@ -33,4 +33,16 @@ export class Error {
     error: _errorData;
 }
 
+export class UserSession {
+    'userId': number;
+    'username': string;
+    'passwordChanged': number;
+    'banned': user.banned;
+    'theme': user.theme;
+    'primaryBalance': number;
+    'secondaryBalance': number;
+    'staff': user.staff;
+    'dailyAward': string;
+}
+
 export {any, auth, avatar, billing, catalog, chat, economy, forum, game, group, mod, notification, settings, staff, thumbnails, user, ad, support}

@@ -45,6 +45,12 @@ let WWWAuthController = class WWWAuthController extends controller_1.default {
             userInfo: userInfo,
         });
     }
+    ModerationHistory(userInfo) {
+        return new Www_1.WWWTemplate({
+            title: "Moderation History",
+            userInfo: userInfo,
+        });
+    }
     Avatar(userInfo) {
         return new Www_1.WWWTemplate({
             title: "Avatar",
@@ -135,6 +141,15 @@ __decorate([
     __metadata("design:paramtypes", [UserModel.SessionUserInfo]),
     __metadata("design:returntype", void 0)
 ], WWWAuthController.prototype, "dashboard", null);
+__decorate([
+    common_1.Get('/moderation'),
+    common_1.Use(Auth_1.YesAuth),
+    common_1.Render('moderation'),
+    __param(0, common_1.Locals('userInfo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [UserModel.SessionUserInfo]),
+    __metadata("design:returntype", void 0)
+], WWWAuthController.prototype, "ModerationHistory", null);
 __decorate([
     common_1.Get('/avatar'),
     common_1.UseBeforeEach(Auth_1.YesAuth),

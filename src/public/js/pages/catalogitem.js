@@ -393,8 +393,12 @@ $(document).on('click', '.onClickPurchaseItem', function() {
     var price = parseInt($(this).attr("data-price"));
     if (userData.attr("data-authenticated") === "true") {
         questionYesNoHtml("Are you sure you'd like to purchase this item for "+formatCurrency(currency)+" "+nform(price)+"?", function(d) {
-            request("/economy/"+catalogid+"/buy", "POST", JSON.stringify({userInventoryId: uid,expectedSellerId: sellerId,expectedCurrency:currency, expectedPrice:price}))
-                .then(function(d) {
+            request("/economy/"+catalogid+"/buy", "POST", {
+                userInventoryId: uid,
+                expectedSellerId: sellerId,
+                expectedCurrency: currency, 
+                expectedPrice: price
+            }).then(function(d) {
                     success("This item was succesfully purchased.", function() {
                         window.location.reload();
                     })

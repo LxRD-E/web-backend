@@ -6,6 +6,87 @@ import * as catalog from '../models/v1/catalog';
 import _init from './_init';
 
 class EconomyDAL extends _init {
+
+    /**
+     * Unlock user from making economy changes
+     * @param userId 
+     * @deprecated Use native knex.transaciton instead of this
+     */
+    public async unlockUserEconomy(userId: number): Promise<void> {
+        await this.knex('users').update({
+            'economy_lock': 0
+        }).where({
+            'id': userId,
+        })
+    }
+    /**
+     * Lock the user from making changes to their economy
+     * @param userId 
+     * @deprecated Use native knex.transaciton instead of this
+     */
+    public async lockUserEconomy(userId: number): Promise<void> {
+        try {
+            await this.knex.transaction(async (trx) => {
+                // First, check if locked
+                let lockStatus = await trx('users').select('economy_lock','economy_lock_date').where({
+                    'id': userId,
+                }).forUpdate('users');
+                let info = lockStatus[0];
+                console.log('user lock status',info);
+                if (info.economy_lock === 1) {
+                    // Check when it was locked at
+                    let lockDateBad = this.moment(info.economy_lock_date).add(10, 'seconds').isSameOrAfter(this.moment());
+                    console.log(lockDateBad);
+                    if (lockDateBad) {
+                        // Not good
+                        throw new Error("CouldNotAquireLockDueToLockNotExpired");
+                    }
+                }
+                // Define date
+                let dateToLock = this.knexTime();
+                // First, try to lock
+                let results = await trx('users').update({
+                    'economy_lock': 1,
+                    'economy_lock_date': dateToLock,
+                }).where({
+                    'id': userId,
+                });
+                console.log(results);
+                // Now, grab the lock status again
+                let newStatus = await trx('users').select('economy_lock', 'economy_lock_date').where({
+                    'id': userId,
+                }).forUpdate('users');
+                // Verify date
+                console.log(newStatus);
+                console.log(dateToLock);
+                let timeLockedAt = (newStatus[0]['economy_lock_date'] as Date).toISOString();
+                let dateWeLockedAt = new Date(dateToLock).toISOString();
+
+                console.log(newStatus);
+                console.log(dateToLock);
+                if (timeLockedAt !== dateWeLockedAt) {
+                    throw new Error('EconomyLockedByOtherProcess');
+                }
+                try {
+                    await trx.commit();
+                }catch(e) {
+                    throw e;
+                }
+            });
+        }catch(e) {
+            throw e;
+        }
+        // OK
+    }
+    /**
+     * Delete a transaction by it's transactionId
+     * @param transactionId 
+     */
+    public async deleteTransaction(transactionId: number): Promise<void> {
+        await this.knex('transactions').delete().where({
+            id: transactionId,
+        });
+    }
     /**
      * Create a Transaction. This will **not** affect anyone's balance; it will simply show up in the transactions table
      * @param userIdTo Who does this transaction affect?
@@ -16,8 +97,9 @@ class EconomyDAL extends _init {
      * @param description Short Human-readable Description of Transaction
      * @param catalogId The ID of the Catalog Item Involved (optional)
      * @param userInventoryId The ID of the Inventory Item Involved (optional)
+     * @returns TransactionId
      */
-    public async createTransaction(userIdTo: number, userIdFrom: number, amount: number, currency: economy.currencyType, type: economy.transactionType, description: string, fromType: catalog.creatorType, toType: catalog.creatorType, catalogId?: number, userInventoryId?: number): Promise<void> {
+    public async createTransaction(userIdTo: number, userIdFrom: number, amount: number, currency: economy.currencyType, type: economy.transactionType, description: string, fromType: catalog.creatorType, toType: catalog.creatorType, catalogId?: number, userInventoryId?: number): Promise<number> {
         let numericCatalogId;
         if (!catalogId) {
             numericCatalogId = 0;
@@ -30,7 +112,8 @@ class EconomyDAL extends _init {
         }else{
             numericInventoryId = userInventoryId;
         }
-        await this.knex("transactions").insert({"userid_to":userIdTo,"userid_from":userIdFrom,"amount":amount,"currency":currency,"type":type,"description":description,"catalogid":numericCatalogId,"user_inventoryid":numericInventoryId,"from_type":fromType,"to_type":toType});
+        let results = await this.knex("transactions").insert({"userid_to":userIdTo,"userid_from":userIdFrom,"amount":amount,"currency":currency,"type":type,"description":description,"catalogid":numericCatalogId,"user_inventoryid":numericInventoryId,"from_type":fromType,"to_type":toType});
+        return results[0];
     }
 
     /**
@@ -40,27 +123,31 @@ class EconomyDAL extends _init {
      * @param currency Currency Type
      */
     public async addToUserBalance(userId: number, amount: number, currency: economy.currencyType): Promise<void> {
-        if (currency === economy.currencyType.primary) {
-            const balance = await this.knex("users").select("user_balance1").where({"id":userId});
-            if (balance && balance[0] && balance[0]["user_balance1"] !== undefined) {
-                const currentBalance = balance[0]["user_balance1"];
-                const newBalance = currentBalance + amount;
-                await this.knex("users").update({"user_balance1":newBalance}).where({"id":userId});
+        await this.knex.transaction(async (trx) => {
+            if (currency === economy.currencyType.primary) {
+                const balance = await trx("users").select("user_balance1").where({"id":userId}).forUpdate('users');
+                if (balance && balance[0] && balance[0]["user_balance1"] !== undefined) {
+                    const currentBalance = balance[0]["user_balance1"];
+                    const newBalance = currentBalance + amount;
+                    await trx("users").update({"user_balance1":newBalance}).where({"id":userId});
+                }else{
+                    throw economy.userBalanceErrors.InvalidUserId;
+                }
+            }else if (currency === economy.currencyType.secondary) {
+                const balance = await trx("users").select("user_balance2").where({"id":userId}).forUpdate('users');
+                if (balance && balance[0] && balance[0]["user_balance2"] !== undefined) {
+                    const currentBalance = balance[0]["user_balance2"];
+                    const newBalance = currentBalance + amount;
+                    await trx("users").update({"user_balance2":newBalance}).where({"id":userId});
+                }else{
+                    throw economy.userBalanceErrors.InvalidUserId;
+                }
             }else{
-                throw economy.userBalanceErrors.InvalidUserId;
+                throw economy.userBalanceErrors.InvalidCurrencyType;
             }
-        }else if (currency === economy.currencyType.secondary) {
-            const balance = await this.knex("users").select("user_balance2").where({"id":userId});
-            if (balance && balance[0] && balance[0]["user_balance2"] !== undefined) {
-                const currentBalance = balance[0]["user_balance2"];
-                const newBalance = currentBalance + amount;
-                await this.knex("users").update({"user_balance2":newBalance}).where({"id":userId});
-            }else{
-                throw economy.userBalanceErrors.InvalidUserId;
-            }
-        }else{
-            throw economy.userBalanceErrors.InvalidCurrencyType;
-        }
+
+            await trx.commit();
+        });
     }
 
     /**
@@ -70,33 +157,37 @@ class EconomyDAL extends _init {
      * @param currency Currency Type
      */
     public async subtractFromUserBalance(userId: number, amount: number, currency: economy.currencyType): Promise<void> {
-        if (currency === economy.currencyType.primary) {
-            const balance = await this.knex("users").select("user_balance1").where({"id":userId});
-            if (balance && balance[0] && balance[0]["user_balance1"] !== undefined) {
-                const currentBalance = balance[0]["user_balance1"];
-                const newBalance = currentBalance - amount;
-                if (newBalance < 0) {
-                    throw economy.userBalanceErrors.NotEnoughCurrency;
+        await this.knex.transaction(async (trx) => {
+            if (currency === economy.currencyType.primary) {
+                const balance = await trx("users").select("user_balance1").where({"id":userId}).forUpdate('users');
+                if (balance && balance[0] && balance[0]["user_balance1"] !== undefined) {
+                    const currentBalance = balance[0]["user_balance1"];
+                    const newBalance = currentBalance - amount;
+                    if (newBalance < 0) {
+                        throw economy.userBalanceErrors.NotEnoughCurrency;
+                    }
+                    await trx("users").update({"user_balance1":newBalance}).where({"id":userId});
+                }else{
+                    throw economy.userBalanceErrors.InvalidUserId;
                 }
-                await this.knex("users").update({"user_balance1":newBalance}).where({"id":userId});
-            }else{
-                throw economy.userBalanceErrors.InvalidUserId;
-            }
-        }else if (currency === economy.currencyType.secondary) {
-            const balance = await this.knex("users").select("user_balance2").where({"id":userId});
-            if (balance && balance[0] && balance[0]["user_balance2"] !== undefined) {
-                const currentBalance = balance[0]["user_balance2"];
-                const newBalance = currentBalance - amount;
-                if (newBalance < 0) {
-                    throw economy.userBalanceErrors.NotEnoughCurrency;
+            }else if (currency === economy.currencyType.secondary) {
+                const balance = await trx("users").select("user_balance2").where({"id":userId}).forUpdate('users');
+                if (balance && balance[0] && balance[0]["user_balance2"] !== undefined) {
+                    const currentBalance = balance[0]["user_balance2"];
+                    const newBalance = currentBalance - amount;
+                    if (newBalance < 0) {
+                        throw economy.userBalanceErrors.NotEnoughCurrency;
+                    }
+                    await trx("users").update({"user_balance2":newBalance}).where({"id":userId});
+                }else{
+                    throw economy.userBalanceErrors.InvalidUserId;
                 }
-                await this.knex("users").update({"user_balance2":newBalance}).where({"id":userId});
             }else{
-                throw economy.userBalanceErrors.InvalidUserId;
+                throw economy.userBalanceErrors.InvalidCurrencyType;
             }
-        }else{
-            throw economy.userBalanceErrors.InvalidCurrencyType;
-        }
+
+            await trx.commit();
+        });
     }
 
     /**
@@ -106,27 +197,31 @@ class EconomyDAL extends _init {
      * @param currency Currency Type
      */
     public async addToGroupBalance(groupId: number, amount: number, currency: economy.currencyType): Promise<void> {
-        if (currency === economy.currencyType.primary) {
-            const balance = await this.knex("groups").select("balance_one").where({"id":groupId});
-            if (balance && balance[0] && balance[0]["balance_one"] !== undefined) {
-                const currentBalance = balance[0]["balance_one"];
-                const newBalance = currentBalance + amount;
-                await this.knex("groups").update({"balance_one":newBalance}).where({"id":groupId});
+        await this.knex.transaction(async (trx) => {
+            if (currency === economy.currencyType.primary) {
+                const balance = await trx("groups").select("balance_one").where({"id":groupId}).forUpdate('groups');
+                if (balance && balance[0] && balance[0]["balance_one"] !== undefined) {
+                    const currentBalance = balance[0]["balance_one"];
+                    const newBalance = currentBalance + amount;
+                    await trx("groups").update({"balance_one":newBalance}).where({"id":groupId});
+                }else{
+                    throw economy.userBalanceErrors.InvalidUserId;
+                }
+            }else if (currency === economy.currencyType.secondary) {
+                const balance = await trx("groups").select("balance_two").where({"id":groupId}).forUpdate('groups');
+                if (balance && balance[0] && balance[0]["balance_two"] !== undefined) {
+                    const currentBalance = balance[0]["balance_two"];
+                    const newBalance = currentBalance + amount;
+                    await trx("groups").update({"balance_two":newBalance}).where({"id":groupId});
+                }else{
+                    throw economy.userBalanceErrors.InvalidUserId;
+                }
             }else{
-                throw economy.userBalanceErrors.InvalidUserId;
+                throw economy.userBalanceErrors.InvalidCurrencyType;
             }
-        }else if (currency === economy.currencyType.secondary) {
-            const balance = await this.knex("groups").select("balance_two").where({"id":groupId});
-            if (balance && balance[0] && balance[0]["balance_two"] !== undefined) {
-                const currentBalance = balance[0]["balance_two"];
-                const newBalance = currentBalance + amount;
-                await this.knex("groups").update({"balance_two":newBalance}).where({"id":groupId});
-            }else{
-                throw economy.userBalanceErrors.InvalidUserId;
-            }
-        }else{
-            throw economy.userBalanceErrors.InvalidCurrencyType;
-        }
+            
+            await trx.commit();
+        });
     }
 
     /**
@@ -136,33 +231,37 @@ class EconomyDAL extends _init {
      * @param currency Currency Type
      */
     public async subtractFromGroupBalance(groupId: number, amount: number, currency: economy.currencyType): Promise<void> {
-        if (currency === economy.currencyType.primary) {
-            const balance = await this.knex("groups").select("balance_one").where({"id":groupId});
-            if (balance && balance[0] && balance[0]["balance_one"] !== undefined) {
-                const currentBalance = balance[0]["balance_one"];
-                const newBalance = currentBalance - amount;
-                if (newBalance < 0) {
-                    throw economy.userBalanceErrors.NotEnoughCurrency;
+        await this.knex.transaction(async (trx) => {
+            if (currency === economy.currencyType.primary) {
+                const balance = await trx("groups").select("balance_one").where({"id":groupId}).forUpdate('groups');
+                if (balance && balance[0] && balance[0]["balance_one"] !== undefined) {
+                    const currentBalance = balance[0]["balance_one"];
+                    const newBalance = currentBalance - amount;
+                    if (newBalance < 0) {
+                        throw economy.userBalanceErrors.NotEnoughCurrency;
+                    }
+                    await trx("groups").update({"balance_one":newBalance}).where({"id":groupId});
+                }else{
+                    throw economy.userBalanceErrors.InvalidUserId;
                 }
-                await this.knex("groups").update({"balance_one":newBalance}).where({"id":groupId});
-            }else{
-                throw economy.userBalanceErrors.InvalidUserId;
-            }
-        }else if (currency === economy.currencyType.secondary) {
-            const balance = await this.knex("groups").select("balance_two").where({"id":groupId});
-            if (balance && balance[0] && balance[0]["balance_two"] !== undefined) {
-                const currentBalance = balance[0]["balance_two"];
-                const newBalance = currentBalance - amount;
-                if (newBalance < 0) {
-                    throw economy.userBalanceErrors.NotEnoughCurrency;
+            }else if (currency === economy.currencyType.secondary) {
+                const balance = await trx("groups").select("balance_two").where({"id":groupId}).forUpdate('groups');
+                if (balance && balance[0] && balance[0]["balance_two"] !== undefined) {
+                    const currentBalance = balance[0]["balance_two"];
+                    const newBalance = currentBalance - amount;
+                    if (newBalance < 0) {
+                        throw economy.userBalanceErrors.NotEnoughCurrency;
+                    }
+                    await trx("groups").update({"balance_two":newBalance}).where({"id":groupId});
+                }else{
+                    throw economy.userBalanceErrors.InvalidUserId;
                 }
-                await this.knex("groups").update({"balance_two":newBalance}).where({"id":groupId});
             }else{
-                throw economy.userBalanceErrors.InvalidUserId;
+                throw economy.userBalanceErrors.InvalidCurrencyType;
             }
-        }else{
-            throw economy.userBalanceErrors.InvalidCurrencyType;
-        }
+
+            await trx.commit();
+        });
     }
 
     /**

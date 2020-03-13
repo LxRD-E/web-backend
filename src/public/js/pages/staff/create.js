@@ -1,4 +1,6 @@
 $(document).on('click', '#createAssetClick', function() {
+    $('#createAssetClick').attr('disabled','disabled');
+    loading();
     //var form = $('#assetsForm')[0];
     //var data = new FormData(form);
     var form = new FormData(); 
@@ -35,6 +37,7 @@ function makeAsset(form, csrf) {
         url: "/api/v1/catalog/create",
         headers:{
             "x-csrf-token": csrf,
+            'accept': 'application/json',
         },
         data: form,
         processData: false,
@@ -57,8 +60,9 @@ function makeAsset(form, csrf) {
                     console.log("bad");
                 }
             }else{
-                if (e.responseJSON.message) {
-                    warning(e.responseJSON.message);
+                $('#createAssetClick').removeAttr('disabled');
+                if (e.responseJSON && e.responseJSON.error && e.responseJSON.error.code) {
+                    warning(errorTransform(e.responseJSON.error.code));
                 }else{
                     warning("An unknown error has ocurred");
                 }

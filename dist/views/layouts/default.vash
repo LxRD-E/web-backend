@@ -189,6 +189,7 @@
                             <a class="dropdown-item" href="/transactions"><i class="fas fa-money-bill-alt"></i> My Transactions</a>
                             <a class="dropdown-item" href="/ads"><i class="fas fa-ad"></i> My Ads</a>
                             <a class="dropdown-item" href="/settings"><i class="fas fa-sliders-h"></i> My Settings</a>
+                            <a class="dropdown-item" href="/moderation"><i class="fas fa-exclamation-triangle"></i> Moderation History</a>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item" id="logoutAClick" href="#"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
                         </div>
@@ -337,7 +338,9 @@
         <script nonce="@model.nonce" src="https://cdn.jsdelivr.net/npm/moment@@2.24.0/moment.min.js" crossorigin="anonymous"></script>
         <!-- XSS -->
         <script nonce="@model.nonce" src="/js/xss.js?v=@model.v"></script>
-        <!-- Local Stuff -->
+        <!-- Locale -->
+        <script nonce="@model.nonce" src="/js/locale/en.js?v=@model.v"></script>
+        <!-- app.js -->
         <script nonce="@model.nonce" src="/js/app.js?v=@model.v"></script>
         @if (model.userInfo && typeof model.userInfo.userId !== "undefined" && model.userInfo.userId !== null) {
         <!-- Chat Stuff -->

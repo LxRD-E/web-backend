@@ -109,23 +109,36 @@ class GroupsDAL extends _init_1.default {
         return role[0];
     }
     async addUserToGroup(groupId, userId, roleSetId) {
-        await this.knex("group_members").insert({
-            "groupid": groupId,
-            "userid": userId,
-            "roleid": roleSetId,
+        await this.knex.transaction(async (trx) => {
+            await trx("group_members").insert({
+                "groupid": groupId,
+                "userid": userId,
+                "roleid": roleSetId,
+            });
+            await this.updateGroupMembersCountTRX(trx, groupId);
+            await trx.commit();
         });
-        await this.updateGroupMemberCount(groupId);
+    }
+    async updateGroupMembersCountTRX(trx, groupId) {
+        const currentMemberCount = await trx("group_members").count("id as Total").where({ "groupid": groupId }).forUpdate('group_members', 'groups');
+        await trx('groups').update({ "membercount": currentMemberCount[0]["Total"] }).where({ "id": groupId });
     }
     async removeUserFromGroup(groupId, userId) {
-        await this.knex("group_members").delete().where({
-            "groupid": groupId,
-            "userid": userId,
+        await this.knex.transaction(async (trx) => {
+            await trx("group_members").delete().where({
+                "groupid": groupId,
+                "userid": userId,
+            });
+            await this.updateGroupMembersCountTRX(trx, groupId);
+            await trx.commit();
         });
-        await this.updateGroupMemberCount(groupId);
     }
     async updateGroupMemberCount(groupId) {
-        const currentMemberCount = await this.knex("group_members").count("id as Total").where({ "groupid": groupId });
-        await this.knex("groups").update({ "membercount": currentMemberCount[0]["Total"] }).where({ "id": groupId });
+        await this.knex.transaction(async (trx) => {
+            const currentMemberCount = await trx("group_members").count("id as Total").where({ "groupid": groupId }).forUpdate('group_members', 'groups');
+            await trx('groups').update({ "membercount": currentMemberCount[0]["Total"] }).where({ "id": groupId });
+            await trx.commit();
+        });
     }
     async verifyPermissions(permissions) {
         if (!permissions) {

@@ -464,6 +464,10 @@ let AuthController = class AuthController extends controller_1.default {
         }
         return result;
     }
+    async getModerationHistory(userInfo) {
+        let history = await this.user.getModerationHistory(userInfo.userId);
+        return history;
+    }
 };
 __decorate([
     common_1.Post('/login/two-factor'),
@@ -687,6 +691,16 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "validateAuthenticationCode", null);
+__decorate([
+    common_1.Get('/moderation/history'),
+    swagger_1.Summary('Get a page of moderationHistory for the authenticated user'),
+    common_1.Use(Auth_1.YesAuth),
+    swagger_1.ReturnsArray(200, { type: model.user.UserModerationAction }),
+    __param(0, common_1.Locals('userInfo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.UserSession]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "getModerationHistory", null);
 AuthController = __decorate([
     common_1.Controller('/auth'),
     swagger_1.Description('Endpoints that deal directly with user authentication, authorization, credentials, and account creation'),

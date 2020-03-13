@@ -5,6 +5,7 @@ import * as groups from '../models/v1/group';
 import * as catalog from '../models/v1/catalog';
 import _init from './_init';
 import { group } from '../models/models';
+import Knex = require('knex');
 
 class GroupsDAL extends _init {
     /**
@@ -192,23 +193,40 @@ class GroupsDAL extends _init {
      * @param userId 
      */
     public async addUserToGroup(groupId: number, userId: number, roleSetId: number): Promise<void> {
-        await this.knex("group_members").insert({
-            "groupid": groupId,
-            "userid": userId,
-            "roleid": roleSetId,
+        await this.knex.transaction(async (trx) => {
+            // Insert user into group
+            await trx("group_members").insert({
+                "groupid": groupId,
+                "userid": userId,
+                "roleid": roleSetId,
+            });
+            await this.updateGroupMembersCountTRX(trx, groupId);
+            // Commit transaction
+            await trx.commit();
         });
-        await this.updateGroupMemberCount(groupId);
+    }
+
+    private async updateGroupMembersCountTRX(trx: Knex.Transaction, groupId: number): Promise<void> {
+        // Count group members
+        const currentMemberCount = await trx("group_members").count("id as Total").where({"groupid":groupId}).forUpdate('group_members','groups');
+        // Update count
+        await trx('groups').update({"membercount": currentMemberCount[0]["Total"]}).where({"id":groupId});
     }
 
     /**
      * Leave a Group
      */
     public async removeUserFromGroup(groupId: number, userId: number): Promise<void> {
-        await this.knex("group_members").delete().where({
-            "groupid": groupId,
-            "userid": userId,
+        await this.knex.transaction(async (trx) => {
+            // Insert user into group
+            await trx("group_members").delete().where({
+                "groupid": groupId,
+                "userid": userId,
+            });
+            await this.updateGroupMembersCountTRX(trx, groupId);
+            // Commit transaction
+            await trx.commit();
         });
-        await this.updateGroupMemberCount(groupId);
     }
 
     /**
@@ -216,8 +234,11 @@ class GroupsDAL extends _init {
      * @param groupId 
      */
     public async updateGroupMemberCount(groupId: number): Promise<void> {
-        const currentMemberCount = await this.knex("group_members").count("id as Total").where({"groupid":groupId});
-        await this.knex("groups").update({"membercount": currentMemberCount[0]["Total"]}).where({"id":groupId});
+        await this.knex.transaction(async (trx) => {
+            const currentMemberCount = await trx("group_members").count("id as Total").where({"groupid":groupId}).forUpdate('group_members','groups');
+            await trx('groups').update({"membercount": currentMemberCount[0]["Total"]}).where({"id":groupId});
+            await trx.commit();
+        });
     }
 
     /**

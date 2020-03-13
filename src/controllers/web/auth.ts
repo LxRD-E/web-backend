@@ -56,6 +56,19 @@ export class WWWAuthController extends controller {
         });
     }
 
+    // Mod History
+    @Get('/moderation')
+    @Use(YesAuth)
+    @Render('moderation')
+    public ModerationHistory(
+        @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
+    ) {
+        return new WWWTemplate({
+            title: "Moderation History",
+            userInfo: userInfo,
+        });
+    }
+
     // User avatar customization
     @Get('/avatar')
     @UseBeforeEach(YesAuth)

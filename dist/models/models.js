@@ -74,4 +74,7 @@ __decorate([
     __metadata("design:type", _errorData)
 ], Error.prototype, "error", void 0);
 exports.Error = Error;
+class UserSession {
+}
+exports.UserSession = UserSession;
 

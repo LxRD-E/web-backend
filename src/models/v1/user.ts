@@ -595,3 +595,21 @@ export class PastUsernamesItem {
     @Required()
     date: string;
 }
+
+export class UserModerationAction {
+    @Required()
+    @Description('Internal Identifier')
+    moderationActionId: number;
+    @Required()
+    @Description('The userid affected')
+    userId: number;
+    @Required()
+    @Description('Date the action was taken')
+    createdAt: string;
+    @Required()
+    @Description('Date the action expired, or same as createdAt if warning')
+    until: string;
+    @Required()
+    @Description('Weather or not the account was terminated')
+    terminated: 0|1;
+}
