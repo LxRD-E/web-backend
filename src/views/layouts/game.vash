@@ -36,7 +36,7 @@
 <body>
     @html.block('content')
     <canvas id="renderCanvas"></canvas>
-    <script src="https://cdn.jsdelivr.net/npm/jquery@@3.4.1/dist/jquery.min.js" integrity="sha384-vk5WoKIaW/vJyUAd9n/wmopsmNhiy+L2Z+SBxGYnUkunIxVxAv/UtMOhba/xskxh" crossorigin="anonymous"></script>
+    <script nonce="@model.nonce" src="https://cdn.jsdelivr.net/npm/jquery@@3.4.1/dist/jquery.min.js" integrity="sha384-vk5WoKIaW/vJyUAd9n/wmopsmNhiy+L2Z+SBxGYnUkunIxVxAv/UtMOhba/xskxh" crossorigin="anonymous"></script>
     <script nonce="@model.nonce" src="/js/request.js"></script>
     <script nonce="@model.nonce" src="/api/v1/game/client.js?v=@model.v"></script>
 </body>
