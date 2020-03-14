@@ -16,20 +16,18 @@ import { wss } from '../../start/websockets';
 
 import config from '../../helpers/config';
 const GAME_KEY = config.encryptionKeys.game;
-// models
-import * as model from '../../models/models';
 
 const allowedDomains = [] as string[];
 if (process.env.NODE_ENV === 'development') {
     allowedDomains.push(
-        'http://localhost/', 
+        'http://localhost/',
         'http://localhost:3000/',
         'http://localhost',
         'http://localhost:3000',
     );
 } else {
     allowedDomains.push(
-        'https://hindigamer.club/', 
+        'https://hindigamer.club/',
         'https://www.hindigamer.club/',
         'https://www.hindigamer.club',
         'https://hindigamer.club',
@@ -57,190 +55,22 @@ const scriptOptions = {
     // disableConsoleOutput: true,
     domainLock: allowedDomains,
 };
-import controller from '../controller';
-import { QueryParams, Get, Controller, PathParams, Use, Locals, Res, Post, BodyParams, Patch, Delete, Required } from '@tsed/common';
-import { Summary, ReturnsArray, Returns, Description } from '@tsed/swagger';
-import { YesAuth } from '../../middleware/Auth';
-import { csrf } from '../../dal/auth';
-/**
- * Game Controller
- */
-@Controller('/game')
-export default class GameController extends controller {
 
-    /**
-     * Search Games
-     * @param offset 
-     * @param limit 
-     * @param sort 
-     */
-    @Get('/search')
-    @Summary('Get all games')
-    @ReturnsArray(200, {type: model.game.GameSearchResult})
-    public async getGames(
-        @QueryParams('offset', Number) offset: number = 0, 
-        @QueryParams('limit', Number) limit: number = 25, 
-        @QueryParams('sortBy', Number) sortBy: number = 1,
-        @QueryParams('genre', Number) genre: number = 1,
-    ) {
-        if (!model.game.GameSortOptions[sortBy]) {
-            throw new this.BadRequest('InvalidSortBy');
-        }
-        let games: model.game.GameSearchResult[];
-        // Filter through sort options, seeing which one was chosen
+const COPYRIGHT_DISCLAIMER = `/**
+ * Copyright (c) Hindi Gamer Club - All Rights Reserved
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * You are not allowed to copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software.
+ * This software includes various open-source libraries which have licenses provided where relevent and required.
+ * View our full terms of service here: https://hindigamer.club/terms
+ */`;
+let simpleCryptoData = model.game.getSimpleCrypto();
 
-        // Featured sort (subject to change at any time)
-        if (sortBy === model.game.GameSortOptions.Featured) {
-            // TODO: revise this to something more specific
-            games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
-        // Top players sort (pretty easy; sorted by most to least players)
-        }else if (sortBy === model.game.GameSortOptions['Top Players']) {
-            games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
-        // Sort by most recently updated
-        }else if (sortBy === model.game.GameSortOptions['Recently Updated']) {
-            games = await this.game.getGames(offset, limit, 'desc', 'updated_at', genre);
-        // No sort specified, so error
-        }else{
-            throw new this.BadRequest('InvalidSortBy');
-        }
-        // Return results
-        return games;
-    }
-
-    @Get('/:gameId/thumbnail')
-    @Summary('Get a game thumbnail')
-    @Description('If no thumbnail available, a placeholder will be provided')
-    @Returns(200, {type: model.game.GameThumbnail})
-    public async getGameThumbnail(
-        @PathParams('gameId', Number) gameId: number,
-    ) {
-        return await this.game.getGameThumbnail(gameId);
-    }
-
-    @Get('/thumbnails')
-    @Summary('Multi-get thumbnails by CSV of gameIds')
-    @Description('Invalid IDs will be filtered out')
-    @ReturnsArray(200, {type: model.game.GameThumbnail})
-    public async multiGetGameThumbnails(
-        @Required()
-        @QueryParams('ids', String) gameIds: string,
-    ) {
-        if (!gameIds) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const idsArray = gameIds.split(',');
-        if (idsArray.length < 1) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const filteredIds: Array<number> = [];
-        let allIdsValid = true;
-        idsArray.forEach((id) => {
-            const gameId = parseInt(id, 10) as number;
-            if (!Number.isInteger(gameId)) {
-                allIdsValid = false
-            }
-            filteredIds.push(gameId);
-        });
-        const safeIds = Array.from(new Set(filteredIds));
-        if (safeIds.length > 25) {
-            throw new this.BadRequest('TooManyIds');
-        }
-        let results = await this.game.multiGetGameThumbnails(safeIds);
-        return results;
-    }
-
-    /**
-     * Get the Map of a Game ID
-     * @param gameId 
-     */
-    @Get('/:gameId/map')
-    @Summary('Get the map of a {gameId}. Authentication required')
-    @Returns(200, {type: String})
-    @Use(YesAuth)
-    public async getMap(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('gameId', Number) gameId: number
-    ) {
-        // Confirm Exists
-        let gameInfo;
-        try {
-            gameInfo = await this.game.getInfo(gameId);
-        } catch (e) {
-            console.log(e);
-            throw new this.BadRequest('InvalidGameId');
-        }
-        if (gameInfo.gameState !== model.game.GameState.public) {
-            throw new this.Conflict('InvalidGameState');
-        }
-        // Game Exists, so grab map/content
-        const map = await this.game.getGameMap(gameId);
-        const mapContent = await this.game.getMapContent(map.scriptUrl);
-        const script = jsObfuse.obfuscate(`
-            (function(scene){
-                // Script Goes Here
-
-                ${mapContent}
-
-                // End Script
-            })();
-            `, scriptOptions);
-        return new SimpleCrypto(GAME_KEY).encrypt(script.getObfuscatedCode());
-    }
-
-    /**
-     * Get the Map of a Game ID
-     * @param gameId 
-     */
-    @Get('/:gameId/scripts')
-    @Summary('Get a game\'s client scripts.')
-    @Use(YesAuth)
-    public async getClientScripts(
-        @PathParams('gameId', Number) gameId: number
-    ): Promise<string> {
-        // Confirm Exists
-        let gameInfo;
-        try {
-            gameInfo = await this.game.getInfo(gameId);
-        } catch (e) {
-            console.error('error grabbing game info: '+e);
-            throw new this.BadRequest('InvalidGameId');
-        }
-        if (gameInfo.gameState !== model.game.GameState.public) {
-            throw new this.Conflict('InvalidGameState');
-        }
-        // Game Exists, so grab map/content
-        const scripts = await this.game.getGameScripts(gameId, model.game.ScriptType.client);
-        let scriptString = '';
-        for (const script of scripts) {
-            const content = await this.game.getScriptContent(script.scriptUrl);
-            scriptString = scriptString + '\n' + content;
-        }
-        const script = jsObfuse.obfuscate(`
-            (function(scene){
-                // Script Goes Here
-
-                ${scriptString}
-
-                // End Script
-            })();
-            `, scriptOptions);
-        return new SimpleCrypto(GAME_KEY).encrypt(script.getObfuscatedCode());
-    }
-
-    /**
-     * Get Primary Client Script
-     */
-    @Get('/client.js')
-    @Summary('Get the primary game client.js')
-    @Use(YesAuth)
-    public async getClientScript(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @Res() res: Res,
-    ) {
-        let simpleCryptoData = model.game.getSimpleCrypto();
-        const script = jsObfuse.obfuscate(`
+// todo: move this to an aws bucket or something...
+const script = jsObfuse.obfuscate(`
         (function() {
             ${simpleCryptoData.lib}
+
+            const gameAuthCode = $('#gamedata').attr('data-authcode');
 
             /**
             * Game Data
@@ -261,22 +91,7 @@ export default class GameController extends controller {
                 if (window.location.host.slice(0,9) === 'localhost') {
                     wsurl = "ws://localhost:8080/game-sockets/websocket.aspx";
                 }
-                function getCsrf() {
-                    // For now, since the ws connection can't validate csrf tokens, we have to make this request which will result in a csrf validation error. 
-                    // 
-                    // In the future, I would probably like to look into either a) using a custom 'csrf'/'authentication' type system for ws connections, or an endpoint that returns a csrf token in the body/headers while returning '200 OK'
-                    return new Promise(function(res, rej) {
-                        $.ajax({
-                            type: "POST",
-                            url: '/api/v1/chat/metadata',
-                            data: '',
-                            complete: function(xhr) {
-                                res(xhr.getResponseHeader('X-CSRF-Token'));
-                            },
-                
-                        });
-                    });
-                }
+
 
                 var isTrying = false;
                 function attemptRetry(closeEvent) {
@@ -294,8 +109,7 @@ export default class GameController extends controller {
                 }
 
                 function setupListen() {
-                    getCsrf().then(function(csrf) {
-                        var sock = new WebSocket(wsurl+'?csrf='+csrf);
+                        var sock = new WebSocket(wsurl+'?gameAuth='+gameAuthCode);
                         sock.onmessage = function (event) {
                             handleWsMessage(event)
                         }
@@ -318,12 +132,11 @@ export default class GameController extends controller {
                         window.onbeforeunload = function () {
                             sock.close();
                         }
-                    });
                 }
                 setupListen()
 
                 /*
-            request('/game/'+gameId+'/join', 'POST', JSON.stringify({}))
+            request('/game/'+gameId+'/join?authCode='+gameAuthCode, 'POST', JSON.stringify({}))
                 .then((d) => {
                     gameServerId = d.serverId;
                     // Setup WSS here
@@ -404,13 +217,13 @@ export default class GameController extends controller {
                     // ... 
                     // IMPORT MAP HERE
 
-                    fetch('/api/v1/game/'+gameId+'/map', {credentials: 'include'}).then((d) => {
+                    fetch('/api/v1/game/'+gameId+'/map?authCode='+gameAuthCode, {credentials: 'omit', mode: 'cors'}).then((d) => {
                         return d.text();
                     }).then((d) => {
                         Function(new ${simpleCryptoData.name}(\`${GAME_KEY}\`).decrypt(d))(scene);
                     });
 
-                    fetch('/api/v1/game/'+gameId+'/scripts', {credentials: 'include'}).then((d) => {
+                    fetch('/api/v1/game/'+gameId+'/scripts?authCode='+gameAuthCode, {credentials: 'omit',  mode: 'cors'}).then((d) => {
                             return d.text();
                         }).then((d) => {
                             Function(new ${simpleCryptoData.name}(\`${GAME_KEY}\`).decrypt(d))(scene);
@@ -431,16 +244,199 @@ export default class GameController extends controller {
             });
         })()
     `, scriptOptions);
-        let disclaimer = `/**
- * Copyright (c) Hindi Gamer Club - All Rights Reserved
- * Unauthorized copying of this file, via any medium, is strictly prohibited.
- * You are not allowed to copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software.
- * This software includes various open-source libraries which have licenses provided where relevent and required.
- * View our full terms of service here: https://hindigamer.club/terms
- */`;
-        let code = disclaimer+'\n'+script.getObfuscatedCode();
-        res.set({'content-type': 'application/javascript'});
-        res.set({'content-length': code.length});
+let code = COPYRIGHT_DISCLAIMER + '\n' + script.getObfuscatedCode();
+
+// models
+import * as model from '../../models/models';
+
+import controller from '../controller';
+import { QueryParams, Get, Controller, PathParams, Use, Locals, Res, Post, BodyParams, Patch, Delete, Required } from '@tsed/common';
+import { Summary, ReturnsArray, Returns, Description } from '@tsed/swagger';
+import { YesAuth, NoAuth, GameAuth } from '../../middleware/Auth';
+import { csrf } from '../../dal/auth';
+/**
+ * Game Controller
+ */
+@Controller('/game')
+export default class GameController extends controller {
+
+    /**
+     * Search Games
+     * @param offset 
+     * @param limit 
+     * @param sort 
+     */
+    @Get('/search')
+    @Summary('Get all games')
+    @ReturnsArray(200, { type: model.game.GameSearchResult })
+    public async getGames(
+        @QueryParams('offset', Number) offset: number = 0,
+        @QueryParams('limit', Number) limit: number = 25,
+        @QueryParams('sortBy', Number) sortBy: number = 1,
+        @QueryParams('genre', Number) genre: number = 1,
+    ) {
+        if (!model.game.GameSortOptions[sortBy]) {
+            throw new this.BadRequest('InvalidSortBy');
+        }
+        let games: model.game.GameSearchResult[];
+        // Filter through sort options, seeing which one was chosen
+
+        // Featured sort (subject to change at any time)
+        if (sortBy === model.game.GameSortOptions.Featured) {
+            // TODO: revise this to something more specific
+            games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
+            // Top players sort (pretty easy; sorted by most to least players)
+        } else if (sortBy === model.game.GameSortOptions['Top Players']) {
+            games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
+            // Sort by most recently updated
+        } else if (sortBy === model.game.GameSortOptions['Recently Updated']) {
+            games = await this.game.getGames(offset, limit, 'desc', 'updated_at', genre);
+            // No sort specified, so error
+        } else {
+            throw new this.BadRequest('InvalidSortBy');
+        }
+        // Return results
+        return games;
+    }
+
+    @Get('/:gameId/thumbnail')
+    @Summary('Get a game thumbnail')
+    @Description('If no thumbnail available, a placeholder will be provided')
+    @Returns(200, { type: model.game.GameThumbnail })
+    public async getGameThumbnail(
+        @PathParams('gameId', Number) gameId: number,
+    ) {
+        return await this.game.getGameThumbnail(gameId);
+    }
+
+    @Get('/thumbnails')
+    @Summary('Multi-get thumbnails by CSV of gameIds')
+    @Description('Invalid IDs will be filtered out')
+    @ReturnsArray(200, { type: model.game.GameThumbnail })
+    public async multiGetGameThumbnails(
+        @Required()
+        @QueryParams('ids', String) gameIds: string,
+    ) {
+        if (!gameIds) {
+            throw new this.BadRequest('InvalidIds');
+        }
+        const idsArray = gameIds.split(',');
+        if (idsArray.length < 1) {
+            throw new this.BadRequest('InvalidIds');
+        }
+        const filteredIds: Array<number> = [];
+        let allIdsValid = true;
+        idsArray.forEach((id) => {
+            const gameId = parseInt(id, 10) as number;
+            if (!Number.isInteger(gameId)) {
+                allIdsValid = false
+            }
+            filteredIds.push(gameId);
+        });
+        const safeIds = Array.from(new Set(filteredIds));
+        if (safeIds.length > 25) {
+            throw new this.BadRequest('TooManyIds');
+        }
+        let results = await this.game.multiGetGameThumbnails(safeIds);
+        return results;
+    }
+
+    /**
+     * Get the Map of a Game ID
+     * @param gameId 
+     */
+    @Get('/:gameId/map')
+    @Summary('Get the map of a {gameId}. Authentication required')
+    @Returns(200, { type: String })
+    @Use(GameAuth)
+    public async getMap(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('gameId', Number) gameId: number,
+        @Res() res: Res,
+    ) {
+        res.set('access-control-allow-origin', 'null');
+        res.set('access-control-allow-credentials', 'false');
+        // Confirm Exists
+        let gameInfo;
+        try {
+            gameInfo = await this.game.getInfo(gameId);
+        } catch (e) {
+            console.log(e);
+            throw new this.BadRequest('InvalidGameId');
+        }
+        if (gameInfo.gameState !== model.game.GameState.public) {
+            throw new this.Conflict('InvalidGameState');
+        }
+        // Game Exists, so grab map/content
+        const map = await this.game.getGameMap(gameId);
+        const mapContent = await this.game.getMapContent(map.scriptUrl);
+        const script = jsObfuse.obfuscate(`
+            (function(scene){
+                // Script Goes Here
+
+                ${mapContent}
+
+                // End Script
+            })();
+            `, scriptOptions);
+        return new SimpleCrypto(GAME_KEY).encrypt(script.getObfuscatedCode());
+    }
+
+    /**
+     * Get the Map of a Game ID
+     * @param gameId 
+     */
+    @Get('/:gameId/scripts')
+    @Summary('Get a game\'s client scripts.')
+    @Use(GameAuth)
+    public async getClientScripts(
+        @PathParams('gameId', Number) gameId: number,
+        @Res() res: Res,
+    ): Promise<string> {
+        res.set('access-control-allow-origin', 'null');
+        res.set('access-control-allow-credentials', 'false');
+        // Confirm Exists
+        let gameInfo;
+        try {
+            gameInfo = await this.game.getInfo(gameId);
+        } catch (e) {
+            console.error('error grabbing game info: ' + e);
+            throw new this.BadRequest('InvalidGameId');
+        }
+        if (gameInfo.gameState !== model.game.GameState.public) {
+            throw new this.Conflict('InvalidGameState');
+        }
+        // Game Exists, so grab map/content
+        const scripts = await this.game.getGameScripts(gameId, model.game.ScriptType.client);
+        let scriptString = '';
+        for (const script of scripts) {
+            const content = await this.game.getScriptContent(script.scriptUrl);
+            scriptString = scriptString + '\n' + content;
+        }
+        const script = jsObfuse.obfuscate(`
+            (function(scene){
+                // Script Goes Here
+
+                ${scriptString}
+
+                // End Script
+            })();
+            `, scriptOptions);
+        return new SimpleCrypto(GAME_KEY).encrypt(script.getObfuscatedCode());
+    }
+
+    /**
+     * Get Primary Client Script
+     */
+    @Get('/client.js')
+    @Summary('Get the primary game client.js')
+    @Use(NoAuth)
+    public async getClientScript(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Res() res: Res,
+    ) {
+        res.set({ 'content-type': 'application/javascript' });
+        res.set({ 'content-length': code.length });
         res.send(code);
     }
 
@@ -450,12 +446,12 @@ export default class GameController extends controller {
     @Post('/create')
     @Use(csrf, YesAuth)
     @Summary('Create a game')
-    @Returns(409, {type: model.Error, description: 'InvalidPermissions: User must be staff rank 1 or higher\n'})
-    @Returns(400, {type: model.Error, description: 'TooManyGames User has created 5 games already\nInvalidNameOrDescription: Name must be between 1 and 32 characters; description must be less than 512 characters\n'})
+    @Returns(409, { type: model.Error, description: 'InvalidPermissions: User must be staff rank 1 or higher\n' })
+    @Returns(400, { type: model.Error, description: 'TooManyGames User has created 5 games already\nInvalidNameOrDescription: Name must be between 1 and 32 characters; description must be less than 512 characters\n' })
     @Use(csrf, YesAuth)
     public async createGame(
         @Locals('userInfo') userInfo: model.user.UserInfo,
-        @BodyParams('name', String) gameName: string, 
+        @BodyParams('name', String) gameName: string,
         @BodyParams('description', String) gameDescription: string
     ) {
         // Verify has perms
@@ -499,13 +495,13 @@ export default class GameController extends controller {
      */
     @Patch('/:gameId')
     @Summary('Update a game')
-    @Returns(400, {type: model.Error,description: 'InvalidNameOrDescription: Name must be between 1 and 32 characters; description can be at most 512 characters\nInvalidMaxPlayers: Must be between 1 and 10\nInvalidGenre: Please specify a valid model.game.GameGenres\n'})
+    @Returns(400, { type: model.Error, description: 'InvalidNameOrDescription: Name must be between 1 and 32 characters; description can be at most 512 characters\nInvalidMaxPlayers: Must be between 1 and 10\nInvalidGenre: Please specify a valid model.game.GameGenres\n' })
     @Use(csrf, YesAuth)
     public async updateGame(
         @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('gameId', Number) gameId: number, 
-        @BodyParams('name', String) gameName: string, 
-        @BodyParams('description', String) gameDescription: string, 
+        @PathParams('gameId', Number) gameId: number,
+        @BodyParams('name', String) gameName: string,
+        @BodyParams('description', String) gameDescription: string,
         @BodyParams('maxPlayers', Number) maxPlayers: number,
         @BodyParams('genre', Number) genre: number,
     ): Promise<{ success: true }> {
@@ -538,7 +534,7 @@ export default class GameController extends controller {
     @Use(csrf, YesAuth)
     public async updateMapScript(
         @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('gameId', Number) gameId: number, 
+        @PathParams('gameId', Number) gameId: number,
         @BodyParams('script', String) newScriptContent: string
     ) {
         // Verify Ownership
@@ -563,7 +559,7 @@ export default class GameController extends controller {
     @Use(csrf, YesAuth)
     public async deleteScript(
         @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('gameId', Number) gameId: number, 
+        @PathParams('gameId', Number) gameId: number,
         @PathParams('scriptId', Number) scriptId: number
     ): Promise<{ success: true }> {
         // Verify Ownership
@@ -592,7 +588,7 @@ export default class GameController extends controller {
     @Use(csrf, YesAuth)
     public async createClientScript(
         @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('gameId', Number) gameId: number, 
+        @PathParams('gameId', Number) gameId: number,
         @BodyParams('script', String) scriptContent: string
     ): Promise<{ success: true }> {
         // Verify Ownership
@@ -621,7 +617,7 @@ export default class GameController extends controller {
     @Use(csrf, YesAuth)
     public async createServerScript(
         @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('gameId', Number) gameId: number, 
+        @PathParams('gameId', Number) gameId: number,
         @BodyParams('script', String) scriptContent: string
     ): Promise<{ success: true }> {
         // Verify Ownership
@@ -651,8 +647,8 @@ export default class GameController extends controller {
     @Use(csrf, YesAuth)
     public async updateScriptContent(
         @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('gameId', Number) gameId: number, 
-        @BodyParams('script', String) scriptContent: string, 
+        @PathParams('gameId', Number) gameId: number,
+        @BodyParams('script', String) scriptContent: string,
         @PathParams('scriptId', Number) scriptId: number
     ): Promise<{ success: true }> {
         // Verify Ownership
@@ -675,7 +671,7 @@ export default class GameController extends controller {
      */
     @Post('/:gameId/join')
     @Summary('Join a game')
-    @Returns( 400, {type: model.Error, description: 'InvalidGameState: Game state does not allow joining\n'})
+    @Returns(400, { type: model.Error, description: 'InvalidGameState: Game state does not allow joining\n' })
     public async requestGameJoin(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('gameId', Number) gameId: number
@@ -724,7 +720,7 @@ export default class GameController extends controller {
      * Leave all games
      */
     public async leaveAllGames(
-       userInfo: model.user.UserInfo,
+        userInfo: model.user.UserInfo,
     ): Promise<{ success: true }> {
         // Kick out of existing game (if any)
         await this.game.leaveServer(userInfo.userId).catch((e) => { })
@@ -743,15 +739,15 @@ export default class GameController extends controller {
 /**
  * WSS Route
  */
-wss.on('connection', async function connection(ws, req: any) {
+wss.on('connection', async function connection(ws, req: any, authCode: { userId: number; username: string; }) {
     if (req.url !== '/game-sockets/websocket.aspx') {
         // someone elses job
         return;
-    } 
+    }
+    console.log(authCode);
     console.log('connection started');
     // If no session, close
-    const sess = req.session;
-    if (!sess) {
+    if (!authCode) {
         console.log('no session');
         ws.close();
         return;
@@ -759,8 +755,8 @@ wss.on('connection', async function connection(ws, req: any) {
     // Setup Listener
     const context = {
         'UserInfo': {
-            'userId': sess.userdata.id,
-            'username': sess.userdata.Username,
+            'userId': authCode.userId,
+            'username': authCode.username,
             'theme': 0,
             'primaryBalance': 0,
             'secondaryBalance': 0,
@@ -794,11 +790,11 @@ wss.on('connection', async function connection(ws, req: any) {
     });
     // On message
     ws.on('message', async function incoming(ev: string) {
-        console.log('ws messaged recieved');
+        console.log('ws message recieved');
         let data;
         try {
             data = JSON.parse(ev);
-        }catch{
+        } catch{
             // Error parsing data. Ignore for now...
             return;
         }

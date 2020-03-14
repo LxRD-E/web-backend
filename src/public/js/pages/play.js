@@ -5,8 +5,21 @@ let currentGenre = 1;
 let currentOffset = 0;
 let currentLimit = 25;
 
+function getUrlVars() {
+    var vars = {};
+    var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+        vars[key] = value;
+    });
+    return vars;
+}
+let _selectedGenreQueryParam = getUrlVars()['genre'];
+if (_selectedGenreQueryParam) {
+    currentGenre = parseInt(_selectedGenreQueryParam);
+}
+
 let isLoading = false;
 function loadGames(addTopTwoGamesToHeader = false) {
+    history.replaceState({genre: currentGenre, sort: currentSortMode}, "Free 3D Games", "?genre="+currentGenre+'&sortBy='+currentSortMode)
     isLoading = true;
     request('/game/search?genre='+currentGenre+'&sortBy='+currentSortMode+'&limit='+currentLimit+'&offset='+currentOffset).then((d) => {
         $('#topTwoGames').empty()
@@ -152,7 +165,16 @@ function loadGames(addTopTwoGamesToHeader = false) {
         isLoading = false;
     });
 }
-loadGames(true);
+if (currentGenre === 1) {
+    loadGames(true);
+}else{
+    $('.genreoption').find('li').css('opacity','0.5');
+    $('.genreoption').find('li').css('font-weight','400');
+    $('.genreoption[data-id='+currentGenre+']').find('li').css('opacity',1).css('font-weight',600);
+
+    loadGames();
+}
+
 $(document).on('click', '.sortoption', function(e) {
     e.preventDefault();
     if (isLoading) {
@@ -168,10 +190,10 @@ $(document).on('click', '.sortoption', function(e) {
     let modeInt = parseInt($(this).attr('data-id'));
     let modeName = xss($(this).attr('data-title'));
 
-    $('.sortoption').css('opacity','0.5');
-    $('.sortoption').css('font-weight','400');
-    $(this).css('opacity',1);
-    $(this).css('font-weight',600);
+    $('.sortoption').find('li').css('opacity','0.5');
+    $('.sortoption').find('li').css('font-weight','400');
+    $(this).find('li').css('opacity',1);
+    $(this).find('li').css('font-weight',600);
 
     currentSortMode = modeInt;
     $('#title').html(modeName);
@@ -191,10 +213,10 @@ $(document).on('click', '.genreoption', function(e) {
     `);
     let modeInt = parseInt($(this).attr('data-id'));
 
-    $('.genreoption').css('opacity','0.5');
-    $('.genreoption').css('font-weight','400');
-    $(this).css('opacity',1);
-    $(this).css('font-weight',600);
+    $('.genreoption').find('li').css('opacity','0.5');
+    $('.genreoption').find('li').css('font-weight','400');
+    $(this).find('li').css('opacity',1);
+    $(this).find('li').css('font-weight',600);
 
     currentGenre = modeInt;
     loadGames();

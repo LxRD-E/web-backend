@@ -438,12 +438,12 @@ export default class AuthController extends controller {
         };
     }
 
-    @Get('/feed')
-    @Summary('Get the authenticated user\'s feed. Hardcoded limit of 25 statuses per request')
+    @Get('/feed/friends')
+    @Summary('Get the authenticated user\'s friends feed.')
     @ReturnsArray(200, { type: model.user.UserStatus })
     @Returns(401, { type: model.Error, description: 'LoginRequired: Login Required\n' })
     @UseBeforeEach(YesAuth)
-    public async getFeed(
+    public async getFeedForFriends(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @QueryParams('offset') offset: number = 0,
         @QueryParams('limit', Number) limit = 100,
@@ -457,6 +457,35 @@ export default class AuthController extends controller {
             return [];
         }
         let feed = await this.user.multiGetStatus(arrayOfIds, offset, limit);
+        return feed;
+    }
+
+    @Get('/feed/groups')
+    @Summary('Get the authenticated user\'s groups feed.')
+    @ReturnsArray(200, { type: model.group.groupShout })
+    @Returns(401, { type: model.Error, description: 'LoginRequired: Login Required\n' })
+    @UseBeforeEach(YesAuth)
+    public async getFeedForGroups(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @QueryParams('offset') offset: number = 0,
+        @QueryParams('limit', Number) limit = 100,
+    ) {
+        let groups = await this.user.getGroups(userInfo.userId);
+        const arrayOfIds: Array<number> = [];
+        groups.forEach(obj => arrayOfIds.push(obj.groupId));
+        if (arrayOfIds.length === 0) {
+            // Return empty array
+            return [];
+        }
+        // grab perms of each groupId to make sure user can view shout
+        let goodGroups: number[] = [];
+        for (const item of arrayOfIds) {
+            let permissions = await this.group.getUserRole(item, userInfo.userId);
+            if (permissions.permissions.getShout) {
+                goodGroups.push(item);
+            }
+        }
+        let feed = await this.group.getShouts(goodGroups, limit, offset);
         return feed;
     }
 

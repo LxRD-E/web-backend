@@ -15,6 +15,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@tsed/common");
+const swagger_1 = require("@tsed/swagger");
 exports.MAX_GROUPS = 100;
 exports.MAX_GROUP_ROLES = 18;
 exports.MAX_RANK_VALUE = 255;
@@ -132,6 +133,31 @@ __decorate([
     __metadata("design:type", groupPermissions)
 ], roleInfo.prototype, "permissions", void 0);
 exports.roleInfo = roleInfo;
+class groupShout {
+}
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('UserId that made the shout'),
+    __metadata("design:type", Number)
+], groupShout.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('groupId that made the shout'),
+    __metadata("design:type", Number)
+], groupShout.prototype, "groupId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], groupShout.prototype, "shout", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], groupShout.prototype, "date", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], groupShout.prototype, "thumbnailCatalogId", void 0);
+exports.groupShout = groupShout;
 var groupStatus;
 (function (groupStatus) {
     groupStatus[groupStatus["locked"] = 1] = "locked";

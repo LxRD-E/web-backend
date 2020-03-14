@@ -19,6 +19,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const ts_httpexceptions_1 = require("ts-httpexceptions");
 const common_1 = require("@tsed/common");
+const Auth = require("../dal/auth");
+const moment = require("moment");
 let YesAuth = class YesAuth {
     use(req, res) {
         if (res.locals.userInfo && res.locals.userInfo.userId && typeof res.locals.userInfo.userId !== 'undefined') {
@@ -59,4 +61,30 @@ NoAuth = __decorate([
     common_1.Middleware()
 ], NoAuth);
 exports.NoAuth = NoAuth;
+let GameAuth = class GameAuth {
+    use(req, res) {
+        let data = req.query['authCode'];
+        if (!data) {
+            throw new ts_httpexceptions_1.Unauthorized('LoginRequired');
+        }
+        let gameAuthData = Auth.decodeGameAuthCode(data);
+        if (!moment().add(15, 'seconds').isSameOrAfter(moment(gameAuthData.iat * 1000))) {
+            throw new ts_httpexceptions_1.Unauthorized('LoginRequired');
+        }
+        let userInfo = res.locals.userInfo;
+        userInfo = userInfo || {};
+        userInfo.userId = gameAuthData.userId;
+        userInfo.username = gameAuthData.username;
+    }
+};
+__decorate([
+    __param(0, common_1.Req()), __param(1, common_1.Res()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], GameAuth.prototype, "use", null);
+GameAuth = __decorate([
+    common_1.Middleware()
+], GameAuth);
+exports.GameAuth = GameAuth;
 

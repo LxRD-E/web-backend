@@ -65,8 +65,8 @@ exports.generateCspWithNonce = async (req, res, next, randomBytesFunction = rand
         nonce = nonceBuffer.toString('base64');
     }
     let headerString;
-    if (req.originalUrl.match(/\/game\/(\d+)\/play/g)) {
-        headerString = 'script-src \'nonce-' + nonce + '\'; ' + "'unsafe-eval' " + exports.getCspString();
+    if (req.originalUrl.match(/\/game\/(\d+)\/sandbox/g)) {
+        headerString = 'script-src \'nonce-' + nonce + '\' ' + "'unsafe-eval'; " + exports.getCspString();
     }
     else {
         headerString = 'script-src \'nonce-' + nonce + '\'; ' + exports.getCspString();

@@ -127,8 +127,21 @@ class GroupsDAL extends _init {
      * @param groupId 
      */
     public async getShout(groupId: number): Promise<groups.groupShout> {
-        const shout = await this.knex("group_shout").select("userid as userId","shout","date").where({"groupid":groupId}).limit(1).orderBy("id", "desc");
+        const shout = await this.knex("group_shout").select("userid as userId","shout","date",'groupid as groupId').where({"groupid":groupId}).limit(1).orderBy("id", "desc");
         return shout[0] as groups.groupShout;
+    }
+
+    /**
+     * Multi-Get Group Shouts
+     * @param groupIds
+     */
+    public async getShouts(groupIds: number[], limit: number = 100, offset: number = 0): Promise<groups.groupShout[]> {
+        let shout = this.knex("group_shout").select("group_shout.userid as userId","group_shout.shout","group_shout.date",'group_shout.groupid as groupId','groups.thumbnail_catalogid as thumbnailCatalogId').orderBy("group_shout.id", "desc").limit(limit).offset(offset).innerJoin('groups','groups.id','group_shout.groupid');
+        for (const item of groupIds) {
+            shout = shout.orWhere('groupid','=',item);
+        }
+        const shoutResults = await shout;
+        return shoutResults as groups.groupShout[];
     }
 
     /**

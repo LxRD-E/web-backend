@@ -271,7 +271,7 @@
             <div id="footerUpper" class="row">
                 <div class="container">
                     <div class="content" style="width:100%;">
-                    <div class="col-12" style="padding: 3rem 0;">
+                    <div class="col-12" style="padding: 3rem 0 0 0;">
                         <div class="row" style="padding-bottom:1rem;">
                             <div class="col-12">
                                 <h2 style="">Hindi Gamer Club</h2>
@@ -280,8 +280,8 @@
                         <div class="row">
                             <div class="col-6 col-md-4 footerBarListItems">
                                 <h5>COMPANY</h5>
-                                <p style="font-size:0.85rem;"><a href="https://blog.hindigamer.club/">Blog</a></p>
-                                <p style="font-size:0.85rem;"><a href="https://blog.hindigamer.club/hey-were-hiring/">Jobs</a></p>
+                                <p style="font-size:0.85rem;"><a href="/play">Play</a></p>
+                                <p style="font-size:0.85rem;"><a href="/forum/9?page=1">Blog</a></p>
                                 <p style="font-size:0.85rem;"><a href="/staff">Staff</a></p>
                                 <p style="font-size:0.85rem;"><a href="/terms">Terms of Service</a></p>
                                 <p style="font-size:0.85rem;"><a href="/terms#privacypolicy">Privacy Policy</a></p>
@@ -293,9 +293,18 @@
                             </div>
                             <div class="col-12 col-md-4 footerBarListItems">
                                 <p>
-                                    idk maybe we can put like a tagline or description here or something
+                                    Free 3D in-browser video games. Use your own virtual 3D sanbox to create nearly whatever you want, the only limitation is your imagination.
                                 </p>
                             </div>
+                        </div>
+                        <div class="row" style="margin-top:2rem;">
+                                @for (const genre in model.gameGenres) {
+                                    @if (Number.isInteger(parseInt(genre, 10))) {
+                                        <div class="col text-center text-truncate" style="padding-left: 5px;padding-right: 5px;">
+                                            <p style="font-size:0.75rem;"><a href="/play?genre=@genre">@model.gameGenres[genre]</a></p>
+                                        </div>
+                                    }
+                                }
                         </div>
                     </div>
                         <div class="col-12">
@@ -303,7 +312,7 @@
                                 <div class="mr-auto">
                                     <div class="row justify-content-center">
                                         <div class="col-12">
-                                            <p style="color:white;padding-top: 10%;font-size:0.85rem;">&copy; @model.year Hindi Gamer Club</p>
+                                            <p style="padding-top: 10%;font-size:0.85rem;">&copy; @model.year Hindi Gamer Club</p>
                                         </div>
                                     </div>
                                 </div>

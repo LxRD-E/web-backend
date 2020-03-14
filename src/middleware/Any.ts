@@ -89,8 +89,8 @@ export const generateCspWithNonce = async (req: Request, res: Response, next: Ne
         nonce = nonceBuffer.toString('base64');
     }
     let headerString;
-    if (req.originalUrl.match(/\/game\/(\d+)\/play/g)) {
-        headerString = 'script-src \'nonce-' + nonce + '\'; ' + "'unsafe-eval' " + getCspString();
+    if (req.originalUrl.match(/\/game\/(\d+)\/sandbox/g)) {
+        headerString = 'script-src \'nonce-' + nonce + '\' ' + "'unsafe-eval'; " + getCspString();
     }else{
         headerString = 'script-src \'nonce-' + nonce + '\'; ' + getCspString();
     }

@@ -310,7 +310,7 @@ let AuthController = class AuthController extends controller_1.default {
             username: username,
         };
     }
-    async getFeed(userInfo, offset = 0, limit = 100) {
+    async getFeedForFriends(userInfo, offset = 0, limit = 100) {
         let friends = await this.user.getFriends(userInfo.userId, 0, 200, 'asc');
         const arrayOfIds = [];
         friends.forEach((obj) => {
@@ -320,6 +320,23 @@ let AuthController = class AuthController extends controller_1.default {
             return [];
         }
         let feed = await this.user.multiGetStatus(arrayOfIds, offset, limit);
+        return feed;
+    }
+    async getFeedForGroups(userInfo, offset = 0, limit = 100) {
+        let groups = await this.user.getGroups(userInfo.userId);
+        const arrayOfIds = [];
+        groups.forEach(obj => arrayOfIds.push(obj.groupId));
+        if (arrayOfIds.length === 0) {
+            return [];
+        }
+        let goodGroups = [];
+        for (const item of arrayOfIds) {
+            let permissions = await this.group.getUserRole(item, userInfo.userId);
+            if (permissions.permissions.getShout) {
+                goodGroups.push(item);
+            }
+        }
+        let feed = await this.group.getShouts(goodGroups, limit, offset);
         return feed;
     }
     async updateStatus(userInfo, newStatus) {
@@ -588,8 +605,8 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "signup", null);
 __decorate([
-    common_1.Get('/feed'),
-    swagger_1.Summary('Get the authenticated user\'s feed. Hardcoded limit of 25 statuses per request'),
+    common_1.Get('/feed/friends'),
+    swagger_1.Summary('Get the authenticated user\'s friends feed.'),
     swagger_1.ReturnsArray(200, { type: model.user.UserStatus }),
     swagger_1.Returns(401, { type: model.Error, description: 'LoginRequired: Login Required\n' }),
     common_1.UseBeforeEach(Auth_1.YesAuth),
@@ -599,7 +616,20 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [model.user.UserInfo, Number, Object]),
     __metadata("design:returntype", Promise)
-], AuthController.prototype, "getFeed", null);
+], AuthController.prototype, "getFeedForFriends", null);
+__decorate([
+    common_1.Get('/feed/groups'),
+    swagger_1.Summary('Get the authenticated user\'s groups feed.'),
+    swagger_1.ReturnsArray(200, { type: model.group.groupShout }),
+    swagger_1.Returns(401, { type: model.Error, description: 'LoginRequired: Login Required\n' }),
+    common_1.UseBeforeEach(Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.QueryParams('offset')),
+    __param(2, common_1.QueryParams('limit', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "getFeedForGroups", null);
 __decorate([
     common_1.Patch('/status'),
     swagger_1.Summary('Update the authenticated user\'s status'),

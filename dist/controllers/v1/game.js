@@ -22,7 +22,6 @@ const simple_crypto_js_1 = require("simple-crypto-js");
 const websockets_1 = require("../../start/websockets");
 const config_1 = require("../../helpers/config");
 const GAME_KEY = config_1.default.encryptionKeys.game;
-const model = require("../../models/models");
 const allowedDomains = [];
 if (process.env.NODE_ENV === 'development') {
     allowedDomains.push('http://localhost/', 'http://localhost:3000/', 'http://localhost', 'http://localhost:3000');
@@ -46,117 +45,19 @@ const scriptOptions = {
     renameGlobals: true,
     domainLock: allowedDomains,
 };
-const controller_1 = require("../controller");
-const common_1 = require("@tsed/common");
-const swagger_1 = require("@tsed/swagger");
-const Auth_1 = require("../../middleware/Auth");
-const auth_1 = require("../../dal/auth");
-let GameController = class GameController extends controller_1.default {
-    async getGames(offset = 0, limit = 25, sortBy = 1, genre = 1) {
-        if (!model.game.GameSortOptions[sortBy]) {
-            throw new this.BadRequest('InvalidSortBy');
-        }
-        let games;
-        if (sortBy === model.game.GameSortOptions.Featured) {
-            games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
-        }
-        else if (sortBy === model.game.GameSortOptions['Top Players']) {
-            games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
-        }
-        else if (sortBy === model.game.GameSortOptions['Recently Updated']) {
-            games = await this.game.getGames(offset, limit, 'desc', 'updated_at', genre);
-        }
-        else {
-            throw new this.BadRequest('InvalidSortBy');
-        }
-        return games;
-    }
-    async getGameThumbnail(gameId) {
-        return await this.game.getGameThumbnail(gameId);
-    }
-    async multiGetGameThumbnails(gameIds) {
-        if (!gameIds) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const idsArray = gameIds.split(',');
-        if (idsArray.length < 1) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const filteredIds = [];
-        let allIdsValid = true;
-        idsArray.forEach((id) => {
-            const gameId = parseInt(id, 10);
-            if (!Number.isInteger(gameId)) {
-                allIdsValid = false;
-            }
-            filteredIds.push(gameId);
-        });
-        const safeIds = Array.from(new Set(filteredIds));
-        if (safeIds.length > 25) {
-            throw new this.BadRequest('TooManyIds');
-        }
-        let results = await this.game.multiGetGameThumbnails(safeIds);
-        return results;
-    }
-    async getMap(userInfo, gameId) {
-        let gameInfo;
-        try {
-            gameInfo = await this.game.getInfo(gameId);
-        }
-        catch (e) {
-            console.log(e);
-            throw new this.BadRequest('InvalidGameId');
-        }
-        if (gameInfo.gameState !== model.game.GameState.public) {
-            throw new this.Conflict('InvalidGameState');
-        }
-        const map = await this.game.getGameMap(gameId);
-        const mapContent = await this.game.getMapContent(map.scriptUrl);
-        const script = jsObfuse.obfuscate(`
-            (function(scene){
-                // Script Goes Here
-
-                ${mapContent}
-
-                // End Script
-            })();
-            `, scriptOptions);
-        return new simple_crypto_js_1.default(GAME_KEY).encrypt(script.getObfuscatedCode());
-    }
-    async getClientScripts(gameId) {
-        let gameInfo;
-        try {
-            gameInfo = await this.game.getInfo(gameId);
-        }
-        catch (e) {
-            console.error('error grabbing game info: ' + e);
-            throw new this.BadRequest('InvalidGameId');
-        }
-        if (gameInfo.gameState !== model.game.GameState.public) {
-            throw new this.Conflict('InvalidGameState');
-        }
-        const scripts = await this.game.getGameScripts(gameId, model.game.ScriptType.client);
-        let scriptString = '';
-        for (const script of scripts) {
-            const content = await this.game.getScriptContent(script.scriptUrl);
-            scriptString = scriptString + '\n' + content;
-        }
-        const script = jsObfuse.obfuscate(`
-            (function(scene){
-                // Script Goes Here
-
-                ${scriptString}
-
-                // End Script
-            })();
-            `, scriptOptions);
-        return new simple_crypto_js_1.default(GAME_KEY).encrypt(script.getObfuscatedCode());
-    }
-    async getClientScript(userInfo, res) {
-        let simpleCryptoData = model.game.getSimpleCrypto();
-        const script = jsObfuse.obfuscate(`
+const COPYRIGHT_DISCLAIMER = `/**
+ * Copyright (c) Hindi Gamer Club - All Rights Reserved
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * You are not allowed to copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software.
+ * This software includes various open-source libraries which have licenses provided where relevent and required.
+ * View our full terms of service here: https://hindigamer.club/terms
+ */`;
+let simpleCryptoData = model.game.getSimpleCrypto();
+const script = jsObfuse.obfuscate(`
         (function() {
             ${simpleCryptoData.lib}
+
+            const gameAuthCode = $('#gamedata').attr('data-authcode');
 
             /**
             * Game Data
@@ -177,22 +78,7 @@ let GameController = class GameController extends controller_1.default {
                 if (window.location.host.slice(0,9) === 'localhost') {
                     wsurl = "ws://localhost:8080/game-sockets/websocket.aspx";
                 }
-                function getCsrf() {
-                    // For now, since the ws connection can't validate csrf tokens, we have to make this request which will result in a csrf validation error. 
-                    // 
-                    // In the future, I would probably like to look into either a) using a custom 'csrf'/'authentication' type system for ws connections, or an endpoint that returns a csrf token in the body/headers while returning '200 OK'
-                    return new Promise(function(res, rej) {
-                        $.ajax({
-                            type: "POST",
-                            url: '/api/v1/chat/metadata',
-                            data: '',
-                            complete: function(xhr) {
-                                res(xhr.getResponseHeader('X-CSRF-Token'));
-                            },
-                
-                        });
-                    });
-                }
+
 
                 var isTrying = false;
                 function attemptRetry(closeEvent) {
@@ -210,8 +96,7 @@ let GameController = class GameController extends controller_1.default {
                 }
 
                 function setupListen() {
-                    getCsrf().then(function(csrf) {
-                        var sock = new WebSocket(wsurl+'?csrf='+csrf);
+                        var sock = new WebSocket(wsurl+'?gameAuth='+gameAuthCode);
                         sock.onmessage = function (event) {
                             handleWsMessage(event)
                         }
@@ -234,12 +119,11 @@ let GameController = class GameController extends controller_1.default {
                         window.onbeforeunload = function () {
                             sock.close();
                         }
-                    });
                 }
                 setupListen()
 
                 /*
-            request('/game/'+gameId+'/join', 'POST', JSON.stringify({}))
+            request('/game/'+gameId+'/join?authCode='+gameAuthCode, 'POST', JSON.stringify({}))
                 .then((d) => {
                     gameServerId = d.serverId;
                     // Setup WSS here
@@ -320,13 +204,13 @@ let GameController = class GameController extends controller_1.default {
                     // ... 
                     // IMPORT MAP HERE
 
-                    fetch('/api/v1/game/'+gameId+'/map', {credentials: 'include'}).then((d) => {
+                    fetch('/api/v1/game/'+gameId+'/map?authCode='+gameAuthCode, {credentials: 'omit', mode: 'cors'}).then((d) => {
                         return d.text();
                     }).then((d) => {
                         Function(new ${simpleCryptoData.name}(\`${GAME_KEY}\`).decrypt(d))(scene);
                     });
 
-                    fetch('/api/v1/game/'+gameId+'/scripts', {credentials: 'include'}).then((d) => {
+                    fetch('/api/v1/game/'+gameId+'/scripts?authCode='+gameAuthCode, {credentials: 'omit',  mode: 'cors'}).then((d) => {
                             return d.text();
                         }).then((d) => {
                             Function(new ${simpleCryptoData.name}(\`${GAME_KEY}\`).decrypt(d))(scene);
@@ -347,14 +231,119 @@ let GameController = class GameController extends controller_1.default {
             });
         })()
     `, scriptOptions);
-        let disclaimer = `/**
- * Copyright (c) Hindi Gamer Club - All Rights Reserved
- * Unauthorized copying of this file, via any medium, is strictly prohibited.
- * You are not allowed to copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software.
- * This software includes various open-source libraries which have licenses provided where relevent and required.
- * View our full terms of service here: https://hindigamer.club/terms
- */`;
-        let code = disclaimer + '\n' + script.getObfuscatedCode();
+let code = COPYRIGHT_DISCLAIMER + '\n' + script.getObfuscatedCode();
+const model = require("../../models/models");
+const controller_1 = require("../controller");
+const common_1 = require("@tsed/common");
+const swagger_1 = require("@tsed/swagger");
+const Auth_1 = require("../../middleware/Auth");
+const auth_1 = require("../../dal/auth");
+let GameController = class GameController extends controller_1.default {
+    async getGames(offset = 0, limit = 25, sortBy = 1, genre = 1) {
+        if (!model.game.GameSortOptions[sortBy]) {
+            throw new this.BadRequest('InvalidSortBy');
+        }
+        let games;
+        if (sortBy === model.game.GameSortOptions.Featured) {
+            games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
+        }
+        else if (sortBy === model.game.GameSortOptions['Top Players']) {
+            games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
+        }
+        else if (sortBy === model.game.GameSortOptions['Recently Updated']) {
+            games = await this.game.getGames(offset, limit, 'desc', 'updated_at', genre);
+        }
+        else {
+            throw new this.BadRequest('InvalidSortBy');
+        }
+        return games;
+    }
+    async getGameThumbnail(gameId) {
+        return await this.game.getGameThumbnail(gameId);
+    }
+    async multiGetGameThumbnails(gameIds) {
+        if (!gameIds) {
+            throw new this.BadRequest('InvalidIds');
+        }
+        const idsArray = gameIds.split(',');
+        if (idsArray.length < 1) {
+            throw new this.BadRequest('InvalidIds');
+        }
+        const filteredIds = [];
+        let allIdsValid = true;
+        idsArray.forEach((id) => {
+            const gameId = parseInt(id, 10);
+            if (!Number.isInteger(gameId)) {
+                allIdsValid = false;
+            }
+            filteredIds.push(gameId);
+        });
+        const safeIds = Array.from(new Set(filteredIds));
+        if (safeIds.length > 25) {
+            throw new this.BadRequest('TooManyIds');
+        }
+        let results = await this.game.multiGetGameThumbnails(safeIds);
+        return results;
+    }
+    async getMap(userInfo, gameId, res) {
+        res.set('access-control-allow-origin', 'null');
+        res.set('access-control-allow-credentials', 'false');
+        let gameInfo;
+        try {
+            gameInfo = await this.game.getInfo(gameId);
+        }
+        catch (e) {
+            console.log(e);
+            throw new this.BadRequest('InvalidGameId');
+        }
+        if (gameInfo.gameState !== model.game.GameState.public) {
+            throw new this.Conflict('InvalidGameState');
+        }
+        const map = await this.game.getGameMap(gameId);
+        const mapContent = await this.game.getMapContent(map.scriptUrl);
+        const script = jsObfuse.obfuscate(`
+            (function(scene){
+                // Script Goes Here
+
+                ${mapContent}
+
+                // End Script
+            })();
+            `, scriptOptions);
+        return new simple_crypto_js_1.default(GAME_KEY).encrypt(script.getObfuscatedCode());
+    }
+    async getClientScripts(gameId, res) {
+        res.set('access-control-allow-origin', 'null');
+        res.set('access-control-allow-credentials', 'false');
+        let gameInfo;
+        try {
+            gameInfo = await this.game.getInfo(gameId);
+        }
+        catch (e) {
+            console.error('error grabbing game info: ' + e);
+            throw new this.BadRequest('InvalidGameId');
+        }
+        if (gameInfo.gameState !== model.game.GameState.public) {
+            throw new this.Conflict('InvalidGameState');
+        }
+        const scripts = await this.game.getGameScripts(gameId, model.game.ScriptType.client);
+        let scriptString = '';
+        for (const script of scripts) {
+            const content = await this.game.getScriptContent(script.scriptUrl);
+            scriptString = scriptString + '\n' + content;
+        }
+        const script = jsObfuse.obfuscate(`
+            (function(scene){
+                // Script Goes Here
+
+                ${scriptString}
+
+                // End Script
+            })();
+            `, scriptOptions);
+        return new simple_crypto_js_1.default(GAME_KEY).encrypt(script.getObfuscatedCode());
+    }
+    async getClientScript(userInfo, res) {
         res.set({ 'content-type': 'application/javascript' });
         res.set({ 'content-length': code.length });
         res.send(code);
@@ -529,26 +518,28 @@ __decorate([
     common_1.Get('/:gameId/map'),
     swagger_1.Summary('Get the map of a {gameId}. Authentication required'),
     swagger_1.Returns(200, { type: String }),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.GameAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('gameId', Number)),
+    __param(2, common_1.Res()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number]),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Object]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "getMap", null);
 __decorate([
     common_1.Get('/:gameId/scripts'),
     swagger_1.Summary('Get a game\'s client scripts.'),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.GameAuth),
     __param(0, common_1.PathParams('gameId', Number)),
+    __param(1, common_1.Res()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "getClientScripts", null);
 __decorate([
     common_1.Get('/client.js'),
     swagger_1.Summary('Get the primary game client.js'),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.NoAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Res()),
     __metadata("design:type", Function),
@@ -654,21 +645,21 @@ GameController = __decorate([
     common_1.Controller('/game')
 ], GameController);
 exports.default = GameController;
-websockets_1.wss.on('connection', async function connection(ws, req) {
+websockets_1.wss.on('connection', async function connection(ws, req, authCode) {
     if (req.url !== '/game-sockets/websocket.aspx') {
         return;
     }
+    console.log(authCode);
     console.log('connection started');
-    const sess = req.session;
-    if (!sess) {
+    if (!authCode) {
         console.log('no session');
         ws.close();
         return;
     }
     const context = {
         'UserInfo': {
-            'userId': sess.userdata.id,
-            'username': sess.userdata.Username,
+            'userId': authCode.userId,
+            'username': authCode.username,
             'theme': 0,
             'primaryBalance': 0,
             'secondaryBalance': 0,
@@ -698,7 +689,7 @@ websockets_1.wss.on('connection', async function connection(ws, req) {
         }
     });
     ws.on('message', async function incoming(ev) {
-        console.log('ws messaged recieved');
+        console.log('ws message recieved');
         let data;
         try {
             data = JSON.parse(ev);

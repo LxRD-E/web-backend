@@ -4,7 +4,7 @@ import * as http from 'http';
 import * as querystring from 'querystring';
 import * as crypto from 'crypto';
 import { Request, Response } from 'express';
-import {validateCsrf} from '../dal/auth';
+import * as Auth from '../dal/auth';
 
 export const wss = new WebSocket.Server({
     noServer: true,
@@ -15,6 +15,57 @@ webSocketServer.listen(8080);
 
 export default (): void => {
     webSocketServer.on('upgrade', function upgrade(request, socket, head) {
+        if(request.url.match(/\/game-sockets\/websocket.aspx/g)) {
+            let decodedAuth;
+            try {
+                const queryinurl = request.url.slice(request.url.indexOf('?')+1, request.url.length);
+                const query = querystring.parse(queryinurl);
+                const authCode = query['gameAuth'];
+                if (!authCode || typeof authCode !== 'string') {
+                    socket.destroy();
+                    return;
+                }
+                decodedAuth = Auth.decodeGameAuthCode(authCode);
+                request.url = request.url.slice(0, request.url.indexOf('?'));
+            }catch(e) {
+                socket.destroy();
+                return;
+            }
+            wss.handleUpgrade(request, socket, head, function(ws) {
+                wss.emit('connection', ws, request, decodedAuth);
+            });
+        }else{
+            parser(request, {} as unknown as Response, () => {
+                if (!request.session || !request.session.userdata || !request.session.userdata.id) {
+                    socket.destroy();
+                    return;
+                }
+                try {
+                    const queryinurl = request.url.slice(request.url.indexOf('?')+1, request.url.length);
+                    const query = querystring.parse(queryinurl);
+                    const csrf = query['csrf'];
+                    if (!csrf || typeof csrf !== 'string') {
+                        socket.destroy();
+                        return;
+                    }
+                    if (csrf.length !== 32) {
+                        throw false;
+                    }
+                    if (crypto.timingSafeEqual(Buffer.from(request.session.userdata.csrf, 'hex'), Buffer.from(csrf, 'hex'))) {
+                    } else {
+                        throw false;
+                    }
+                    request.url = request.url.slice(0, request.url.indexOf('?'));
+                }catch(e) {
+                    socket.destroy();
+                    return;
+                }
+                wss.handleUpgrade(request, socket, head, function(ws) {
+                    wss.emit('connection', ws, request);
+                });
+            });
+        }
+        /*
         parser(request, {} as unknown as Response, () => {
             if (!request.session || !request.session.userdata || !request.session.userdata.id) {
                 socket.destroy();
@@ -44,5 +95,6 @@ export default (): void => {
                 wss.emit('connection', ws, request);
             });
         });
+        */
     });
 }

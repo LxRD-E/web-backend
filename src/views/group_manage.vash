@@ -136,7 +136,7 @@
                             </div>
                         </div>
 
-                        <div class="col-12 col-md-12 group-settings-panel economy" style="display:none;">
+                        <div class="col-12 col-md-12 group-settings-panel economy" style="display:none;margin-bottom:1rem;">
                             <div class="card">
                                 <div class="card-body">
                                     <form>
@@ -254,7 +254,7 @@
                                     </div>
                                 </div>
                 </div>
-                <div class="row group-settings-panel economy" style="margin-top:1rem;display:none;">
+                <div class="row group-settings-panel economy" style="display:none;">
                     <div class="col-12">
                         <div class="card">
                             <div class="card-body">

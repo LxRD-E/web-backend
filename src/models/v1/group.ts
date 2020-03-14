@@ -1,4 +1,5 @@
 import { Required } from "@tsed/common";
+import { Description } from "@tsed/swagger";
 
 // meta stuff
 export const MAX_GROUPS = 100;
@@ -125,10 +126,19 @@ export interface groupMember {
     roleSetId: number;
 }
 
-export interface groupShout {
+export class groupShout {
+    @Required()
+    @Description('UserId that made the shout')
     userId: number;
+    @Required()
+    @Description('groupId that made the shout')
+    groupId: number;
+    @Required()
     shout: string;
-    date: object;
+    @Required()
+    date: string;
+    @Required()
+    thumbnailCatalogId: number;
 }
 
 export interface wall {

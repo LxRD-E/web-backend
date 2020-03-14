@@ -27,19 +27,19 @@
                                 <div class="col-12" style="margin-bottom:1rem;">
                                     <h3>Help</h3>
                                 </div>
-                                <div class="col-12">
+                                <div class="col-12" style="margin-bottom:1rem;">
                                     <h4 style="font-size:1rem;margin-bottom:0;">How does the ad system work?</h4>
                                     <p>When you purchase an ad, each single primary currency you spend on it gives it a higher chance of being randomly picked and displayed to end users. For instance, if John spends 90 primary on one ad and Jane spends 10 primary on one ad, you have a 90% chance of seeing John's ad (and a 10% chance of seeing Jane's ad). We do not offer any sort of targeting (i.e. based on country, signed in or signed out, based on gender, based on birth-year, etc), although we might look into more advanced offerings in the future.</p>
                                 </div>
-                                <div class="col-12">
+                                <div class="col-12" style="margin-bottom:1rem;">
                                     <h4 style="font-size:1rem;margin-bottom:0;">Can I advertise a link to something outside of this website?</h4>
                                     <p>No. At this time, you may only advertise links to catalog items and groups.</p>
                                 </div>
-                                <div class="col-12">
+                                <div class="col-12" style="margin-bottom:1rem;">
                                     <h4 style="font-size:1rem;margin-bottom:0;">I can't bid on my ad!</h4>
                                     <p>You cannot bid on ads that have been declined by moderation, or ads that are pending moderation approval. If your ad was declined, you'll recieve a message in your inbox, otherwise you should just wait for a moderator to approve it.</p>
                                 </div>
-                                <div class="col-12">
+                                <div class="col-12" style="margin-bottom:1rem;">
                                     <h4 style="font-size:1rem;margin-bottom:0;">What sort of analytics do you offer?</h4>
                                     <p>You can view the click-through rate of advertisements (i.e. out of x views, y users clicked your ad) & the amount of views your ad has. You can view both of those metrics per-advertisement session, and all-time. We do not store any sort of historical data for advertisements, other than all-time views and all-time clicks. We do not offer advanced metrics, tracking, or targetting as that would violate coppa laws.</p>
                                 </div>

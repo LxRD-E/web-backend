@@ -7,6 +7,7 @@ import controller from '../controller'
 import moment = require("moment");
 import xss = require('xss');
 import Config from '../../helpers/config';
+import _ = require('lodash');
 // Models
 import { NoAuth, YesAuth } from "../../middleware/Auth";
 import {numberWithCommas} from '../../helpers/Filter';
@@ -56,6 +57,7 @@ export class WWWGameController extends controller {
                 'creatorType',
                 'creatorId',
                 'genre',
+                'createdAt',
             ]);
             gameThumb = await this.game.getGameThumbnail(gameId);
         }catch(e) {
@@ -83,6 +85,15 @@ export class WWWGameController extends controller {
         ViewData.page.ThumbnailURL = gameThumb.url;
         ViewData.title = gameInfo.gameName;
         ViewData.page.gameGenreString = model.game.GameGenres[gameInfo.genre];
+        ViewData.page.genres = model.game.GameGenres;
+        let possibleGenres: number[] = [];
+        for (const genre in model.game.GameGenres) {
+            let numberVal = parseInt(genre, 10);
+            if (Number.isInteger(numberVal)) {
+                possibleGenres.push(numberVal);
+            } 
+        }
+        ViewData.page.recommendedGenres = _.sampleSize(possibleGenres, 4);
         return ViewData;
     }
     /**
@@ -111,6 +122,7 @@ export class WWWGameController extends controller {
         @Locals('userInfo') userData: model.user.SessionUserInfo,
         @PathParams('gameId', Number) gameId: number
     ) {
+        console.log('Loading play page!');
         // Confirm place is valid
         try {
             const gameInfo = await this.game.getInfo(gameId, ['gameState']);
@@ -121,8 +133,56 @@ export class WWWGameController extends controller {
             // Invalid ID
             throw new this.BadRequest('InvalidGameId');
         }
+        // generate an auth code
+        let gameAuthCode = await this.auth.generateGameAuthCode(userData.userId, userData.username);
         let ViewData = new this.WWWTemplate({'title': 'Play'});
         ViewData.page.gameId = gameId;
+        ViewData.page.authCode = gameAuthCode;
+
+        return ViewData;
+    }
+
+    @Get('/game-check/browser-compatibility')
+    @Summary('Confirm browser respects iframe sandbox attribute')
+    public browserCompatibilityCheck(
+        @Res() res: Res,
+    ) {
+        res.send(`<!DOCTYPE html><html><head><title>Checking your browser...</title></head><body><script nonce="${res.locals.nonce}">try{alert("Sorry, your browser is not supported.");window.top.location.href = "/support/browser-not-compatible";}catch(e){}</script></body></html>`);
+        return;
+    }
+
+    /**
+     * Load Game Play Page Sandbox
+     */
+    @Get('/game/:gameId/sandbox')
+    @Summary('Load game play page sandbox')
+    @Use(YesAuth)
+    @Render('game_sandbox')
+    public async gamePlaySandbox(
+        @Locals('userInfo') userData: model.user.SessionUserInfo,
+        @PathParams('gameId', Number) gameId: number,
+        @Required()
+        @QueryParams('authCode', String) authCode: string,
+    ) {
+        // Confirm place is valid
+        try {
+            const gameInfo = await this.game.getInfo(gameId, ['gameState']);
+            if (gameInfo.gameState !== 1) {
+                throw Error('Game state does not allow playing');
+            }
+        }catch(e) {
+            // Invalid ID
+            throw new this.BadRequest('InvalidGameId');
+        }
+        // verify auth code
+        let verifyAuthCode = await this.auth.decodeGameAuthCode(authCode);
+        if (!moment().add(15, 'seconds').isSameOrAfter(verifyAuthCode.iat * 1000)) {
+            throw new Error('InvalidAuthCode');
+        }
+        // OK, continue
+        let ViewData = new this.WWWTemplate({'title': 'Play'});
+        ViewData.page.gameId = gameId;
+        ViewData.page.authCode = authCode;
         return ViewData;
     }
 
@@ -151,6 +211,7 @@ export class WWWGameController extends controller {
                 'creatorId',
                 'maxPlayers',
                 'genre',
+                'createdAt',
             ]);
         }catch(e) {
             // Invalid ID

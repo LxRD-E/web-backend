@@ -11,10 +11,14 @@
                         <ul style="padding-left:1.25rem;list-style: none;font-size:0.85rem;">
                             @for (const sort in model.page.sorts) {
                                 @if (sort === '1') {
-                                    <li style="cursor:pointer;margin-bottom:0.25rem;font-weight:600;" data-id="1" class="sortoption" data-title="Featured Free Games">Featured</li>
+                                    <a class="normal sortoption" href="#" data-id="@sort" data-title="Featured Free Games">
+                                        <li style="cursor:pointer;margin-bottom:0.25rem;font-weight:600;">Featured</li>
+                                    </a>
                                 }else{
                                     @if (!isNaN(Number(sort))) {
-                                        <li style="cursor:pointer;opacity:0.5;margin-bottom:0.25rem;" data-id="@sort" class="sortoption" data-title="@model.page.sorts[sort]">@model.page.sorts[sort]</li>
+                                        <a class="normal sortoption" href="#" data-id="@sort" data-title="@model.page.sorts[sort]">
+                                            <li style="cursor:pointer;opacity:0.5;margin-bottom:0.25rem;">@model.page.sorts[sort]</li>
+                                        </a>
                                     }
                                 }
                             }
@@ -25,10 +29,14 @@
                         <ul style="padding-left:1.25rem;list-style: none;font-size:0.85rem;">
                             @for (const genre in model.page.genres) {
                                 @if (genre === '1') {
-                                    <li style="cursor:pointer;margin-bottom:0.25rem;font-weight:600;" data-id="1" class="genreoption">Any</li>
+                                    <a class="normal genreoption" href="#" data-id="@genre">
+                                        <li style="cursor:pointer;margin-bottom:0.25rem;font-weight:600;">Any</li>
+                                    </a>
                                 }else{
                                     @if (!isNaN(Number(genre))) {
-                                        <li style="cursor:pointer;margin-bottom:0.25rem;opacity:0.5;" data-id="@genre" class="genreoption">@model.page.genres[genre]</li>
+                                        <a class="normal genreoption" href="#" data-id="@genre">
+                                            <li style="cursor:pointer;margin-bottom:0.25rem;">@model.page.genres[genre]</li>
+                                        </a>
                                     }
                                 }
                             }

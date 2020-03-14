@@ -4,7 +4,8 @@ import crypto = require('crypto');
 import fs = require('fs');
 import path = require('path');
 let versionStr = crypto.randomBytes(16).toString('hex');
-
+// game geners
+import * as model from '../../models/models';
 // banner text stuff
 import StaffDAL  from '../../dal/staff';
 let staff = new StaffDAL();
@@ -66,4 +67,9 @@ export class WWWTemplate {
      * Banner Thing
      */
     bannerText?: string = currentBannerText;
+
+    /**
+     * Game Genres (for footer)
+     */
+    gameGenres?: any = model.game.GameGenres;
 }

@@ -75,8 +75,16 @@ class GroupsDAL extends _init_1.default {
         return members[0]["Total"];
     }
     async getShout(groupId) {
-        const shout = await this.knex("group_shout").select("userid as userId", "shout", "date").where({ "groupid": groupId }).limit(1).orderBy("id", "desc");
+        const shout = await this.knex("group_shout").select("userid as userId", "shout", "date", 'groupid as groupId').where({ "groupid": groupId }).limit(1).orderBy("id", "desc");
         return shout[0];
+    }
+    async getShouts(groupIds, limit = 100, offset = 0) {
+        let shout = this.knex("group_shout").select("group_shout.userid as userId", "group_shout.shout", "group_shout.date", 'group_shout.groupid as groupId', 'groups.thumbnail_catalogid as thumbnailCatalogId').orderBy("group_shout.id", "desc").limit(limit).offset(offset).innerJoin('groups', 'groups.id', 'group_shout.groupid');
+        for (const item of groupIds) {
+            shout = shout.orWhere('groupid', '=', item);
+        }
+        const shoutResults = await shout;
+        return shoutResults;
     }
     async getWall(groupId, offset, limit, orderBy) {
         const wall = await this.knex("group_wall").select("id as wallPostId", "groupid as groupId", "userid as userId", "content as wallPost", "date").where({ "groupid": groupId }).orderBy("id", orderBy).limit(limit).offset(offset);

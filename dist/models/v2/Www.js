@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const config_1 = require("../../helpers/config");
 const crypto = require("crypto");
 let versionStr = crypto.randomBytes(16).toString('hex');
+const model = require("../../models/models");
 const staff_1 = require("../../dal/staff");
 let staff = new staff_1.default();
 let currentBannerText = '';
@@ -30,6 +31,7 @@ class WWWTemplate {
         this.page = {};
         this.v = versionStr;
         this.bannerText = currentBannerText;
+        this.gameGenres = model.game.GameGenres;
         for (const [key, value] of Object.entries(props)) {
             this[key] = value;
         }

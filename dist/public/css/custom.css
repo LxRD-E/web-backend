@@ -470,3 +470,34 @@ div.on-hover-show-game-info-tooltip:hover > div.game-info-tooltip {
 div.on-hover-show-game-info-tooltip > div.game-info-tooltip {
     display: none;
 }
+
+button.btn-grouping-status-left {
+    text-align:left;
+    width:100%;
+}
+button.btn-grouping-status-right {
+    text-align:left;
+    width:100%;
+}
+
+@media (min-width: 992px) { 
+    button.btn-grouping-status-left {
+        border-bottom-left-radius: 0;
+        border-top-left-radius: 0;
+    }
+    button.btn-grouping-status-right {
+        border-bottom-right-radius: 0;
+        border-top-right-radius: 0;
+    }
+    div.user-feed-col-right {
+        padding-right:0;
+    }
+    div.user-feed-col-left {
+        padding-left:0;
+    }
+}
+@media (max-width: 992px) { 
+    div.user-feed-col-left {
+        margin-top:0.5rem;
+    }
+}

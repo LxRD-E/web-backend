@@ -279,11 +279,34 @@ exports.generateAuthServiceJWT = async (userId, username) => {
     return jwt.sign(obj, config_1.default.jwt.authenticationService);
 };
 exports.decodeAuthServiceJWT = (code) => {
-    if (!config_1.default.jwt || !config_1.default.jwt.twoFactor) {
-        console.error('No jwt.twoFactor specified in config.json');
+    if (!config_1.default.jwt || !config_1.default.jwt.authenticationService) {
+        console.error('No jwt.authenticationService specified in config.json');
         process.exit(1);
     }
     let val = jwt.verify(code, config_1.default.jwt.authenticationService);
+    return val;
+};
+exports.generateGameAuthCode = async (userId, username) => {
+    if (!config_1.default.jwt || !config_1.default.jwt.gameAuthentication) {
+        console.error('No jwt.gameAuthentication specified in config.json');
+        process.exit(1);
+    }
+    let obj = {
+        userId: userId,
+        username: username,
+        isAuthCode: true,
+    };
+    return jwt.sign(obj, config_1.default.jwt.gameAuthentication);
+};
+exports.decodeGameAuthCode = (code) => {
+    if (!config_1.default.jwt || !config_1.default.jwt.gameAuthentication) {
+        console.error('No jwt.gameAuthentication specified in config.json');
+        process.exit(1);
+    }
+    let val = jwt.verify(code, config_1.default.jwt.gameAuthentication);
+    if (!val.isAuthCode) {
+        throw new Error('This token is not an auth code.');
+    }
     return val;
 };
 

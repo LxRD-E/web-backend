@@ -330,10 +330,38 @@ export const generateAuthServiceJWT = async (userId: number, username: string) =
 }
 
 export const decodeAuthServiceJWT = (code: string): {userId: number; username: string; iat: number} => {
-    if (!config.jwt || !config.jwt.twoFactor) {
-        console.error('No jwt.twoFactor specified in config.json');
+    if (!config.jwt || !config.jwt.authenticationService) {
+        console.error('No jwt.authenticationService specified in config.json');
         process.exit(1);
     }
     let val = jwt.verify(code, config.jwt.authenticationService);
+    return val as any;
+}
+
+
+
+
+export const generateGameAuthCode = async (userId: number, username: string) => {
+    if (!config.jwt || !config.jwt.gameAuthentication) {
+        console.error('No jwt.gameAuthentication specified in config.json');
+        process.exit(1);
+    }
+    let obj = {
+        userId: userId,
+        username: username,
+        isAuthCode: true,
+    };
+    return jwt.sign(obj, config.jwt.gameAuthentication);
+}
+
+export const decodeGameAuthCode = (code: string): {userId: number; username: string; iat: number} => {
+    if (!config.jwt || !config.jwt.gameAuthentication) {
+        console.error('No jwt.gameAuthentication specified in config.json');
+        process.exit(1);
+    }
+    let val = jwt.verify(code, config.jwt.gameAuthentication) as {userId: number; username: string; isAuthCode?: boolean};
+    if (!val.isAuthCode) {
+        throw new Error('This token is not an auth code.');
+    }
     return val as any;
 }

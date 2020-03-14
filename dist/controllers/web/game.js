@@ -21,6 +21,8 @@ const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 const model = require("../../models/models");
 const controller_1 = require("../controller");
+const moment = require("moment");
+const _ = require("lodash");
 const Auth_1 = require("../../middleware/Auth");
 let WWWGameController = class WWWGameController extends controller_1.default {
     constructor() {
@@ -52,6 +54,7 @@ let WWWGameController = class WWWGameController extends controller_1.default {
                 'creatorType',
                 'creatorId',
                 'genre',
+                'createdAt',
             ]);
             gameThumb = await this.game.getGameThumbnail(gameId);
         }
@@ -79,6 +82,15 @@ let WWWGameController = class WWWGameController extends controller_1.default {
         ViewData.page.ThumbnailURL = gameThumb.url;
         ViewData.title = gameInfo.gameName;
         ViewData.page.gameGenreString = model.game.GameGenres[gameInfo.genre];
+        ViewData.page.genres = model.game.GameGenres;
+        let possibleGenres = [];
+        for (const genre in model.game.GameGenres) {
+            let numberVal = parseInt(genre, 10);
+            if (Number.isInteger(numberVal)) {
+                possibleGenres.push(numberVal);
+            }
+        }
+        ViewData.page.recommendedGenres = _.sampleSize(possibleGenres, 4);
         return ViewData;
     }
     async play() {
@@ -92,6 +104,7 @@ let WWWGameController = class WWWGameController extends controller_1.default {
         return ViewData;
     }
     async gamePlay(userData, gameId) {
+        console.log('Loading play page!');
         try {
             const gameInfo = await this.game.getInfo(gameId, ['gameState']);
             if (gameInfo.gameState !== 1) {
@@ -101,8 +114,33 @@ let WWWGameController = class WWWGameController extends controller_1.default {
         catch (e) {
             throw new this.BadRequest('InvalidGameId');
         }
+        let gameAuthCode = await this.auth.generateGameAuthCode(userData.userId, userData.username);
         let ViewData = new this.WWWTemplate({ 'title': 'Play' });
         ViewData.page.gameId = gameId;
+        ViewData.page.authCode = gameAuthCode;
+        return ViewData;
+    }
+    browserCompatibilityCheck(res) {
+        res.send(`<!DOCTYPE html><html><head><title>Checking your browser...</title></head><body><script nonce="${res.locals.nonce}">try{alert("Sorry, your browser is not supported.");window.top.location.href = "/support/browser-not-compatible";}catch(e){}</script></body></html>`);
+        return;
+    }
+    async gamePlaySandbox(userData, gameId, authCode) {
+        try {
+            const gameInfo = await this.game.getInfo(gameId, ['gameState']);
+            if (gameInfo.gameState !== 1) {
+                throw Error('Game state does not allow playing');
+            }
+        }
+        catch (e) {
+            throw new this.BadRequest('InvalidGameId');
+        }
+        let verifyAuthCode = await this.auth.decodeGameAuthCode(authCode);
+        if (!moment().add(15, 'seconds').isSameOrAfter(verifyAuthCode.iat * 1000)) {
+            throw new Error('InvalidAuthCode');
+        }
+        let ViewData = new this.WWWTemplate({ 'title': 'Play' });
+        ViewData.page.gameId = gameId;
+        ViewData.page.authCode = authCode;
         return ViewData;
     }
     async gameEdit(userInfo, gameId) {
@@ -119,6 +157,7 @@ let WWWGameController = class WWWGameController extends controller_1.default {
                 'creatorId',
                 'maxPlayers',
                 'genre',
+                'createdAt',
             ]);
         }
         catch (e) {
@@ -195,6 +234,27 @@ __decorate([
     __metadata("design:paramtypes", [model.user.SessionUserInfo, Number]),
     __metadata("design:returntype", Promise)
 ], WWWGameController.prototype, "gamePlay", null);
+__decorate([
+    common_1.Get('/game-check/browser-compatibility'),
+    swagger_1.Summary('Confirm browser respects iframe sandbox attribute'),
+    __param(0, common_1.Res()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], WWWGameController.prototype, "browserCompatibilityCheck", null);
+__decorate([
+    common_1.Get('/game/:gameId/sandbox'),
+    swagger_1.Summary('Load game play page sandbox'),
+    common_1.Use(Auth_1.YesAuth),
+    common_1.Render('game_sandbox'),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('gameId', Number)),
+    __param(2, common_1.Required()),
+    __param(2, common_1.QueryParams('authCode', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.SessionUserInfo, Number, String]),
+    __metadata("design:returntype", Promise)
+], WWWGameController.prototype, "gamePlaySandbox", null);
 __decorate([
     common_1.Get('/game/:gameId/edit'),
     swagger_1.Summary('Game edit page'),
