@@ -1,5 +1,20 @@
 @html.extend('layouts/default', function(model) {
+    @html.block('seo', function(model) {
+        @if (model.page.genre === 1) {
+            <meta name="og:title" content="Free 3D Browser Games" />
+            <meta name="og:description" content="Browse tons of user-generated 3D games that run on nearly every device, in your browser!" />
+            <meta name="twitter:title" content="Free 3D Browser Games" />
+            <meta name="twitter:description" content="Browse tons of user-generated 3D games that run on nearly every device, in your browser!" />
+        }else{
+            <meta name="og:title" content="Free 3D @model.page.genres[model.page.genre] Games" />
+            <meta name="og:description" content="Browse tons of user-generated @model.page.genres[model.page.genre] 3D games that run on nearly every device, in your browser!" />
+            <meta name="twitter:title" content="Free 3D @model.page.genres[model.page.genre] Games" />
+            <meta name="twitter:description" content="Browse tons of user-generated @model.page.genres[model.page.genre] 3D games that run on nearly every device, in your browser!" />
+        }
+        <meta name="og:type" content="website" />
+    })
     @html.block('content', function(model) {
+        <div style="display:none;" id="meta-play-info" data-genres="@JSON.stringify(model.page.genres)"></div>
         <div class="row">
             <div class="col-12 col-lg-2">
                 <div class="card">
@@ -35,7 +50,7 @@
                                 }else{
                                     @if (!isNaN(Number(genre))) {
                                         <a class="normal genreoption" href="#" data-id="@genre">
-                                            <li style="cursor:pointer;margin-bottom:0.25rem;">@model.page.genres[genre]</li>
+                                            <li style="cursor:pointer;margin-bottom:0.25rem;opacity:0.5;">@model.page.genres[genre]</li>
                                         </a>
                                     }
                                 }
@@ -52,7 +67,8 @@
                     </div>
                     <div class="col-4 col-md-2">
                         <div class='form-group'>
-                        <a style="margin-top: 1rem;width:100%;color:white;" href="/game/create" class="btn btn-success">Create</a>
+                            <a style="width:100%;color:white;" href="/game/create" class="btn btn-success">Create</a>
+                            <a style="width:100%;color:white;margin-top:0.5rem;" href="/support/game-help" class="btn btn-danger">Help</a>
                         </div>
                     </div>
                 </div>

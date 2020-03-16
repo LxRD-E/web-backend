@@ -81,7 +81,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-12 col-md-6 col-lg-8">
+        <div class="col-sm-12 col-md-6 col-lg-6">
         <!--
             <h1>Hello, @model.userInfo.username</h1>-->
             <div class="card">
@@ -91,7 +91,7 @@
                             <h5 class="card-title" style="margin-bottom:1rem;">Status</h5>
                             <div class="row">
                                 <div class="col-lg-9 col-md-8 col-12">
-                                    <input type="text" class="form-control" id="newStatusValue" value="" placeholder="Say what's on your mind!" maxlength="255" style="font-size:0.85rem;" autocomplete="off" >
+                                    <textarea id="newStatusValue" class="form-control" rows="1" placeholder="Say what's on your mind!" style="font-size:0.75rem;" maxlength="255"></textarea>
                                     <small id="newStatusValueHelp" class="form-text text-muted" style="font-size:0.65rem;">Max 255 Characters</small>
                                 </div>
                                 <div class="col-lg-3 col-md-4 col-12">
@@ -137,6 +137,7 @@
                 </div>
             </div>
         </div>
+        <div class="col-2 skyscraper-ads d-none d-lg-block"></div>
     </div>
   })
   @html.block('js', function(model) {

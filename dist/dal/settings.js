@@ -32,6 +32,14 @@ class SettingsDAL extends _init_1.default {
         });
         console.log(request);
     }
+    async isEmailInUse(email) {
+        let encryptedEmail = await auth_1.encrypt(email, emailEncryptionKey);
+        let results = await this.knex('user_emails').select('id').where({ 'email': encryptedEmail }).limit(1).orderBy('id', 'desc');
+        if (results[0]) {
+            return true;
+        }
+        return false;
+    }
     async insertNewEmail(userId, newEmail, emaiLVerificationCode) {
         const encryptedEmail = await auth_1.encrypt(newEmail, emailEncryptionKey);
         await this.knex("user_emails").insert({

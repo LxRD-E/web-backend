@@ -19,6 +19,12 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const jsObfuse = require("javascript-obfuscator");
 const simple_crypto_js_1 = require("simple-crypto-js");
+const model = require("../../models/models");
+const controller_1 = require("../controller");
+const common_1 = require("@tsed/common");
+const swagger_1 = require("@tsed/swagger");
+const Auth_1 = require("../../middleware/Auth");
+const auth_1 = require("../../dal/auth");
 const websockets_1 = require("../../start/websockets");
 const config_1 = require("../../helpers/config");
 const GAME_KEY = config_1.default.encryptionKeys.game;
@@ -232,12 +238,6 @@ const script = jsObfuse.obfuscate(`
         })()
     `, scriptOptions);
 let code = COPYRIGHT_DISCLAIMER + '\n' + script.getObfuscatedCode();
-const model = require("../../models/models");
-const controller_1 = require("../controller");
-const common_1 = require("@tsed/common");
-const swagger_1 = require("@tsed/swagger");
-const Auth_1 = require("../../middleware/Auth");
-const auth_1 = require("../../dal/auth");
 let GameController = class GameController extends controller_1.default {
     async getGames(offset = 0, limit = 25, sortBy = 1, genre = 1) {
         if (!model.game.GameSortOptions[sortBy]) {

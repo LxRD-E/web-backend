@@ -51,7 +51,10 @@ class ChatDAL extends _init_1.default {
     async publishTypingStatus(userIdTo, userIdFrom, isTyping) {
         const listener = ioredis_pubsub_1.default();
         listener.on('connect', async () => {
-            await listener.publish('ChatMessage' + userIdTo, JSON.stringify({ 'typing': isTyping, 'userIdFrom': userIdFrom }));
+            console.log('Sending message');
+            let key = 'ChatMessage' + userIdTo;
+            console.log('Publishing to key:', key);
+            await listener.publish(key, JSON.stringify({ 'typing': isTyping, 'userIdFrom': userIdFrom }));
         });
     }
     async countUnreadMessages(userId) {
@@ -65,7 +68,9 @@ class ChatDAL extends _init_1.default {
         return new Promise((resolve, reject) => {
             const listener = ioredis_pubsub_1.default();
             listener.on('connect', async () => {
-                await listener.subscribe('ChatMessage' + userIdTo);
+                let key = 'ChatMessage' + userIdTo;
+                console.log('Subscribed to key:', key);
+                await listener.subscribe(key);
                 resolve(listener);
             });
         });

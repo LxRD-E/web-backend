@@ -7,7 +7,8 @@
                 <div class="card-body">
                     <form>
                         <div class="form-group">
-                            <h5 class="card-title text-margin">My Email</h5>
+                            <h5 class="card-title text-margin" style="margin-bottom:0;">My Email</h5>
+                            <p id="email-status" style="font-size:0.775rem;margin-bottom:1rem;"></p>
                             <div class="row">
                                 <div class="col-md-8 col-sm-12">
                                     <input type="text" class="form-control" id="newEmailValue" value="" placeholder="Email">

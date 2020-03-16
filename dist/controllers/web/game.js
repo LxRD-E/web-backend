@@ -93,12 +93,20 @@ let WWWGameController = class WWWGameController extends controller_1.default {
         ViewData.page.recommendedGenres = _.sampleSize(possibleGenres, 4);
         return ViewData;
     }
-    async play() {
+    async play(genre) {
+        if (!model.game.GameGenres[genre]) {
+            genre = 1;
+        }
+        let title = 'Free 3D Games';
+        if (genre !== 1) {
+            title = 'Free 3D ' + model.game.GameGenres[genre] + ' Games';
+        }
         let ViewData = new this.WWWTemplate({
-            title: 'Free 3D Games',
+            title: title,
             page: {
                 genres: model.game.GameGenres,
                 sorts: model.game.GameSortOptions,
+                genre: genre,
             }
         });
         return ViewData;
@@ -121,10 +129,12 @@ let WWWGameController = class WWWGameController extends controller_1.default {
         return ViewData;
     }
     browserCompatibilityCheck(res) {
+        res.set('x-frame-options', 'sameorigin');
         res.send(`<!DOCTYPE html><html><head><title>Checking your browser...</title></head><body><script nonce="${res.locals.nonce}">try{alert("Sorry, your browser is not supported.");window.top.location.href = "/support/browser-not-compatible";}catch(e){}</script></body></html>`);
         return;
     }
-    async gamePlaySandbox(userData, gameId, authCode) {
+    async gamePlaySandbox(res, userData, gameId, authCode) {
+        res.set('x-frame-options', 'sameorigin');
         try {
             const gameInfo = await this.game.getInfo(gameId, ['gameState']);
             if (gameInfo.gameState !== 1) {
@@ -219,8 +229,9 @@ __decorate([
 __decorate([
     common_1.Get('/play'),
     common_1.Render('play'),
+    __param(0, common_1.QueryParams('genre', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], WWWGameController.prototype, "play", null);
 __decorate([
@@ -247,12 +258,13 @@ __decorate([
     swagger_1.Summary('Load game play page sandbox'),
     common_1.Use(Auth_1.YesAuth),
     common_1.Render('game_sandbox'),
-    __param(0, common_1.Locals('userInfo')),
-    __param(1, common_1.PathParams('gameId', Number)),
-    __param(2, common_1.Required()),
-    __param(2, common_1.QueryParams('authCode', String)),
+    __param(0, common_1.Res()),
+    __param(1, common_1.Locals('userInfo')),
+    __param(2, common_1.PathParams('gameId', Number)),
+    __param(3, common_1.Required()),
+    __param(3, common_1.QueryParams('authCode', String)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.SessionUserInfo, Number, String]),
+    __metadata("design:paramtypes", [Object, model.user.SessionUserInfo, Number, String]),
     __metadata("design:returntype", Promise)
 ], WWWGameController.prototype, "gamePlaySandbox", null);
 __decorate([

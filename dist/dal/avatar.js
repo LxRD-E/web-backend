@@ -8,6 +8,81 @@ const config_1 = require("../helpers/config");
 const crypto = require("crypto");
 const _init_1 = require("./_init");
 class AvatarDAL extends _init_1.default {
+    async createOutfit(userId, thumbnailUrl, name) {
+        let outfitCreated = await this.knex('user_outfit').insert({
+            user_id: userId,
+            name: name,
+            'outfit_url': thumbnailUrl,
+        });
+        return outfitCreated[0];
+    }
+    async getOutfit(outfitId) {
+        let outfitData = await this.knex('user_outfit').select('id as outfitId', 'user_id as userId', 'name', 'outfit_url as url').where({
+            'id': outfitId,
+        }).limit(1);
+        return outfitData[0];
+    }
+    async deleteOutfit(outfitId) {
+        await this.knex('user_outfit').delete().where({ 'id': outfitId });
+        await this.knex('user_outfit_avatar').delete().where({ 'outfit_id': outfitId });
+        await this.knex('user_outfit_avatarcolor').delete().where({ 'outfit_id': outfitId });
+    }
+    async updateOutfitName(outfitId, newName) {
+        await this.knex('user_outfit').update({
+            'name': newName,
+            'updated_at': this.knexTime(),
+        }).where({ 'id': outfitId }).limit(1);
+    }
+    async getOutfitsForUser(userId, limit = 100, offset = 0) {
+        let outfits = await this.knex('user_outfit').select('id as outfitId', 'user_id as userId', 'name', 'outfit_url as url').where({
+            'user_id': userId,
+        }).limit(limit).offset(offset);
+        return outfits;
+    }
+    async countOutfitsForUser(userId) {
+        let outfits = await this.knex('user_outfit').count('id as total').where({
+            'user_id': userId,
+        });
+        return outfits[0]['total'];
+    }
+    async getOutfitAvatar(outfitId) {
+        const userAvatar = await this.knex('user_outfit_avatar').select('user_outfit_avatar.catalog_id as catalogId', 'type').where({ outfit_id: outfitId });
+        return userAvatar;
+    }
+    async getOutfitAvatarColors(outfitId) {
+        const userAvatarColors = await this.knex('user_outfit_avatarcolor').select('user_outfit_avatarcolor.*').where({ outfit_id: outfitId });
+        return userAvatarColors;
+    }
+    async updateOutfitUrl(outfitId, url) {
+        await this.knex('user_outfit').update({
+            'outfit_url': url,
+        }).where({ 'id': outfitId });
+    }
+    async multiAddItemsToOutfit(outfitId, avatarRequest) {
+        const addItems = [];
+        avatarRequest.forEach((obj) => {
+            addItems.push({
+                'catalog_id': obj.catalogId,
+                type: obj.category,
+                outfit_id: outfitId,
+            });
+        });
+        await this.knex("user_outfit_avatar").insert(addItems);
+    }
+    async addColorsToOutfit(outfitId, HeadRGB, LegRGB, TorsoRGB) {
+        await this.knex("user_outfit_avatarcolor").insert({
+            outfit_id: outfitId,
+            legr: LegRGB[0],
+            legg: LegRGB[1],
+            legb: LegRGB[2],
+            headr: HeadRGB[0],
+            headg: HeadRGB[1],
+            headb: HeadRGB[2],
+            torsor: TorsoRGB[0],
+            torsog: TorsoRGB[1],
+            torsob: TorsoRGB[2],
+        });
+    }
     async multiAddItemsToAvatar(avatarRequest) {
         const addItems = [];
         avatarRequest.forEach((obj) => {
@@ -107,7 +182,7 @@ class AvatarDAL extends _init_1.default {
         if (!latestModification || !latestModification[0]) {
             return true;
         }
-        if (this.moment().isSameOrAfter(this.moment(latestModification[0]["date"]).add(30, "seconds"))) {
+        if (this.moment().isSameOrAfter(this.moment(latestModification[0]["date"]).add(15, "seconds"))) {
             return true;
         }
         return false;

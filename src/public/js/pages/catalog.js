@@ -12,7 +12,7 @@ window.orderBy = "id";
 window.orderByType = "desc";
 var url = new URL(window.location.href);
 if (url.searchParams.get("category")) {
-    window.category = url.searchParams.get("category");
+    window.category = parseInt(url.searchParams.get("category"), 10) || 10;
 }
 if (url.searchParams.get("orderBy")) {
     window.orderBy = url.searchParams.get("orderBy");
@@ -39,61 +39,71 @@ $('#newSortOrder').on('change', function () {
     }
     reload();
 });
-$('#featured').click(function () {
+$('#featured').click(function (e) {
+    e.preventDefault();
     $('#currentCategoryText').html("Featured");
     $('#currentCategoryDescription').html("These are items created by the staff team. It can also feature community-submitted items.");
     window.category = 10;
     reload();
 });
-$('#all').click(function () {
+$('#all').click(function (e) {
+    e.preventDefault();
     $('#currentCategoryText').html("All");
     $('#currentCategoryDescription').html("These are all of our items in the Catalog, both created by users and the staff team.");
     window.category = 11;
     reload();
 });
-$('#all_hats').click(function () {
+$('#all_hats').click(function (e) {
+    e.preventDefault();
     $('#currentCategoryText').html("Hats");
     $('#currentCategoryDescription').html("These are Hats you can wear. They are created by the staff team, as well as by other users through community submissions.");
     window.category = 1;
     reload();
 });
-$('#all_shirts').click(function () {
+$('#all_shirts').click(function (e) {
+    e.preventDefault();
     $('#currentCategoryText').html("Shirts");
     $('#currentCategoryDescription').html("These are Shirts you can wear, created by the community.");
     window.category = 2;
     reload();
 });
-$('#all_pants').click(function () {
+$('#all_pants').click(function (e) {
+    e.preventDefault();
     $('#currentCategoryText').html("Pants");
     $('#currentCategoryDescription').html("These are Pants you can wear, created by the community.");
     window.category = 3;
     reload();
 });
-$('#all_faces').click(function () {
+$('#all_faces').click(function (e) {
+    e.preventDefault();
     $('#currentCategoryText').html("Faces");
     $('#currentCategoryDescription').html("These are Faces you can wear, created by the community.");
     window.category = 4;
     reload();
 });
-$('#all_gears').click(function () {
+$('#all_gears').click(function (e) {
+    e.preventDefault();
     $('#currentCategoryText').html("Gears");
     $('#currentCategoryDescription').html("These are Gears you can wear, created by the staff team.");
     window.category = 5;
     reload();
 });
-$('#all_shoes').click(function () {
+$('#all_shoes').click(function (e) {
+    e.preventDefault();
     $('#currentCategoryText').html("Shoes");
     $('#currentCategoryDescription').html("These are Shoes you can wear, created by the staff team.");
     window.category = 6;
     reload();
 });
-$('#all_tshirts').click(function () {
+$('#all_tshirts').click(function (e) {
+    e.preventDefault();
     $('#currentCategoryText').html("TShirts");
     $('#currentCategoryDescription').html("These are TShirts you can wear, created by the community.");
     window.category = 7;
     reload();
 });
-$('#collectibles').click(function () {
+$('#collectibles').click(function (e) {
+    e.preventDefault();
     $('#currentCategoryText').html("Collectibles");
     $('#currentCategoryDescription').html("These are collectible items that can no longer be purchased directly, but can instead be purchased from other users and/or traded.");
     window.category = 20;
@@ -203,7 +213,7 @@ function loadCatalogStuff(d, dontUndoOffset) {
         let creatorIds = [];
         let groupIds = [];
         $.each(d, function (index, value) {
-            value.currency = formatCurrency(value.currency);
+            value.currency = formatCurrency(value.currency, '0.75rem');
             value.col = "";
             if (value.collectible === 1) {
                 if (value.maxSales !== 0) {
@@ -222,18 +232,27 @@ function loadCatalogStuff(d, dontUndoOffset) {
                     </div>`;
                 }
             }
-            let byNameTag = `<p class="text-left text-truncate" style="font-weight: 300;font-size: 0.85rem;padding-bottom:0.5rem;">By: <span data-userid="${value.creatorId}"></span></p>`;
+            let byNameTag = `<p class="text-left text-truncate" style="font-weight: 300;font-size: 0.85rem;padding-bottom:0;">By: <span data-userid="${value.creatorId}"></span></p>`;
             if (value.creatorType === 1) {
-                byNameTag = `<p class="text-left text-truncate" style="font-weight: 300;font-size: 0.85rem;padding-bottom:0.5rem;">By: <span data-groupid="${value.creatorId}"></span></p>`;
+                byNameTag = `<p class="text-left text-truncate" style="font-weight: 300;font-size: 0.85rem;padding-bottom:0;">By: <span data-groupid="${value.creatorId}"></span></p>`;
                 groupIds.push(value.creatorId);
             } else {
                 creatorIds.push(value.creatorId);
             }
-            let priceDisplay;
-            if (value.price) {
-                priceDisplay = value.currency + nform(value.price);
+            let priceDisplay = '';
+            if (window.defaultcategory === 20) {
+                priceDisplay = `<span style="text-decoration: line-through;opacity:0.5;font-size:0.75rem;">Original: ${formatCurrency(value.currency, '0.75rem')} ${value.price}</span><br>`;
+            }
+            if (typeof value.price === 'number' && typeof value.collectibleLowestPrice === 'undefined') {
+                priceDisplay += value.currency + nform(value.price);
+            }else if (value.collectibleLowestPrice) {
+                priceDisplay += '<span style="font-size:0.65rem;">Lowest Price: '+formatCurrency(1, '0.75rem') + nform(value.collectibleLowestPrice)+'</span>';
             }else{
-                priceDisplay = '<span style="color:rgba(255,255,255,0.5)">N/A</span>';
+                if (window.defaultcategory === 20) {
+                    priceDisplay += '<span style="font-size:0.75rem;">No Resellers</span>';
+                }else{
+                    priceDisplay += '<span style="font-size:0.75rem;">Not for sale</span>';
+                }
             }
             $('#catalogItemsDiv').append('<div style="padding-right: 5px;padding-left: 5px;" class="col-6 col-sm-4 col-md-3 catalogItem" data-catalogid="' + value.catalogId + '"><div class="card" style="margin: 0.5rem 0 0 0;border: 0;box-shadow:none;"><a href="/catalog/' + value.catalogId + '/' + urlencode(value.catalogName) + '"><img data-catalogid="' + value.catalogId + '" style="width:100%;" class="image-with-background" /></a>' + value.col + ' <div class="card-body" style="padding: 0.75rem;"><div class="card-title text-left text-truncate" style="margin-bottom:0;font-size:0.85rem;"><a href="/catalog/' + value.catalogId + '/' + urlencode(value.catalogName) + '">' + xss(value.catalogName) + '</a>' + byNameTag + '<p class="text-left text-truncate">'+priceDisplay+'</p></div></div></div></div>');
             catalogIdsRequest.push(value.catalogId);

@@ -11,6 +11,10 @@ export const wss = new WebSocket.Server({
 });
 
 export const webSocketServer = http.createServer();
+webSocketServer.on('error', err => {
+    // Ignore, for now
+    console.log(err);
+});
 webSocketServer.listen(8080);
 
 export default (): void => {

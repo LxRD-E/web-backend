@@ -258,6 +258,27 @@ const errorTransform = (errCode) => {
         case 'NoFileSpecified': {
             return 'Please specify at least one file.';
         }
+        case 'ModerationStatusConflict': {
+            return 'You cannot perform this action right now due to a moderation status conflict. Try again later.';
+        }
+        case 'ConstraintEmailVerificationRequired': {
+            return 'In order to perform this action, your account must have a verified email. Go to your settings to add & verify your email address.';
+        }
+        case 'EmailAlreadyInUse': {
+            return 'Sorry, this email is already in use. Please use a different email.';
+        }
+        case 'AvatarRenderRequired': {
+            return 'Sorry, you cannot create an outfit while your current avatar is pending. Try again later.';
+        }
+        case 'MaximumOutfitsReached': {
+            return 'You have reached the maximum amount of outfits. Delete an outfit, and try agian.';
+        }
+        case 'InvalidOutfitId': {
+            return 'This outfit can\'t be modified right now. Refresh the page, and try again.';
+        }
+        case 'Cooldown': {
+            return 'You cannot perform this action right now. Try again later.';
+        }
     }
     return 'An unknown error has ocurred. Please try again later, or contact support.';
 }

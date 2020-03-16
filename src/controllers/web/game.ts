@@ -101,12 +101,22 @@ export class WWWGameController extends controller {
      */
     @Get('/play')
     @Render('play')
-    public async play() {
+    public async play(
+        @QueryParams('genre', Number) genre: number,
+    ) {
+        if (!model.game.GameGenres[genre]) {
+            genre = 1;
+        }
+        let title = 'Free 3D Games';
+        if (genre !== 1) {
+            title = 'Free 3D '+model.game.GameGenres[genre]+ ' Games';
+        }
         let ViewData = new this.WWWTemplate({
-            title: 'Free 3D Games',
+            title: title,
             page: {
                 genres: model.game.GameGenres,
                 sorts: model.game.GameSortOptions,
+                genre: genre,
             }
         })
         return ViewData;
@@ -147,6 +157,7 @@ export class WWWGameController extends controller {
     public browserCompatibilityCheck(
         @Res() res: Res,
     ) {
+        res.set('x-frame-options','sameorigin');
         res.send(`<!DOCTYPE html><html><head><title>Checking your browser...</title></head><body><script nonce="${res.locals.nonce}">try{alert("Sorry, your browser is not supported.");window.top.location.href = "/support/browser-not-compatible";}catch(e){}</script></body></html>`);
         return;
     }
@@ -159,11 +170,13 @@ export class WWWGameController extends controller {
     @Use(YesAuth)
     @Render('game_sandbox')
     public async gamePlaySandbox(
+        @Res() res: Res,
         @Locals('userInfo') userData: model.user.SessionUserInfo,
         @PathParams('gameId', Number) gameId: number,
         @Required()
         @QueryParams('authCode', String) authCode: string,
     ) {
+        res.set('x-frame-options','sameorigin');
         // Confirm place is valid
         try {
             const gameInfo = await this.game.getInfo(gameId, ['gameState']);

@@ -25,7 +25,7 @@
         <div class="row">
             <div class="col-sm-12 col-md-6">
                 <h5 id="currentCategoryText">Featured</h5>
-                <p id="currentCategoryDescription">These are items created by the staff team. It can also feature community-submitted items.</p>
+                <p id="currentCategoryDescription" style="font-size:0.85rem;">These are items created by the staff team. It can also feature community-submitted items.</p>
             </div>
             <div class="col-sm-12 col-md-6 text-right">
                 <h5>Sort Order</h5>
@@ -85,11 +85,12 @@
                 </div>
             </div>
 
-            <div class="col-12 col-sm-8 col-md-10">
+            <div class="col-12 col-sm-8 col-md-10 col-lg-8">
                 <div class="row" id="catalogItemsDiv">
 
                 </div>
             </div>
+            <div class="col-2 skyscraper-ads d-none d-lg-block"></div>
         </div>
         <div class="row" id="loadingMoreItems" style="margin-top:2rem;">
             <div class="col-2">

@@ -15,6 +15,7 @@ export enum AdType {
 
 export enum AdDisplayType {
     'Leaderboard' = 1,
+    'Skyscraper',
 }
 
 export class Advertisment {
@@ -71,4 +72,6 @@ export class FullAdvertismentDetails {
     clicks: number;
     @Required()
     totalClicks: number;
+    @Required()
+    adDisplayType: AdDisplayType;
 }

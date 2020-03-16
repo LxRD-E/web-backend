@@ -26,21 +26,27 @@ request('/ad/my/created-ads', 'GET')
             spanText = '<a href="/groups/'+ad.adRedirectId+'"/<span data-groupid="'+ad.adRedirectId+'">Loading...</span></a>';
         }else if (ad.adType === 3) {
             adForText = 'Forum Thread';
-            spanText = '<a href="/forum/thread/'+ad.adRedirectId+'?page=1"><span data-threadid="'+ad.adRedirectId+'">Loading...</span></a>';
+            spanText = '<a href="/forum/thread/'+ad.adRedirectId+'?page=1">Forum Thread</a>';
         }
         let running = '<p style="font-weight:500;cursor:pointer;" class="onClickRunAd" data-id="'+ad.adId+'">Status: <span style="color:red;">Not Running</span> (click me to run)</p>';
         if (ad.bidAmount !== 0 && moment(ad.updatedAt).add(24, 'hours').isSameOrAfter(moment())) {
             running = '<p style="font-weight:500;">Status: <span style="color:green;">Running</span> (for '+moment(ad.updatedAt).fromNow(true)+')</p>';
         }
+        let adDisplay = '';
+        if (ad.adDisplayType === 1) {
+            adDisplay = `<img src="${imageUrl}" style="width:100%;height:auto;display:block;margin:0 auto;max-width:700px;" />`;
+        }else if (ad.adDisplayType === 2) {
+            adDisplay = `<img src="${imageUrl}" style="width:100%;height:auto;display:block;margin:0 auto;max-width:160px;" />`;
+        }
         $('#running-ads').append(`
         
         <div class="row">
             <div class="col-6 col-md-4 col-lg-3">
-                <img src="${imageUrl}" style="width:100%;height:auto;display:block;margin:0 auto;max-width:700px;" />
+                ${adDisplay}
             </div>
             <div class="col-6 col-md-8 col-lg-9">
                 <h2 style="font-size:1.25rem;margin-bottom:0;">${ad.title.escape()}</h2>
-                <p>${adForText} advertisment for ${spanText}</p>
+                <p>${adForText} advertisement for ${spanText}</p>
                 ${running}
             </div>
             <div class="col-12">

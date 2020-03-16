@@ -5,6 +5,9 @@ let currentGenre = 1;
 let currentOffset = 0;
 let currentLimit = 25;
 
+let metaInfo = $("#meta-play-info");
+let possibleGenres = JSON.parse(metaInfo.attr('data-genres'));
+
 function getUrlVars() {
     var vars = {};
     var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
@@ -22,6 +25,11 @@ function loadGames(addTopTwoGamesToHeader = false) {
     history.replaceState({genre: currentGenre, sort: currentSortMode}, "Free 3D Games", "?genre="+currentGenre+'&sortBy='+currentSortMode)
     isLoading = true;
     request('/game/search?genre='+currentGenre+'&sortBy='+currentSortMode+'&limit='+currentLimit+'&offset='+currentOffset).then((d) => {
+        if (currentGenre === 1) {
+            $('title').html('Free 3D Games - Hindi Gamer Club')
+        }else{
+            $('title').html('Free 3D '+possibleGenres[currentGenre]+' Games - Hindi Gamer Club');
+        }
         $('#topTwoGames').empty()
         const ids = [];
         const topList = $('#topTwoGames');

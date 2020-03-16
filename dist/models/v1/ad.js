@@ -31,6 +31,7 @@ var AdType;
 var AdDisplayType;
 (function (AdDisplayType) {
     AdDisplayType[AdDisplayType["Leaderboard"] = 1] = "Leaderboard";
+    AdDisplayType[AdDisplayType["Skyscraper"] = 2] = "Skyscraper";
 })(AdDisplayType = exports.AdDisplayType || (exports.AdDisplayType = {}));
 class Advertisment {
 }
@@ -125,5 +126,9 @@ __decorate([
     common_1.Required(),
     __metadata("design:type", Number)
 ], FullAdvertismentDetails.prototype, "totalClicks", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], FullAdvertismentDetails.prototype, "adDisplayType", void 0);
 exports.FullAdvertismentDetails = FullAdvertismentDetails;
 

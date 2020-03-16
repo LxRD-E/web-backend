@@ -33,6 +33,20 @@ export class StaffController extends controller {
             throw new this.BadRequest('InvalidPermissions');
         }
     }
+
+    @Get('/user/:userId/transactions')
+    @Summary('Get transaction history for the {userId}')
+    @Use(YesAuth)
+    @ReturnsArray(200, {type: model.economy.userTransactions})
+    public async getTransactions(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @QueryParams('offset', Number) offset: number = 0,
+        @PathParams('userId', Number) userId: number,
+    ): Promise<model.economy.userTransactions[]> {
+        this.validate(userInfo, 1);
+        const transactions = await this.economy.getUserTransactions(userId, offset);
+        return transactions;
+    }
     /**
      * Ban a User
      * @param deleted Delete the account? This cannot be reversed after 30 days

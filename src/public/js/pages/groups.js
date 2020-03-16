@@ -26,7 +26,7 @@ $(document).on('click', '#groupLeave', function() {
 if ($('#userdata').attr("data-authenticated") === "true") {
     request("/user/"+$('#userdata').attr("data-userid")+"/groups", "GET")
         .then(function(d) {
-            $('#groupDisplayCol').attr("class", "col-12 col-lg-10");
+            $('#groupDisplayCol').attr("class", "col-12 col-lg-8");
             $('#UserGroupsDiv').show();
             $('#groupDisplayCol').show();
             var groupIds = [];
@@ -39,12 +39,12 @@ if ($('#userdata').attr("data-authenticated") === "true") {
         .catch(function(e) {
             console.log(e);
             $('#UserGroupsDiv').attr('style', 'display:none !important;');
-            $('#groupDisplayCol').attr("class", "col-12");
+            $('#groupDisplayCol').attr("class", "col-12 col-lg-10");
             $('#groupDisplayCol').show(); 
         });
 }else{
     $('#UserGroupsDiv').hide();
-    $('#groupDisplayCol').attr("class", "col-12");
+    $('#groupDisplayCol').attr("class", "col-12 col-lg-10");
     $('#groupDisplayCol').show(); 
 }
 

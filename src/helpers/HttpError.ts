@@ -144,6 +144,15 @@ export enum HttpErrors {
     InvalidStatus,
     RankAlreadyExists,
     InvalidGenre,
+    ConstraintEmailVerificationRequired,
+    EmailAlreadyInUse,
+    MaximumOutfitsReached,
+    AvatarRenderRequired,
+    InvalidOutfitId,
+    InvalidStatusId,
+    InvalidReactionType,
+    AlreadyReactedToStatus,
+    NotReactedToStatus,
 };
 // @Locals('userInfo') userInfo: model.user.UserInfo,
 export const ErrorTemplate = (title: string, body: string): string => {

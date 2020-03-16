@@ -63,6 +63,15 @@ class SettingsDAL extends _init {
         */
     }
 
+    public async isEmailInUse(email: string): Promise<boolean> {
+        let encryptedEmail = await encrypt(email, emailEncryptionKey);
+        let results = await this.knex('user_emails').select('id').where({'email': encryptedEmail}).limit(1).orderBy('id','desc');
+        if (results[0]) {
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Insert a New Email for a User
      * @param userId 

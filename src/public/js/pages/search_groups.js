@@ -4,7 +4,7 @@ function search(q, offset) {
     $('#userSearchResultsDiv').children().each(function(k) {
         $(this).css("opacity", 0.5)
     })
-    request("/group/search?limit=100&name="+q+"&offset="+offset)
+    request("/group/search?limit=25&name="+q+"&offset="+offset)
     .then(function(d) {
         // $('#groupSearchResultsDiv').empty();
         var groupIdThumbs = [];
@@ -30,8 +30,8 @@ function search(q, offset) {
             </div>`)
             groupIdThumbs.push(k.groupIconCatalogId);
         });
-        if (d.length >= 100) {
-            window.searchOffset = window.searchOffset + 100;
+        if (d.length >= 25) {
+            window.searchOffset = window.searchOffset + 25;
             $('.loadMoreGroups').show();
         }else{
             window.searchOffset = 0;

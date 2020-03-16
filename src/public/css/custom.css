@@ -336,6 +336,13 @@ code {
 .catalogItem > .card:hover {
     box-shadow: 0px 0px 28px -10px rgba(0,0,0,0.44)!important;
 }
+.userInventoryColor > .card {
+    cursor: pointer;
+}
+.userInventoryColor > .card:hover {
+    box-shadow: 0px 0px 28px -10px rgba(0,0,0,0.44)!important;
+    transition: all 0.15s;
+}
 
 div.secondaryNavBar li {
     font-size: 0.8rem;
@@ -500,4 +507,39 @@ button.btn-grouping-status-right {
     div.user-feed-col-left {
         margin-top:0.5rem;
     }
+}
+
+li.page-item.active > a.page-link {
+    background-color: #28a745;
+    border: 1px solid #237e38;
+    color: white;
+}
+
+li.page-item > a.page-link {
+    color: #28a745;
+}
+li.page-item > a.page-link:focus {
+    box-shadow: 0 0 0 0.2rem rgba(37, 179, 37, 0.25);
+}
+div.add-reaction > p, div.add-comment > p, div.remove-reaction:p {
+    padding-top:0.5rem;
+    padding-bottom:0.5rem;
+}
+
+div.add-reaction,div.add-comment,div.remove-reaction {
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 600;
+    padding-top:0.5rem;
+    padding-bottom:0.5rem;
+}
+div.add-reaction:hover,div.add-comment:hover,div.remove-reaction:hover {
+    color: rgba(33, 37, 41, 0.75);
+    transition: all 0.15s;
+
+    border-radius: 0.25rem;
+    background: rgba(0,0,0,0.05);
+}
+p.add-comment {
+    cursor: pointer;
 }

@@ -88,3 +88,26 @@ export class UpdateAvatarPayload {
     @PropertyType(Number)
     Pants: number | boolean;
 }
+
+export class AvatarPollResponseOK {
+    @Required()
+    url: string;
+}
+
+export class UserOutfit {
+    @Required()
+    outfitId: number;
+    @Required()
+    userId: number;
+    @Required()
+    name: string;
+    @Required()
+    url: string;
+}
+
+export class UserOutfitAvatar {
+    @Required()
+    catalogId: number;
+    @Required()
+    type: number;
+}

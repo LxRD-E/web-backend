@@ -30,13 +30,34 @@
                             <div class="row">
                                 <div class="col-12">
                                     <h3>Ad Image</h3>
-                                    <p>For best results, your file should have a resolution of 728x90. Otherwise, it will be cropped and might look strange.</p>
                                 </div>
                                     <div class="col-sm-12">
                                         <div class="form-group">
                                             <form id="assetsForm" enctype="multipart/form-data" style="margin-top:1 rem;">
                                                 <input type="file" class="form-control-file" id="imageFile">
                                             </form>
+                                        </div>
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12">
+                                    <h3>Ad Type</h3>
+                                </div>
+                                    <div class="col-sm-12">
+                                        <div class="form-group">
+                                            <select id="adDisplayType" class="form-control">
+                                                @for (const type in model.page.adDisplayTypes) {
+                                                    @if (!isNaN(parseInt(type, 10))) {
+                                                        <option value="@type">@model.page.adDisplayTypes[type]</option>
+                                                    }
+                                                }
+                                            </select>
                                         </div>
                                     </div>
                             </div>

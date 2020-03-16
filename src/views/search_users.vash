@@ -28,8 +28,13 @@
                 </div>
             </div>
         </div>
-        <div class="row" id="userSearchResultsDiv">
+        <div class="row">
+            <div class="col-12 col-lg-10">
+                <div class="row" id="userSearchResultsDiv">
 
+                </div>
+            </div>
+            <div class="col-2 skyscraper-ads d-none d-lg-block"></div>
         </div>
         <div class="row" >
             <div class="col-sm-6 offset-sm-3" style="margin-bottom:1rem;margin-top: 1rem;">

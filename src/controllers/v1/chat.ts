@@ -10,7 +10,7 @@ import * as model from '../../models/models';
 import { filterOffset, filterLimit, filterId, filterSort } from '../../helpers/Filter';
 import { Redis } from 'ioredis';
 import controller from '../controller';
-import { Locals, UseBefore, Get, PathParams, BodyParams, Put, UseBeforeEach, Controller, QueryParams, Patch, Post } from '@tsed/common';
+import { Locals, UseBefore, Get, PathParams, BodyParams, Put, UseBeforeEach, Controller, QueryParams, Patch, Post, Use } from '@tsed/common';
 import { YesAuth } from '../../middleware/Auth';
 import { csrf } from '../../dal/auth';
 import { Summary, Returns, Description } from '@tsed/swagger';
@@ -55,8 +55,7 @@ export class ChatController extends controller {
     @Get('/:userId/history')
     @Summary('Get chat history between authenticated user and userId')
     @Returns(400, {type: model.Error, description: 'InvalidUserId: UserId is invalid\n'})
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(YesAuth)
     public async getChatHistory(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) numericId: number, 
@@ -177,14 +176,17 @@ export class ChatController extends controller {
 wss.on('connection', async function connection(ws, request: any) {
     if (request.url !== '/chat/websocket.aspx') {
         // let someone else handle it
+        console.log('Invalid request URL for websocket');
         return;
     }
     // If no session, close
     const sess = request.session;
     if (!sess) {
+        console.log("No session for websocket");
         ws.close();
         return;
     }
+    console.log('Websocket OK, startin conn info');
     // We ignore incomming requests for now
     ws.on('message', function incoming() {
         // Not supposed to recieve messages
@@ -192,18 +194,22 @@ wss.on('connection', async function connection(ws, request: any) {
     });
     // Setup Listener
     const userInfo = new model.user.UserInfo;
-    userInfo.userId = sess.userdata.userId;
+    userInfo.userId = sess.userdata.id;
     let listener: Redis;
     try {
+        console.log('Setting up REDIS');
         // Listen for events
         listener = await new ChatController().listenForChatEvents(userInfo);
         listener.on('message', (channel, message): void => {
+            console.log('MEssage recieved to websocket. Sending message to clients...');
             ws.send(message);
         });
     }catch(e) {
+        console.log('Closing ws conn  due to redis error',e);
         ws.close();
     }
     ws.on('close', function() {
+        console.log('Websocket conn closed - disconnecting redis');
         // Close Redis Sub
         if (listener && listener.disconnect) {
             listener.disconnect();

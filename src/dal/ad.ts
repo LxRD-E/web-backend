@@ -75,7 +75,7 @@ export default class AdDAL extends _init {
 
     public async getUserAds(userId: number): Promise<model.ad.FullAdvertismentDetails[]> {
         let data = await this.knex('user_ads')
-        .select('id as adId','image_url as imageUrl','title','ad_type as adType','ad_redirectid as adRedirectId','moderation_status as moderationStatus','user_id as userId','created_at as createdAt','updated_at as updatedAt','bid_amount as bidAmount','total_bid_amount as totalBidAmount','created_at as createdAt','updated_at as updatedAt','views','clicks','total_views as totalViews','total_clicks as totalClicks').where({'user_id': userId});
+        .select('id as adId','image_url as imageUrl','title','ad_type as adType','ad_redirectid as adRedirectId','moderation_status as moderationStatus','user_id as userId','created_at as createdAt','updated_at as updatedAt','bid_amount as bidAmount','total_bid_amount as totalBidAmount','created_at as createdAt','updated_at as updatedAt','views','clicks','total_views as totalViews','total_clicks as totalClicks', 'ad_displaytype as adDisplayType').where({'user_id': userId});
         for (const ad of data) {
             if (ad['moderationStatus'] !== model.ad.ModerationStatus.Approved) {
                 ad['imageUrl'] = null;

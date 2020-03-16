@@ -40,9 +40,11 @@ let WWWAdsController = class WWWAdsController extends controller_1.default {
                 throw new this.BadRequest('InvalidCatalogId');
             }
         }
-        return new this.WWWTemplate({ title: 'Create Catalog Ad', page: {
+        let ViewData = new this.WWWTemplate({ title: 'Create Catalog Ad', page: {
                 catalogInfo: info,
+                adDisplayTypes: model.ad.AdDisplayType,
             } });
+        return ViewData;
     }
     async createGroupAd(userInfo, groupId) {
         let info = await this.group.getInfo(groupId);
@@ -51,6 +53,7 @@ let WWWAdsController = class WWWAdsController extends controller_1.default {
         }
         return new this.WWWTemplate({ title: 'Create Group Ad', page: {
                 groupInfo: info,
+                adDisplayTypes: model.ad.AdDisplayType,
             } });
     }
     async createThreadAd(userInfo, threadId) {
@@ -60,6 +63,7 @@ let WWWAdsController = class WWWAdsController extends controller_1.default {
         }
         return new this.WWWTemplate({ title: 'Create Thread Ad', page: {
                 threadInfo: info,
+                adDisplayTypes: model.ad.AdDisplayType,
             } });
     }
 };

@@ -41,6 +41,7 @@ $('#newSortOrder').on('change', function() {
         window.sortBy = "user_lastonline";
         window.sort = "desc";
     }
+    $('#userSearchResultsDiv').empty();
     search(0);
 });
 
@@ -50,12 +51,14 @@ function search(offset) {
             return 'style="opacity: 0.5;"'
         }
     }
+    /*
     $('#userSearchResultsDiv').children().each(function(k) {
         $(this).css("opacity", 0.5)
     })
-    request("/user/search?username="+q+"&offset="+offset+"&sort="+window.sort+"&sortBy="+window.sortBy)
+    */
+    request("/user/search?limit=25&username="+q+"&offset="+offset+"&sort="+window.sort+"&sortBy="+window.sortBy)
     .then(function(d) {
-        $('#userSearchResultsDiv').empty();
+        // $('#userSearchResultsDiv').empty();
         var userIdThumbs = [];
         d.forEach(function(k) {
             if (k.status === null) {
@@ -69,9 +72,9 @@ function search(offset) {
                 k.staff = "";
             }
             $('#userSearchResultsDiv').append(`
-            <div class="col-12" >
+            <div class="col-12">
                 <div class="card" style="border-radius: 0;">
-                    <div class="card-body groupChangeBgOnHover" style="padding-bottom:0;border-bottom-radius:0;border-radius: 0;padding-top:0;">
+                    <div class="card-body groupChangeBgOnHover" style="border-bottom-radius:0;border-radius: 0;">
                         <div class="row">
                             <div class="col-3 col-md-2 col-lg-1" style="padding-right:0.25rem;">
                                 <a href="/users/`+k.userId+`/profile">
@@ -82,7 +85,7 @@ function search(offset) {
                             <div class="col-7 col-md-8 col-lg-11">
                                 <h5 style="margin-bottom:0;"><a href="/users/`+k.userId+`/profile">`+k.username+`</a></h5>
                                 <p style="font-size:0.75rem;margin-bottom:0.25rem;">Last Online: `+moment(k.lastOnline).local().fromNow()+`</p>
-                                <p>`+k.status.escape()+`</p>
+                                <p style="font-size:0.85rem;">`+xss(k.status)+`</p>
                             </div>
                         </div>
                     </div>
@@ -92,7 +95,7 @@ function search(offset) {
             $('[data-toggle="staffTooltip"]').tooltip();
         });
         if (d.length >= 25) {
-            window.searchOffset = window.searchOffset + 100;
+            window.searchOffset = window.searchOffset + 25;
             $('.loadMorePlayer').show();
         }else{
             window.searchOffset = 0;
@@ -102,7 +105,6 @@ function search(offset) {
             $('#userSearchResultsDiv').append('<div class="col-12"><h3 class="text-center" style="margin-top:1rem;">Your search query returned 0 results.</h3></div>');
         }
         setUserThumbs(userIdThumbs);
-        $("html, body").animate({ scrollTop: 0 }, 250);
         window.history.replaceState(null, null, "/users?sort="+window.sort+"&sortBy="+window.sortBy+"&q="+q);
     })
     .catch(function(e) {

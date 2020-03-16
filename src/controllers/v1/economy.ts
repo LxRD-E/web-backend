@@ -245,8 +245,8 @@ export default class EconomyController extends controller {
                 throw e;
             }
             // Create Transactions
-            await this.economy.createTransaction(userInfo.userId, userInfo.userId, -numericAmount, model.economy.currencyType.secondary, model.economy.transactionType.CurrencyConversionOfPrimaryToSecondary, "Currency Conversion", model.catalog.creatorType.User, model.catalog.creatorType.User);
-            await this.economy.createTransaction(userInfo.userId, userInfo.userId, newAmount, model.economy.currencyType.primary, model.economy.transactionType.CurrencyConversionOfPrimaryToSecondary, "Currency Conversion", model.catalog.creatorType.User, model.catalog.creatorType.User);
+            await this.economy.createTransaction(userInfo.userId, userInfo.userId, -numericAmount, model.economy.currencyType.primary, model.economy.transactionType.CurrencyConversionOfPrimaryToSecondary, "Currency Conversion", model.catalog.creatorType.User, model.catalog.creatorType.User);
+            await this.economy.createTransaction(userInfo.userId, userInfo.userId, newAmount, model.economy.currencyType.secondary, model.economy.transactionType.CurrencyConversionOfPrimaryToSecondary, "Currency Conversion", model.catalog.creatorType.User, model.catalog.creatorType.User);
 
             // Unlock economy
             await unlockEconomy();
@@ -314,6 +314,7 @@ export default class EconomyController extends controller {
     @Summary('Purchase a catalog item')
     @Description('Notes: User can own multiple collectible items but can only own one non-collectible item. If a collectible item is still listed for sale, the user can only own one and cannot own multiple until it is taken off sale or sells out.')
     @Returns(400, {type: model.Error, description: 'InvalidCatalogId: CatalogId is invalid\nNoLongerForSale: Item is no longer for sale\nSellerHasChanged: The userId of the seller has changed\nPriceHasChanged: Price has changed\nCurrencyHasChanged: Currency has changed\nAlreadyOwns: User already owns the item specified\nNotEnoughCurrency: User does not have enough currency for this purchase\nInvalidCurrencySpecified: Currency of product is invalid\nItemStillForSale: You cannot purchase collectible items that have not finished selling yet\nInvalidUserInventoryId: Invalid userInventoryId\nItemNoLongerForSale: Item is no longer for sale\nInvalidUserId: Seller userId is invalid\n'})
+    @Returns(409, {type: model.Error, description: 'ConstraintEmailVerificationRequired: Your account must have a verified email before you can purchase something.\n'})
     @Use(csrf, YesAuth, TwoStepCheck('BuyItem'))
     public async buy(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -340,6 +341,12 @@ export default class EconomyController extends controller {
         const expectedCurrency = parseInt(expectedCurrencyStr);
         const unlockEconomy = async () => {
             await this.economy.unlockUserEconomy(userInfo.userId);
+        }
+        // Check email status
+        const emailStatus = await this.settings.getUserEmail(userInfo.userId);
+        if (!emailStatus || emailStatus.status !== model.user.emailVerificationType.true) {
+            await unlockEconomy();
+            throw new this.Conflict('ConstraintEmailVerificationRequired');
         }
         // If buying new...
         if (userInventoryId === 0) {

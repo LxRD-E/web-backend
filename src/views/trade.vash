@@ -12,15 +12,21 @@
                     color: white;
                 }
             </style>
+        }else{
+            <style nonce="@model.nonce">
+                p,h1 {
+                    color: white;
+                }
+            </style>
         }
     })
-  @html.block('content', function(model) {
-      <div id="tradedata" data-userid ="@model.page.userId" data-username="@model.page.userId"></div>
-      <div class="row">
-        <div class="col-sm-12">
-            <h1 style="white-space:pre-wrap;margin-top: 1rem;margin-bottom:1rem;" class="text-left">Trade with @model.page.username</h1>
+    @html.block('content', function(model) {
+        <div id="tradedata" data-userid ="@model.page.userId" data-username="@model.page.userId"></div>
+        <div class="row">
+            <div class="col-12">
+                <h1 style="white-space:pre-wrap;margin-top: 1rem;margin-bottom:1rem;" class="text-left">Trade with @model.page.username</h1>
+            </div>
         </div>
-      </div>
 
     <div class="row">
         <div class="col-12">

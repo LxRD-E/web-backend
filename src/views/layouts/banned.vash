@@ -68,6 +68,8 @@
         <script nonce="@model.nonce" src="https://cdn.jsdelivr.net/npm/moment@@2.24.0/moment.min.js" crossorigin="anonymous"></script>
         <!-- XSS -->
         <script nonce="@model.nonce" src="/js/xss.js?v=@model.v"></script>
+        <!-- Locale -->
+        <script nonce="@model.nonce" src="/js/locale/en.js?v=@model.v"></script>
         <!-- Local Stuff -->
         <script nonce="@model.nonce" src="/js/app.js?v=@model.v"></script>
         @if (model.userInfo && typeof model.userInfo.userId !== "undefined" && model.userInfo.userId !== null) {

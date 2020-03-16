@@ -79,7 +79,10 @@ class ChatDAL extends _init {
     public async publishTypingStatus(userIdTo: number, userIdFrom: number, isTyping: number): Promise<void> {
         const listener = redis();
         listener.on('connect', async () => {
-            await listener.publish('ChatMessage'+userIdTo, JSON.stringify({'typing':isTyping,'userIdFrom':userIdFrom}));
+            console.log('Sending message');
+            let key = 'ChatMessage'+userIdTo;
+            console.log('Publishing to key:', key)
+            await listener.publish(key, JSON.stringify({'typing':isTyping,'userIdFrom':userIdFrom}));
         });
     }
 
@@ -110,7 +113,9 @@ class ChatDAL extends _init {
         return new Promise((resolve, reject): void => {
             const listener = redis();
             listener.on('connect', async () => {
-                await listener.subscribe('ChatMessage'+userIdTo);
+                let key = 'ChatMessage'+userIdTo;
+                console.log('Subscribed to key:',key);
+                await listener.subscribe(key);
                 resolve(listener);
             });
         });

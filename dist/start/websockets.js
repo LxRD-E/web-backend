@@ -10,6 +10,9 @@ exports.wss = new WebSocket.Server({
     noServer: true,
 });
 exports.webSocketServer = http.createServer();
+exports.webSocketServer.on('error', err => {
+    console.log(err);
+});
 exports.webSocketServer.listen(8080);
 exports.default = () => {
     exports.webSocketServer.on('upgrade', function upgrade(request, socket, head) {

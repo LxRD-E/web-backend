@@ -6,7 +6,18 @@ request("/settings", "GET")
         if (!data.forumSignature) {
             data.forumSignature = "";
         }
-        $('#newEmailValue').val(data.email["email"]);
+        if (data.email) {
+            $('#newEmailValue').val(data.email["email"]);
+            if (data.email.status === 0) {
+                if (data.email.email === null) {
+                    $('#email-status').html('( No Email Added )')
+                }else{
+                    $('#email-status').html('( Unverified; Check your inbox! )')
+                }
+            }else if (data.email.status === 1) {
+                $('#email-status').html('( Verified )')
+            }
+        }
         $('#newBlurbValue').html(data.blurb.escape());
         $('#newForumSignatureValue').html(data.forumSignature.escape());
         $('#selectTradingOption').find("[value=\""+data.tradingEnabled+"\"]").attr("selected", "selected");

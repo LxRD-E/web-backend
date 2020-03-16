@@ -1,7 +1,7 @@
 @html.extend('layouts/default', function(model) {
     @html.block('content', function(model) {
         <div class="row">
-            <div class="col-12">
+            <div class="col-12 col-lg-10">
                 <div class="card">
                     <div class="card-body" style="padding-top:0.5rem;">
                         <div class="row" style="margin-top:0;">
@@ -43,9 +43,9 @@
                                     </div>
                                 </div>
                                 @if (model.userInfo && model.page.gameInfo.creatorId === model.userInfo.userId && model.page.gameInfo.creatorType === 0) {
-                                    <a href="/game/@model.page.gameInfo.gameId/edit" role="button" style="width:100%;cursor: pointer;margin-top:1rem;font-size:0.85rem;margin-bottom:1rem;" class="btn btn-outline-success">EDIT</a>
+                                    <a href="/game/@model.page.gameInfo.gameId/edit" role="button" style="width:100%;cursor: pointer;margin-top:1rem;font-size:0.85rem;margin-top:1rem;" class="btn btn-outline-success">EDIT</a>
                                 }
-                                <a href="/game/@model.page.gameInfo.gameId/play" role="button" style="width:100%;color:white;cursor: pointer;" class="btn btn-success"><i class="fas fa-play"></i></a>
+                                <a href="/game/@model.page.gameInfo.gameId/play" role="button" style="width:100%;color:white;cursor: pointer;margin-top:1rem;" class="btn btn-success"><i class="fas fa-play"></i></a>
                             </div>
                         </div>
                         <div class="row" style="padding-top:1rem;padding-bottom:1rem;">
@@ -63,6 +63,13 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="col-2 skyscraper-ads d-none d-lg-block"></div>
+        </div>
+        <div class="row">
+            <div class="leaderboard-ad" style="display:block;margin:0 auto;">
+                <!-- whitespace so that when the ad loads, the user doesnt accidentally click it -->
+                <div style="padding-top:130px;" class="whitespace-ad"></div>
             </div>
         </div>
         <div class="row" style="margin-top:1rem;">

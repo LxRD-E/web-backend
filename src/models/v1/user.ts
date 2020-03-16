@@ -298,12 +298,60 @@ export class ThumbnailResponse {
  */
 export class UserStatus {
     @Required()
+    statusId: number;
+    @Required()
     userId: number;
     @Required()
     status: string|null;
     @Required()
     date: string;
+    @Required()
+    heartReactionCount: number;
+    @Required()
+    commentCount: number;
 }
+/**
+ * Interface for Retrival of Multiple Users' Statuses
+ */
+export class UserStatusForAuthenticated {
+    @Required()
+    statusId: number;
+    @Required()
+    userId: number;
+    @Required()
+    status: string|null;
+    @Required()
+    date: string;
+    @Required()
+    heartReactionCount: number;
+    @Required()
+    didReactWithHeart: boolean;
+}
+
+export class UserReactionInformation {
+    @Required()
+    statusId: number;
+    @Required()
+    userId: number;
+    @Required()
+    didReact: boolean;
+}
+
+export class UserStatusComment {
+    @Required()
+    userStatusCommentId: number;
+    @Required()
+    userId: number;
+    @Required()
+    statusId: number;
+    @Required()
+    comment: string;
+    @Required()
+    createdAt: string;
+    @Required()
+    updatedAt: string;
+}
+
 /**
  * Friendship Status between Two Users
  */
@@ -610,6 +658,6 @@ export class UserModerationAction {
     @Description('Date the action expired, or same as createdAt if warning')
     until: string;
     @Required()
-    @Description('Weather or not the account was terminated')
+    @Description('Whether or not the account was terminated')
     terminated: 0|1;
 }

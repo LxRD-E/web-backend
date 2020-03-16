@@ -11,6 +11,7 @@ $(document).on('click', '#createAdClick', function(e) {
     form.append("title", title);
     form.append('adType', 3);
     form.append('adRedirectId', $('#threadid').val());
+    form.append('adDisplayType', $('#adDisplayType').val());
     makeAsset(form, "fetch");
 });
 
@@ -21,6 +22,7 @@ function makeAsset(form, csrf) {
         url: "/api/v1/ad/create",
         headers:{
             "x-csrf-token": csrf,
+            "accept": 'application/json',
         },
         data: form,
         processData: false,

@@ -97,10 +97,14 @@ let AdController = class AdController extends controller_1.default {
         }
         let imageInfo = await jimp.read(file);
         if (adDisplayType === model.ad.AdDisplayType.Leaderboard) {
-            await imageInfo.resize(728, 90);
+            imageInfo.resize(728, 90);
+        }
+        else if (adDisplayType === model.ad.AdDisplayType.Skyscraper) {
+            imageInfo.resize(160, 600);
         }
         else {
-            throw new Error('NotImplemented');
+            throw new Error('Ad type specified (' + adDisplayType + ') is not supported by AdController.createAdvertisement()');
+            ;
         }
         let imageData = await imageInfo.getBufferAsync(mime);
         if (!model.ad.AdType[adType]) {

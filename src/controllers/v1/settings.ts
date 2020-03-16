@@ -81,7 +81,7 @@ export default class SettingsController extends controller {
     @Patch('/email')
     @Summary('Update users email')
     @Returns(400, { type: model.Error, description: 'InvalidEmail: Email is not of a valid format\n' })
-    @Returns(409, { type: model.Error, description: 'FloodCheck: Try again later\n' })
+    @Returns(409, { type: model.Error, description: 'FloodCheck: Try again later\nEmailAlreadyInUse: Email is already in use by this or another account\n' })
     @UseBeforeEach(csrf)
     @UseBefore(YesAuth)
     public async updateEmail(
@@ -99,9 +99,27 @@ export default class SettingsController extends controller {
         if (!validate(newEmail)) {
             throw new this.BadRequest('InvalidEmail');
         }
+        // Remove special characters from gmail
+        let stuffBeforeAtSign = newEmail.slice(0, newEmail.indexOf('@'));
+        let domain = newEmail.slice(newEmail.indexOf('@')+1).toLowerCase();
+        let emailDomainWithoutSuffix = domain.slice(0, domain.indexOf('.'));
+        if (emailDomainWithoutSuffix === 'gmail' || emailDomainWithoutSuffix === 'googlemail') {
+            stuffBeforeAtSign = stuffBeforeAtSign.replace(/\./g, '');
+            if (stuffBeforeAtSign.indexOf('+') !== -1) {
+                stuffBeforeAtSign = stuffBeforeAtSign.slice(0,stuffBeforeAtSign.indexOf('+'));
+            }
+            newEmail = stuffBeforeAtSign+'@gmail.com';
+        }
+        console.log(newEmail);
+        // I cant imagine any email clients are case-sensitive
+        newEmail = newEmail.toLowerCase();
         let latestEmail = await this.settings.getUserEmail(userInfo.userId);
-        if (!moment().isSameOrAfter(moment(latestEmail.date).add(1, "minute"))) {
+        if (latestEmail && !moment().isSameOrAfter(moment(latestEmail.date).add(1, "minute"))) {
             throw new this.Conflict('FloodCheck');
+        }
+        // Check if email already in use
+        if (await this.settings.isEmailInUse(newEmail)) {
+            throw new this.Conflict('EmailAlreadyInUse');
         }
         // Token Generator
         let emailToken = await new Promise((resolve, reject): void => {

@@ -252,6 +252,10 @@ class UserStatus {
 __decorate([
     common_1.Required(),
     __metadata("design:type", Number)
+], UserStatus.prototype, "statusId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
 ], UserStatus.prototype, "userId", void 0);
 __decorate([
     common_1.Required(),
@@ -261,7 +265,84 @@ __decorate([
     common_1.Required(),
     __metadata("design:type", String)
 ], UserStatus.prototype, "date", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserStatus.prototype, "heartReactionCount", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserStatus.prototype, "commentCount", void 0);
 exports.UserStatus = UserStatus;
+class UserStatusForAuthenticated {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserStatusForAuthenticated.prototype, "statusId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserStatusForAuthenticated.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], UserStatusForAuthenticated.prototype, "status", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], UserStatusForAuthenticated.prototype, "date", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserStatusForAuthenticated.prototype, "heartReactionCount", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Boolean)
+], UserStatusForAuthenticated.prototype, "didReactWithHeart", void 0);
+exports.UserStatusForAuthenticated = UserStatusForAuthenticated;
+class UserReactionInformation {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserReactionInformation.prototype, "statusId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserReactionInformation.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Boolean)
+], UserReactionInformation.prototype, "didReact", void 0);
+exports.UserReactionInformation = UserReactionInformation;
+class UserStatusComment {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserStatusComment.prototype, "userStatusCommentId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserStatusComment.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserStatusComment.prototype, "statusId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], UserStatusComment.prototype, "comment", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], UserStatusComment.prototype, "createdAt", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], UserStatusComment.prototype, "updatedAt", void 0);
+exports.UserStatusComment = UserStatusComment;
 class FriendshipStatus {
 }
 __decorate([
@@ -579,7 +660,7 @@ __decorate([
 ], UserModerationAction.prototype, "until", void 0);
 __decorate([
     common_1.Required(),
-    swagger_1.Description('Weather or not the account was terminated'),
+    swagger_1.Description('Whether or not the account was terminated'),
     __metadata("design:type", Number)
 ], UserModerationAction.prototype, "terminated", void 0);
 exports.UserModerationAction = UserModerationAction;

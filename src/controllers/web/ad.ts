@@ -46,9 +46,11 @@ export class WWWAdsController extends controller {
                 throw new this.BadRequest('InvalidCatalogId');
             }
         }
-        return new this.WWWTemplate({title: 'Create Catalog Ad', page: {
+        let ViewData = new this.WWWTemplate({title: 'Create Catalog Ad', page: {
             catalogInfo: info,
+            adDisplayTypes: model.ad.AdDisplayType,
         }});
+        return ViewData;
     }
 
     @Get('/ad/group/create/:groupId')
@@ -64,6 +66,7 @@ export class WWWAdsController extends controller {
         }
         return new this.WWWTemplate({title: 'Create Group Ad', page: {
             groupInfo: info,
+            adDisplayTypes: model.ad.AdDisplayType,
         }});
     }
 
@@ -80,6 +83,7 @@ export class WWWAdsController extends controller {
         }
         return new this.WWWTemplate({title: 'Create Thread Ad', page: {
             threadInfo: info,
+            adDisplayTypes: model.ad.AdDisplayType,
         }});
     }
 }

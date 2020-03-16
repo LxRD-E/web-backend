@@ -80,9 +80,24 @@ let SettingsController = class SettingsController extends controller_1.default {
         if (!validate(newEmail)) {
             throw new this.BadRequest('InvalidEmail');
         }
+        let stuffBeforeAtSign = newEmail.slice(0, newEmail.indexOf('@'));
+        let domain = newEmail.slice(newEmail.indexOf('@') + 1).toLowerCase();
+        let emailDomainWithoutSuffix = domain.slice(0, domain.indexOf('.'));
+        if (emailDomainWithoutSuffix === 'gmail' || emailDomainWithoutSuffix === 'googlemail') {
+            stuffBeforeAtSign = stuffBeforeAtSign.replace(/\./g, '');
+            if (stuffBeforeAtSign.indexOf('+') !== -1) {
+                stuffBeforeAtSign = stuffBeforeAtSign.slice(0, stuffBeforeAtSign.indexOf('+'));
+            }
+            newEmail = stuffBeforeAtSign + '@gmail.com';
+        }
+        console.log(newEmail);
+        newEmail = newEmail.toLowerCase();
         let latestEmail = await this.settings.getUserEmail(userInfo.userId);
-        if (!moment().isSameOrAfter(moment(latestEmail.date).add(1, "minute"))) {
+        if (latestEmail && !moment().isSameOrAfter(moment(latestEmail.date).add(1, "minute"))) {
             throw new this.Conflict('FloodCheck');
+        }
+        if (await this.settings.isEmailInUse(newEmail)) {
+            throw new this.Conflict('EmailAlreadyInUse');
         }
         let emailToken = await new Promise((resolve, reject) => {
             crypto.randomBytes(128, function (err, buffer) {
@@ -189,7 +204,7 @@ __decorate([
     common_1.Patch('/email'),
     swagger_1.Summary('Update users email'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidEmail: Email is not of a valid format\n' }),
-    swagger_1.Returns(409, { type: model.Error, description: 'FloodCheck: Try again later\n' }),
+    swagger_1.Returns(409, { type: model.Error, description: 'FloodCheck: Try again later\nEmailAlreadyInUse: Email is already in use by this or another account\n' }),
     common_1.UseBeforeEach(auth_1.csrf),
     common_1.UseBefore(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),

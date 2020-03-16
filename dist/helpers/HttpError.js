@@ -147,6 +147,15 @@ var HttpErrors;
     HttpErrors[HttpErrors["InvalidStatus"] = 142] = "InvalidStatus";
     HttpErrors[HttpErrors["RankAlreadyExists"] = 143] = "RankAlreadyExists";
     HttpErrors[HttpErrors["InvalidGenre"] = 144] = "InvalidGenre";
+    HttpErrors[HttpErrors["ConstraintEmailVerificationRequired"] = 145] = "ConstraintEmailVerificationRequired";
+    HttpErrors[HttpErrors["EmailAlreadyInUse"] = 146] = "EmailAlreadyInUse";
+    HttpErrors[HttpErrors["MaximumOutfitsReached"] = 147] = "MaximumOutfitsReached";
+    HttpErrors[HttpErrors["AvatarRenderRequired"] = 148] = "AvatarRenderRequired";
+    HttpErrors[HttpErrors["InvalidOutfitId"] = 149] = "InvalidOutfitId";
+    HttpErrors[HttpErrors["InvalidStatusId"] = 150] = "InvalidStatusId";
+    HttpErrors[HttpErrors["InvalidReactionType"] = 151] = "InvalidReactionType";
+    HttpErrors[HttpErrors["AlreadyReactedToStatus"] = 152] = "AlreadyReactedToStatus";
+    HttpErrors[HttpErrors["NotReactedToStatus"] = 153] = "NotReactedToStatus";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 ;
 exports.ErrorTemplate = (title, body) => {

@@ -8,6 +8,7 @@ import * as Avatar from '../models/v1/avatar';
 
 import * as Users from '../models/v1/user';
 import * as Catalog from '../models/v1/catalog';
+import * as model from '../models/models';
 
 import config from '../helpers/config';
 import crypto = require('crypto');
@@ -17,6 +18,126 @@ import _init from './_init';
  * Model used for Avatar and Thumbnail Rendering, as well as controlling the User Avatar
  */
 class AvatarDAL extends _init {
+
+    /**
+     * Create an outfit. Resolves with a promise containing the ID of the outfit
+     * @param name 
+     */
+    public async createOutfit(userId: number, thumbnailUrl: string, name?: string): Promise<number> {
+        let outfitCreated = await this.knex('user_outfit').insert({
+            user_id: userId,
+            name: name,
+            'outfit_url': thumbnailUrl,
+        });
+        return outfitCreated[0];
+    }
+
+    /**
+     * Get an outfit by the {outfitId}
+     * @param outfitId 
+     */
+    public async getOutfit(outfitId: number): Promise<model.avatar.UserOutfit> {
+        let outfitData = await this.knex ('user_outfit').select('id as outfitId','user_id as userId','name', 'outfit_url as url').where({
+            'id': outfitId,
+        }).limit(1);
+        return outfitData[0];
+    }
+
+    public async deleteOutfit(outfitId: number): Promise<void> {
+        await this.knex('user_outfit').delete().where({'id': outfitId});
+        await this.knex('user_outfit_avatar').delete().where({'outfit_id': outfitId});
+        await this.knex('user_outfit_avatarcolor').delete().where({'outfit_id': outfitId});
+    }
+
+    public async updateOutfitName(outfitId: number, newName: string): Promise<void> {
+        await this.knex('user_outfit').update({
+            'name': newName,
+            'updated_at': this.knexTime(),
+        }).where({'id': outfitId}).limit(1);
+    }
+
+    /**
+     * Get outfits for the specified userId
+     * @param userId 
+     * @param limit 
+     * @param offset 
+     */
+    public async getOutfitsForUser(userId: number, limit: number = 100, offset: number = 0): Promise<model.avatar.UserOutfit[]> {
+        let outfits = await this.knex('user_outfit').select('id as outfitId','user_id as userId','name', 'outfit_url as url').where({
+            'user_id': userId,
+        }).limit(limit).offset(offset);
+        return outfits;
+    }
+
+    /**
+     * Count outfits for the specified userId
+     * @param userId 
+     */
+    public async countOutfitsForUser(userId: number): Promise<number> {
+        let outfits = await this.knex('user_outfit').count('id as total').where({
+            'user_id': userId,
+        });
+        return outfits[0]['total'] as number;
+    }
+
+    public async getOutfitAvatar(outfitId: number): Promise<model.avatar.UserOutfitAvatar[]> {
+        const userAvatar = await this.knex('user_outfit_avatar').select('user_outfit_avatar.catalog_id as catalogId','type').where({outfit_id: outfitId});
+        return userAvatar;
+    }
+
+    public async getOutfitAvatarColors(outfitId: number): Promise<model.avatar.UserOutfitAvatar[]> {
+        const userAvatarColors = await this.knex('user_outfit_avatarcolor').select('user_outfit_avatarcolor.*').where({outfit_id: outfitId});
+        return userAvatarColors;
+    }
+
+    /**
+     * Update the thumbnail URL of an outfit
+     * @param outfitId 
+     * @param url 
+     */
+    public async updateOutfitUrl(outfitId: number, url: string): Promise<void> {
+        await this.knex('user_outfit').update({
+            'outfit_url': url,
+        }).where({'id': outfitId});
+    }
+
+    /**
+     * Add items to the outfit user_outfit_avatar table
+     */
+    public async multiAddItemsToOutfit(outfitId: number, avatarRequest: Avatar.itemsArray[]): Promise<void> {
+        const addItems = [] as any;
+        avatarRequest.forEach((obj: Avatar.itemsArray) => {
+            addItems.push({
+                'catalog_id': obj.catalogId,
+                type: obj.category,
+                outfit_id: outfitId,
+            });
+        });
+        await this.knex("user_outfit_avatar").insert(addItems);
+    }
+
+    /**
+     * Add a user's avatar colors to a user outfit
+     * @param UserId User's ID
+     * @param HeadRGB Array of RGB Values
+     * @param LegRGB Array of RGB Values
+     * @param TorsoRGB Array of RGB Values
+     */
+    public async addColorsToOutfit(outfitId: number, HeadRGB: Array<number>, LegRGB: Array<number>, TorsoRGB: Array<number>): Promise<void> {
+        await this.knex("user_outfit_avatarcolor").insert({
+            outfit_id: outfitId,
+            legr: LegRGB[0],
+            legg: LegRGB[1],
+            legb: LegRGB[2],
+            headr: HeadRGB[0],
+            headg: HeadRGB[1],
+            headb: HeadRGB[2],
+            torsor: TorsoRGB[0],
+            torsog: TorsoRGB[1],
+            torsob: TorsoRGB[2],
+        });
+    }
+
     /**
      * Add items to the user's user_avatar table.
      */
@@ -243,7 +364,7 @@ class AvatarDAL extends _init {
         if (!latestModification || !latestModification[0]) {
             return true;
         }
-        if (this.moment().isSameOrAfter(this.moment(latestModification[0]["date"]).add(30, "seconds"))) {
+        if (this.moment().isSameOrAfter(this.moment(latestModification[0]["date"]).add(15, "seconds"))) {
             return true;
         }
         return false;

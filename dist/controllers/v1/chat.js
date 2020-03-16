@@ -122,8 +122,7 @@ __decorate([
     common_1.Get('/:userId/history'),
     swagger_1.Summary('Get chat history between authenticated user and userId'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is invalid\n' }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __param(2, common_1.QueryParams('offset', Number)),
@@ -187,29 +186,36 @@ ChatController = __decorate([
 exports.ChatController = ChatController;
 websockets_1.wss.on('connection', async function connection(ws, request) {
     if (request.url !== '/chat/websocket.aspx') {
+        console.log('Invalid request URL for websocket');
         return;
     }
     const sess = request.session;
     if (!sess) {
+        console.log("No session for websocket");
         ws.close();
         return;
     }
+    console.log('Websocket OK, startin conn info');
     ws.on('message', function incoming() {
         ws.close();
     });
     const userInfo = new model.user.UserInfo;
-    userInfo.userId = sess.userdata.userId;
+    userInfo.userId = sess.userdata.id;
     let listener;
     try {
+        console.log('Setting up REDIS');
         listener = await new ChatController().listenForChatEvents(userInfo);
         listener.on('message', (channel, message) => {
+            console.log('MEssage recieved to websocket. Sending message to clients...');
             ws.send(message);
         });
     }
     catch (e) {
+        console.log('Closing ws conn  due to redis error', e);
         ws.close();
     }
     ws.on('close', function () {
+        console.log('Websocket conn closed - disconnecting redis');
         if (listener && listener.disconnect) {
             listener.disconnect();
         }

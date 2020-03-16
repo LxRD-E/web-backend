@@ -29,7 +29,7 @@
                     <button type="button" class="btn btn-success" style="display:none;margin-top:1rem;" id="groupLeave">Leave Group</button>
                 </div>
             }else{
-                <div class="col-12" id="groupDisplayCol" style="display:none;">
+                <div class="col-12 coi-lg-8" id="groupDisplayCol" style="display:none;">
                     <div class="row">
                         <div class="col-sm-12">
                             <div class="card" style="margin-top:1rem;">
@@ -199,7 +199,9 @@
 
                         </div>
                     </div>
-            </div>
+                
+                </div>
+                <div class="col-2 skyscraper-ads d-none d-lg-block"></div>
         }
         </div>
   })

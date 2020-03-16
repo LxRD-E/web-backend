@@ -10,7 +10,7 @@
     @html.block('content', function(model) {
         <div id="catalogdata" data-id="@model.page.catalogId" data-name="@model.page.catalogName" data-creatorid="@model.page.creatorId" data-creatoruserid="@model.page.userId" data-creatortype="@model.page.creatorType" data-collectible="@model.page.collectible" data-isunique="@model.page.unique" data-isforsale="@model.page.forSale" data-encoded-name="@model.page.catalogEncodedName"></div>
         <div class="row" style="margin-top:1rem;">
-            <div class="col-12">
+            <div class="col-12 col-lg-10">
                 <div class="card" style="margin: 1rem 0;">
                     <div class="card-body">
                         <div class="row">
@@ -129,6 +129,7 @@
         </div>
         </div>
         </div>
+        <div class="col-2 skyscraper-ads d-none d-lg-block"></div>
         </div>
         @if (model.page.collectible === 1 && model.page.forSale === 0) {
         <div class="row">

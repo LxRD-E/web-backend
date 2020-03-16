@@ -410,7 +410,7 @@ class GroupsDAL extends _init {
     }
 
     /**
-     * Given a groupId, this method checks weather or not new members will have to be approved before joining
+     * Given a groupId, this method checks whether or not new members will have to be approved before joining
      * @param groupId 
      */
     public async doesGroupRequireApprovalForNewMembers(groupId: number): Promise<boolean> {
@@ -436,7 +436,7 @@ class GroupsDAL extends _init {
     }
 
     /**
-     * Given a groupId and userId, this method will check weather or not the user is pending to join a group
+     * Given a groupId and userId, this method will check whethet or not the user is pending to join a group
      * @param groupId 
      * @param userId 
      */
@@ -475,7 +475,7 @@ class GroupsDAL extends _init {
     /**
      * Update groups.approval_required status
      * @param groupId The groupId to update
-     * @param approvalRequired Weather or not the group will require approval
+     * @param approvalRequired whether or not the group will require approval
      */
     public async updateGroupApprovalRequiredStatus(groupId: number, approvalRequired: number): Promise<void> {
         await this.knex("groups").update({

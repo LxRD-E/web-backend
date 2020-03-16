@@ -1,12 +1,12 @@
-# sudo rm /etc/systemd/system/hindigamerclub.service
-# sudo nano /etc/systemd/system/hindigamerclub.service
-# sudo systemctl enable hindigamerclub.service
-# sudo systemctl start hindigamerclub.service
-# sudo systemctl status hindigamerclub.service
+# sudo rm /etc/systemd/system/hindigamerclub-one.service
+# sudo nano /etc/systemd/system/hindigamerclub-one.service
+# sudo systemctl enable hindigamerclub-one.service
+# sudo systemctl start hindigamerclub-one.service
+# sudo systemctl status hindigamerclub-one.service
 # to view logs:
-# sudo journalctl -u hindigamerclub.service
+# sudo journalctl -u hindigamerclub-one.service
 [Unit]
-Description=Hindi Gamer Club Web/API Daemon
+Description=Hindi Gamer Club Web/API Daemon 1
 # After=mysql.service redis.service
 
 [Service]
@@ -18,9 +18,9 @@ Restart=always
 RestartSec=0
 RemainAfterExit=yes
 # Output to custom log files
-StandardOutput=file:/home/beak/sites/hindigamerclub/www/out.log
-StandardError=file:/home/beak/sites/hindigamerclub/www/err.log
-SyslogIdentifier=hindigamerclub
+# StandardOutput=file:/home/beak/sites/hindigamerclub/www/out.log
+# StandardError=file:/home/beak/sites/hindigamerclub/www/err.log
+SyslogIdentifier=hindigamerclub-one
 # obviously we dont wanna be running this on root
 User=beak
 #Group=<alternate group>
@@ -29,7 +29,7 @@ User=beak
 # !!! CONFIG SETUP REQUIRED !!!
 # MAKE SURE TO SET SECRET_ENCRYPTION_KEY AND SECRET_ENCRYPTION_IV ENVIRONMENTAL VARIABLES
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-Environment=NODE_ENV=production PORT=3000
+Environment=NODE_ENV=production PORT=4000
 
 [Install]
 WantedBy=multi-user.target

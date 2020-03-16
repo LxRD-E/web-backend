@@ -176,14 +176,13 @@ export class CatalogController extends controller {
         if (category === model.catalog.searchCategory.Collectibles) {
             let arrayOfCatalogIds: number[] = [];
             for (const item of SearchResults) {
-                item.currency = model.economy.currencyType.primary;
                 arrayOfCatalogIds.push(item.catalogId);
             }
             let lowestPrices = await this.catalog.getLowestPriceOfCollectibleCatalogItems(arrayOfCatalogIds);
             for (const item of lowestPrices) {
                 for (const result of SearchResults) {
                     if (result.catalogId === item.catalogId) {
-                        result.price = item.price;
+                        result.collectibleLowestPrice = item.price;
                         break;
                     }
                 }
@@ -676,7 +675,7 @@ export class CatalogController extends controller {
         }
         if (!staffMode) {
             // disabled so users can buy their own stuff (for whatever reason...)
-            // await this.catalog.createItemForUserInventory(userInfo.userId, catalogId);
+            await this.catalog.createItemForUserInventory(userInfo.userId, catalogId);
         }
         // Upload File(s)
         if (files.obj) {

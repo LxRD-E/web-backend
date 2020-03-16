@@ -13,6 +13,7 @@ import {encrypt, decrypt, encryptPasswordHash, decryptPasswordHash} from './auth
 // Init
 import _init from './_init';
 import * as model from '../models/models';
+
 /**
  * Encryption/Decryption Keys
  */
@@ -580,12 +581,165 @@ class UsersDAL extends _init {
      * Retrieve Multiple Statuses from UserIds at once
      */
     public async multiGetStatus(ids: Array<number>, offset: number, limit: number): Promise<Array<users.UserStatus>> {
-        const query = this.knex('user_status').select('user_status.userid as userId','user_status.status', 'user_status.date').limit(limit).offset(offset).orderBy('user_status.id', 'desc');
+        const query = this.knex('user_status').select('user_status.id as statusId','user_status.userid as userId','user_status.status', 'user_status.date', 'reaction_count_heart as heartReactionCount', 'comment_count as commentCount').limit(limit).offset(offset).orderBy('user_status.id', 'desc');
         ids.forEach((id) => {
             query.orWhere({'user_status.userid':id,});
         });
         const UserStatuses = await query;
         return UserStatuses as Array<users.UserStatus>;
+    }
+
+    public async canUserPostCommentToStatus(userId: number): Promise<boolean> {
+        let latestComments = await this.knex('user_status_comment').select('id').where('created_at', '>', this.knexTime(this.moment().subtract(1, 'hour'))).andWhere({
+            'user_id': userId,
+        });
+        if (latestComments.length >= 25) {
+            return false;
+        }
+    }
+
+    /**
+     * Mutli-get the heart status for statusIds in respect to the {userId}
+     */
+    public async multiGetReactionStatusForUser(userId: number, statusIds: number[], reactionType: string): Promise<model.user.UserReactionInformation[]> {
+        let query = this.knex('user_status_reactions').select('id','status_id');
+        for (const status of statusIds) {
+            query = query.orWhere({
+                'user_id': userId,
+                'status_id': status,
+                'reaction': reactionType,
+            });
+        }
+        let results = await query;
+        let multiStatusItem = [];
+        for (const item of statusIds) {
+            let didReact = false;
+            for (const otherItem of results) {
+                if (otherItem.status_id === item) {
+                    didReact = true;
+                    break;
+                }
+            }
+            multiStatusItem.push({
+                statusId: item,
+                userId: userId,
+                didReact: didReact,
+            });
+        }
+        return multiStatusItem;
+    }
+
+    public async getStatusById(statusId: number): Promise<users.UserStatus> {
+        const query = this.knex('user_status').select('user_status.id as statusId','user_status.userid as userId','user_status.status', 'user_status.date', 'reaction_count_heart as heartReactionCount', 'comment_count as commentCount').limit(1).where('id','=',statusId);
+        const UserStatuses = await query;
+        if (!UserStatuses[0]) {
+            throw new Error('InvalidStatusId');
+        }
+        return UserStatuses[0];
+    }
+
+    public async checkIfAlreadyReacted(statusId: number, userId: number, reactionType: string) {
+        if (reactionType !== '❤️') {
+            throw new Error('Reaction type is not supported by this method. UsersDAL.checkIfAlreadyReacted()');
+        }
+        let alreadyReacted = await this.knex('user_status_reactions').select('id').where({
+            'status_id': statusId,
+            'user_id': userId,
+            'reaction': reactionType,
+        }).limit(1);
+        if (alreadyReacted && alreadyReacted[0]) {
+            return true;
+        }
+        return false;
+    }
+
+    public async addCommentToStatus(statusId: number, userId: number, comment: string) {
+        await this.knex.transaction(async (trx) => {
+            // Add comment
+            await trx('user_status_comment').insert({
+                'status_id': statusId,
+                'user_id': userId,
+                'comment': comment,
+            }).forUpdate('user_status','user_status_comment');
+            // Increment reaction count
+            await trx('user_status').increment('comment_count').where({
+                'id': statusId,
+            }).forUpdate('user_status','user_status_comment');
+            // Commit
+            await trx.commit();
+            // Ok
+        });
+    }
+
+    public async getCommentsToStatus(statusId: number, offset: number, limit: number): Promise<model.user.UserStatusComment[]> {
+        let comments = await this.knex('user_status_comment').select('id as userStatusCommentId','user_id as userId','status_id as statusId','comment','created_at as createdAt','updated_at as updatedAt').limit(limit).offset(offset).orderBy('id','asc').where({'status_id': statusId});
+        return comments;
+    }
+
+    public async addReactionToStatus(statusId: number, userId: number, reactionType: string) {
+        if (reactionType !== '❤️') {
+            throw new Error('Reaction type is not supported by this transaction. UsersDAL.addReactionToStatus()');
+        }
+        await this.knex.transaction(async (trx) => {
+            let alreadyReacted = await trx('user_status_reactions').select('id').where({
+                'status_id': statusId,
+                'user_id': userId,
+                'reaction': reactionType,
+            }).limit(1).forUpdate('user_status_reactions', 'user_status');
+            if (alreadyReacted && alreadyReacted[0]) {
+                throw new Error('AlreadyReactedToStatus');
+            }
+            // Add reaction
+            await trx('user_status_reactions').insert({
+                'status_id': statusId,
+                'user_id': userId,
+                'reaction': reactionType,
+            }).forUpdate('user_status','user_status_reactions');
+            // Increment reaction count
+            if (reactionType === '❤️') {
+                await trx('user_status').increment('reaction_count_heart').where({
+                    'id': statusId,
+                }).forUpdate('user_status','user_status_reactions');
+            }else{
+                throw new Error('Cannot increment reaction count for invalid reactionType');
+            }
+            // Commit
+            await trx.commit();
+            // Ok
+        });
+    }
+
+    public async removeReactionToStatus(statusId: number, userId: number, reactionType: string) {
+        if (reactionType !== '❤️') {
+            throw new Error('Reaction type is not supported by this transaction. UsersDAL.addReactionToStatus()');
+        }
+        await this.knex.transaction(async (trx) => {
+            let alreadyReacted = await trx('user_status_reactions').select('id').where({
+                'status_id': statusId,
+                'user_id': userId,
+                'reaction': reactionType,
+            }).limit(1).forUpdate('user_status_reactions', 'user_status');
+            if (!alreadyReacted || !alreadyReacted[0]) {
+                throw new Error('NotReactedToStatus');
+            }
+            // Add reaction
+            await trx('user_status_reactions').delete().where({
+                'status_id': statusId,
+                'user_id': userId,
+                'reaction': reactionType,
+            }).forUpdate('user_status','user_status_reactions');
+            // Increment reaction count
+            if (reactionType === '❤️') {
+                await trx('user_status').decrement('reaction_count_heart').where({
+                    'id': statusId,
+                }).forUpdate('user_status','user_status_reactions');
+            }else{
+                throw new Error('Cannot decrement reaction count for invalid reactionType');
+            }
+            // Commit
+            await trx.commit();
+            // Ok
+        });
     }
 
     /**

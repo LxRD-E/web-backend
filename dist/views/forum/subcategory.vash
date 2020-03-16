@@ -85,7 +85,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-12">
+            <div class="col-lg-10 col-12">
                 <div class="row forumcategories">
                     <div class="col-12">
                         <div class="card bg-success" style="color:white;border-radius:0;">
@@ -154,6 +154,8 @@
                         </ul>
                     </div>
                 </div>
+            </div>
+            <div class="col-2 skyscraper-ads d-none d-lg-block">
             </div>
         </div>
     })

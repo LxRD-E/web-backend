@@ -73,7 +73,7 @@
                                 <form>
                                     <div class="form-group">
                                         <h5 class="card-title">Approval Required</h5>
-                                        <p style="font-size:0.85rem;margin-bottom:1rem;">Weather or not group members will have to be approved before joining this group.</p>
+                                        <p style="font-size:0.85rem;margin-bottom:1rem;">Whether or not group members will have to be approved before joining this group.</p>
                                         <div class="row">
                                             <div class="col-md-8 col-sm-12">
                                                 <select class="form-control" id="groupApprovalRequired">

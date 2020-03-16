@@ -9,6 +9,8 @@ var curChatOffset = 0;
 var canLoadMore = false;
 let latestMessage = {};
 
+userId = parseInt(userId, 10);
+
 function getCsrf() {
     // For now, since the ws connection can't validate csrf tokens, we have to make this request which will result in a csrf validation error. 
     // 
@@ -60,7 +62,7 @@ function chatInit() {
         ">
 
             <div class="row" id="latestChatUsersParent" style="display:none;">
-                <div class="col-12">
+                <div class="col-12" id="latest-chats-header">
                     <h5 style="padding-left:0.5rem;margin-top:0.5rem;">Latest Chats</h5>
                 </div>
                 <div class="col-12" id="latestChatUsers">
@@ -69,7 +71,7 @@ function chatInit() {
             </div>
 
             <div class="row" id="chatUsersParent" style="display:none;">
-                <div class="col-12">
+                <div class="col-12" id="latest-friends-header">
                     <h5 style="padding-left:0.5rem;margin-top:0.5rem;">Friends</h5>
                 </div>
                 <div class="col-12" id="chatUsers">
@@ -133,21 +135,24 @@ function chatInit() {
             });
     }
     loadUnread();
-    if (!localStorage.getItem('notifSystemInUse')) {
-        localStorage.setItem('notifSystemInUse', false);
-    }
+    localStorage.setItem('notifSystemInUse', false);
+
     function parseBool(bool) {
         if (bool === "true") {
             return true;
         }
         return false;
     }
+    setupListen();
+
+    // local storage stuff was way harder to set up than its worth
+    /*
     if (parseBool(localStorage.getItem('notifSystemInUse')) === false) {
         setupListen();
     } else {
         console.log('Already in use');
         console.log(parseBool(localStorage.getItem('notifSystemInUse')));
-    }
+    }*/
     var isTrying = false;
     function attemptRetry(closeEvent) {
         if (!isTrying) {
@@ -168,13 +173,13 @@ function chatInit() {
             sock.onmessage = function (event) {
                 var messageToLoad = JSON.parse(event.data);
                 handleChatMessage(messageToLoad);
-                localStorage.setItem('notifSystemJson', event.data);
+                // localStorage.setItem('notifSystemJson', event.data);
             }
             sock.onopen = function (event) {
                 if (unload) {
                     return;
                 }
-                localStorage.setItem('notifSystemInUse', true);
+                // localStorage.setItem('notifSystemInUse', true);
             }
             sock.onclose = function (event) {
                 if (unload) {
@@ -194,7 +199,7 @@ function chatInit() {
             }
             window.onbeforeunload = function () {
                 unload = true;
-                localStorage.setItem('notifSystemInUse', false);
+                // localStorage.setItem('notifSystemInUse', false);
                 sock.close();
             }
         });
@@ -283,6 +288,7 @@ function chatInit() {
         return request('/chat/latest', 'GET')
             .then((d) => {
                 if (d.length === 0) {
+                    $('#latest-chats-header').hide();
                     // $('#latestChatUsersParent').empty();
                     // $('#chatUsersLatest').append('<div class="row"><div class="col-12"><p class="text-center">N/A</p></div></div>');
                     return;
@@ -293,6 +299,7 @@ function chatInit() {
                     let savedIndex = index;
                     let user = chatMessage.userIdTo;
                     if (user === userId) {
+                        console.log('Using userIdFrom instead');
                         user = chatMessage.userIdFrom;
                     }
                     console.log(user);
@@ -347,7 +354,9 @@ function chatInit() {
                     curChatOffset += 25;
                 }
                 if (d.total === 0) {
-                    $('#chatUsers').append(`<div class="row"><div class="col-12"><p class="text-center">Make some Friends to chat with them!</p></div></div>`)
+                    $('#latest-chats-header').hide();
+                    $('#latest-friends-header').hide();
+                    $('#chatUsers').append(`<div class="row" style="margin-top:1rem;padding-left:1rem;padding-right:1rem;"><div class="col-12"><p class="text-center" style="font-size:0.85rem;">Make some Friends to chat with them!</p></div></div>`)
                 } else {
                     var ids = [];
                     d.friends.forEach(function (fr) {

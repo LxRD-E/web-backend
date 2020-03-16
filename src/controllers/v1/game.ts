@@ -8,6 +8,15 @@ import jsObfuse = require('javascript-obfuscator');
  * @deprecated
  */
 import SimpleCrypto from "simple-crypto-js";
+
+// models
+import * as model from '../../models/models';
+
+import controller from '../controller';
+import { QueryParams, Get, Controller, PathParams, Use, Locals, Res, Post, BodyParams, Patch, Delete, Required } from '@tsed/common';
+import { Summary, ReturnsArray, Returns, Description } from '@tsed/swagger';
+import { YesAuth, NoAuth, GameAuth } from '../../middleware/Auth';
+import { csrf } from '../../dal/auth';
 /**
  * this is purely used for typings. please access directly from dal instead of here
  */
@@ -246,14 +255,6 @@ const script = jsObfuse.obfuscate(`
     `, scriptOptions);
 let code = COPYRIGHT_DISCLAIMER + '\n' + script.getObfuscatedCode();
 
-// models
-import * as model from '../../models/models';
-
-import controller from '../controller';
-import { QueryParams, Get, Controller, PathParams, Use, Locals, Res, Post, BodyParams, Patch, Delete, Required } from '@tsed/common';
-import { Summary, ReturnsArray, Returns, Description } from '@tsed/swagger';
-import { YesAuth, NoAuth, GameAuth } from '../../middleware/Auth';
-import { csrf } from '../../dal/auth';
 /**
  * Game Controller
  */

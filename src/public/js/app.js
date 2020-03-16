@@ -84,12 +84,12 @@ function formatDate(dat) {
 }
 
 // Idea is you pass the value (1 or 2) into this function and get an html span that will represent the currency name & color (since we don't know it yet)
-function formatCurrency(cur) {
+function formatCurrency(cur, heightData = '1rem') {
     if (cur === 1) {
         // return '<span style="color:#28a745;"><i class="far fa-money-bill-alt"></i> </span>';
-        return '<span style="color:#28a745;"><img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/money-green-2.svg"/> </span>';
+        return '<span style="color:#28a745;"><img alt="$" style="height: '+heightData+';" src="https://cdn.hindigamer.club/static/money-green-2.svg"/> </span>';
     } else {
-        return '<span style="color:#ffc107;"><img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/coin-stack-yellow.svg"/> </span>';
+        return '<span style="color:#ffc107;"><img alt="$" style="height: '+heightData+';" src="https://cdn.hindigamer.club/static/coin-stack-yellow.svg"/> </span>';
     }
 }
 
@@ -1218,38 +1218,67 @@ $(document).on('click', '.onClickShowTabs', function (e) {
 /**
  *  load ads
  */
-request('/ad/random/1', 'GET')
-.then(d => {
-    $('#leaderboard-ad-one').append(`
-    <div class="col-12" style="margin-top:1rem;">
-        <div style="display:block;margin:0 auto;max-width:728px;">
-            <a href="/api/v1/ad/${d.adId}/click">
-                <img style="width:100%;" src="${d.imageUrl}" title="${xss(d.title)}" />
-                <p class="ad-alert-text" style="color: rgba(33, 37, 41, 0.95);"><i class="fas fa-ad"></i></p>
-            </a>
+$('.leaderboard-ad').each(function(e) {
+    request('/ad/random/1', 'GET')
+    .then(d => {
+        $(this).append(`
+        <div class="col-12" style="margin-top:1rem;">
+            <div style="display:block;margin:0 auto;max-width:728px;">
+                <a href="/api/v1/ad/${d.adId}/click">
+                    <img style="width:100%;" src="${d.imageUrl}" title="${xss(d.title)}" />
+                    <p class="ad-alert-text" style="color: rgba(33, 37, 41, 0.95);"><i class="fas fa-ad"></i></p>
+                </a>
+            </div>
         </div>
-    </div>
-    `);
-    $('#leaderboard-ad-one').find('img').on('load', () => {
-        console.log('ad image loaded');
-        $('#leaderboard-ad-one').find('.whitespace-ad').remove();
-    });
-})
-.catch(e => {
-    // default ad url https://cdn.hindigamer.club/thumbnails/684bc763f1459a12ac64c74d5b6154216f2bf26bd1b76cb976449ffad5e163d8.png
-    $('#leaderboard-ad-one').append(`
-    <div class="col-12" style="margin-top:1rem;">
-        <div style="display:block;margin:0 auto;max-width:728px;">
-            <a href="/ads">
-                <img style="width:100%;" src="https://cdn.hindigamer.club/thumbnails/684bc763f1459a12ac64c74d5b6154216f2bf26bd1b76cb976449ffad5e163d8.png" />
-                <p class="ad-alert-text"><i class="fas fa-ad"></i></p>
-            </a>
+        `);
+        $(this).find('img').on('load', () => {
+            console.log('ad image loaded');
+            $(this).find('.whitespace-ad').remove();
+        });
+    })
+    .catch(e => {
+        // default ad url https://cdn.hindigamer.club/thumbnails/684bc763f1459a12ac64c74d5b6154216f2bf26bd1b76cb976449ffad5e163d8.png
+        $(this).append(`
+        <div class="col-12" style="margin-top:1rem;">
+            <div style="display:block;margin:0 auto;max-width:728px;">
+                <a href="/ads">
+                    <img style="width:100%;" src="https://cdn.hindigamer.club/thumbnails/684bc763f1459a12ac64c74d5b6154216f2bf26bd1b76cb976449ffad5e163d8.png" />
+                    <p class="ad-alert-text"><i class="fas fa-ad"></i></p>
+                </a>
+            </div>
         </div>
-    </div>
-    `);
-    $('#leaderboard-ad-one').find('img').on('load', () => {
-        console.log('ad image loaded');
-        $('#leaderboard-ad-one').find('.whitespace-ad').remove();
+        `);
+        $(this).find('img').on('load', () => {
+            console.log('ad image loaded');
+            $(this).find('.whitespace-ad').remove();
+        });
+        
     });
-    
 });
+if (window.innerWidth > 991) {
+    $('.skyscraper-ads').each(function(e) {
+        request('/ad/random/2', 'GET')
+        .then(d => {
+            $(this).append(`
+                    <a href="/api/v1/ad/${d.adId}/click">
+                        <img style="width:160px;height:600px;" src="${d.imageUrl}" title="${xss(d.title)}" />
+                        <p class="ad-alert-text" style="color: rgba(33, 37, 41, 0.95);"><i class="fas fa-ad"></i></p>
+                    </a>
+            `);
+        })
+        .catch(e => {
+            // default ad url https://cdn.hindigamer.club/thumbnails/684bc763f1459a12ac64c74d5b6154216f2bf26bd1b76cb976449ffad5e163d8.png
+            $(this).append(`
+                    <a href="/ads">
+                        <img style="width:160px;height:600px;" src="https://cdn.hindigamer.club/thumbnails/81082ace029ca2526b6a54e6f2d9914b2397a22c3d4e3260de402f872e093f97.png" />
+                        <p class="ad-alert-text"><i class="fas fa-ad"></i></p>
+                    </a>
+            `);
+            $(this).find('img').on('load', () => {
+                console.log('ad image loaded');
+                $(this).find('.whitespace-ad').remove();
+            });
+            
+        });
+    });
+}

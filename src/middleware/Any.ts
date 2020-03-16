@@ -175,6 +175,8 @@ export default async (req: Request, res: Response, next: NextFunction, UserModel
             }
             // Setup Locals
             res.locals.userInfo = userInfo;
+            // csrf local (so that it auto loads into the view)
+            res.locals.csrf = req.session.userdata.csrf;
             // If not api request
             if (req.url.slice(0,5) !== '/api/') {
                 let dal = new UserModel();

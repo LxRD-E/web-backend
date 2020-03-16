@@ -1,0 +1,33 @@
+# sudo rm /etc/systemd/system/hindigamerclub-two.service & sudo nano /etc/systemd/system/hindigamerclub-two.service
+# sudo systemctl enable hindigamerclub-two.service & sudo systemctl start hindigamerclub-two.service
+# sudo systemctl status hindigamerclub-two.service
+# to view logs:
+# sudo journalctl -u hindigamerclub-two.service
+[Unit]
+Description=Hindi Gamer Club Web/API Daemon 2
+# After=mysql.service redis.service
+
+[Service]
+ExecStart=/usr/bin/npm run start
+# Required on some systems
+WorkingDirectory=/home/beak/sites/hindigamerclub/www/
+Restart=always
+# Restart service after 0 seconds if service crashes
+RestartSec=0
+RemainAfterExit=yes
+# Output to custom log files
+# StandardOutput=file:/home/beak/sites/hindigamerclub/www/out.log
+# StandardError=file:/home/beak/sites/hindigamerclub/www/err.log
+SyslogIdentifier=hindigamerclub-two
+# obviously we dont wanna be running this on root
+User=beak
+#Group=<alternate group>
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!! CONFIG SETUP REQUIRED !!!
+# MAKE SURE TO SET SECRET_ENCRYPTION_KEY AND SECRET_ENCRYPTION_IV ENVIRONMENTAL VARIABLES
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Environment=NODE_ENV=production PORT=4001
+
+[Install]
+WantedBy=multi-user.target

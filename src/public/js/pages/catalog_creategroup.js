@@ -38,6 +38,7 @@ function makeAsset(form, csrf) {
         url: "/api/v1/catalog/create",
         headers:{
             "x-csrf-token": csrf,
+            "accept": 'application/json',
         },
         data: form,
         processData: false,
@@ -58,8 +59,8 @@ function makeAsset(form, csrf) {
                     console.log("bad");
                 }
             }else{
-                if (e.responseJSON && e.responseJSON.message) {
-                    warning(e.responseJSON.message);
+                if (e.responseJSON && e.responseJSON.error) {
+                    warning(errorTransform(e.responseJSON.error.code));
                 }else{
                     warning("An unknown error has occured. Try reloading the page, and trying again.");
                 }

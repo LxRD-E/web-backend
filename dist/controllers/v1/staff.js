@@ -36,6 +36,11 @@ let StaffController = class StaffController extends controller_1.default {
             throw new this.BadRequest('InvalidPermissions');
         }
     }
+    async getTransactions(userInfo, offset = 0, userId) {
+        this.validate(userInfo, 1);
+        const transactions = await this.economy.getUserTransactions(userId, offset);
+        return transactions;
+    }
     async ban(userInfo, userId, reason, privateReason, length, lengthType, terminated, deleted) {
         this.validate(userInfo, 2);
         const numericId = Filter_1.filterId(userId);
@@ -592,6 +597,18 @@ let StaffController = class StaffController extends controller_1.default {
         };
     }
 };
+__decorate([
+    common_1.Get('/user/:userId/transactions'),
+    swagger_1.Summary('Get transaction history for the {userId}'),
+    common_1.Use(Auth_1.YesAuth),
+    swagger_1.ReturnsArray(200, { type: model.economy.userTransactions }),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.QueryParams('offset', Number)),
+    __param(2, common_1.PathParams('userId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "getTransactions", null);
 __decorate([
     common_1.UseBeforeEach(auth_1.csrf),
     common_1.UseBefore(Auth_1.YesAuth),

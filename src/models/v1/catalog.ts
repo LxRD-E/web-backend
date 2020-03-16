@@ -2,6 +2,7 @@
  * Imports
  */
 import {currencyType} from './economy';
+import { PropertyType, Required } from '@tsed/common';
 /**
  * Enums
  */
@@ -133,14 +134,23 @@ export interface FilesInterface {
     obj: boolean|Buffer;
     mtl: boolean|Buffer;
 }
-export interface SearchResults {
+export class SearchResults {
+    @Required()
     catalogId: number;
+    @Required()
     catalogName: string;
+    @Required()
     price: number;
+    @Required()
     currency: currencyType;
+    @Required()
     userId: number;
+    @Required()
     collectible: collectible;
+    @Required()
     maxSales: number|null;
+    @PropertyType(Number)
+    collectibleLowestPrice: number;
 }
 /**
  * catalog_comments

@@ -1,4 +1,4 @@
-$('#leaderboard-ad-one').remove();
+$('.leaderboard-ad').remove();
 let codeToIncludeInRedirect = undefined;
 let serviceMetaInfo = $('.meta-info-for-service').first();
 let returnUrl = serviceMetaInfo.attr('data-returnurl');

@@ -141,9 +141,11 @@ export default class AdController extends controller {
         // Resize (to leaderboard)
         // currently hard-coded for leaderboard, but we may add more types of ads in the future, so update this code accordingly
         if (adDisplayType === model.ad.AdDisplayType.Leaderboard) {
-            await imageInfo.resize(728,90);
+            imageInfo.resize(728,90);
+        }else if (adDisplayType === model.ad.AdDisplayType.Skyscraper) {
+            imageInfo.resize(160,600);
         }else{
-            throw new Error('NotImplemented');
+            throw new Error('Ad type specified ('+adDisplayType+') is not supported by AdController.createAdvertisement()');;
         }
         // Grab edited buffer
         let imageData = await imageInfo.getBufferAsync(mime);

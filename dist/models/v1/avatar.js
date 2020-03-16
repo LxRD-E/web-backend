@@ -50,4 +50,41 @@ __decorate([
     __metadata("design:type", Object)
 ], UpdateAvatarPayload.prototype, "Pants", void 0);
 exports.UpdateAvatarPayload = UpdateAvatarPayload;
+class AvatarPollResponseOK {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], AvatarPollResponseOK.prototype, "url", void 0);
+exports.AvatarPollResponseOK = AvatarPollResponseOK;
+class UserOutfit {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserOutfit.prototype, "outfitId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserOutfit.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], UserOutfit.prototype, "name", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], UserOutfit.prototype, "url", void 0);
+exports.UserOutfit = UserOutfit;
+class UserOutfitAvatar {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserOutfitAvatar.prototype, "catalogId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserOutfitAvatar.prototype, "type", void 0);
+exports.UserOutfitAvatar = UserOutfitAvatar;
 

@@ -316,11 +316,86 @@ let AuthController = class AuthController extends controller_1.default {
         friends.forEach((obj) => {
             arrayOfIds.push(obj.userId);
         });
+        arrayOfIds.push(userInfo.userId);
         if (arrayOfIds.length === 0) {
             return [];
         }
         let feed = await this.user.multiGetStatus(arrayOfIds, offset, limit);
+        let idsForStatus = [];
+        for (const id of feed) {
+            idsForStatus.push(id.statusId);
+        }
+        let resultsForMultiGetReactionStatus = await this.user.multiGetReactionStatusForUser(userInfo.userId, idsForStatus, '❤️');
+        for (const item of feed) {
+            for (const reactionInfo of resultsForMultiGetReactionStatus) {
+                if (reactionInfo.statusId === item.statusId) {
+                    item.didReactWithHeart = reactionInfo.didReact;
+                    break;
+                }
+            }
+        }
         return feed;
+    }
+    async addCommentToStatus(userInfo, statusId, comment) {
+        if (!comment || !comment.replace(/\s+/g, '') || comment.length > 4096) {
+            throw new this.BadRequest('InvalidComment');
+        }
+        let canPost = await this.user.canUserPostCommentToStatus(userInfo.userId);
+        if (!canPost) {
+            throw new this.Conflict('Cooldown');
+        }
+        let statusData = await this.user.getStatusById(statusId);
+        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
+        if (!info.areFriends && userInfo.userId !== statusData.userId) {
+            throw new this.BadRequest('InvalidStatusId');
+        }
+        await this.user.addCommentToStatus(statusId, userInfo.userId, comment);
+        return {
+            success: true,
+        };
+    }
+    async getCommentsForStatus(userInfo, statusId, offset = 0, limit = 25) {
+        let statusData = await this.user.getStatusById(statusId);
+        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
+        if (!info.areFriends && userInfo.userId !== statusData.userId) {
+            throw new this.BadRequest('InvalidStatusId');
+        }
+        let comments = await this.user.getCommentsToStatus(statusId, offset, limit);
+        return comments;
+    }
+    async addReactionToStatus(userInfo, statusId, reactionType) {
+        if (reactionType !== 'heart') {
+            throw new this.BadRequest('InvalidReactionType');
+        }
+        let statusData = await this.user.getStatusById(statusId);
+        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
+        if (!info.areFriends && userInfo.userId !== statusData.userId) {
+            throw new this.BadRequest('InvalidStatusId');
+        }
+        if (await this.user.checkIfAlreadyReacted(statusId, userInfo.userId, '❤️')) {
+            throw new this.Conflict('AlreadyReactedToStatus');
+        }
+        await this.user.addReactionToStatus(statusId, userInfo.userId, '❤️');
+        return {
+            success: true,
+        };
+    }
+    async deleteReactionToStatus(userInfo, statusId, reactionType) {
+        if (reactionType !== 'heart') {
+            throw new this.BadRequest('InvalidReactionType');
+        }
+        let statusData = await this.user.getStatusById(statusId);
+        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
+        if (!info.areFriends && userInfo.userId !== statusData.userId) {
+            throw new this.BadRequest('InvalidStatusId');
+        }
+        if (!await this.user.checkIfAlreadyReacted(statusId, userInfo.userId, '❤️')) {
+            throw new this.Conflict('NotReactedToStatus');
+        }
+        await this.user.removeReactionToStatus(statusId, userInfo.userId, '❤️');
+        return {
+            success: true,
+        };
     }
     async getFeedForGroups(userInfo, offset = 0, limit = 100) {
         let groups = await this.user.getGroups(userInfo.userId);
@@ -606,8 +681,8 @@ __decorate([
 ], AuthController.prototype, "signup", null);
 __decorate([
     common_1.Get('/feed/friends'),
-    swagger_1.Summary('Get the authenticated user\'s friends feed.'),
-    swagger_1.ReturnsArray(200, { type: model.user.UserStatus }),
+    swagger_1.Summary('Get the authenticated user\'s friends feed. Includes their own statuses.'),
+    swagger_1.ReturnsArray(200, { type: model.user.UserStatusForAuthenticated }),
     swagger_1.Returns(401, { type: model.Error, description: 'LoginRequired: Login Required\n' }),
     common_1.UseBeforeEach(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
@@ -617,6 +692,52 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "getFeedForFriends", null);
+__decorate([
+    common_1.Post('/feed/friends/:userStatusId/comment'),
+    swagger_1.Summary('Add a comment to the {userStatusId}'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('userStatusId', Number)),
+    __param(2, common_1.BodyParams('comment', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "addCommentToStatus", null);
+__decorate([
+    common_1.Get('/feed/friends/:userStatusId/comments'),
+    swagger_1.Summary('Get comments to the {userStatusId}'),
+    swagger_1.ReturnsArray(200, { type: model.user.UserStatusComment }),
+    common_1.Use(Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('userStatusId', Number)),
+    __param(2, common_1.QueryParams('offset', Number)),
+    __param(3, common_1.QueryParams('limit', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number, Number]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "getCommentsForStatus", null);
+__decorate([
+    common_1.Post('/feed/friends/:userStatusId/react'),
+    swagger_1.Summary('Add a heart reaction to the {userStatusId}'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('userStatusId', Number)),
+    __param(2, common_1.BodyParams('reactionType', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "addReactionToStatus", null);
+__decorate([
+    common_1.Delete('/feed/friends/:userStatusId/react'),
+    swagger_1.Summary('Delete your reaction to a {userStatusId}'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('userStatusId', Number)),
+    __param(2, common_1.BodyParams('reactionType', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "deleteReactionToStatus", null);
 __decorate([
     common_1.Get('/feed/groups'),
     swagger_1.Summary('Get the authenticated user\'s groups feed.'),
