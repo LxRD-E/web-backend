@@ -22,6 +22,7 @@
                         <button class="btn btn-success group-settings-option text-truncate" data-class-to-toggle="general" style="width:100%;">General</button>
                         <button class="btn btn-success group-settings-option text-truncate" data-class-to-toggle="member-manage" style="width:100%;opacity:0.5;margin-top:1rem;">Members</button>
                         <button class="btn btn-success group-settings-option text-truncate" data-class-to-toggle="economy" style="width:100%;opacity:0.5;margin-top:1rem;">Economy</button>
+                        <button class="btn btn-success group-settings-option text-truncate" data-class-to-toggle="logs-view" style="width:100%;opacity:0.5;margin-top:1rem;">Logs</button>
                     </div>
                 </div>
             </div>
@@ -189,6 +190,23 @@
                                                         <div class="col-3 offset-6">
                                                             <button type="button" class="btn btn-small btn-success" id="loadMoreMembers" style="width:100%;margin: 0px auto;display:none;">Next Page</button>
                                                         </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 group-settings-panel logs-view" style="display:none;">
+                                    <div class="row">
+                                        <div class="col-sm-12">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <div class="col-12">
+                                                            <h3>Ownership Changes</h3>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row" id="group-ownership-changes">
                                                     </div>
                                                 </div>
                                             </div>

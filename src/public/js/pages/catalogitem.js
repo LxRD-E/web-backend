@@ -19,13 +19,13 @@ request("/user/"+catalogdata.attr("data-creatoruserid")+"/info", "GET")
         if (catalogdata.attr("data-creatortype") === "1") {
             request("/group/"+catalogdata.attr("data-creatorid")+"/info", "GET")
                 .then(function(group) {
-                    $('#createdByP').html('Created By: <a href="/users/'+catalogdata.attr("data-creatoruserid")+'/profile">'+d.username+'</a> <a href="/groups/'+group.groupId+'/'+urlencode(group.groupName)+'/">('+group.groupName.escape()+')</a>');
+                    $('#createdByP').html('<span style="font-weight:600;">Created By:</span> <a href="/users/'+catalogdata.attr("data-creatoruserid")+'/profile">'+d.username+'</a> <a href="/groups/'+group.groupId+'/'+urlencode(group.groupName)+'/">('+group.groupName.escape()+')</a>');
                 })
                 .catch(function(e) {
 
                 })
         }else{
-            $('#createdByP').html('Created By: <a href="/users/'+catalogdata.attr("data-creatoruserid")+'/profile">'+d.username+'</a>');
+            $('#createdByP').html('<span style="font-weight:600;">Created By:</span> <a href="/users/'+catalogdata.attr("data-creatoruserid")+'/profile">'+d.username+'</a>');
         }
     })
     .catch(function(e) {

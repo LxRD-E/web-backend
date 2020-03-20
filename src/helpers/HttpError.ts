@@ -153,6 +153,8 @@ export enum HttpErrors {
     InvalidReactionType,
     AlreadyReactedToStatus,
     NotReactedToStatus,
+    InvalidGroupStatus,
+    InvalidReportReason,
 };
 // @Locals('userInfo') userInfo: model.user.UserInfo,
 export const ErrorTemplate = (title: string, body: string): string => {

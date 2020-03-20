@@ -12,6 +12,7 @@ function supportsLocalStorage() {
         return false;
     }
 }
+
 function supportsWebSockets() {
     return 'WebSocket' in window || 'MozWebSocket' in window;
 }

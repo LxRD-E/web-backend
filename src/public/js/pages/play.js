@@ -1,3 +1,5 @@
+// extension to uhh show when divs are visible
+
 // default = featured
 let currentSortMode = 1;
 // default = any
@@ -8,6 +10,15 @@ let currentLimit = 25;
 let metaInfo = $("#meta-play-info");
 let possibleGenres = JSON.parse(metaInfo.attr('data-genres'));
 
+// stuff to manage xhr requests
+let isLoading = false;
+let gamesLoaded = 0;
+let areMoreAvailable = false;
+
+
+/**
+ * get url vars from page url
+ */
 function getUrlVars() {
     var vars = {};
     var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
@@ -20,15 +31,59 @@ if (_selectedGenreQueryParam) {
     currentGenre = parseInt(_selectedGenreQueryParam);
 }
 
-let isLoading = false;
+/**
+ * when user scrolls to bottom of page, and xhr requests arent loading, and more games can be loaded: load more games
+ */
+$(window).scroll(function() {
+    if (isLoading || !areMoreAvailable) {
+        return;
+    }
+    if($(window).scrollTop() + $(window).height() > $(document).height() - $('div#footerUpper').innerHeight()) {
+        currentOffset += 25;
+        loadGames();
+    }
+});
+
+/**
+ * when user clicks search filter on mobile, reveal it
+ */
+$(document).on('click', '#open-search-filters-mobile', function(e) {
+    e.preventDefault();
+    let dToOpen = $('#search-filters');
+    console.log(dToOpen.css('display'));
+    if (dToOpen.css('display') === 'block') {
+        dToOpen.css('display', 'none');
+    }else{
+        dToOpen.attr('style','display: block!important;');
+    }
+});
+
+/**
+ * load games via XHR request and append to #topTwoGames
+ * @param {boolean} addTopTwoGamesToHeader Wheather or not the top two games list will be visible
+ */
 function loadGames(addTopTwoGamesToHeader = false) {
-    history.replaceState({genre: currentGenre, sort: currentSortMode}, "Free 3D Games", "?genre="+currentGenre+'&sortBy='+currentSortMode)
+    history.replaceState({genre: currentGenre, sort: currentSortMode}, "Free 3D Games", "?genre="+currentGenre+'&sortBy='+currentSortMode+'&offset='+currentOffset)
     isLoading = true;
-    request('/game/search?genre='+currentGenre+'&sortBy='+currentSortMode+'&limit='+currentLimit+'&offset='+currentOffset).then((d) => {
+    request('/game/search?genre='+currentGenre+'&sortBy='+currentSortMode+'&limit='+currentLimit+'&offset='+currentOffset).then((gameData) => {
+
+        let totalResults = gameData.total;
+        let d = gameData.data;
+        gamesLoaded += d.length;
+        if (gamesLoaded >= totalResults) {
+            areMoreAvailable = false;
+        }else{
+            areMoreAvailable = true;
+        }
         if (currentGenre === 1) {
             $('title').html('Free 3D Games - Hindi Gamer Club')
         }else{
             $('title').html('Free 3D '+possibleGenres[currentGenre]+' Games - Hindi Gamer Club');
+        }
+        if (currentGenre === 1) {
+            $('#free-games-description').html(`Experience thousands of user-created 3D games designed for all ages, all for free! No download required. Our games are supported on all major devices, including Desktop Computers, Laptop Computers, Tablets, and Phones.`);
+        }else{
+            $('#free-games-description').html(`Experience thousands of user-created 3D ${possibleGenres[currentGenre]} games designed for all ages, all for free! No download required. Our games are supported on all major devices, including Desktop Computers, Laptop Computers, Tablets, and Phones.`);
         }
         $('#topTwoGames').empty()
         const ids = [];
@@ -174,12 +229,15 @@ function loadGames(addTopTwoGamesToHeader = false) {
     });
 }
 if (currentGenre === 1) {
+    gamesLoaded=0;
+    areMoreAvailable=false;
     loadGames(true);
 }else{
     $('.genreoption').find('li').css('opacity','0.5');
     $('.genreoption').find('li').css('font-weight','400');
     $('.genreoption[data-id='+currentGenre+']').find('li').css('opacity',1).css('font-weight',600);
-
+    gamesLoaded=0;
+    areMoreAvailable=false;
     loadGames();
 }
 
@@ -205,6 +263,8 @@ $(document).on('click', '.sortoption', function(e) {
 
     currentSortMode = modeInt;
     $('#title').html(modeName);
+    gamesLoaded=0;
+    areMoreAvailable=false;
     loadGames();
 });
 $(document).on('click', '.genreoption', function(e) {
@@ -227,6 +287,8 @@ $(document).on('click', '.genreoption', function(e) {
     $(this).find('li').css('font-weight',600);
 
     currentGenre = modeInt;
+    gamesLoaded=0;
+    areMoreAvailable=false;
     loadGames();
 });
 

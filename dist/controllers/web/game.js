@@ -93,7 +93,7 @@ let WWWGameController = class WWWGameController extends controller_1.default {
         ViewData.page.recommendedGenres = _.sampleSize(possibleGenres, 4);
         return ViewData;
     }
-    async play(genre) {
+    play(genre) {
         if (!model.game.GameGenres[genre]) {
             genre = 1;
         }
@@ -110,6 +110,18 @@ let WWWGameController = class WWWGameController extends controller_1.default {
             }
         });
         return ViewData;
+    }
+    gameGenre(gameGernre, res) {
+        if (!isNaN(parseInt(gameGernre, 10))) {
+            return res.redirect('/play');
+        }
+        let genreToRedirectTo = model.game.GameGenres[gameGernre];
+        if (genreToRedirectTo) {
+            return res.redirect('/play?genre=' + genreToRedirectTo + '&sortBy=1');
+        }
+        else {
+            return res.redirect('/play');
+        }
     }
     async gamePlay(userData, gameId) {
         console.log('Loading play page!');
@@ -232,8 +244,17 @@ __decorate([
     __param(0, common_1.QueryParams('genre', Number)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], WWWGameController.prototype, "play", null);
+__decorate([
+    common_1.Get('/game/genre/:gameGenre'),
+    swagger_1.Summary('Get the gamePage of a gameGenre'),
+    __param(0, common_1.PathParams('gameGenre', String)),
+    __param(1, common_1.Res()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], WWWGameController.prototype, "gameGenre", null);
 __decorate([
     common_1.Get('/game/:gameId/play'),
     swagger_1.Summary('Load game play page'),

@@ -286,6 +286,7 @@ let GroupsController = class GroupsController extends controller_1.default {
         }
         await this.group.updateUserRolesetInGroup(groupId, roleset.roleSetId, userInfo.userId);
         await this.group.updateGroupOwner(groupId, userInfo.userId);
+        await this.group.recordGroupOwnershipChange(groupId, model.group.GroupOwnershipChangeType.ClaimOwnership, userInfo.userId, userInfo.userId);
         return { success: true };
     }
     async join(userInfo, groupId) {
@@ -345,9 +346,19 @@ let GroupsController = class GroupsController extends controller_1.default {
         }
         if (role.rank === 255) {
             await this.group.updateGroupOwner(groupId, 0);
+            await this.group.recordGroupOwnershipChange(groupId, model.group.GroupOwnershipChangeType.LeaveGroup, userInfo.userId, userInfo.userId);
         }
         await this.group.removeUserFromGroup(groupId, userInfo.userId);
         return { success: true };
+    }
+    async getGroupOwnershipChanges(userInfo, groupId, limit = 100, offset = 0) {
+        await this.getGroupInfo(groupId);
+        const role = await this.getAuthRole(userInfo, groupId);
+        if (!role.permissions.manage) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        let changes = await this.group.getGroupOwnershipChanges(groupId, limit, offset);
+        return changes;
     }
     async getJoinRequests(userInfo, groupId, limit = 100, offset = 0) {
         await this.getGroupInfo(groupId);
@@ -774,7 +785,7 @@ let GroupsController = class GroupsController extends controller_1.default {
         let transferInfo;
         transferInfo = await this.user.getInfo(userId, ['banned']);
         if (transferInfo.banned) {
-            throw false;
+            throw new this.BadRequest('InvalidUserId');
         }
         const userRole = await this.group.getUserRole(groupId, userId);
         if (userRole.rank === 0 || userRole.rank === 255) {
@@ -785,6 +796,7 @@ let GroupsController = class GroupsController extends controller_1.default {
         const newRole = await this.group.getRoleForNewMembers(groupId);
         await this.group.updateUserRolesetInGroup(groupId, newRole.roleSetId, userData.userId);
         await this.group.updateGroupOwner(groupId, userId);
+        await this.group.recordGroupOwnershipChange(groupId, model.group.GroupOwnershipChangeType.TransferOwnership, userId, userInfo.userId);
         return ({
             'success': true,
         });
@@ -1017,6 +1029,20 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number]),
     __metadata("design:returntype", Promise)
 ], GroupsController.prototype, "leave", null);
+__decorate([
+    common_1.Get('/:groupId/ownership-changes'),
+    swagger_1.Summary('Get an array of group ownership changes for the {groupId}'),
+    swagger_1.Description('Requester must have manage permission'),
+    common_1.Use(Auth_1.YesAuth),
+    swagger_1.ReturnsArray(200, { type: model.group.GroupOwnershipChangeEntry }),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('groupId', Number)),
+    __param(2, common_1.QueryParams('limit', Number)),
+    __param(3, common_1.QueryParams('offset', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number, Number]),
+    __metadata("design:returntype", Promise)
+], GroupsController.prototype, "getGroupOwnershipChanges", null);
 __decorate([
     common_1.Get('/:groupId/join-requests'),
     swagger_1.Summary('Get a page of group join requests'),

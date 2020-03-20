@@ -150,7 +150,7 @@ $(window).scroll(function () {
     if (!loadMoreItemsPossible) {
         return;
     }
-    if ($(window).scrollTop() + $(window).height() > $(document).height() - 200) {
+    if($(window).scrollTop() + $(window).height() > $(document).height() - $('div#footerUpper').innerHeight()) {
         loadMoreItemsPossible = false;
         window.offset = window.offset + 25;
         reload(true);

@@ -22,6 +22,7 @@ request("/settings", "GET")
         $('#newForumSignatureValue').html(data.forumSignature.escape());
         $('#selectTradingOption').find("[value=\""+data.tradingEnabled+"\"]").attr("selected", "selected");
         $('#selectThemeOption').find("[value=\""+data.theme+"\"]").attr("selected", "selected");
+        $('#birthDateValue').attr('data-birthdate', xss(moment(data.birthDate).format('MMMM DD[,] YYYY')));
 
         if (data['2faEnabled'] === 0) {
             $('#twoFactorAuth').find('[value=0]').attr('selected','selected');
@@ -175,6 +176,12 @@ request("/settings", "GET")
     .catch(function(e) {
         // hmm
     });
+
+
+$(document).on('change', '#newEmailValue', function(e) {
+    $('#updateEmailClick').removeAttr('disabled');
+});
+
 $(document).on("click", "#updateEmailClick", function() {
     var email = $('#newEmailValue').val();
     request("/settings/email", "PATCH", JSON.stringify({"email":email}))
@@ -188,6 +195,9 @@ $(document).on("click", "#updateEmailClick", function() {
         });
 });
 
+$(document).on('change', '#newForumSignatureValue', function() {
+    $('#updateForumSignatureClick').removeAttr('disabled');
+});
 $(document).on("click", "#updateForumSignatureClick", function() {
     var signature = $('#newForumSignatureValue').val();
     request("/settings/forum/signature", "PATCH", JSON.stringify({"signature":signature}))
@@ -201,6 +211,9 @@ $(document).on("click", "#updateForumSignatureClick", function() {
         });
 });
 
+$(document).on('change', '#selectThemeOption', function() {
+    $('#updateThemeClick').removeAttr('disabled');
+});
 $(document).on("click", "#updateThemeClick", function() {
     var theme = parseInt($('#selectThemeOption').find(":selected").attr("value"));
     request("/settings/theme", "PATCH", JSON.stringify({"theme":theme}))
@@ -225,6 +238,10 @@ $(document).on("click", "#updateThemeClick", function() {
             // hmm
         });
 });
+
+$(document).on('change', '#selectTradingOption', function() {
+    $('#updateTradingClick').removeAttr('disabled');
+});
 $(document).on("click", "#updateTradingClick", function() {
     var enabled = parseInt($('#selectTradingOption').find(":selected").attr("value"));
     request("/settings/trade", "PATCH", JSON.stringify({"enabled":enabled}))
@@ -237,6 +254,11 @@ $(document).on("click", "#updateTradingClick", function() {
             warning(e.responseJSON.message);
             // hmm
         });
+});
+
+
+$(document).on('change', '#newBlurbValue', function() {
+    $('#updateBlurbClick').removeAttr('disabled');
 });
 $(document).on("click", "#updateBlurbClick", function() {
     var blurb = $('#newBlurbValue').val();
@@ -251,6 +273,11 @@ $(document).on("click", "#updateBlurbClick", function() {
             // hmm
         });
 });
+
+$(document).on('change', '#newPasswordValue', function() {
+    $('#updatePasswordClick').removeAttr('disabled');
+});
+
 $(document).on("click", "#updatePasswordClick", function() {
     var captcha = grecaptcha.getResponse();
     var newPassword = $('#newPasswordValue').val();
@@ -272,6 +299,10 @@ $(document).on("click", "#updatePasswordClick", function() {
     }
 });
 
+
+$(document).on('change', '#newUsernameValue', function(e) {
+    $('#updateUsernameClick').removeAttr('disabled');
+});
 
 // Username Change
 $(document).on("click", "#updateUsernameClick", function() {
@@ -296,4 +327,15 @@ $(document).on("click", "#updateUsernameClick", function() {
                 warning(e.responseJSON.message);
             })
     });
+});
+
+$(document).on('click', '#birthDateValue', function(e) {
+    console.log('brithDateValueClick');
+    if ($(this).attr('data-visible') === 'true') {
+        $(this).attr('data-visible','false');
+        $(this).html('Click to view');
+    } else {
+        $(this).attr('data-visible','true');
+        $(this).html($(this).attr('data-birthdate') + ' (click to hide)');
+    }
 });

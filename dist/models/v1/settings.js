@@ -52,5 +52,9 @@ __decorate([
     common_1.Required(),
     __metadata("design:type", Number)
 ], UserSettings.prototype, "2faEnabled", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], UserSettings.prototype, "birthDate", void 0);
 exports.UserSettings = UserSettings;
 

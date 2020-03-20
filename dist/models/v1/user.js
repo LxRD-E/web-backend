@@ -71,11 +71,11 @@ __decorate([
 ], UserInfo.prototype, "joinDate", void 0);
 __decorate([
     common_1.Required(),
-    __metadata("design:type", Date)
+    __metadata("design:type", String)
 ], UserInfo.prototype, "lastOnline", void 0);
 __decorate([
     common_1.Required(),
-    __metadata("design:type", Date)
+    __metadata("design:type", String)
 ], UserInfo.prototype, "birthDate", void 0);
 __decorate([
     common_1.Required(),
@@ -274,6 +274,13 @@ __decorate([
     __metadata("design:type", Number)
 ], UserStatus.prototype, "commentCount", void 0);
 exports.UserStatus = UserStatus;
+class UserStatusUpdatedResponse {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserStatusUpdatedResponse.prototype, "statusId", void 0);
+exports.UserStatusUpdatedResponse = UserStatusUpdatedResponse;
 class UserStatusForAuthenticated {
 }
 __decorate([
@@ -342,7 +349,34 @@ __decorate([
     common_1.Required(),
     __metadata("design:type", String)
 ], UserStatusComment.prototype, "updatedAt", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserStatusComment.prototype, "replyCount", void 0);
 exports.UserStatusComment = UserStatusComment;
+class UserStatusCommentReply {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserStatusCommentReply.prototype, "commentReplyId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserStatusCommentReply.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], UserStatusCommentReply.prototype, "comment", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], UserStatusCommentReply.prototype, "createdAt", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], UserStatusCommentReply.prototype, "updatedAt", void 0);
+exports.UserStatusCommentReply = UserStatusCommentReply;
 class FriendshipStatus {
 }
 __decorate([

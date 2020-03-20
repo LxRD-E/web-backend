@@ -163,6 +163,39 @@ var groupStatus;
     groupStatus[groupStatus["locked"] = 1] = "locked";
     groupStatus[groupStatus["ok"] = 0] = "ok";
 })(groupStatus = exports.groupStatus || (exports.groupStatus = {}));
+var GroupOwnershipChangeType;
+(function (GroupOwnershipChangeType) {
+    GroupOwnershipChangeType[GroupOwnershipChangeType["LeaveGroup"] = 1] = "LeaveGroup";
+    GroupOwnershipChangeType[GroupOwnershipChangeType["ClaimOwnership"] = 2] = "ClaimOwnership";
+    GroupOwnershipChangeType[GroupOwnershipChangeType["TransferOwnership"] = 3] = "TransferOwnership";
+})(GroupOwnershipChangeType = exports.GroupOwnershipChangeType || (exports.GroupOwnershipChangeType = {}));
+class GroupOwnershipChangeEntry {
+}
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('userId who was affected by the change'),
+    __metadata("design:type", Number)
+], GroupOwnershipChangeEntry.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('userId who performed the change'),
+    __metadata("design:type", Number)
+], GroupOwnershipChangeEntry.prototype, "actorUserId", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('groupId affected'),
+    __metadata("design:type", Number)
+], GroupOwnershipChangeEntry.prototype, "groupId", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('The type of ownership change'),
+    __metadata("design:type", Number)
+], GroupOwnershipChangeEntry.prototype, "type", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], GroupOwnershipChangeEntry.prototype, "createdAt", void 0);
+exports.GroupOwnershipChangeEntry = GroupOwnershipChangeEntry;
 class GroupJoinRequest {
 }
 __decorate([

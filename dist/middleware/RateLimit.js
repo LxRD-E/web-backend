@@ -43,12 +43,21 @@ const rateLimitTypeConfigs = {
         inmemoryBlockDuration: 3600,
         storeClient: redisClient,
     },
+    'passwordResetAttempt': {
+        keyPrefix: 'passwordResetAttempt',
+        points: 5,
+        duration: 3600,
+        inmemoryBlockOnConsumed: 25,
+        inmemoryBlockDuration: 3600,
+        storeClient: redisClient,
+    },
 };
 const rateLimitTypes = {
     'default': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.default),
     'loginAttempt': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.loginAttempt),
     'twoFactorEnableOrDisable': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.twoFactorEnableOrDisable),
     'sendFriendRequest': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.sendFriendRequest),
+    'passwordResetAttempt': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.passwordResetAttempt),
 };
 exports.RateLimiterMiddleware = (typeOfRateLimit = 'default') => {
     return (req, res, next) => {

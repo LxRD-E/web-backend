@@ -50,7 +50,7 @@ let WWWForumController = class WWWForumController extends controller_1.default {
                 }
             }
         }
-        let latestThreads = await this.forum.getLatestThreads(subs.length);
+        let latestThreads = await this.forum.getLatestThreads(subs.length >= 5 ? 5 : subs.length);
         return new this.WWWTemplate({
             title: 'Forum',
             page: {
@@ -180,6 +180,13 @@ let WWWForumController = class WWWForumController extends controller_1.default {
         catch (e) {
             throw new this.BadRequest('InvalidSubCategoryId');
         }
+        let forumCategory;
+        try {
+            forumCategory = await this.forum.getCategoryById(forumSubCategory.categoryId);
+        }
+        catch (e) {
+            throw new this.BadRequest('InvalidCategoryId');
+        }
         let allForumSubCategories;
         try {
             allForumSubCategories = await this.forum.getSubCategories(rank);
@@ -195,6 +202,8 @@ let WWWForumController = class WWWForumController extends controller_1.default {
         ViewData.page.subCategoryName = forumSubCategory.title;
         ViewData.page.page = page;
         ViewData.page.subCategories = allForumSubCategories;
+        ViewData.page.categoryId = forumSubCategory.categoryId;
+        ViewData.page.categoryName = forumCategory.title;
         return ViewData;
     }
 };

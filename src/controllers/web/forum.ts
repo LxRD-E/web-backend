@@ -45,7 +45,9 @@ export class WWWForumController extends controller {
                 }
             }
         }
-        let latestThreads = await this.forum.getLatestThreads(subs.length);
+        // grab the latest threads. 
+        // at most, it will return 5 or the current amount of subcategories there are (whichever is smaller)
+        let latestThreads = await this.forum.getLatestThreads(subs.length >= 5 ? 5 : subs.length);
         return new this.WWWTemplate({
             title: 'Forum',
             page: {
@@ -199,7 +201,7 @@ export class WWWForumController extends controller {
         if (!numericId) {
             throw new this.BadRequest('InvalidSubCategoryId');
         }
-        let forumSubCategory
+        let forumSubCategory: model.forum.SubCategories;
         try {
             forumSubCategory = await this.forum.getSubCategoryById(numericId);
             if (forumSubCategory.permissions.read > rank) {
@@ -208,7 +210,14 @@ export class WWWForumController extends controller {
         }catch(e) {
             throw new this.BadRequest('InvalidSubCategoryId');
         }
-        let allForumSubCategories;
+        // grab category info
+        let forumCategory: model.forum.Categories;
+        try {
+            forumCategory = await this.forum.getCategoryById(forumSubCategory.categoryId);
+        }catch(e) {
+            throw new this.BadRequest('InvalidCategoryId');
+        }
+        let allForumSubCategories: model.forum.SubCategories[];
         try {
             allForumSubCategories = await this.forum.getSubCategories(rank);
         }catch(e) {
@@ -222,6 +231,8 @@ export class WWWForumController extends controller {
         ViewData.page.subCategoryName = forumSubCategory.title;
         ViewData.page.page = page;
         ViewData.page.subCategories = allForumSubCategories;
+        ViewData.page.categoryId = forumSubCategory.categoryId;
+        ViewData.page.categoryName = forumCategory.title;
         return ViewData;
     }
 }

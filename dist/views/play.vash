@@ -7,9 +7,9 @@
             <meta name="twitter:description" content="Browse tons of user-generated 3D games that run on nearly every device, in your browser!" />
         }else{
             <meta name="og:title" content="Free 3D @model.page.genres[model.page.genre] Games" />
-            <meta name="og:description" content="Browse tons of user-generated @model.page.genres[model.page.genre] 3D games that run on nearly every device, in your browser!" />
+            <meta name="og:description" content="Browse tons of user-generated 3D @model.page.genres[model.page.genre] games that run on nearly every device, in your browser!" />
             <meta name="twitter:title" content="Free 3D @model.page.genres[model.page.genre] Games" />
-            <meta name="twitter:description" content="Browse tons of user-generated @model.page.genres[model.page.genre] 3D games that run on nearly every device, in your browser!" />
+            <meta name="twitter:description" content="Browse tons of user-generated 3D @model.page.genres[model.page.genre] games that run on nearly every device, in your browser!" />
         }
         <meta name="og:type" content="website" />
     })
@@ -62,8 +62,12 @@
             <div class="col-12 col-lg-10">
                 <div class="row" style="padding-top:1rem;">
                     <div class="col-8 col-md-10">
-                        <h4 id="title">Featured Free Games</h4>
-                        <p>Experience thousands of user-created 3D games designed for all ages, all for free! No download required. Our games are supported on all major devices, including Desktop Computers, Laptop Computers, Tablets, and Phones.</p>
+                    <h4 id="title">Featured Free Games</h4>
+                        @if (model.page.genre === 1) {
+                            <p style="font-size:0.85rem;" id="free-games-description">Experience thousands of user-created 3D games designed for all ages, all for free! No download required. Our games are supported on all major devices, including Desktop Computers, Laptop Computers, Tablets, and Phones.</p>
+                        }else{
+                            <p style="font-size:0.85rem;" id="free-games-description">Experience thousands of user-created 3D @model.page.genres[model.page.genre] games designed for all ages, all for free! No download required. Our games are supported on all major devices, including Desktop Computers, Laptop Computers, Tablets, and Phones.</p>
+                        }
                     </div>
                     <div class="col-4 col-md-2">
                         <div class='form-group'>

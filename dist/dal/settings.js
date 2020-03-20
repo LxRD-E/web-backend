@@ -40,6 +40,22 @@ class SettingsDAL extends _init_1.default {
         }
         return false;
     }
+    async getUserByEmail(email) {
+        let encryptedEmail = await auth_1.encrypt(email, emailEncryptionKey);
+        let results = await this.knex('user_emails')
+            .select('id', 'userid')
+            .where({ 'email': encryptedEmail, 'status': model.user.emailVerificationType.true })
+            .limit(1)
+            .orderBy('id', 'desc');
+        if (results[0]) {
+            let infoForUser = await this.knex('users').select('id as userId', 'username').where({ 'id': results[0]['userid'] });
+            if (!infoForUser || !infoForUser[0]) {
+                throw new Error('InvalidEmailAddress');
+            }
+            return infoForUser[0];
+        }
+        throw new Error('InvalidEmailAddress');
+    }
     async insertNewEmail(userId, newEmail, emaiLVerificationCode) {
         const encryptedEmail = await auth_1.encrypt(newEmail, emailEncryptionKey);
         await this.knex("user_emails").insert({

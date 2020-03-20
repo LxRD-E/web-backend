@@ -24,7 +24,7 @@ const Filter_1 = require("../../helpers/Filter");
 const model = require("../../models/models");
 const Auth_1 = require("../../middleware/Auth");
 let WWWGroupController = class WWWGroupController extends controller_1.default {
-    async users() { return new this.WWWTemplate({ title: 'Search Groups' }); }
+    async groups() { return new this.WWWTemplate({ title: 'Search Groups' }); }
     async groupCreate(userInfo) {
         return new this.WWWTemplate({ 'title': 'Create a Group', userInfo: userInfo });
     }
@@ -64,7 +64,13 @@ let WWWGroupController = class WWWGroupController extends controller_1.default {
         let groupData;
         try {
             groupData = await this.group.getInfo(filteredCatalogId);
-            const encodedName = Filter_1.urlEncode(groupData.groupName);
+            let encodedName;
+            if (groupData.groupStatus !== model.group.groupStatus.ok) {
+                encodedName = Filter_1.urlEncode('Locked Group');
+            }
+            else {
+                encodedName = Filter_1.urlEncode(groupData.groupName);
+            }
             return res.redirect("/groups/" + filteredCatalogId + "/" + encodedName);
         }
         catch (e) {
@@ -154,7 +160,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
-], WWWGroupController.prototype, "users", null);
+], WWWGroupController.prototype, "groups", null);
 __decorate([
     common_1.Get('/groups/create'),
     swagger_1.Summary('Create group page'),

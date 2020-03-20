@@ -410,6 +410,38 @@ class GroupsDAL extends _init {
     }
 
     /**
+     * Record a group ownership change
+     * @param groupId 
+     * @param changeType 
+     * @param userIdAffected 
+     * @param userIdWhoPerformedAction 
+     */
+    public async recordGroupOwnershipChange(groupId: number, changeType: group.GroupOwnershipChangeType, userIdAffected: number, userIdWhoPerformedAction: number): Promise<void> {
+        await this.knex('group_ownership_change').insert({
+            user_id: userIdAffected,
+            actor_user_id: userIdWhoPerformedAction,
+            group_id: groupId,
+            type: changeType,
+        });
+    }
+
+    public async getGroupOwnershipChanges(groupId: number, limit: number, offset: number): Promise<group.GroupOwnershipChangeEntry[]> {
+        let results = await this.knex('group_ownership_change').select('id as groupOwnershipChangeId','user_id as userId','actor_user_id as actorUserId','group_id as groupId','type','created_at as createdAt').where({'group_id': groupId}).limit(limit).offset(offset).orderBy('id','desc');
+        return results;
+    }
+
+    /**
+     * Update the {status} of the {groupId}
+     * @param groupId 
+     * @param status 
+     */
+    public async updateGroupStatus(groupId: number, status: group.groupStatus): Promise<void> {
+        await this.knex('groups').update({
+            'status': status,
+        }).where({'id': groupId}).limit(1);
+    }
+
+    /**
      * Given a groupId, this method checks whether or not new members will have to be approved before joining
      * @param groupId 
      */
@@ -468,7 +500,7 @@ class GroupsDAL extends _init {
      * @param groupId 
      */
     public async getPendingMembers(groupId: number, offset: number, limit: number): Promise<group.GroupJoinRequest[]> {
-        let page = await this.knex('group_members_pending').select('group_id as groupId','user_id as userId').limit(limit).offset(offset);
+        let page = await this.knex('group_members_pending').select('group_id as groupId','user_id as userId').where({'group_id': groupId}).limit(limit).offset(offset);
         return page;
     }
 

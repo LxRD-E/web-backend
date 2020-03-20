@@ -193,6 +193,7 @@ a.navbar-brand:hover {
     transition: all .1s ease-in;
 }
 a.navbar-brand {
+    transition: all .1s ease-in;
     color: #16181b;
     font-size: 0.95rem;
     font-weight: 400;
@@ -542,4 +543,38 @@ div.add-reaction:hover,div.add-comment:hover,div.remove-reaction:hover {
 }
 p.add-comment {
     cursor: pointer;
+}
+
+
+img.zoom-on-hover  {
+    transition: transform .15s ease;
+}
+
+div.og-tags-card {
+    overflow: hidden;
+    cursor: pointer;
+}
+div.og-tags-card:hover > img.zoom-on-hover {
+    transform: scale(1.025);
+}
+div.og-tags-card:hover {
+    box-shadow: 0px 0px 28px -10px rgba(0,0,0,0.44);
+    transition: all 0.15s;
+}
+div.og-tags-card {
+    transition: all 0.15s;
+}
+.formated-total-reactions {
+    cursor: pointer;
+}
+p.reply-to-comment {
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: all 0.15s;
+}
+p.reply-to-comment:hover {
+    color: rgba(33, 37, 41, 0.75);
+    transition: all 0.15s;
+    border-radius: 0.25rem;
+    background: rgba(0,0,0,0.05);
 }

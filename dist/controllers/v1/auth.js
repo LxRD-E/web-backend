@@ -26,9 +26,37 @@ const auth_1 = require("../../dal/auth");
 const controller_1 = require("../controller");
 const Auth_1 = require("../../middleware/Auth");
 const RecaptchaV2_1 = require("../../middleware/RecaptchaV2");
+const crypto = require("crypto");
 let AuthController = class AuthController extends controller_1.default {
     constructor() {
         super();
+    }
+    async requestPasswordReset(res, emailProvided) {
+        let email = this.auth.verifyEmail(emailProvided);
+        if (!email) {
+            throw new this.BadRequest('InvalidEmail');
+        }
+        res.status(200).json({
+            success: true,
+        });
+        try {
+            let userInfo;
+            try {
+                userInfo = await this.settings.getUserByEmail(email);
+            }
+            catch (e) {
+                console.log('[warn] email is invalid', email, e);
+                return;
+            }
+            let randomCode = crypto.randomBytes(128);
+            const stringToken = randomCode.toString('hex');
+            await this.user.insertPasswordReset(userInfo.userId, stringToken);
+            let url = `https://hindigamer.club/reset/password?userId=${userInfo.userId}&code=` + encodeURIComponent(stringToken);
+            await this.settings.sendEmail(email, `Password Reset Request`, `Hello ${userInfo.username}\nYou (or someone else) requested your account's password on Hindi Gamer Club to be reset. Please copy and paste the link below into your browser to reset your password.\n\n${url}\n`, `Hello ${userInfo.username}<br>You (or someone else) requested your account's password on Hindi Gamer Club to be reset. Please click the link below to reset your password.<br><a href="${url}">${url}</a><br>Alternatively, you can copy and paste this URL into your browser<br>${url}<br>`);
+        }
+        catch (e) {
+            console.error(e);
+        }
     }
     async loginWithTwoFactor(code, token, userIp, userInfo, session) {
         if (!userIp) {
@@ -310,122 +338,6 @@ let AuthController = class AuthController extends controller_1.default {
             username: username,
         };
     }
-    async getFeedForFriends(userInfo, offset = 0, limit = 100) {
-        let friends = await this.user.getFriends(userInfo.userId, 0, 200, 'asc');
-        const arrayOfIds = [];
-        friends.forEach((obj) => {
-            arrayOfIds.push(obj.userId);
-        });
-        arrayOfIds.push(userInfo.userId);
-        if (arrayOfIds.length === 0) {
-            return [];
-        }
-        let feed = await this.user.multiGetStatus(arrayOfIds, offset, limit);
-        let idsForStatus = [];
-        for (const id of feed) {
-            idsForStatus.push(id.statusId);
-        }
-        let resultsForMultiGetReactionStatus = await this.user.multiGetReactionStatusForUser(userInfo.userId, idsForStatus, '❤️');
-        for (const item of feed) {
-            for (const reactionInfo of resultsForMultiGetReactionStatus) {
-                if (reactionInfo.statusId === item.statusId) {
-                    item.didReactWithHeart = reactionInfo.didReact;
-                    break;
-                }
-            }
-        }
-        return feed;
-    }
-    async addCommentToStatus(userInfo, statusId, comment) {
-        if (!comment || !comment.replace(/\s+/g, '') || comment.length > 4096) {
-            throw new this.BadRequest('InvalidComment');
-        }
-        let canPost = await this.user.canUserPostCommentToStatus(userInfo.userId);
-        if (!canPost) {
-            throw new this.Conflict('Cooldown');
-        }
-        let statusData = await this.user.getStatusById(statusId);
-        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
-        if (!info.areFriends && userInfo.userId !== statusData.userId) {
-            throw new this.BadRequest('InvalidStatusId');
-        }
-        await this.user.addCommentToStatus(statusId, userInfo.userId, comment);
-        return {
-            success: true,
-        };
-    }
-    async getCommentsForStatus(userInfo, statusId, offset = 0, limit = 25) {
-        let statusData = await this.user.getStatusById(statusId);
-        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
-        if (!info.areFriends && userInfo.userId !== statusData.userId) {
-            throw new this.BadRequest('InvalidStatusId');
-        }
-        let comments = await this.user.getCommentsToStatus(statusId, offset, limit);
-        return comments;
-    }
-    async addReactionToStatus(userInfo, statusId, reactionType) {
-        if (reactionType !== 'heart') {
-            throw new this.BadRequest('InvalidReactionType');
-        }
-        let statusData = await this.user.getStatusById(statusId);
-        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
-        if (!info.areFriends && userInfo.userId !== statusData.userId) {
-            throw new this.BadRequest('InvalidStatusId');
-        }
-        if (await this.user.checkIfAlreadyReacted(statusId, userInfo.userId, '❤️')) {
-            throw new this.Conflict('AlreadyReactedToStatus');
-        }
-        await this.user.addReactionToStatus(statusId, userInfo.userId, '❤️');
-        return {
-            success: true,
-        };
-    }
-    async deleteReactionToStatus(userInfo, statusId, reactionType) {
-        if (reactionType !== 'heart') {
-            throw new this.BadRequest('InvalidReactionType');
-        }
-        let statusData = await this.user.getStatusById(statusId);
-        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
-        if (!info.areFriends && userInfo.userId !== statusData.userId) {
-            throw new this.BadRequest('InvalidStatusId');
-        }
-        if (!await this.user.checkIfAlreadyReacted(statusId, userInfo.userId, '❤️')) {
-            throw new this.Conflict('NotReactedToStatus');
-        }
-        await this.user.removeReactionToStatus(statusId, userInfo.userId, '❤️');
-        return {
-            success: true,
-        };
-    }
-    async getFeedForGroups(userInfo, offset = 0, limit = 100) {
-        let groups = await this.user.getGroups(userInfo.userId);
-        const arrayOfIds = [];
-        groups.forEach(obj => arrayOfIds.push(obj.groupId));
-        if (arrayOfIds.length === 0) {
-            return [];
-        }
-        let goodGroups = [];
-        for (const item of arrayOfIds) {
-            let permissions = await this.group.getUserRole(item, userInfo.userId);
-            if (permissions.permissions.getShout) {
-                goodGroups.push(item);
-            }
-        }
-        let feed = await this.group.getShouts(goodGroups, limit, offset);
-        return feed;
-    }
-    async updateStatus(userInfo, newStatus) {
-        if (newStatus.length > 255 || newStatus.length < 1) {
-            throw new this.BadRequest('InvalidStatus');
-        }
-        const latestUpdate = await this.user.getUserLatestStatus(userInfo.userId);
-        if (latestUpdate && !moment().isSameOrAfter(moment(latestUpdate.date).add(5, "minutes"))) {
-            throw new this.BadRequest('Cooldown');
-            ;
-        }
-        await this.user.updateStatus(userInfo.userId, newStatus);
-        return { success: true };
-    }
     async resetPassword(code, numericUserId, newPassword) {
         let info;
         try {
@@ -562,6 +474,17 @@ let AuthController = class AuthController extends controller_1.default {
     }
 };
 __decorate([
+    common_1.Put('/request/password-reset'),
+    swagger_1.Summary('Request a password reset'),
+    swagger_1.Description('Limited to 5 attempts per hour. Uses RecaptchaV2'),
+    common_1.Use(auth_1.csrf, Auth_1.NoAuth, RateLimit_1.RateLimiterMiddleware('passwordResetAttempt'), RecaptchaV2_1.default),
+    __param(0, common_1.Res()),
+    __param(1, common_1.BodyParams('email', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "requestPasswordReset", null);
+__decorate([
     common_1.Post('/login/two-factor'),
     swagger_1.Summary('Login to an account using the two-factor JWT generated from /auth/login'),
     common_1.Use(auth_1.csrf, Auth_1.NoAuth, RateLimit_1.RateLimiterMiddleware('loginAttempt')),
@@ -679,91 +602,6 @@ __decorate([
     __metadata("design:paramtypes", [model.auth.SignupRequest, String, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "signup", null);
-__decorate([
-    common_1.Get('/feed/friends'),
-    swagger_1.Summary('Get the authenticated user\'s friends feed. Includes their own statuses.'),
-    swagger_1.ReturnsArray(200, { type: model.user.UserStatusForAuthenticated }),
-    swagger_1.Returns(401, { type: model.Error, description: 'LoginRequired: Login Required\n' }),
-    common_1.UseBeforeEach(Auth_1.YesAuth),
-    __param(0, common_1.Locals('userInfo')),
-    __param(1, common_1.QueryParams('offset')),
-    __param(2, common_1.QueryParams('limit', Number)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, Object]),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "getFeedForFriends", null);
-__decorate([
-    common_1.Post('/feed/friends/:userStatusId/comment'),
-    swagger_1.Summary('Add a comment to the {userStatusId}'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
-    __param(0, common_1.Locals('userInfo')),
-    __param(1, common_1.PathParams('userStatusId', Number)),
-    __param(2, common_1.BodyParams('comment', String)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "addCommentToStatus", null);
-__decorate([
-    common_1.Get('/feed/friends/:userStatusId/comments'),
-    swagger_1.Summary('Get comments to the {userStatusId}'),
-    swagger_1.ReturnsArray(200, { type: model.user.UserStatusComment }),
-    common_1.Use(Auth_1.YesAuth),
-    __param(0, common_1.Locals('userInfo')),
-    __param(1, common_1.PathParams('userStatusId', Number)),
-    __param(2, common_1.QueryParams('offset', Number)),
-    __param(3, common_1.QueryParams('limit', Number)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number, Number]),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "getCommentsForStatus", null);
-__decorate([
-    common_1.Post('/feed/friends/:userStatusId/react'),
-    swagger_1.Summary('Add a heart reaction to the {userStatusId}'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
-    __param(0, common_1.Locals('userInfo')),
-    __param(1, common_1.PathParams('userStatusId', Number)),
-    __param(2, common_1.BodyParams('reactionType', String)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "addReactionToStatus", null);
-__decorate([
-    common_1.Delete('/feed/friends/:userStatusId/react'),
-    swagger_1.Summary('Delete your reaction to a {userStatusId}'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
-    __param(0, common_1.Locals('userInfo')),
-    __param(1, common_1.PathParams('userStatusId', Number)),
-    __param(2, common_1.BodyParams('reactionType', String)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "deleteReactionToStatus", null);
-__decorate([
-    common_1.Get('/feed/groups'),
-    swagger_1.Summary('Get the authenticated user\'s groups feed.'),
-    swagger_1.ReturnsArray(200, { type: model.group.groupShout }),
-    swagger_1.Returns(401, { type: model.Error, description: 'LoginRequired: Login Required\n' }),
-    common_1.UseBeforeEach(Auth_1.YesAuth),
-    __param(0, common_1.Locals('userInfo')),
-    __param(1, common_1.QueryParams('offset')),
-    __param(2, common_1.QueryParams('limit', Number)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, Object]),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "getFeedForGroups", null);
-__decorate([
-    common_1.Patch('/status'),
-    swagger_1.Summary('Update the authenticated user\'s status'),
-    swagger_1.Returns(400, { type: model.Error, description: 'InvalidStatus: Status is too long or too short\nCooldown: You cannot change your status right now\n' }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
-    __param(0, common_1.Locals('userInfo')),
-    __param(1, common_1.Required()),
-    __param(1, common_1.BodyParams("status", String)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, String]),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "updateStatus", null);
 __decorate([
     common_1.Patch('/reset/password'),
     swagger_1.Summary('Reset user password via code from email'),

@@ -269,7 +269,7 @@ export default class GameController extends controller {
      */
     @Get('/search')
     @Summary('Get all games')
-    @ReturnsArray(200, { type: model.game.GameSearchResult })
+    @Returns(200, { type: model.game.GameSearchResult })
     public async getGames(
         @QueryParams('offset', Number) offset: number = 0,
         @QueryParams('limit', Number) limit: number = 25,
@@ -279,7 +279,7 @@ export default class GameController extends controller {
         if (!model.game.GameSortOptions[sortBy]) {
             throw new this.BadRequest('InvalidSortBy');
         }
-        let games: model.game.GameSearchResult[];
+        let games: model.game.GameSearchResult;
         // Filter through sort options, seeing which one was chosen
 
         // Featured sort (subject to change at any time)

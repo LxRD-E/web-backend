@@ -52,7 +52,6 @@
     })
     @html.block('jsInternal', function(model) {
         <!-- Locale -->
-        <script nonce="@model.nonce" src="/js/locale/en.js?v=@model.v"></script>
         <script src="/js/pages/staff/_staff.js?v=@model.v" nonce="@model.nonce"></script>
     })
 })

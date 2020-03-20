@@ -1,9 +1,30 @@
 @html.extend('layouts/default', function(model) {
   @html.block('content', function(model) {
-    <div class="row" style="padding:1rem 0 1rem 0">
+      <div class="row">
+            <div class="col-12">
+                <h1>Settings</h1>
+            </div>
+      </div>
+    <div class="row" style="padding:0 0 1rem 0">
         <div class="col-sm-12">
-            <h1>Settings</h1>
             <div class="card">
+                <div class="card-body">
+                    <form>
+                        <div class="form-group">
+                            <h5 class="card-title text-margin">Birthdate</h5>
+                            <div class="row">
+                                <div class="col-12">
+                                    <p class="form-control" id="birthDateValue" style="cursor:pointer;">Click to view</p>
+                                    <small class="form-text text-muted" style="margin-bottom:0;">
+                                    Your birthdate controls what content & games you may or may not see on the website. If your birthdate is not correct, you can <a href="/support">contact support to change it</a>.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card" style="margin-top:1rem;">
                 <div class="card-body">
                     <form>
                         <div class="form-group">
@@ -14,7 +35,7 @@
                                     <input type="text" class="form-control" id="newEmailValue" value="" placeholder="Email">
                                 </div>
                                 <div class="col-md-4 col-sm-12">
-                                    <button type="button" class="btn btn-small btn-success" id="updateEmailClick" style="margin:0 auto;display: block;">Update</button>
+                                    <button type="button" class="btn btn-small btn-success" id="updateEmailClick" style="margin:0 auto;display: block;" disabled="disabled">Update</button>
                                 </div>
                             </div>
                         </div>
@@ -35,7 +56,7 @@
                                     </small>
                                 </div>
                                 <div class="col-md-4 col-sm-12">
-                                    <button type="button" class="btn btn-small btn-success" id="updateUsernameClick" style="margin:0 auto;display: block;">Update</button>
+                                    <button type="button" class="btn btn-small btn-success" id="updateUsernameClick" style="margin:0 auto;display: block;" disabled="disabled">Update</button>
                                 </div>
                             </div>
                         </div>
@@ -50,13 +71,13 @@
                             <h5 class="card-title text-margin">My Password</h5>
                             <div class="row">
                                 <div class="col-md-8 col-sm-12">
-                                    <input type="password" class="form-control" id="newPasswordValue" value="" placeholder="New Password">
+                                    <input type="password" class="form-control" id="newPasswordValue" value="" placeholder="New Password" autocomplete="new-password">
                                 </div>
                                 <div class="col-md-8 col-sm-12" style="padding-top:1rem;">
                                     <div class="g-recaptcha" id="rcaptcha" data-sitekey="@model.captchakey"></div>
                                 </div>
                                 <div class="col-md-4 col-sm-12">
-                                    <button type="button" class="btn btn-small btn-success" id="updatePasswordClick" style="margin:0 auto;display: block;">Update</button>
+                                    <button type="button" class="btn btn-small btn-success" id="updatePasswordClick" style="margin:0 auto;display: block;" disabled="disabled">Update</button>
                                 </div>
                             </div>
                         </div>
@@ -76,7 +97,7 @@
                                     </small>
                                 </div>
                                 <div class="col-md-4 col-sm-12">
-                                    <button type="button" class="btn btn-small btn-success" id="updateBlurbClick" style="margin:0 auto;display: block;">Update</button>
+                                    <button type="button" class="btn btn-small btn-success" id="updateBlurbClick" style="margin:0 auto;display: block;" disabled="disabled">Update</button>
                                 </div>
                             </div>
                         </div>
@@ -93,7 +114,7 @@
                                     <textarea class="form-control" id="newForumSignatureValue" rows="3"></textarea>
                                 </div>
                                 <div class="col-md-4 col-sm-12">
-                                    <button type="button" class="btn btn-small btn-success" id="updateForumSignatureClick" style="margin:0 auto;display: block;">Update</button>
+                                    <button type="button" class="btn btn-small btn-success" id="updateForumSignatureClick" style="margin:0 auto;display: block;" disabled="disabled">Update</button>
                                 </div>
                             </div>
                         </div>
@@ -113,7 +134,7 @@
                                     </select>
                                 </div>
                                 <div class="col-md-4 col-sm-12">
-                                    <button type="button" class="btn btn-small btn-success" id="updateTradingClick" style="margin:0 auto;display: block;">Update</button>
+                                    <button type="button" class="btn btn-small btn-success" id="updateTradingClick" style="margin:0 auto;display: block;" disabled="disabled">Update</button>
                                 </div>
                             </div>
                         </div>
@@ -133,7 +154,7 @@
                                     </select>
                                 </div>
                                 <div class="col-md-4 col-sm-12">
-                                    <button type="button" class="btn btn-small btn-success" id="updateThemeClick" style="margin:0 auto;display: block;">Update</button>
+                                    <button type="button" class="btn btn-small btn-success" id="updateThemeClick" style="margin:0 auto;display: block;" disabled="disabled">Update</button>
                                 </div>
                             </div>
                         </div>
@@ -147,7 +168,7 @@
                             <div class="row">
                                 <div class="col-md-7 col-sm-12">
                                     <h5 class="card-title text-margin" style="margin-bottom:0.5rem;">Two-Factor Authentication</h5>
-                                    <p style="margin-top:0rem;margin-bottom:1rem;font-size:0.85rem;">Once enabled, you will be required to enter a two factor authentication code every time you login to your account.</p>
+                                    <p style="margin-top:0rem;margin-bottom:1rem;font-size:0.85rem;">Once enabled, you will be required to enter a two-factor authentication code every time you login to your account. <br><br>You may also be prompted to enter a two-factor authentication code when performing certain actions, like creating trades or buying items, from new locations.</p>
                                 </div>
                                 <div class="col-md-8 col-sm-12">
                                     <select class="form-control form-control-sm" id="twoFactorAuth">

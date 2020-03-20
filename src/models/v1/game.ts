@@ -48,6 +48,27 @@ export enum GameGenres {
     'Western',
 }
 
+export enum GameGenreDescriptions {
+    'Thousands of free 3D games from every genre' = 1,
+    'Build stuff with friends',
+    'Begin work at your dream job & have a family in Town & City games',
+    'Be a soldier in military games',
+    'Laugh and meet new people in Comedy games',
+    'Rule an ancient kingdom in Medieval games',
+    'Explore vast land with friends in Adventure games',
+    'Discover aliens in Sci-Fi games',
+    'Seek new lands and battle players in Naval games',
+    'Form teams and destroy enemies in FPS (First-Person Shooter) games',
+    'Roleplay with the only limit bing your imagination in RPG (Role-Playing) games',
+    'Get active and work closely with your team in Sports games',
+    'Fight other players, with bare hands or swords, in Fighting games',
+    'Prospect the grand wild west and meet people in Western games',
+}
+
+export enum GameGenreThumbnails {
+    'https://cdn.hindigamer.club/static/genre/Western-small.jpg' = 14
+}
+
 export class GameThumbnail {
     @Required()
     @AllowTypes('string','null')
@@ -135,7 +156,7 @@ export class GameInfo {
     genre: GameGenres;
 }
 
-export class GameSearchResult {
+export class GameSearchResultEntry {
     @Required()
     gameId: number;
     @Required()
@@ -151,6 +172,15 @@ export class GameSearchResult {
     @Required()
     updatedAt: string;
 }
+
+export class GameSearchResult {
+    @Required()
+    total: number;
+    @Required()
+    @PropertyType(GameSearchResultEntry)
+    data: GameSearchResultEntry[];
+}
+
 
 export class GameServerPlayer {
     @Required()

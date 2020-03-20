@@ -13,6 +13,16 @@ class ForumDAL extends _init {
         return categories;
     }
     /**
+     * Get Category by id
+     */
+    public async getCategoryById(categoryId: number): Promise<Forum.Categories> {
+        const categories = await this.knex("forum_categories").select("id as categoryId","title","description",'weight').orderBy('weight','desc').where({'id': categoryId}).limit(1);
+        if (!categories[0]) {
+            throw new Error('InvalidCategoryId');
+        }
+        return categories[0];
+    }
+    /**
      * Get All Subcategories
      * @param minimumRank The minimum rank required to read the subcategory. Defaults to 0 (aka Guest/Regular User)
      */

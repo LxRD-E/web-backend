@@ -188,9 +188,25 @@ wss.on('connection', async function connection(ws, request: any) {
     }
     console.log('Websocket OK, startin conn info');
     // We ignore incomming requests for now
-    ws.on('message', function incoming() {
-        // Not supposed to recieve messages
-        ws.close();
+    ws.on('message', function incoming(msg) {
+        // try to decode
+        let decodedMessage: any = {};
+        try {
+            decodedMessage = JSON.parse(msg.toString());
+        }catch(e) {
+            ws.close();
+        }
+        if (decodedMessage && decodedMessage.ping) {
+            ws.send(JSON.stringify({
+                'pong': Math.floor(new Date().getTime() / 1000),
+            }), (err) => {
+                if (err) {
+                    console.error(err);
+                }
+            });
+        }else{
+            ws.close();
+        }
     });
     // Setup Listener
     const userInfo = new model.user.UserInfo;

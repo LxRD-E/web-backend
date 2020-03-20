@@ -14,14 +14,14 @@
                             <div class="col-12 col-lg-4">
                                 @if (model.page.gameInfo.creatorType === 0) {
                                     <div class="row">
-                                        <div class="d-none col d-lg-block">
+                                        <div class="d-none col d-lg-block" style="max-width: 100px;">
                                             <a href="/users/@model.page.gameInfo.creatorId/profile">
-                                                <img src="/api/v1/user/@model.page.gameInfo.creatorId/thumbnail/redirect" style="width:100%;height:auto;display:block;margin:0 auto;max-width:200px;border-radius:1rem;" />
+                                                <img src="/api/v1/user/@model.page.gameInfo.creatorId/thumbnail/redirect" style="width:100%;height:auto;display:block;margin:0 auto;max-width:100px;border-radius:1rem;" />
                                             </a>
                                         </div>
-                                        <div class="col-12 col-md" style="margin-top:1rem;">
-                                            <p style="margin-bottom:0.25rem;font-size:0.85rem;"><span class="font-weight-bold">By:</span> @model.page.creatorName</p>
-                                            <p style="margin-bottom:0.25rem;font-size:0.85rem;"><span class="font-weight-bold">Created:</span> <span class="formatDateNoTime" data-date="@model.page.gameInfo.createdAt"></span></p>
+                                        <div class="col-12 col-md">
+                                            <p style="font-size:0.75rem;"><span class="font-weight-bold">By:</span> @model.page.creatorName</p>
+                                            <p style="font-size:0.75rem;"><span class="font-weight-bold">Created:</span> <span class="formatDateNoTime" data-date="@model.page.gameInfo.createdAt"></span></p>
                                         </div>
                                     </div>
                                 }else if (model.page.gameInfo.creatorType === 1) {
@@ -63,14 +63,14 @@
                         </div>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="leaderboard-ad" style="display:block;margin:0 auto;">
+                        <!-- whitespace so that when the ad loads, the user doesnt accidentally click it -->
+                        <div style="padding-top:130px;" class="whitespace-ad"></div>
+                    </div>
+                </div>
             </div>
             <div class="col-2 skyscraper-ads d-none d-lg-block"></div>
-        </div>
-        <div class="row">
-            <div class="leaderboard-ad" style="display:block;margin:0 auto;">
-                <!-- whitespace so that when the ad loads, the user doesnt accidentally click it -->
-                <div style="padding-top:130px;" class="whitespace-ad"></div>
-            </div>
         </div>
         <div class="row" style="margin-top:1rem;">
             <div class="col-12">
@@ -80,9 +80,17 @@
                         <p style="font-size:0.85rem;margin-bottom:1rem;">We think you might like some of these game genres.</p>
                         <div class="row">
                             @for (const genre of model.page.recommendedGenres) {
-                                <div class="col-6 col-md-3">
-                                    <a href="/play?genre=@genre">
-                                        <p class="text-center font-weight-bold">@model.page.genres[genre]</p>
+                                <div class="col-6 col-md-3 game-suggested-genre" style="overflow: hidden;">
+                                    <a href="/game/genre/@model.page.genres[genre]" class="normal">
+                                        @{
+                                            model.currentGenreThumbnail = 'https://cdn.hindigamer.club/game/default_assets/Screenshot_5.png';
+                                            if (model.page.GameGenreThumbnails[genre]) {
+                                                model.currentGenreThumbnail = model.page.GameGenreThumbnails[genre]
+                                            }
+                                        }
+                                        <img src="@model.currentGenreThumbnail" />
+                                        <p class="text-left font-weight-bold">@model.page.genres[genre]</p>
+                                        <p class="text-left" style="line-height:normal;height:1.97rem;font-size:0.7rem;overflow-y:hidden;margin:0;padding:0;">@model.page.GameGenreDescriptions[genre]</p>
                                     </a>
                                 </div>
                             }

@@ -27,6 +27,10 @@
                 <div class="col-12 col-lg-10">
                     <h1 style="margin-top:2rem;font-size:1.5rem;">This group has been locked.</h1>
                     <button type="button" class="btn btn-success" style="display:none;margin-top:1rem;" id="groupLeave">Leave Group</button>
+                    
+                     @if (model.userInfo && model.userInfo.staff >= 2) {
+                        <a class="btn btn-success text-white" style="margin-top:0.5rem;" href="/staff/groups/manage?groupId=@model.page.groupId">Manage Group (Staff)</a>
+                    }
                 </div>
             }else{
                 <div class="col-12 coi-lg-8" id="groupDisplayCol" style="display:none;">
@@ -39,15 +43,15 @@
                                             <img src="/api/v1/catalog/@model.page.groupIconCatalogId/thumbnail/redirect" style="width:100%;" />
                                         </div>
                                         <div class="col-sm-8">
-                                            <h1 class="card-title">@model.page.groupName</h1>
+                                            <h1 class="card-title" style="font-size:1.75rem;">@model.page.groupName</h1>
                                             @if (model.page.groupOwnerUserId === 0) {
-                                                <p>Owner: Nobody</p>
+                                                <p style="font-size:0.85rem;">Owner: Nobody</p>
                                             }else{
-                                                <p>Owner: <a href="/users/@model.page.groupOwnerUserId/profile"><span data-userid="@model.page.groupOwnerUserId"></span></a></p>
+                                                <p style="font-size:0.85rem;">Owner: <a href="/users/@model.page.groupOwnerUserId/profile"><span data-userid="@model.page.groupOwnerUserId"></span></a></p>
                                             }
                                             
-                                            <p>Members: <span id="memberCountSpan" data-membercount="@model.page.groupMemberCount"></span></p>
-                                            <p id="authUserRank"></p>
+                                            <p style="font-size:0.85rem;">Members: <span id="memberCountSpan" data-membercount="@model.page.groupMemberCount"></span></p>
+                                            <p id="authUserRank" style="font-size:0.85rem;"></p>
                                         </div>
                                         <div class="col-sm-2">
                                             <button type="button" class="btn btn-success" style="margin:0auto;display:block;width: 100%;" data-toggle="dropdown" aria-expanded="false" aria-haspopup="true"><i class="fas fa-chevron-circle-down"></i></button><div class="dropdown-menu dropdown-menu-right fade">
@@ -56,6 +60,9 @@
                                                 <a class="dropdown-item" href="#" id="groupLeave" style="display:none;">Leave Group</a>
                                                 <a class="dropdown-item" href="/groups/@model.page.groupId/@model.page.groupEncodedName/manage" id="groupManage" style="display:none;">Manage</a>
                                                 <a class="dropdown-item" href="/ad/group/create/@model.page.groupId" id="advertise" style="display:none;">Advertise</a>
+                                                @if (model.userInfo && model.userInfo.staff >= 2) {
+                                                    <a class="dropdown-item" href="/staff/groups/manage?groupId=@model.page.groupId">Manage Group (Staff)</a>
+                                                }
                                             </div>
                                         @*
                                             <button type="button" class="btn btn-success" id="groupJoin" style="display:none;">Join Group</button>
@@ -86,7 +93,7 @@
                                             <div class="card-body" id="groupShoutDisplayDiv">
                                                 <div class="row">
                                                     <div class="col-12">
-                                                        <h3>Shout</h3>
+                                                        <h3 style="font-size:1.35rem;">Shout</h3>
                                                     </div>
                                                 </div>
                                             </div>
@@ -103,12 +110,12 @@
                                             <div class="card-body">
                                                 <div class="row">
                                                     <div class="col-12">
-                                                        <h3>Description</h3>
+                                                        <h3 style="font-size:1.35rem;">Description</h3>
                                                     </div>
                                                 </div>
                                                 <div class="row">
                                                     <div class="col-12">
-                                                        <p style="font-weight: 500;white-space:pre-wrap;">@model.page.groupDescription</p>
+                                                        <p style="font-weight: 500;white-space:pre-wrap;font-size:0.85rem;">@model.page.groupDescription</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -125,7 +132,7 @@
                                             <div class="card-body">
                                                 <div class="row">
                                                     <div class="col-6 col-md-8">
-                                                        <h3>Members</h3>
+                                                        <h3 style="font-size:1.35rem;">Members</h3>
                                                     </div>
                                                     <div class="col-6 col-md-4">
                                                         <select class="form-control" id="groupRolesSelection">
@@ -163,7 +170,7 @@
                                             <div class="card-body">
                                                 <div class="row">
                                                     <div class="col-12">
-                                                        <h3>Group Wall</h3>
+                                                        <h3 style="font-size:1.35rem;">Group Wall</h3>
                                                     </div>
                                                 </div>
                                                 <div class="row" id="postToGroupWall">
@@ -171,7 +178,7 @@
                                                 </div>
                                                 <div class="row" id="noGroupWallPostsDisplay" style="display:none;">
                                                     <div class="col-12">
-                                                        <p>This group has no wall posts.</p>
+                                                        <p style="font-size:0.85rem;">This group has no wall posts.</p>
                                                     </div>
                                                 </div>
                                                 <div id="hasGroupWallPostsDisplay" style="display:none;">

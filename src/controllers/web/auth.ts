@@ -95,6 +95,18 @@ export class WWWAuthController extends controller {
         return new this.WWWTemplate({'title': 'Email Verification',userInfo: userInfo, page: {'code': code}});
     }
 
+    @Get('/request/password-reset')
+    @Render('request_password_reset')
+    @Use(NoAuth)
+    public resetPasswordRequest() {
+        let ViewData = new this.WWWTemplate({
+            title: 'Reset Your Password'
+        });
+        ViewData.page = {
+        }
+        return ViewData;
+    }
+
     @Get('/reset/password')
     @UseBefore(NoAuth)
     @Render('reset_password')
@@ -134,7 +146,7 @@ export class WWWAuthController extends controller {
     @Summary('Notifications page')
     @UseBefore(YesAuth)
     @Render('notifications')
-    public async loadNotifications(
+    public loadNotifications(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
         return new this.WWWTemplate({

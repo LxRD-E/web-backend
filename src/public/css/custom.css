@@ -193,6 +193,7 @@ a.navbar-brand:hover {
     transition: all .1s ease-in;
 }
 a.navbar-brand {
+    transition: all .1s ease-in;
     color: #16181b;
     font-size: 0.95rem;
     font-weight: 400;
@@ -542,4 +543,91 @@ div.add-reaction:hover,div.add-comment:hover,div.remove-reaction:hover {
 }
 p.add-comment {
     cursor: pointer;
+}
+
+
+img.zoom-on-hover  {
+    transition: transform .15s ease;
+}
+
+div.og-tags-card {
+    overflow: hidden;
+    cursor: pointer;
+}
+div.og-tags-card:hover > img.zoom-on-hover {
+    transform: scale(1.025);
+}
+div.og-tags-card:hover {
+    box-shadow: 0px 0px 28px -10px rgba(0,0,0,0.44);
+    transition: all 0.15s;
+}
+div.og-tags-card {
+    transition: all 0.15s;
+}
+.formated-total-reactions {
+    cursor: pointer;
+}
+p.reply-to-comment {
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: all 0.15s;
+}
+p.reply-to-comment:hover {
+    color: rgba(33, 37, 41, 0.75);
+    transition: all 0.15s;
+    border-radius: 0.25rem;
+    background: rgba(0,0,0,0.05);
+}
+
+
+/*
+all
+*/
+div.game-suggested-genre {
+    transition: all 0.15s;
+}
+/*
+normal img
+*/
+div.game-suggested-genre > a > img {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    border-radius: 0.35rem;
+    transition: all 0.15s;
+}
+
+/*
+hover img
+*/
+div.game-suggested-genre:hover > a > img {
+    transition: all 0.15s;
+    transform: scale(1.025);
+    border-radius: 0.15rem;
+    opacity: 0.85;
+}
+
+div.game-suggested-genre:hover {
+    transition: all 0.15s;
+    transform: scale(1.025);
+}
+
+span#open-search-filters-mobile {
+    transition: all 0.15s;
+}
+
+span#open-search-filters-mobile:hover {
+    transition: all 0.15s;
+    opacity: 0.65;
+}
+
+img.hover-to-view-image {
+    transition: all 0.15s;
+    filter: blur(1.05rem);
+    cursor: pointer;
+}
+img.hover-to-view-image:hover {
+    filter: none;
+    transition: all 0.15s;
 }

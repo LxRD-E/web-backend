@@ -83,12 +83,12 @@ export class UserInfo {
      * The date the user last visited the website
      */
     @Required()
-    lastOnline: Date;
+    lastOnline: string;
     /**
      * The birthdate the user provided on sign up
      */
     @Required()
-    birthDate: Date;
+    birthDate: string;
     /**
      * The theme the user has the website set to
      */
@@ -310,6 +310,11 @@ export class UserStatus {
     @Required()
     commentCount: number;
 }
+
+export class UserStatusUpdatedResponse {
+    @Required()
+    statusId: number;
+}
 /**
  * Interface for Retrival of Multiple Users' Statuses
  */
@@ -344,6 +349,21 @@ export class UserStatusComment {
     userId: number;
     @Required()
     statusId: number;
+    @Required()
+    comment: string;
+    @Required()
+    createdAt: string;
+    @Required()
+    updatedAt: string;
+    @Required()
+    replyCount: number;
+}
+
+export class UserStatusCommentReply {
+    @Required()
+    commentReplyId: number;
+    @Required()
+    userId: number;
     @Required()
     comment: string;
     @Required()

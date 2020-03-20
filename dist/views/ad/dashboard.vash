@@ -9,7 +9,7 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-body">
-                            <div class="row">
+                            <div class="row" style="max-height:500px;overflow-y:auto;">
                                 <div class="col-12">
                                     <h3>Your Ads</h3>
                                 </div>
@@ -17,56 +17,9 @@
                                     <p>Loading...</p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-12" style="margin-bottom:1rem;">
-                                    <h3>Help</h3>
-                                </div>
-                                <div class="col-12" style="margin-bottom:1rem;">
-                                    <h4 style="font-size:1rem;margin-bottom:0;">How does the ad system work?</h4>
-                                    <p>When you purchase an ad, each single primary currency you spend on it gives it a higher chance of being randomly picked and displayed to end users. For instance, if John spends 90 primary on one ad and Jane spends 10 primary on one ad, you have a 90% chance of seeing John's ad (and a 10% chance of seeing Jane's ad). We do not offer any sort of targeting (i.e. based on country, signed in or signed out, based on gender, based on birth-year, etc), although we might look into more advanced offerings in the future.</p>
-                                </div>
-                                <div class="col-12" style="margin-bottom:1rem;">
-                                    <h4 style="font-size:1rem;margin-bottom:0;">Can I advertise a link to something outside of this website?</h4>
-                                    <p>No. At this time, you may only advertise links to catalog items and groups.</p>
-                                </div>
-                                <div class="col-12" style="margin-bottom:1rem;">
-                                    <h4 style="font-size:1rem;margin-bottom:0;">I can't bid on my ad!</h4>
-                                    <p>You cannot bid on ads that have been declined by moderation, or ads that are pending moderation approval. If your ad was declined, you'll recieve a message in your inbox, otherwise you should just wait for a moderator to approve it.</p>
-                                </div>
-                                <div class="col-12" style="margin-bottom:1rem;">
-                                    <h4 style="font-size:1rem;margin-bottom:0;">What sort of analytics do you offer?</h4>
-                                    <p>You can view the click-through rate of advertisements (i.e. out of x views, y users clicked your ad) & the amount of views your ad has. You can view both of those metrics per-advertisement session, and all-time. We do not store any sort of historical data for advertisements, other than all-time views and all-time clicks. We do not offer advanced metrics, tracking, or targetting as that would violate coppa laws.</p>
-                                </div>
-                                <div class="col-12" style="margin-top:0.5rem;">
-                                    <h4 style="font-size:1rem;margin-bottom:0;">How do I advertise a catalog item, forum thread, or group?</h4>
-                                    <p style="margin-top:1rem;">To advertise a group:</p>
-                                    <p style="margin-left:1rem;">
-                                        <span class="font-weight-bold">1. Visit the page of the group you'd like to advertise.</span>
-                                        <br>
-                                        <span class="font-weight-bold">2. Click on the dropdown to the right of the group name</span>. Click on "Advertise" listed below Manage. If you do not see "Advertise", it means you cannot advertise this group.
-                                        <br>
-                                        <span class="font-weight-bold">3. Give your ad a name (optional) and select an image</span>. Tip: Your image should be 728x90 pixels (728 width, 90 height) for optimal results, although any image will work. If your image becomes really stretched or squished, try using a photo editing program to make it fit into 728x90.
-                                        <br>
-                                        <span class="font-weight-bold">4. Refresh this page, scroll up, and bid on your ad</span>. You can bid almost any amount of primary currency, with the minimum being 1 and the maximum being 100,000. Your ad will run for 24 hours after you bid on it.
-                                        <br>
-                                    </p>
-                                    <p style="margin-top:1rem;">To advertise a catalog item (TShirt, Shirt, Pants, etc):</p>
-                                    <p style="margin-left:1rem;">
-                                        <span class="font-weight-bold">1. Visit the page of the catalog item you'd like to advertise.</span>
-                                        <br>
-                                        <span class="font-weight-bold">2. Click on the &quot;Advertise&quot; button, below "Edit"</span>. If you do not see "Advertise", it means you cannot advertise this item.
-                                        <br>
-                                        <span class="font-weight-bold">3. Give your ad a name (optional) and select an image</span>. Tip: Your image should be 728x90 pixels (728 width, 90 height) for optimal results, although any image will work. If your image becomes really stretched or squished, try using a photo editing program to make it fit into 728x90.
-                                        <br>
-                                        <span class="font-weight-bold">4. Refresh this page, scroll up, and bid on your ad</span>. You can bid almost any amount of primary currency, with the minimum being 1 and the maximum being 100,000. Your ad will run for 24 hours after you bid on it.
-                                        <br>
-                                    </p>
+                            <div class="row" style="padding-top:1rem;">
+                                <div class="col-12">
+                                    <p style="font-size:0.75rem;opacity:0.65;text-align:center;"><a href="/support/ad-system">Need help? Click me</a></p>
                                 </div>
                             </div>
                         </div>

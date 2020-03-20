@@ -21,12 +21,16 @@ const bcrypt = require("bcrypt");
 const Crypto = require("crypto");
 const util = require("util");
 const moment = require("moment");
+const axios_1 = require("axios");
 const ts_httpexceptions_1 = require("ts-httpexceptions");
 const common_1 = require("@tsed/common");
 const speakeasy = require("speakeasy");
 const qrcode = require("qrcode");
 const jwt = require("jsonwebtoken");
 const config_1 = require("../helpers/config");
+const allSettled = require("promise.allsettled");
+const cheerio = require("cheerio");
+const jimp = require("jimp");
 const randomBytes = util.promisify(Crypto.randomBytes);
 exports.hashPassword = async (passwd, bcryptLib = bcrypt) => {
     const salt = await bcryptLib.genSalt(10);
@@ -308,5 +312,140 @@ exports.decodeGameAuthCode = (code) => {
         throw new Error('This token is not an auth code.');
     }
     return val;
+};
+exports.decodeImageProxyQuery = (imageProxyUrl) => {
+    if (!config_1.default.jwt || !config_1.default.jwt.imageProxy) {
+        console.error('No jwt.imageProxy specified in config.json');
+        process.exit(1);
+    }
+    let data = jwt.verify(imageProxyUrl, config_1.default.jwt.imageProxy);
+    if (moment().isSameOrAfter(moment(data.iat * 1000).add(5, 'minutes'))) {
+        throw new Error('Request has expired');
+    }
+    return data['url'];
+};
+exports.fetchImageAndResize = async (imageUrl) => {
+    let image = await axios_1.default.get(imageUrl, { responseType: 'arraybuffer' });
+    let loaded = await jimp.create(image.data);
+    loaded.cover(640, 360);
+    loaded.quality(25);
+    let newBuffer = await loaded.getBufferAsync(image.headers['content-type']);
+    return {
+        type: image.headers['content-type'],
+        image: newBuffer,
+    };
+};
+exports.multiGetOgTagsForYoutubeLinks = async (data) => {
+    if (data.length === 0) {
+        return [];
+    }
+    let allPromises = [];
+    let newDataArr = [];
+    for (const item of data) {
+        if (!item.urls) {
+            continue;
+        }
+        item.urls = [...new Set(item.urls)];
+        for (const url of item.urls) {
+            allPromises.push(axios_1.default.get(url, {
+                maxRedirects: 2,
+                headers: {
+                    'user-agent': 'hindigamer.club bot v1.0.0'
+                }
+            }));
+            newDataArr.push({
+                statusId: item.statusId,
+                url: url,
+                ogInfo: {},
+            });
+        }
+    }
+    let results = await allSettled(allPromises);
+    let index = 0;
+    for (const item of results) {
+        if (item.status === 'fulfilled') {
+            let thumbnailUrl = null;
+            let desc = null;
+            let title = null;
+            const $ = cheerio.load(item.value.data);
+            let thumb = $('meta[property="og:image"]').first().attr('content');
+            if (thumb) {
+                thumbnailUrl = thumb;
+            }
+            else {
+                let twitterThumbnail = $('meta[name="twitter:image"]').first().attr('content');
+                if (twitterThumbnail) {
+                    thumbnailUrl = twitterThumbnail;
+                }
+            }
+            if (thumbnailUrl && thumbnailUrl.length > 255) {
+                thumbnailUrl = null;
+            }
+            let ogDesc = $('meta[propety="og:description"]').first().attr('content');
+            if (ogDesc) {
+                desc = ogDesc;
+            }
+            else {
+                let twitterDesc = $('meta[name="twitter:description"]').first().attr('content');
+                if (twitterDesc) {
+                    desc = twitterDesc;
+                }
+            }
+            if (desc && desc.length > 255) {
+                desc = desc.slice(0, 255 - '...'.length) + '...';
+            }
+            let ogTitle = $('meta[name="og:title"]').first().attr('content');
+            if (ogTitle) {
+                title = ogTitle;
+            }
+            else {
+                let twitterTitle = $('meta[name="twitter:title"]').first().attr('content');
+                if (twitterTitle) {
+                    title = twitterTitle;
+                }
+                else {
+                    let generalTitle = $('title').first().html();
+                    if (generalTitle) {
+                        title = generalTitle;
+                    }
+                }
+            }
+            if (title && title.length > 64) {
+                title = title.slice(0, 64 - '...'.length) + '...';
+            }
+            if (thumbnailUrl) {
+                let imageUrlWithProxy = jwt.sign({ url: thumbnailUrl }, config_1.default.jwt.imageProxy);
+                thumbnailUrl = '/api/v1/feed/preview-proxy?url=' + encodeURIComponent(imageUrlWithProxy);
+            }
+            newDataArr[index]['ogInfo'] = {
+                thumbnailUrl: thumbnailUrl,
+                description: desc,
+                title: title,
+            };
+        }
+        index++;
+    }
+    return newDataArr;
+};
+exports.verifyEmail = (newEmail) => {
+    const validate = (email) => {
+        const expression = /(?!.*\.{2})^([a-z\d!#$%&'*+\-\/=?^_`{|}~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+(\.[a-z\d!#$%&'*+\-\/=?^_`{|}~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+)*|"((([ \t]*\r\n)?[ \t]+)?([\x01-\x08\x0b\x0c\x0e-\x1f\x7f\x21\x23-\x5b\x5d-\x7e\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|\\[\x01-\x09\x0b\x0c\x0d-\x7f\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))*(([ \t]*\r\n)?[ \t]+)?")@(([a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|[a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF][a-z\d\-._~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]*[a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])\.)+([a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|[a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF][a-z\d\-._~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]*[a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])\.?$/i;
+        return expression.test(String(email).toLowerCase());
+    };
+    if (!validate(newEmail)) {
+        return false;
+    }
+    let stuffBeforeAtSign = newEmail.slice(0, newEmail.indexOf('@'));
+    let domain = newEmail.slice(newEmail.indexOf('@') + 1).toLowerCase();
+    let emailDomainWithoutSuffix = domain.slice(0, domain.indexOf('.'));
+    if (emailDomainWithoutSuffix === 'gmail' || emailDomainWithoutSuffix === 'googlemail') {
+        stuffBeforeAtSign = stuffBeforeAtSign.replace(/\./g, '');
+        if (stuffBeforeAtSign.indexOf('+') !== -1) {
+            stuffBeforeAtSign = stuffBeforeAtSign.slice(0, stuffBeforeAtSign.indexOf('+'));
+        }
+        newEmail = stuffBeforeAtSign + '@gmail.com';
+    }
+    newEmail = newEmail.toLowerCase();
+    return newEmail;
 };
 

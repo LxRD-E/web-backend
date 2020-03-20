@@ -8,10 +8,13 @@ import crypto = require('crypto');
 import * as model from '../../models/models';
 // Misc Models
 import { filterOffset, filterId } from '../../helpers/Filter';
+// middleware
+import * as middleware from '../../middleware/middleware';
+import * as filter from '../../filters/filters';
 // Autoload
 import controller from '../controller';
-import { Controller, Post, Get, Patch, Delete, Put, QueryParams, BodyParams, PathParams, UseBeforeEach, UseBefore, Locals, Use, MaxLength, MinLength, Required } from '@tsed/common';
-import { Summary, Description, ReturnsArray } from '@tsed/swagger';
+import { Controller, Post, Get, Patch, Delete, Put, QueryParams, BodyParams, PathParams, UseBeforeEach, UseBefore, Locals, Use, MaxLength, MinLength, Required, Filter } from '@tsed/common';
+import { Summary, Description, ReturnsArray, Returns } from '@tsed/swagger';
 import { YesAuth } from '../../middleware/Auth';
 import { csrf } from '../../dal/auth';
 /**
@@ -739,6 +742,14 @@ export class StaffController extends controller {
     ) {
         // Verify User
         this.validate(userInfo, 1);
+        // grab id of current status
+        let currentStatus = await this.user.multiGetStatus([userId], 0, 1);
+        if (currentStatus[0]) {
+            let data = currentStatus[0];
+            // delete current status
+            await this.user.updateStatusByid(data.statusId, '[ Content Deleted ]');
+        }
+        // now, update the current one to content deleted
         await this.user.updateStatus(userId, '[ Content Deleted ]');
         return {
             'success': true,
@@ -787,7 +798,7 @@ export class StaffController extends controller {
      * Clear a users balance
      */
     @Delete('/user/:userId/clear-balance/:currencyTypeId')
-    @Summary('Disable an accounts two-factor authentcation')
+    @Summary('Clear the balance of the {currencyTypeId} for the {userId}')
     @UseBeforeEach(csrf)
     @UseBefore(YesAuth)
     public async clearBalance(
@@ -1058,6 +1069,79 @@ export class StaffController extends controller {
         }
         await this.support.updateTicketStatus(ticketId, status);
         // return success
+        return {
+            success: true,
+        };
+    }
+
+    @Patch('/groups/:groupId/status')
+    @Summary('Update a groups status')
+    @Use(csrf, YesAuth)
+    public async updateGroupStatus(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('groupId', Number) groupId: number,
+        @BodyParams('status', Number) status: number,
+    ) {
+        this.validate(userInfo, 2);
+        if (!model.group.groupStatus[status]) {
+            throw new this.BadRequest('InvalidGroupStatus');
+        }
+        // update status
+        await this.group.updateGroupStatus(groupId, status);
+        // ok
+        return {
+            success: true,
+        };
+    }
+
+    @Get('/feed/friends/abuse-reports')
+    @Summary('Get latest abuse reports for friend feed')
+    @Use(YesAuth)
+    @ReturnsArray(200, {type: model.reportAbuse.ReportedStatusEntry})
+    public async latestAbuseReports(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+    ) {
+        this.validate(userInfo, 1);
+        let pendingAbuseReports = await this.reportAbuse.latestReportedUserStatuses();
+        return pendingAbuseReports;
+    }
+
+    @Patch('/feed/friends/abuse-report/:reportId/')
+    @Summary('Update a friends feed abuse-report status')
+    @Use(csrf, YesAuth)
+    @Returns(200, {description: 'Abuse report has been updated'})
+    public async updateAbuseReportStatus(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('reportId', Number) reportId: number,
+        @Required()
+        @BodyParams('status', Number) status: number,
+    ) {
+        this.validate(userInfo, 1);
+        if (!model.reportAbuse.ReportStatus[status]) {
+            throw new this.BadRequest('InvalidStatus');
+        }
+        // mark report as OK
+        await this.reportAbuse.updateUserStatusReportStatus(reportId, status);
+        return {
+            success: true,
+        };
+    }
+
+    @Delete('/feed/friends/:userStatusId')
+    @Summary('Delete a userStatusId')
+    @Use(csrf, YesAuth)
+    @Returns(200, {description: 'Status Deleted'})
+    public async deleteUserStatusId(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('userStatusId', Number) userStatusId: number,
+    ) {
+        this.validate(userInfo, 1);
+        let info = await this.user.getStatusById(userStatusId);
+        // update status to delete
+        await this.user.updateStatusByid(userStatusId, '[ Content Deleted ]');
+        // update current status
+        await this.user.updateStatus(info.userId, '[ Content Deleted ]');
+        // return ok
         return {
             success: true,
         };

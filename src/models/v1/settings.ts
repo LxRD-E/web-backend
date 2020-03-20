@@ -32,4 +32,6 @@ export class UserSettings {
     email: EmailModelForSettings;
     @Required()
     '2faEnabled': 0|1;
+    @Required()
+    birthDate: string;
 }

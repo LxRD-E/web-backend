@@ -16,6 +16,8 @@ import * as thumbnails from './v1/thumnails';
 import * as user from './v1/user';
 import * as ad from './v1/ad';
 import * as support from './v1/support';
+import * as feed from './v1/feed';
+import * as reportAbuse from './v1/report-abuse';
 import { Required } from '@tsed/common';
 import { Example } from '@tsed/swagger';
 
@@ -45,4 +47,4 @@ export class UserSession {
     'dailyAward': string;
 }
 
-export {any, auth, avatar, billing, catalog, chat, economy, forum, game, group, mod, notification, settings, staff, thumbnails, user, ad, support}
+export {any, auth, avatar, billing, catalog, chat, economy, forum, game, group, mod, notification, settings, staff, thumbnails, user, ad, support, feed, reportAbuse}

@@ -33,7 +33,7 @@ export const csp = {
     'form-action': `'self'`,
     'media-src': `'none'`,
     'frame-ancestors': `'self'`,
-    'img-src': `'self' data: https://cdn.hindigamer.club/ https://hindigamerclub-game.ewr1.vultrobjects.com/`,
+    'img-src': `'self' data: https://cdn.hindigamer.club/ https://hindigamerclub-game.ewr1.vultrobjects.com/ https://www.google-analytics.com/`,
     'connect-src': `'self' ws://localhost:8080/ https://sentry.io/`,
     'object-src': `'none'`,
     'base-uri': `'self'`,

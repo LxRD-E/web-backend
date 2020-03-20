@@ -12,7 +12,7 @@ export class WWWGroupController extends controller {
     @Get('/groups')
     @Summary('Search gropus')
     @Render('search_groups')
-    public async users() { return new this.WWWTemplate({ title: 'Search Groups' }); }
+    public async groups() { return new this.WWWTemplate({ title: 'Search Groups' }); }
 
     @Get('/groups/create')
     @Summary('Create group page')
@@ -78,7 +78,12 @@ export class WWWGroupController extends controller {
         let groupData;
         try {
             groupData = await this.group.getInfo(filteredCatalogId);
-            const encodedName = urlEncode(groupData.groupName);
+            let encodedName: string;
+            if (groupData.groupStatus !== model.group.groupStatus.ok) {
+                encodedName = urlEncode('Locked Group');
+            }else{
+                encodedName = urlEncode(groupData.groupName);
+            }
             return res.redirect("/groups/" + filteredCatalogId + "/" + encodedName);
         } catch (e) {
             return res.redirect("/404");

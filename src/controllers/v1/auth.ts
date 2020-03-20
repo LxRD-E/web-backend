@@ -2,7 +2,7 @@
  * Imports
  */
 // TSed
-import { Controller, Get, All, Next, Req, Res, UseBefore, Render, QueryParams, PathParams, Redirect, Response, Request, Locals, UseAfter, Required, Use, Err, Post, BodyParams, HeaderParams, Session, UseBeforeEach, PropertyType, MinItems, MaxItems, Maximum, Minimum, Patch, Delete } from "@tsed/common";
+import { Controller, Get, All, Next, Req, Res, UseBefore, Render, QueryParams, PathParams, Redirect, Response, Request, Locals, UseAfter, Required, Use, Err, Post, BodyParams, HeaderParams, Session, UseBeforeEach, PropertyType, MinItems, MaxItems, Maximum, Minimum, Patch, Delete, Put } from "@tsed/common";
 import { Description, Summary, Returns, ReturnsArray, Hidden } from "@tsed/swagger"; // import swagger Ts.ED module
 import moment = require('moment');
 import { RateLimiterMiddleware } from '../../middleware/RateLimit';
@@ -15,6 +15,8 @@ import controller from '../controller';
 import { NoAuth, YesAuth } from "../../middleware/Auth";
 import RecaptchaV2 from '../../middleware/RecaptchaV2';
 import { UserInfo } from "../../models/v1/user";
+import config from '../../helpers/config';
+import crypto = require('crypto');
 /**
  * Auth Controller
  */
@@ -24,6 +26,47 @@ export default class AuthController extends controller {
 
     constructor() {
         super();
+    }
+
+    @Put('/request/password-reset')
+    @Summary('Request a password reset')
+    @Description('Limited to 5 attempts per hour. Uses RecaptchaV2')
+    @Use(csrf, NoAuth, RateLimiterMiddleware('passwordResetAttempt'), RecaptchaV2)
+    public async requestPasswordReset(
+        @Res() res: Res,
+        @BodyParams('email', String) emailProvided: string,
+    ) {
+        let email = this.auth.verifyEmail(emailProvided);
+        if (!email) {
+            throw new this.BadRequest('InvalidEmail');
+        }
+        // return success
+        res.status(200).json({
+            success: true,
+        });
+        // verify and send email in background
+        try {
+            let userInfo: {userId: number; username: string};
+            try {
+                userInfo = await this.settings.getUserByEmail(email);
+            }catch(e) {
+                // no email
+                console.log('[warn] email is invalid', email, e);
+                return;
+            }
+            // generate reset link
+            let randomCode = crypto.randomBytes(128);
+            const stringToken = randomCode.toString('hex');
+            // insert code
+            await this.user.insertPasswordReset(userInfo.userId, stringToken);
+            // create url
+            let url = `https://hindigamer.club/reset/password?userId=${userInfo.userId}&code=`+encodeURIComponent(stringToken);
+            // send email
+            await this.settings.sendEmail(email, `Password Reset Request`, 
+            `Hello ${userInfo.username}\nYou (or someone else) requested your account's password on Hindi Gamer Club to be reset. Please copy and paste the link below into your browser to reset your password.\n\n${url}\n`,`Hello ${userInfo.username}<br>You (or someone else) requested your account's password on Hindi Gamer Club to be reset. Please click the link below to reset your password.<br><a href="${url}">${url}</a><br>Alternatively, you can copy and paste this URL into your browser<br>${url}<br>`);
+        }catch(e) {
+            console.error(e);
+        }
     }
 
     @Post('/login/two-factor')
@@ -436,200 +479,6 @@ export default class AuthController extends controller {
             userId: userId,
             username: username,
         };
-    }
-
-    @Get('/feed/friends')
-    @Summary('Get the authenticated user\'s friends feed. Includes their own statuses.')
-    @ReturnsArray(200, { type: model.user.UserStatusForAuthenticated })
-    @Returns(401, { type: model.Error, description: 'LoginRequired: Login Required\n' })
-    @UseBeforeEach(YesAuth)
-    public async getFeedForFriends(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @QueryParams('offset') offset: number = 0,
-        @QueryParams('limit', Number) limit = 100,
-    ) {
-        let friends = await this.user.getFriends(userInfo.userId, 0, 200, 'asc');
-        const arrayOfIds: Array<number> = [];
-        friends.forEach((obj) => {
-            arrayOfIds.push(obj.userId);
-        });
-        arrayOfIds.push(userInfo.userId);
-        if (arrayOfIds.length === 0) {
-            return [];
-        }
-        let feed = await this.user.multiGetStatus(arrayOfIds, offset, limit);
-        let idsForStatus = [];
-        for (const id of feed) {
-            idsForStatus.push(id.statusId);
-        }
-        let resultsForMultiGetReactionStatus = await this.user.multiGetReactionStatusForUser(userInfo.userId, idsForStatus, '❤️');
-        for (const item of feed as any[]) {
-            for (const reactionInfo of resultsForMultiGetReactionStatus) {
-                if (reactionInfo.statusId === item.statusId) {
-                    item.didReactWithHeart = reactionInfo.didReact;
-                    break;
-                }
-            }
-        }
-        return feed;
-    }
-
-    @Post('/feed/friends/:userStatusId/comment')
-    @Summary('Add a comment to the {userStatusId}')
-    @Use(csrf, YesAuth)
-    public async addCommentToStatus(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('userStatusId', Number) statusId: number,
-        @BodyParams('comment', String) comment: string,
-    ) {
-        if (!comment || !comment.replace(/\s+/g, '') || comment.length > 4096) {
-            throw new this.BadRequest('InvalidComment');
-        }
-        let canPost = await this.user.canUserPostCommentToStatus(userInfo.userId);
-        if (!canPost) {
-            throw new this.Conflict('Cooldown');
-        }
-        let statusData = await this.user.getStatusById(statusId);
-        // check if friends
-        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
-        if (!info.areFriends && userInfo.userId !== statusData.userId) {
-            throw new this.BadRequest('InvalidStatusId');
-        }
-        // add comment
-        await this.user.addCommentToStatus(statusId, userInfo.userId, comment);
-        // return success
-        return {
-            success: true,
-        };
-    }
-
-    @Get('/feed/friends/:userStatusId/comments')
-    @Summary('Get comments to the {userStatusId}')
-    @ReturnsArray(200, {type: model.user.UserStatusComment})
-    @Use(YesAuth)
-    public async getCommentsForStatus(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('userStatusId', Number) statusId: number,
-        @QueryParams('offset', Number) offset: number = 0,
-        @QueryParams('limit', Number) limit: number = 25,
-    ) {
-        let statusData = await this.user.getStatusById(statusId);
-        // check if friends
-        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
-        if (!info.areFriends && userInfo.userId !== statusData.userId) {
-            throw new this.BadRequest('InvalidStatusId');
-        }
-        let comments = await this.user.getCommentsToStatus(statusId, offset, limit);
-        return comments;
-    }
-
-
-    @Post('/feed/friends/:userStatusId/react')
-    @Summary('Add a heart reaction to the {userStatusId}')
-    @Use(csrf, YesAuth)
-    public async addReactionToStatus(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('userStatusId', Number) statusId: number,
-        @BodyParams('reactionType', String) reactionType: string,
-    ) {
-        if (reactionType !== 'heart') {
-            throw new this.BadRequest('InvalidReactionType');
-        } 
-        let statusData = await this.user.getStatusById(statusId);
-        // check if friends
-        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
-        if (!info.areFriends && userInfo.userId !== statusData.userId) {
-            throw new this.BadRequest('InvalidStatusId');
-        }
-        // Check if already reacted
-        if (await this.user.checkIfAlreadyReacted(statusId, userInfo.userId, '❤️')) {
-            throw new this.Conflict('AlreadyReactedToStatus');
-        }
-        // add reaction
-        await this.user.addReactionToStatus(statusId, userInfo.userId, '❤️');
-        // return success
-        return {
-            success: true,
-        };
-    }
-
-    @Delete('/feed/friends/:userStatusId/react')
-    @Summary('Delete your reaction to a {userStatusId}')
-    @Use(csrf, YesAuth)
-    public async deleteReactionToStatus(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('userStatusId', Number) statusId: number,
-        @BodyParams('reactionType', String) reactionType: string,
-    ) {
-        if (reactionType !== 'heart') {
-            throw new this.BadRequest('InvalidReactionType');
-        }
-        let statusData = await this.user.getStatusById(statusId);
-        // check if friends
-        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
-        if (!info.areFriends && userInfo.userId !== statusData.userId) {
-            throw new this.BadRequest('InvalidStatusId');
-        }
-        // Check if not already reacted
-        if (!await this.user.checkIfAlreadyReacted(statusId, userInfo.userId, '❤️')) {
-            throw new this.Conflict('NotReactedToStatus');
-        }
-        // delete reaction
-        await this.user.removeReactionToStatus(statusId, userInfo.userId, '❤️');
-        // return success
-        return {
-            success: true,
-        };
-    }
-
-    @Get('/feed/groups')
-    @Summary('Get the authenticated user\'s groups feed.')
-    @ReturnsArray(200, { type: model.group.groupShout })
-    @Returns(401, { type: model.Error, description: 'LoginRequired: Login Required\n' })
-    @UseBeforeEach(YesAuth)
-    public async getFeedForGroups(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @QueryParams('offset') offset: number = 0,
-        @QueryParams('limit', Number) limit = 100,
-    ) {
-        let groups = await this.user.getGroups(userInfo.userId);
-        const arrayOfIds: Array<number> = [];
-        groups.forEach(obj => arrayOfIds.push(obj.groupId));
-        if (arrayOfIds.length === 0) {
-            // Return empty array
-            return [];
-        }
-        // grab perms of each groupId to make sure user can view shout
-        let goodGroups: number[] = [];
-        for (const item of arrayOfIds) {
-            let permissions = await this.group.getUserRole(item, userInfo.userId);
-            if (permissions.permissions.getShout) {
-                goodGroups.push(item);
-            }
-        }
-        let feed = await this.group.getShouts(goodGroups, limit, offset);
-        return feed;
-    }
-
-    @Patch('/status')
-    @Summary('Update the authenticated user\'s status')
-    @Returns(400, { type: model.Error, description: 'InvalidStatus: Status is too long or too short\nCooldown: You cannot change your status right now\n' })
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
-    public async updateStatus(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @Required()
-        @BodyParams("status", String) newStatus: string
-    ) {
-        if (newStatus.length > 255 || newStatus.length < 1) {
-            throw new this.BadRequest('InvalidStatus');
-        }
-        const latestUpdate = await this.user.getUserLatestStatus(userInfo.userId);
-        if (latestUpdate && !moment().isSameOrAfter(moment(latestUpdate.date).add(5, "minutes"))) {
-            throw new this.BadRequest('Cooldown');;
-        }
-        await this.user.updateStatus(userInfo.userId, newStatus);
-        return { success: true };
     }
 
     @Patch('/reset/password')

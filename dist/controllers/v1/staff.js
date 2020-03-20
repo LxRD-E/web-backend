@@ -456,6 +456,11 @@ let StaffController = class StaffController extends controller_1.default {
     }
     async deleteStatus(userInfo, userId) {
         this.validate(userInfo, 1);
+        let currentStatus = await this.user.multiGetStatus([userId], 0, 1);
+        if (currentStatus[0]) {
+            let data = currentStatus[0];
+            await this.user.updateStatusByid(data.statusId, '[ Content Deleted ]');
+        }
         await this.user.updateStatus(userId, '[ Content Deleted ]');
         return {
             'success': true,
@@ -592,6 +597,16 @@ let StaffController = class StaffController extends controller_1.default {
             throw new this.BadRequest('InvalidTicketStatus');
         }
         await this.support.updateTicketStatus(ticketId, status);
+        return {
+            success: true,
+        };
+    }
+    async updateGroupStatus(userInfo, groupId, status) {
+        this.validate(userInfo, 2);
+        if (!model.group.groupStatus[status]) {
+            throw new this.BadRequest('InvalidGroupStatus');
+        }
+        await this.group.updateGroupStatus(groupId, status);
         return {
             success: true,
         };
@@ -838,7 +853,7 @@ __decorate([
 ], StaffController.prototype, "disableTwoFactor", null);
 __decorate([
     common_1.Delete('/user/:userId/clear-balance/:currencyTypeId'),
-    swagger_1.Summary('Disable an accounts two-factor authentcation'),
+    swagger_1.Summary('Clear the balance of the {currencyTypeId} for the {userId}'),
     common_1.UseBeforeEach(auth_1.csrf),
     common_1.UseBefore(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
@@ -1007,6 +1022,17 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "updateTicketStatus", null);
+__decorate([
+    common_1.Patch('/groups/:groupId/status'),
+    swagger_1.Summary('Update a groups status'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('groupId', Number)),
+    __param(2, common_1.BodyParams('status', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "updateGroupStatus", null);
 StaffController = __decorate([
     common_1.Controller('/staff'),
     __metadata("design:paramtypes", [])

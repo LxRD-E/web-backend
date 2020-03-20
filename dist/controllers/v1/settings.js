@@ -38,12 +38,14 @@ let SettingsController = class SettingsController extends controller_1.default {
             email: {},
             '2faEnabled': 0,
         };
-        let userInfoModel = await this.user.getInfo(userInfo.userId, ['blurb', 'tradingEnabled', 'theme', 'forumSignature', '2faEnabled']);
+        let userInfoModel = await this.user.getInfo(userInfo.userId, ['blurb', 'tradingEnabled', 'theme', 'forumSignature', '2faEnabled', 'birthDate']);
+        console.log('date type:', typeof userInfoModel.birthDate);
         settingsObject.blurb = userInfoModel.blurb;
         settingsObject.tradingEnabled = userInfoModel.tradingEnabled;
         settingsObject.theme = userInfoModel.theme;
         settingsObject.forumSignature = userInfoModel.forumSignature;
         settingsObject.forumSignature = userInfoModel.forumSignature;
+        settingsObject.birthDate = userInfoModel.birthDate;
         settingsObject["2faEnabled"] = userInfoModel['2faEnabled'];
         const userEmailModel = await this.user.getUserEmail(userInfo.userId);
         const userEmail = await this.settings.getUserEmail(userInfo.userId);
@@ -72,26 +74,11 @@ let SettingsController = class SettingsController extends controller_1.default {
         }
         return settingsObject;
     }
-    async updateEmail(userInfo, newEmail) {
-        const validate = (email) => {
-            const expression = /(?!.*\.{2})^([a-z\d!#$%&'*+\-\/=?^_`{|}~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+(\.[a-z\d!#$%&'*+\-\/=?^_`{|}~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+)*|"((([ \t]*\r\n)?[ \t]+)?([\x01-\x08\x0b\x0c\x0e-\x1f\x7f\x21\x23-\x5b\x5d-\x7e\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|\\[\x01-\x09\x0b\x0c\x0d-\x7f\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))*(([ \t]*\r\n)?[ \t]+)?")@(([a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|[a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF][a-z\d\-._~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]*[a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])\.)+([a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|[a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF][a-z\d\-._~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]*[a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])\.?$/i;
-            return expression.test(String(email).toLowerCase());
-        };
-        if (!validate(newEmail)) {
+    async updateEmail(userInfo, newEmailProvided) {
+        let newEmail = this.auth.verifyEmail(newEmailProvided);
+        if (!newEmail) {
             throw new this.BadRequest('InvalidEmail');
         }
-        let stuffBeforeAtSign = newEmail.slice(0, newEmail.indexOf('@'));
-        let domain = newEmail.slice(newEmail.indexOf('@') + 1).toLowerCase();
-        let emailDomainWithoutSuffix = domain.slice(0, domain.indexOf('.'));
-        if (emailDomainWithoutSuffix === 'gmail' || emailDomainWithoutSuffix === 'googlemail') {
-            stuffBeforeAtSign = stuffBeforeAtSign.replace(/\./g, '');
-            if (stuffBeforeAtSign.indexOf('+') !== -1) {
-                stuffBeforeAtSign = stuffBeforeAtSign.slice(0, stuffBeforeAtSign.indexOf('+'));
-            }
-            newEmail = stuffBeforeAtSign + '@gmail.com';
-        }
-        console.log(newEmail);
-        newEmail = newEmail.toLowerCase();
         let latestEmail = await this.settings.getUserEmail(userInfo.userId);
         if (latestEmail && !moment().isSameOrAfter(moment(latestEmail.date).add(1, "minute"))) {
             throw new this.Conflict('FloodCheck');

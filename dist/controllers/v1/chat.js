@@ -196,8 +196,26 @@ websockets_1.wss.on('connection', async function connection(ws, request) {
         return;
     }
     console.log('Websocket OK, startin conn info');
-    ws.on('message', function incoming() {
-        ws.close();
+    ws.on('message', function incoming(msg) {
+        let decodedMessage = {};
+        try {
+            decodedMessage = JSON.parse(msg.toString());
+        }
+        catch (e) {
+            ws.close();
+        }
+        if (decodedMessage && decodedMessage.ping) {
+            ws.send(JSON.stringify({
+                'pong': Math.floor(new Date().getTime() / 1000),
+            }), (err) => {
+                if (err) {
+                    console.error(err);
+                }
+            });
+        }
+        else {
+            ws.close();
+        }
     });
     const userInfo = new model.user.UserInfo;
     userInfo.userId = sess.userdata.id;

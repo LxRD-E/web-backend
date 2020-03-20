@@ -1,3 +1,7 @@
+@{
+    // view settings below
+    model.ad = false;
+}
 @html.extend('layouts/default', function(model) {
   @html.block('content', function(model) {
     <div class="row align-items-center" style="padding-top:1rem;">

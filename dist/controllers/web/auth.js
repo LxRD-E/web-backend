@@ -60,6 +60,13 @@ let WWWAuthController = class WWWAuthController extends controller_1.default {
     async emailVerification(userInfo, code) {
         return new this.WWWTemplate({ 'title': 'Email Verification', userInfo: userInfo, page: { 'code': code } });
     }
+    resetPasswordRequest() {
+        let ViewData = new this.WWWTemplate({
+            title: 'Reset Your Password'
+        });
+        ViewData.page = {};
+        return ViewData;
+    }
     async resetPassword(res, code, userId) {
         let info;
         try {
@@ -86,7 +93,7 @@ let WWWAuthController = class WWWAuthController extends controller_1.default {
         };
         return ViewData;
     }
-    async loadNotifications(userInfo) {
+    loadNotifications(userInfo) {
         return new this.WWWTemplate({
             title: 'Notifications',
             userInfo: userInfo,
@@ -170,6 +177,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], WWWAuthController.prototype, "emailVerification", null);
 __decorate([
+    common_1.Get('/request/password-reset'),
+    common_1.Render('request_password_reset'),
+    common_1.Use(Auth_1.NoAuth),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], WWWAuthController.prototype, "resetPasswordRequest", null);
+__decorate([
     common_1.Get('/reset/password'),
     common_1.UseBefore(Auth_1.NoAuth),
     common_1.Render('reset_password'),
@@ -188,7 +203,7 @@ __decorate([
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [UserModel.SessionUserInfo]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], WWWAuthController.prototype, "loadNotifications", null);
 __decorate([
     common_1.Get('/v1/authenticate-to-service'),

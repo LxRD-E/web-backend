@@ -50,6 +50,8 @@ const ad = require("./v1/ad");
 exports.ad = ad;
 const support = require("./v1/support");
 exports.support = support;
+const feed = require("./v1/feed");
+exports.feed = feed;
 const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 class _errorData {

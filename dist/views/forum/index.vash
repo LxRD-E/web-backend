@@ -18,7 +18,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-lg-8">
+            <div class="col-12 col-xl-8">
             @for (const cat of model.page.cats) {
                 if (cat.subCategories.length === 0) {
                     continue;
@@ -50,23 +50,31 @@
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-6">
-                                            <a href="/forum/@sub.subCategoryId?page=1">
+                                            <a href="/forum/@sub.subCategoryId?page=1" class="normal">
                                                 <h5 style="margin-bottom:0;font-size:1.05rem;">@sub.title</h5>
+                                                <p style="    
+                                                margin-bottom: 0;
+                                                font-size: 0.75rem;
+                                                line-height: normal;
+                                                height: 1.95rem;
+                                                text-overflow: ellipsis;
+                                                max-height: 1.85rem;
+                                                overflow: hidden;
+                                                ">@sub.description</p>
                                             </a>
-                                            <p style="margin-bottom:0;font-size:0.85rem;" class="text-truncate">@sub.description</p>
                                         </div>
                                         <div class="col-2 d-none d-md-block vertical-align-text text-center">
-                                            <h6 style="margin-bottom:0;margin-top:0.5rem;font-size:0.95rem;">
+                                            <h6 style="margin-bottom:0;margin-top:0.75rem;font-size:0.95rem;">
                                                 @sub.totalThreads
                                             </h6>
                                         </div>
                                         <div class="col-2 d-none d-lg-block vertical-align-text text-center">
-                                            <h6 style="margin-bottom:0;margin-top:0.5rem;font-size:0.95rem;">
+                                            <h6 style="margin-bottom:0;margin-top:0.75rem;font-size:0.95rem;">
                                                 @sub.totalPosts
                                             </h6>
                                         </div>
                                         <div class="col-6 col-md-4 col-lg-2 vertical-align-text text-center">
-                                            <h6 style="margin-bottom:0;">
+                                            <h6 style="margin-bottom:0;margin-top:0.75rem;">
                                                 @if (!sub.latestPost) {
                                                     <span>N/A</span>
                                                 }else{
@@ -94,14 +102,14 @@
             }
             </div>
             
-            <div class="col-12 col-lg-4" style="margin-top:1rem;">
+            <div class="col-12 col-xl-4" style="margin-top:1rem;">
                 <div class="row forumlatestposts">
                     <div class="col-12">
-                        <div class="card bg-success" style="color:white;border-radius:0;">
+                        <div class="card" style="color:white;border-radius:0;border-bottom: 1px solid rgba(105,222,124,1);">
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-12">
-                                        <h5 style="margin-bottom:0;font-size:1rem;">Latest Threads</h5>
+                                        <h5 style="margin-bottom:0;font-size:1rem;background: linear-gradient(90deg, rgba(71,195,91,1) 0%, rgba(105,222,124,1) 100%);-webkit-background-clip: text;-webkit-text-fill-color: transparent;">Latest Threads</h5>
                                     </div>
                                 </div>
                             </div>
@@ -113,7 +121,7 @@
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-6">
-                                            <a href="/forum/thread/@thread.threadId?page=1">
+                                            <a href="/forum/thread/@thread.threadId?page=1" class="normal">
                                                 <h5 style="margin-bottom:0;font-size:0.75rem;">@thread.title</h5>
                                             </a>
                                         </div>

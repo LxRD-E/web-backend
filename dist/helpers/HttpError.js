@@ -156,6 +156,7 @@ var HttpErrors;
     HttpErrors[HttpErrors["InvalidReactionType"] = 151] = "InvalidReactionType";
     HttpErrors[HttpErrors["AlreadyReactedToStatus"] = 152] = "AlreadyReactedToStatus";
     HttpErrors[HttpErrors["NotReactedToStatus"] = 153] = "NotReactedToStatus";
+    HttpErrors[HttpErrors["InvalidGroupStatus"] = 154] = "InvalidGroupStatus";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 ;
 exports.ErrorTemplate = (title, body) => {

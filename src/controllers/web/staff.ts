@@ -116,6 +116,19 @@ export class WWWStaffController extends controller {
         return new this.WWWTemplate({title: 'Items Awaiting Moderator Approval', userInfo: userInfo});
     }
 
+    @Get('/staff/report-abuse/user-status')
+    @UseBefore(YesAuth)
+    @Render('staff/report-abuse/user-status')
+    public async reportAbuseUserStatus(
+        @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
+    ) {
+        const staff = userInfo.staff >= 1 ? true : false;
+        if (!staff) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        return new this.WWWTemplate({title: 'User Status Reports', userInfo: userInfo});
+    }
+
     @Get('/staff/give')
     @UseBefore(YesAuth)
     @Render('staff/give')
@@ -204,6 +217,32 @@ export class WWWStaffController extends controller {
         ViewData.page.ModerationHistory = moderationHistory;
         ViewData.page.userEmails = userEmails;
         ViewData.page.twoFactorEnabled = twoFactorEnabled;
+        return ViewData;
+    }
+
+    @Get('/staff/groups/manage')
+    @UseBefore(YesAuth)
+    @Render('staff/groups/manage')
+    public async moderationGroup(
+        @Locals('userInfo') localUserData: UserModel.SessionUserInfo,
+        @Required()
+        @QueryParams('groupId', Number) groupId: number
+    ) {
+        const staff = localUserData.staff >= 2 ? true : false;
+        if (!staff) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        let groupInfo: model.group.groupDetails;
+        try {
+            groupInfo = await this.group.getInfo(groupId);
+        }catch(e) {
+            console.log(e);
+            throw new this.BadRequest('InvalidGroupId');
+        }
+        let ViewData = new WWWTemplate({'title': "Manage \""+groupInfo.groupName+"\""});
+        ViewData.page = {
+            groupInfo: groupInfo,  
+        };
         return ViewData;
     }
 

@@ -122,7 +122,7 @@ const loadGoup = () => {
     });
 
     $(window).on("scroll", function() {
-        if($(window).scrollTop() + $(window).height() > $(document).height() - 300) {
+        if($(window).scrollTop() + $(window).height() > $(document).height() - $('div#footerUpper').innerHeight()) {
             if (window.wallOffset >= 25 && window.wallLoading === false && window.managegroup !== undefined) {
                 loadWall();
             }
@@ -159,7 +159,7 @@ const loadGoup = () => {
                     if (!k.wallPost) {
                         k.wallPost = "";
                     }
-                    $('#hasGroupWallPostsDisplay').append('<div class="row"><div style="" class="col-6 col-sm-3 col-lg-2"><img style="width:100%;" data-userid="'+k.userId+'"><a style="color:#212529;" href="/users/'+k.userId+'/profile"><h6 class="text-center text-truncate" data-userid="'+k.userId+'"></h6></a><p class="text-center text-truncate" style="font-size: small;">'+moment(k["date"]).fromNow()+'</p><button type="button" class="btn btn-success deletePost" data-id="'+k.wallPostId+'" '+customstyle+'>Delete</button></div><div class="col-6 col-sm-9 col-lg-10"><p>'+k.wallPost.escapeAllowFormattingBasic()+'</p></div><div class="col-12"><hr /></div></div>');
+                    $('#hasGroupWallPostsDisplay').append('<div class="row"><div style="" class="col-6 col-sm-3 col-lg-2"><img style="width:100%;" data-userid="'+k.userId+'"><a class="normal" href="/users/'+k.userId+'/profile"><h6 class="text-center text-truncate" data-userid="'+k.userId+'" style="font-size:0.75rem;font-weight:600;"></h6></a><button type="button" class="btn btn-success deletePost" data-id="'+k.wallPostId+'" '+customstyle+'>Delete</button></div><div class="col-6 col-sm-9 col-lg-10"><p style="font-size:0.85rem;white-space: pre-wrap;font-weight:500;">'+xss(k.wallPost)+'</p><p class="text-left text-truncate" style="font-size: 0.75rem;font-weight:600;opacity:0.45;">'+moment(k["date"]).fromNow()+'</p></div><div class="col-12"><hr /></div></div>');
                 });
                 setUserThumbs(userids);
                 setUserNames(userids);
@@ -214,7 +214,7 @@ const loadGoup = () => {
                         <div class="form-group">
                             <div class="row" style="margin-bottom:1rem;">
                                 <div class="col-sm-12">
-                                    <textarea class="form-control" id="groupWallText" rows="3"></textarea>
+                                    <textarea class="form-control" id="groupWallText" rows="3" placeholder="Post to the Group Wall..."></textarea>
                                 </div>
                             </div>
                             <div class="row">
@@ -251,8 +251,12 @@ const loadGoup = () => {
                 // Load Group Shout
                 request("/group/"+groupid+"/shout")
                     .then(function(d) {
+                        if (!d || !d.userId) {
+                            $('#shoutDiv').hide();
+                            return;
+                        }
                         $('#shoutDiv').show();
-                        $('#groupShoutDisplayDiv').append('<div class="row"><div class="col-4 col-sm-2"><a href="/users/'+d.userid+'/profile"><img data-userid="'+d.userId+'" style="width:100%;" /></a></div><div class="col-8 col-sm-10"><a href="/users/'+d.userId+'/profile"><h5 data-userid="'+d.userId+'"></h5></a><p style="font-weight: 500;">'+d.shout.escape()+'</p> </div></div><div class="row"><div class="col-12"><p style="font-weight: 300;font-size: small;">'+moment(d.date).format("MMMM Do YYYY, h:mm:ss a")+'</p></div></div>');
+                        $('#groupShoutDisplayDiv').append('<div class="row"><div class="col-4 col-sm-2"><a class="normal" href="/users/'+d.userid+'/profile"><img data-userid="'+d.userId+'" style="width:100%;" /></a></div><div class="col-8 col-sm-10"><a class="normal" href="/users/'+d.userId+'/profile"><h5 data-userid="'+d.userId+'" style="margin-bottom:0;"></h5></a><p style="font-weight: 500;font-size:0.75rem;">'+xss(d.shout)+'</p> </div></div><div class="row"><div class="col-12"><p style="font-weight: 300;font-size: 0.75rem;font-weight:600;opacity:0.5;margin-top:0.5rem;">'+moment(d.date).format("MMMM Do YYYY, h:mm a")+'</p></div></div>');
                         setUserThumbs([d.userId]);
                         setUserNames([d.userId]);
                     })
@@ -322,7 +326,7 @@ const loadGoup = () => {
                 }
                 var userIdsForReq = [];
                 d["members"].forEach(function(k) {
-                    $('#hasMembersDisplay').append('<div class="col-4 col-md-3 col-lg-2"><a href="/users/'+k.userId+'/profile"><img data-userid="'+k.userId+'" style="width:100%;" /><p class="text-truncate text-center" data-userid="'+k.userId+'"></p></a></div>');
+                    $('#hasMembersDisplay').append('<div class="col-4 col-md-3 col-lg-2"><a class="normal" href="/users/'+k.userId+'/profile"><img data-userid="'+k.userId+'" style="width:100%;" /><p class="text-truncate text-center" data-userid="'+k.userId+'" style="font-size:0.75rem;"></p></a></div>');
                     userIdsForReq.push(k.userId);
                 });
                 setUserThumbs(userIdsForReq);

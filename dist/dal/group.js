@@ -236,6 +236,23 @@ class GroupsDAL extends _init_1.default {
             'owner_userid': userId,
         }).where({ 'id': groupId });
     }
+    async recordGroupOwnershipChange(groupId, changeType, userIdAffected, userIdWhoPerformedAction) {
+        await this.knex('group_ownership_change').insert({
+            user_id: userIdAffected,
+            actor_user_id: userIdWhoPerformedAction,
+            group_id: groupId,
+            type: changeType,
+        });
+    }
+    async getGroupOwnershipChanges(groupId, limit, offset) {
+        let results = await this.knex('group_ownership_change').select('id as groupOwnershipChangeId', 'user_id as userId', 'actor_user_id as actorUserId', 'group_id as groupId', 'type', 'created_at as createdAt').where({ 'group_id': groupId }).limit(limit).offset(offset).orderBy('id', 'desc');
+        return results;
+    }
+    async updateGroupStatus(groupId, status) {
+        await this.knex('groups').update({
+            'status': status,
+        }).where({ 'id': groupId }).limit(1);
+    }
     async doesGroupRequireApprovalForNewMembers(groupId) {
         let status = await this.knex('groups').select('approval_required').where({
             'id': groupId,
@@ -268,7 +285,7 @@ class GroupsDAL extends _init_1.default {
         });
     }
     async getPendingMembers(groupId, offset, limit) {
-        let page = await this.knex('group_members_pending').select('group_id as groupId', 'user_id as userId').limit(limit).offset(offset);
+        let page = await this.knex('group_members_pending').select('group_id as groupId', 'user_id as userId').where({ 'group_id': groupId }).limit(limit).offset(offset);
         return page;
     }
     async updateGroupApprovalRequiredStatus(groupId, approvalRequired) {

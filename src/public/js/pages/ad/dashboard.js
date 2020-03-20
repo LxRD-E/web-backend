@@ -32,12 +32,13 @@ request('/ad/my/created-ads', 'GET')
         if (ad.bidAmount !== 0 && moment(ad.updatedAt).add(24, 'hours').isSameOrAfter(moment())) {
             running = '<p style="font-weight:500;">Status: <span style="color:green;">Running</span> (for '+moment(ad.updatedAt).fromNow(true)+')</p>';
         }
-        let adDisplay = '';
+        let adDisplay = `<p>Error</p>`;
         if (ad.adDisplayType === 1) {
-            adDisplay = `<img src="${imageUrl}" style="width:100%;height:auto;display:block;margin:0 auto;max-width:700px;" />`;
+            adDisplay = `<a href="${imageUrl}" target="_blank"><img src="${imageUrl}" style="width:100%;height:auto;display:block;margin:0 auto;max-width:700px;" /></a>`;
         }else if (ad.adDisplayType === 2) {
-            adDisplay = `<img src="${imageUrl}" style="width:100%;height:auto;display:block;margin:0 auto;max-width:160px;" />`;
+            adDisplay = `<a href="${imageUrl}" target="_blank"><img src="${imageUrl}" style="width:80px;height:auto;display:block;margin:0 auto;max-width:160px;" /></a>`;
         }
+        
         $('#running-ads').append(`
         
         <div class="row">

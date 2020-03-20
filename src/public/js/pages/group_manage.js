@@ -602,3 +602,68 @@ $(document).on('click', '#deleteRoleset', function(e) {
         })
     });
 });
+
+request('/group/'+groupid+'/ownership-changes?limit=25', 'GET').then(d => {
+    console.log(d);
+    if (d.length === 0) {
+        $('#group-ownership-changes').append(`
+        
+        <div class="col-12">
+            <p>This group has not had any ownership changes.</p>
+        </div>
+
+        `);
+    }else{
+        $('#group-ownership-changes').append(`
+            <div class="col-12">
+                <table class="table" style="margin-bottom:0;">
+                    <thead>
+                        <tr>
+                        <th scope="col" style="border-top: none;">Description</th>
+                        <th scope="col" style="border-top: none;">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="groupOwnershipChangesTbody">
+                    
+                    </tbody>
+                </table>
+            </div>
+        `);
+        let table = $('#groupOwnershipChangesTbody');
+        let ids = [];
+        for (const item of d) {
+            ids.push(item.actorUserId);
+            ids.push(item.userId);
+            let type = item.type;
+            if (type === 1) {
+                table.append(`
+            
+                <tr>
+                    <td><span data-userid="${item.actorUserId}"></span> abandoned the group, leaving nobody as the owner.</td>
+                    <td>${moment(item.createdAt).fromNow()}</td>
+                </tr>
+                
+                `);
+            }else if (type === 2) {
+                table.append(`
+            
+                <tr>
+                    <td><span data-userid="${item.actorUserId}"></span> claimed ownership of the group.</td>
+                    <td>${moment(item.createdAt).fromNow()}</td>
+                </tr>
+                
+                `);
+            }else if (type === 3) {
+                table.append(`
+            
+                <tr>
+                    <td><span data-userid="${item.actorUserId}"></span> transferred group ownership to <span data-userid="${item.userId}"></span>.</td>
+                    <td>${moment(item.createdAt).fromNow()}</td>
+                </tr>
+                
+                `);
+            }
+        }
+        setUserNames(ids);
+    }
+})

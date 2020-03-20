@@ -86,6 +86,8 @@ export class WWWGameController extends controller {
         ViewData.title = gameInfo.gameName;
         ViewData.page.gameGenreString = model.game.GameGenres[gameInfo.genre];
         ViewData.page.genres = model.game.GameGenres;
+        ViewData.page.GameGenreDescriptions = model.game.GameGenreDescriptions;
+        ViewData.page.GameGenreThumbnails = model.game.GameGenreThumbnails;
         let possibleGenres: number[] = [];
         for (const genre in model.game.GameGenres) {
             let numberVal = parseInt(genre, 10);
@@ -101,7 +103,7 @@ export class WWWGameController extends controller {
      */
     @Get('/play')
     @Render('play')
-    public async play(
+    public play(
         @QueryParams('genre', Number) genre: number,
     ) {
         if (!model.game.GameGenres[genre]) {
@@ -120,6 +122,22 @@ export class WWWGameController extends controller {
             }
         })
         return ViewData;
+    }
+    @Get('/game/genre/:gameGenre')
+    @Summary('Get the gamePage of a gameGenre')
+    public gameGenre(
+        @PathParams('gameGenre', String) gameGernre: string,
+        @Res() res: Res,
+    ) {
+        if (!isNaN(parseInt(gameGernre, 10))) {
+            return res.redirect('/play');
+        }
+        let genreToRedirectTo = model.game.GameGenres[gameGernre];
+        if (genreToRedirectTo) {
+            return res.redirect('/play?genre='+genreToRedirectTo+'&sortBy=1');
+        }else{
+            return res.redirect('/play');
+        }
     }
     /**
      * Load Game Play Page

@@ -590,12 +590,27 @@ class UsersDAL extends _init {
     }
 
     public async canUserPostCommentToStatus(userId: number): Promise<boolean> {
-        let latestComments = await this.knex('user_status_comment').select('id').where('created_at', '>', this.knexTime(this.moment().subtract(1, 'hour'))).andWhere({
+        let timeToCheck = this.knexTime(this.moment().subtract(1, 'hour'));
+        let latestComments = await this.knex('user_status_comment')
+        .select('id')
+        .where('created_at', '>', timeToCheck)
+        .andWhere({
             'user_id': userId,
         });
         if (latestComments.length >= 25) {
             return false;
         }
+        // now check replies
+        let latestCommentReplies = await this.knex('user_status_comment_reply')
+        .select('id')
+        .where('created_at', '>', timeToCheck)
+        .andWhere({
+            'user_id': userId,
+        })
+        if (latestCommentReplies.length >= 25) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -638,6 +653,24 @@ class UsersDAL extends _init {
         return UserStatuses[0];
     }
 
+    /**
+     * Update a userStatus by it's id. Mostly meant for mod stuff
+     * @param statusId 
+     * @param newStatus 
+     */
+    public async updateStatusByid(statusId: number, newStatus: string): Promise<void> {
+        await this.knex('user_status').update({'status': newStatus}).where({'id': statusId}).limit(1);
+    }
+
+    public async multiGetStatusById(statusIds: number[]): Promise<users.UserStatus[]> {
+        let query = this.knex('user_status').select('user_status.id as statusId','user_status.userid as userId','user_status.status', 'user_status.date', 'reaction_count_heart as heartReactionCount', 'comment_count as commentCount');
+        for (const id of statusIds) {
+            query = query.orWhere('id','=',id);
+        }
+        const UserStatuses = await query;
+        return UserStatuses;
+    }
+
     public async checkIfAlreadyReacted(statusId: number, userId: number, reactionType: string) {
         if (reactionType !== '❤️') {
             throw new Error('Reaction type is not supported by this method. UsersDAL.checkIfAlreadyReacted()');
@@ -651,6 +684,17 @@ class UsersDAL extends _init {
             return true;
         }
         return false;
+    }
+
+    public async getUsersWhoReactedToStatus(statusId: number, reactionType: string): Promise<{userId: number}[]> {
+        if (reactionType !== '❤️') {
+            throw new Error('Reaction type is not supported by this method. UsersDAL.checkIfAlreadyReacted()');
+        }
+        let reactions = await this.knex('user_status_reactions').select('user_id as userId').where({
+            'status_id': statusId,
+            'reaction': reactionType,
+        }).limit(25);
+        return reactions;
     }
 
     public async addCommentToStatus(statusId: number, userId: number, comment: string) {
@@ -671,8 +715,39 @@ class UsersDAL extends _init {
         });
     }
 
+    public async replyToUserStatusComment(commentId: number, userId: number, reply: string) {
+        await this.knex.transaction(async (trx) => {
+            // Add comment
+            await trx('user_status_comment_reply').insert({
+                'userstatuscomment_id': commentId,
+                'user_id': userId,
+                'comment': reply,
+            }).forUpdate('user_status_comment_reply','user_status_comment');
+            // Increment reply count
+            await trx('user_status_comment').increment('reply_count').where({
+                'id': commentId,
+            }).forUpdate('user_status_comment_reply','user_status_comment');
+            // Commit
+            await trx.commit();
+            // Ok
+        });
+    }
+
+    public async getUserStatusCommentById(commentId: number, statusId: number): Promise<model.user.UserStatusComment> {
+        let comments = await this.knex('user_status_comment').select('id as userStatusCommentId','user_id as userId','status_id as statusId','comment','created_at as createdAt','updated_at as updatedAt','reply_count as replyCount').limit(1).orderBy('id','asc').where({'id': commentId,'status_id': statusId});
+        if (comments[0]) {
+            return comments[0];
+        }
+        throw new Error('InvalidCommentId');
+    }
+
     public async getCommentsToStatus(statusId: number, offset: number, limit: number): Promise<model.user.UserStatusComment[]> {
-        let comments = await this.knex('user_status_comment').select('id as userStatusCommentId','user_id as userId','status_id as statusId','comment','created_at as createdAt','updated_at as updatedAt').limit(limit).offset(offset).orderBy('id','asc').where({'status_id': statusId});
+        let comments = await this.knex('user_status_comment').select('id as userStatusCommentId','user_id as userId','status_id as statusId','comment','created_at as createdAt','updated_at as updatedAt','reply_count as replyCount').limit(limit).offset(offset).orderBy('id','asc').where({'status_id': statusId});
+        return comments;
+    }
+
+    public async getRepliesToStatusComment(commentId: number, offset: number, limit: number): Promise<model.user.UserStatusCommentReply[]> {
+        let comments = await this.knex('user_status_comment_reply').select('id as commentReplyId','user_id as userId','comment','created_at as createdAt','updated_at as updatedAt').limit(limit).offset(offset).where({'userstatuscomment_id': commentId});
         return comments;
     }
 
@@ -964,13 +1039,14 @@ class UsersDAL extends _init {
      * @param userId 
      * @param newStatus 
      */
-    public async updateStatus(userId: number, newStatus: string): Promise<void> {
+    public async updateStatus(userId: number, newStatus: string): Promise<number> {
         await this.knex("users").update({"user_status":newStatus}).where({"users.id":userId});
-        await this.knex("user_status").insert({
+        let idOfStatus = await this.knex("user_status").insert({
             "userid": userId,
             "status": newStatus,
             "date": this.moment().format('YYYY-MM-DD HH:mm:ss'),
         });
+        return idOfStatus[0];
     }
 
     /**

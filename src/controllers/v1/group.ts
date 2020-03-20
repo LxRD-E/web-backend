@@ -448,6 +448,8 @@ export class GroupsController extends controller {
         await this.group.updateUserRolesetInGroup(groupId, roleset.roleSetId, userInfo.userId);
         // Update Owner
         await this.group.updateGroupOwner(groupId, userInfo.userId);
+        // Record claim
+        await this.group.recordGroupOwnershipChange(groupId, model.group.GroupOwnershipChangeType.ClaimOwnership, userInfo.userId, userInfo.userId);
         // Return Success
         return { success: true };
     }
@@ -548,9 +550,37 @@ export class GroupsController extends controller {
         if (role.rank === 255) {
             // Update owner to 0
             await this.group.updateGroupOwner(groupId, 0);
+            // Record ownership change
+            await this.group.recordGroupOwnershipChange(groupId, model.group.GroupOwnershipChangeType.LeaveGroup, userInfo.userId, userInfo.userId);
         }
         await this.group.removeUserFromGroup(groupId, userInfo.userId);
         return { success: true };
+    }
+
+    @Get('/:groupId/ownership-changes')
+    @Summary('Get an array of group ownership changes for the {groupId}')
+    @Description('Requester must have manage permission')
+    @Use(YesAuth)
+    @ReturnsArray(200, {type: model.group.GroupOwnershipChangeEntry})
+    public async getGroupOwnershipChanges(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('groupId', Number) groupId: number,
+        @QueryParams('limit', Number) limit: number = 100,
+        @QueryParams('offset', Number) offset: number = 0,
+    ) {
+        // First, make sure requester has manage permissions
+        // Validate Group
+        await this.getGroupInfo(groupId);
+        // Grab role of requester
+        const role = await this.getAuthRole(userInfo, groupId);
+        if (!role.permissions.manage) {
+            // user is not authorized
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        // grab changes
+        let changes = await this.group.getGroupOwnershipChanges(groupId, limit, offset);
+        // retrun results
+        return changes;
     }
     
     @Get('/:groupId/join-requests')
@@ -1262,7 +1292,7 @@ export class GroupsController extends controller {
         let transferInfo;
         transferInfo = await this.user.getInfo(userId, ['banned']);
         if (transferInfo.banned) {
-            throw false;
+            throw new this.BadRequest('InvalidUserId');
         }
         const userRole = await this.group.getUserRole(groupId, userId);
         if (userRole.rank === 0 || userRole.rank === 255) {
@@ -1277,6 +1307,8 @@ export class GroupsController extends controller {
         await this.group.updateUserRolesetInGroup(groupId, newRole.roleSetId, userData.userId);
         // Update Group Ownership Property in Groups Table
         await this.group.updateGroupOwner(groupId, userId);
+        // Record ownership change
+        await this.group.recordGroupOwnershipChange(groupId, model.group.GroupOwnershipChangeType.TransferOwnership, userId, userInfo.userId);
         // Return success
         return ({
             'success': true,

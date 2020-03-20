@@ -157,9 +157,36 @@ export enum groupStatus {
     ok = 0,
 }
 
+/**
+ * Type of group ownership change
+ */
+export enum GroupOwnershipChangeType {
+    'LeaveGroup' = 1,
+    'ClaimOwnership' = 2,
+    'TransferOwnership' = 3,
+}
+
+export class GroupOwnershipChangeEntry {
+    @Required()
+    @Description('userId who was affected by the change')
+    userId: number;
+    @Required()
+    @Description('userId who performed the change')
+    actorUserId: number;
+    @Required()
+    @Description('groupId affected')
+    groupId: number;
+    @Required()
+    @Description('The type of ownership change')
+    type: GroupOwnershipChangeType;
+    @Required()
+    createdAt: string;
+}
+
 export class GroupJoinRequest {
     @Required()
     groupId: number;
     @Required()
     userId: number;
 }
+

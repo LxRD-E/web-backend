@@ -15,13 +15,13 @@ $(document).on('click', '#signInButton', function() {
                 if (d.isTwoFactorRequied) {
                     twoFactorJwt = d.twoFactor;
                     $('#login-row').empty().append(`
-                    <div class="col-sm-12" style="padding:0.5rem;">
+                    <div class="col-12">
                         <p>Please enter your two-factor authentication token to login.</p>
                     </div>
-                    <div class="col-sm-12" style="padding:0.5rem;">
+                    <div class="col-12">
                         <input type="text" class="form-control" id="two-factor-token" value="" maxlength="7" placeholder="Two-Factor Token">
                     </div>
-                    <div class="col-sm-12" style="padding-top:0.5rem;">
+                    <div class="col-12">
                         <button type="button" class="btn btn-small btn-success" id="twoFactorLogin" style="margin:0 auto;display: block;">Continue</button>
                     </div>
                 `);

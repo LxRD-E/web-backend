@@ -73,6 +73,31 @@ class SettingsDAL extends _init {
     }
 
     /**
+     * Get a user by their email address.
+     * @param email 
+     * @throws InvalidEmailAddress
+     */
+    public async getUserByEmail(email: string): Promise<{
+        userId: number;
+        username: string;
+    }> {
+        let encryptedEmail = await encrypt(email, emailEncryptionKey);
+        let results = await this.knex('user_emails')
+        .select('id','userid')
+        .where({'email': encryptedEmail,'status': model.user.emailVerificationType.true})
+        .limit(1)
+        .orderBy('id','desc');
+        if (results[0]) {
+            let infoForUser = await this.knex('users').select('id as userId','username').where({'id': results[0]['userid']});
+            if (!infoForUser || !infoForUser[0]) {
+                throw new Error('InvalidEmailAddress');
+            }
+            return infoForUser[0];
+        }
+        throw new Error('InvalidEmailAddress');
+    }
+
+    /**
      * Insert a New Email for a User
      * @param userId 
      * @param newEmail 

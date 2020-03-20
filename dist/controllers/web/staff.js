@@ -145,6 +145,25 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
         ViewData.page.twoFactorEnabled = twoFactorEnabled;
         return ViewData;
     }
+    async moderationGroup(localUserData, groupId) {
+        const staff = localUserData.staff >= 2 ? true : false;
+        if (!staff) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        let groupInfo;
+        try {
+            groupInfo = await this.group.getInfo(groupId);
+        }
+        catch (e) {
+            console.log(e);
+            throw new this.BadRequest('InvalidGroupId');
+        }
+        let ViewData = new Www_1.WWWTemplate({ 'title': "Manage \"" + groupInfo.groupName + "\"" });
+        ViewData.page = {
+            groupInfo: groupInfo,
+        };
+        return ViewData;
+    }
     async modifyForums(userInfo) {
         const staff = userInfo.staff >= 3 ? true : false;
         if (!staff) {
@@ -280,6 +299,17 @@ __decorate([
     __metadata("design:paramtypes", [UserModel.SessionUserInfo, Number]),
     __metadata("design:returntype", Promise)
 ], WWWStaffController.prototype, "moderationProfile", null);
+__decorate([
+    common_1.Get('/staff/groups/manage'),
+    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Render('staff/groups/manage'),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Required()),
+    __param(1, common_1.QueryParams('groupId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [UserModel.SessionUserInfo, Number]),
+    __metadata("design:returntype", Promise)
+], WWWStaffController.prototype, "moderationGroup", null);
 __decorate([
     common_1.Get('/staff/forums'),
     common_1.UseBefore(Auth_1.YesAuth),

@@ -7,6 +7,13 @@ class ForumDAL extends _init_1.default {
         const categories = await this.knex("forum_categories").select("id as categoryId", "title", "description", 'weight').orderBy('weight', 'desc');
         return categories;
     }
+    async getCategoryById(categoryId) {
+        const categories = await this.knex("forum_categories").select("id as categoryId", "title", "description", 'weight').orderBy('weight', 'desc').where({ 'id': categoryId }).limit(1);
+        if (!categories[0]) {
+            throw new Error('InvalidCategoryId');
+        }
+        return categories[0];
+    }
     async getSubCategories(minimumRank = 0) {
         const subCategories = await this.knex("forum_subcategories").select("id as subCategoryId", "category as categoryId", "title", "description", "read_permission_level", "post_permission_level", 'forum_subcategories.weight').where("read_permission_level", "<=", minimumRank).orderBy('weight', 'desc');
         const formattedCategories = [];

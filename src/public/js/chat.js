@@ -163,15 +163,19 @@ function chatInit() {
             }, 1500);
         }
     }
+    window.sock = undefined;
     var unload = false;
     function setupListen() {
         getCsrf().then(function (csrf) {
             if (openUserId) {
                 loadMessages(openUserId);
             }
-            var sock = new WebSocket(wsurl + '?csrf=' + csrf);
+            sock = new WebSocket(wsurl + '?csrf=' + csrf);
             sock.onmessage = function (event) {
                 var messageToLoad = JSON.parse(event.data);
+                if (messageToLoad.pong) {
+                    return;
+                } 
                 handleChatMessage(messageToLoad);
                 // localStorage.setItem('notifSystemJson', event.data);
             }
@@ -204,6 +208,13 @@ function chatInit() {
             }
         });
     }
+    setInterval(() => {
+        if (sock && sock.readyState && sock.readyState === WebSocket.OPEN) {
+            sock.send(JSON.stringify({
+                'ping': Math.floor(new Date().getTime() / 1000),
+            }));
+        }
+    }, 10000);
     function onStorageEvent(storageEvent) {
         if (storageEvent.key === "notifSystemJson") {
             handleChatMessage(JSON.parse(storageEvent.newValue));
@@ -323,13 +334,11 @@ function chatInit() {
                                 <img data-userid="${user}" style="width:100%;max-width:50px;margin:0 auto;display: block;" />
                             </div>
                             <div class="col-8">
-                                <p data-userid="${user}" class="text-truncate" style="font-weight:500;">Loading...</p>
+                                <p data-userid="${user}" class="text-truncate" style="font-weight:500;font-size:0.75rem;">Loading...</p>
                                 <p class="chatMessageTrunc text-truncate" style="font-size: small;">${latestMessage.escape()}</p>
                             </div>
-                            <div class="col-12">
-                                <hr style="margin: 0.05rem;" />
-                            </div>
                         `);
+                        $('#latestUserChats').append(`<div class="row"><div class="col-12"> <hr style="margin: 0.05rem;" /></div></div>`);
                 }
                 setUserThumbs(currentlyDisplayedUserIds);
                 setUserNames(currentlyDisplayedUserIds);

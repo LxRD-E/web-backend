@@ -9,12 +9,24 @@
     <link href="/css/custom.css?v=@model.v" rel="stylesheet">
     <link href="/css/animate.css?v=@model.v" rel="stylesheet">
 
-        <!-- Metrics -->
-        <script nonce="@model.nonce" src="/js/metrics.js?v=@model.v"></script>
-        <!-- Font Awesome -->
-        <script nonce="@model.nonce" src="https://kit.fontawesome.com/983cb40861.js"></script>
-        <!-- Recaptcha -->
-        <script nonce="@model.nonce" src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <!-- Metrics -->
+    <script nonce="@model.nonce" src="/js/metrics.js?v=@model.v"></script>
+    <!-- Font Awesome -->
+    <script nonce="@model.nonce" src="https://kit.fontawesome.com/983cb40861.js"></script>
+    <!-- Recaptcha -->
+    <script nonce="@model.nonce" src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <!-- google analytics -->
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-161288601-1" nonce="@model.nonce"></script>
+    <script nonce="@model.nonce">
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'UA-161288601-1');
+    </script>
+
+
     <style>
         body,html {
             margin: 0;
@@ -47,6 +59,23 @@
             <div data-authenticated="false" data-csrf="@model.csrf"  id="userdata"> </div>
         }
         
+        <div class="row secondaryNavBar">
+            <div class="container" style="margin-top:0;">
+                <div class="row">
+                    <div class="col-12" style="padding-top:0.25rem;padding-bottom:0.25rem;">
+                        <ul class="list-inline" style="padding-bottom:0;margin-bottom:0;">
+                            <li class="list-inline-item">
+                                <a class="text-white" href="/">Home</a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a class="text-white" href="/support">Support</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="container">
             @html.block('content')
         </div>
@@ -76,6 +105,8 @@
         <!-- Chat Stuff -->
             <script nonce="@model.nonce" src="/js/chat.js?v=@model.v"></script>
         }
+        <!-- gdpr cookie prompt -->
+        <script nonce="@model.nonce" src="/js/misc/cookies.js?v=@model.v"></script>
 
         @html.block('js')
     </body>

@@ -71,8 +71,9 @@ class GameDAL extends _init {
      * @param limit 
      * @param sortMode 
      */
-    public async getGames(offset: number, limit: number, sortMode: 'asc'|'desc', sortByColumn: string, genre: number): Promise<Game.GameSearchResult[]> {
+    public async getGames(offset: number, limit: number, sortMode: 'asc'|'desc', sortByColumn: string, genre: number): Promise<Game.GameSearchResult> {
         let games;
+        let total: number;
         if (genre === Game.GameGenres.Any) {
             games = await this.knex('game').select([
                 'id as gameId',
@@ -85,6 +86,10 @@ class GameDAL extends _init {
             ]).limit(limit).offset(offset).orderBy(sortByColumn,sortMode).where({
                 'game_state': Game.GameState.public,
             });
+            let _total = await this.knex('game').count('id as total').where({
+                'game_state': Game.GameState.public,
+            });
+            total = _total[0]['total'] as number;
         }else{
             games = await this.knex('game').select([
                 'id as gameId',
@@ -98,9 +103,17 @@ class GameDAL extends _init {
                 'game_state': Game.GameState.public,
                 'genre': genre,
             });
+            let _total = await this.knex('game').count('id as total').where({
+                'game_state': Game.GameState.public,
+                'genre': genre,
+            });
+            total = _total[0]['total'] as number;
         }
 
-        return games;
+        return {
+            total: total,
+            data: games,
+        };
     }
 
     /**
