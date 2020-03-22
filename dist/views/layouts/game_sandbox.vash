@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html" charset="utf-8"/>
+    <meta name="x-lb-origin" content="@model['x-lb-origin']">
     <title>Hindi Gamer Club</title>
 
     <!-- Meta -->
@@ -15,6 +16,15 @@
     @*
     <script nonce="@model.nonce" src="https://cdn.jsdelivr.net/npm/simple-crypto-js@@2.2.0/dist/SimpleCrypto.min.js"></script>
     *@
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-161288601-1" nonce="@model.nonce"></script>
+    <script nonce="@model.nonce">
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'UA-161288601-1');
+    </script>
 
     <script nonce="@model.nonce" src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
     <style>

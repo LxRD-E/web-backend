@@ -63,6 +63,27 @@ var GameGenres;
     GameGenres[GameGenres["Fighting"] = 13] = "Fighting";
     GameGenres[GameGenres["Western"] = 14] = "Western";
 })(GameGenres = exports.GameGenres || (exports.GameGenres = {}));
+var GameGenreDescriptions;
+(function (GameGenreDescriptions) {
+    GameGenreDescriptions[GameGenreDescriptions["Thousands of free 3D games from every genre"] = 1] = "Thousands of free 3D games from every genre";
+    GameGenreDescriptions[GameGenreDescriptions["Build stuff with friends"] = 2] = "Build stuff with friends";
+    GameGenreDescriptions[GameGenreDescriptions["Begin work at your dream job & have a family in Town & City games"] = 3] = "Begin work at your dream job & have a family in Town & City games";
+    GameGenreDescriptions[GameGenreDescriptions["Be a soldier in military games"] = 4] = "Be a soldier in military games";
+    GameGenreDescriptions[GameGenreDescriptions["Laugh and meet new people in Comedy games"] = 5] = "Laugh and meet new people in Comedy games";
+    GameGenreDescriptions[GameGenreDescriptions["Rule an ancient kingdom in Medieval games"] = 6] = "Rule an ancient kingdom in Medieval games";
+    GameGenreDescriptions[GameGenreDescriptions["Explore vast land with friends in Adventure games"] = 7] = "Explore vast land with friends in Adventure games";
+    GameGenreDescriptions[GameGenreDescriptions["Discover aliens in Sci-Fi games"] = 8] = "Discover aliens in Sci-Fi games";
+    GameGenreDescriptions[GameGenreDescriptions["Seek new lands and battle players in Naval games"] = 9] = "Seek new lands and battle players in Naval games";
+    GameGenreDescriptions[GameGenreDescriptions["Form teams and destroy enemies in FPS (First-Person Shooter) games"] = 10] = "Form teams and destroy enemies in FPS (First-Person Shooter) games";
+    GameGenreDescriptions[GameGenreDescriptions["Roleplay with the only limit bing your imagination in RPG (Role-Playing) games"] = 11] = "Roleplay with the only limit bing your imagination in RPG (Role-Playing) games";
+    GameGenreDescriptions[GameGenreDescriptions["Get active and work closely with your team in Sports games"] = 12] = "Get active and work closely with your team in Sports games";
+    GameGenreDescriptions[GameGenreDescriptions["Fight other players, with bare hands or swords, in Fighting games"] = 13] = "Fight other players, with bare hands or swords, in Fighting games";
+    GameGenreDescriptions[GameGenreDescriptions["Prospect the grand wild west and meet people in Western games"] = 14] = "Prospect the grand wild west and meet people in Western games";
+})(GameGenreDescriptions = exports.GameGenreDescriptions || (exports.GameGenreDescriptions = {}));
+var GameGenreThumbnails;
+(function (GameGenreThumbnails) {
+    GameGenreThumbnails[GameGenreThumbnails["https://cdn.hindigamer.club/static/genre/Western-small.jpg"] = 14] = "https://cdn.hindigamer.club/static/genre/Western-small.jpg";
+})(GameGenreThumbnails = exports.GameGenreThumbnails || (exports.GameGenreThumbnails = {}));
 class GameThumbnail {
 }
 __decorate([
@@ -188,36 +209,48 @@ __decorate([
     __metadata("design:type", Number)
 ], GameInfo.prototype, "genre", void 0);
 exports.GameInfo = GameInfo;
+class GameSearchResultEntry {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameSearchResultEntry.prototype, "gameId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], GameSearchResultEntry.prototype, "gameName", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], GameSearchResultEntry.prototype, "gameDescription", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameSearchResultEntry.prototype, "playerCount", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameSearchResultEntry.prototype, "creatorId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameSearchResultEntry.prototype, "creatorType", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], GameSearchResultEntry.prototype, "updatedAt", void 0);
+exports.GameSearchResultEntry = GameSearchResultEntry;
 class GameSearchResult {
 }
 __decorate([
     common_1.Required(),
     __metadata("design:type", Number)
-], GameSearchResult.prototype, "gameId", void 0);
+], GameSearchResult.prototype, "total", void 0);
 __decorate([
     common_1.Required(),
-    __metadata("design:type", String)
-], GameSearchResult.prototype, "gameName", void 0);
-__decorate([
-    common_1.Required(),
-    __metadata("design:type", String)
-], GameSearchResult.prototype, "gameDescription", void 0);
-__decorate([
-    common_1.Required(),
-    __metadata("design:type", Number)
-], GameSearchResult.prototype, "playerCount", void 0);
-__decorate([
-    common_1.Required(),
-    __metadata("design:type", Number)
-], GameSearchResult.prototype, "creatorId", void 0);
-__decorate([
-    common_1.Required(),
-    __metadata("design:type", Number)
-], GameSearchResult.prototype, "creatorType", void 0);
-__decorate([
-    common_1.Required(),
-    __metadata("design:type", String)
-], GameSearchResult.prototype, "updatedAt", void 0);
+    common_1.PropertyType(GameSearchResultEntry),
+    __metadata("design:type", Array)
+], GameSearchResult.prototype, "data", void 0);
 exports.GameSearchResult = GameSearchResult;
 class GameServerPlayer {
 }

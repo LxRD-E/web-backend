@@ -36,14 +36,23 @@ export class Error {
 }
 
 export class UserSession {
+    @Required()
     'userId': number;
+    @Required()
     'username': string;
+    @Required()
     'passwordChanged': number;
+    @Required()
     'banned': user.banned;
+    @Required()
     'theme': user.theme;
+    @Required()
     'primaryBalance': number;
+    @Required()
     'secondaryBalance': number;
+    @Required()
     'staff': user.staff;
+    @Required()
     'dailyAward': string;
 }
 

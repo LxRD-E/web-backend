@@ -156,13 +156,15 @@ export enum HttpErrors {
     InvalidGroupStatus,
     InvalidReportReason,
 };
+import os = require('os');
 // @Locals('userInfo') userInfo: model.user.UserInfo,
 export const ErrorTemplate = (title: string, body: string): string => {
     return `
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="x-lb-origin" content="${os.hostname()+'-'+process.pid.toString()}">
     <title>${title} - Hindi Gamer Club</title>
     <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,600,700,900" rel="stylesheet">
     <style>
@@ -205,5 +207,5 @@ export const ErrorTemplate = (title: string, body: string): string => {
             <p>${body}</p>
         </div>
     </body>
-    </html>`.replace(/\n/g, '');
+    </html>`.replace(/\n/g, '').replace(/  /g,'');
 }

@@ -65,6 +65,7 @@ class GameDAL extends _init_1.default {
     }
     async getGames(offset, limit, sortMode, sortByColumn, genre) {
         let games;
+        let total;
         if (genre === Game.GameGenres.Any) {
             games = await this.knex('game').select([
                 'id as gameId',
@@ -77,6 +78,10 @@ class GameDAL extends _init_1.default {
             ]).limit(limit).offset(offset).orderBy(sortByColumn, sortMode).where({
                 'game_state': Game.GameState.public,
             });
+            let _total = await this.knex('game').count('id as total').where({
+                'game_state': Game.GameState.public,
+            });
+            total = _total[0]['total'];
         }
         else {
             games = await this.knex('game').select([
@@ -91,8 +96,16 @@ class GameDAL extends _init_1.default {
                 'game_state': Game.GameState.public,
                 'genre': genre,
             });
+            let _total = await this.knex('game').count('id as total').where({
+                'game_state': Game.GameState.public,
+                'genre': genre,
+            });
+            total = _total[0]['total'];
         }
-        return games;
+        return {
+            total: total,
+            data: games,
+        };
     }
     async countGames(creatorId, creatorType) {
         const count = await this.knex('game').count('id as Total').where({ 'creator_id': creatorId, 'creator_type': creatorType });

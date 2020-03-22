@@ -80,6 +80,13 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
         }
         return new this.WWWTemplate({ title: 'Items Awaiting Moderator Approval', userInfo: userInfo });
     }
+    async reportAbuseUserStatus(userInfo) {
+        const staff = userInfo.staff >= 1 ? true : false;
+        if (!staff) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        return new this.WWWTemplate({ title: 'User Status Reports', userInfo: userInfo });
+    }
     async giveItem(userInfo) {
         const staff = userInfo.staff >= 3 ? true : false;
         if (!staff) {
@@ -190,6 +197,74 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
         }
         return new this.WWWTemplate({ title: 'View Tickets Awaiting Response', userInfo: userInfo });
     }
+    async searchUsers(userInfo) {
+        const staff = userInfo.staff >= 1 ? true : false;
+        if (!staff) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        return new this.WWWTemplate({ title: 'Search Users', userInfo: userInfo });
+    }
+    async searchUsersResults(userInfo, req) {
+        const staff = userInfo.staff >= 1 ? true : false;
+        if (!staff) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        let query;
+        let column;
+        if (req.query.email) {
+            query = req.query.email;
+            column = 'email';
+        }
+        if (req.query.username) {
+            query = req.query.username;
+            column = 'username';
+        }
+        if (req.query.userId) {
+            query = req.query.userId;
+            column = 'userId';
+        }
+        if (!column || !query) {
+            throw new this.BadRequest('SchemaValidationFailed');
+        }
+        let results = [];
+        console.log(column);
+        if (column === 'email') {
+            try {
+                let result = await this.settings.getUserByEmail(query);
+                results.push(result);
+            }
+            catch (e) {
+            }
+        }
+        else if (column === 'username') {
+            try {
+                let result = await this.user.userNameToId(query);
+                results.push({
+                    userId: result,
+                    username: query,
+                });
+            }
+            catch (e) {
+            }
+        }
+        else if (column === 'userId') {
+            try {
+                let result = await this.user.getInfo(parseInt(query, 10), ['userId', 'username']);
+                results.push({
+                    userId: result.userId,
+                    username: result.username,
+                });
+            }
+            catch (e) {
+                console.error(e);
+            }
+        }
+        return new this.WWWTemplate({ title: 'Search Users', page: {
+                results: results,
+                column: column,
+                query: query,
+            } });
+    }
 };
 __decorate([
     common_1.Get('/staff'),
@@ -262,6 +337,15 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], WWWStaffController.prototype, "catalogPending", null);
 __decorate([
+    common_1.Get('/staff/report-abuse/user-status'),
+    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Render('staff/report-abuse/user-status'),
+    __param(0, common_1.Locals('userInfo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [UserModel.SessionUserInfo]),
+    __metadata("design:returntype", Promise)
+], WWWStaffController.prototype, "reportAbuseUserStatus", null);
+__decorate([
     common_1.Get('/staff/give'),
     common_1.UseBefore(Auth_1.YesAuth),
     common_1.Render('staff/give'),
@@ -328,6 +412,25 @@ __decorate([
     __metadata("design:paramtypes", [UserModel.SessionUserInfo]),
     __metadata("design:returntype", Promise)
 ], WWWStaffController.prototype, "staffTickets", null);
+__decorate([
+    common_1.Get('/staff/user/search'),
+    common_1.Use(Auth_1.YesAuth),
+    common_1.Render('staff/user/search'),
+    __param(0, common_1.Locals('userInfo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [UserModel.SessionUserInfo]),
+    __metadata("design:returntype", Promise)
+], WWWStaffController.prototype, "searchUsers", null);
+__decorate([
+    common_1.Get('/staff/user/search_results'),
+    common_1.Use(Auth_1.YesAuth),
+    common_1.Render('staff/user/search_results'),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [UserModel.SessionUserInfo, Object]),
+    __metadata("design:returntype", Promise)
+], WWWStaffController.prototype, "searchUsersResults", null);
 WWWStaffController = __decorate([
     common_1.Controller("/"),
     __metadata("design:paramtypes", [])

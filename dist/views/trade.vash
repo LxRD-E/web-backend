@@ -14,7 +14,7 @@
             </style>
         }else{
             <style nonce="@model.nonce">
-                p,h1 {
+                h1 {
                     color: white;
                 }
             </style>

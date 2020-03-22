@@ -157,14 +157,17 @@ var HttpErrors;
     HttpErrors[HttpErrors["AlreadyReactedToStatus"] = 152] = "AlreadyReactedToStatus";
     HttpErrors[HttpErrors["NotReactedToStatus"] = 153] = "NotReactedToStatus";
     HttpErrors[HttpErrors["InvalidGroupStatus"] = 154] = "InvalidGroupStatus";
+    HttpErrors[HttpErrors["InvalidReportReason"] = 155] = "InvalidReportReason";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 ;
+const os = require("os");
 exports.ErrorTemplate = (title, body) => {
     return `
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="x-lb-origin" content="${os.hostname() + '-' + process.pid.toString()}">
     <title>${title} - Hindi Gamer Club</title>
     <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,600,700,900" rel="stylesheet">
     <style>
@@ -207,6 +210,6 @@ exports.ErrorTemplate = (title, body) => {
             <p>${body}</p>
         </div>
     </body>
-    </html>`.replace(/\n/g, '');
+    </html>`.replace(/\n/g, '').replace(/  /g, '');
 };
 

@@ -273,12 +273,16 @@ export const generateTOTPSecret = () => {
             if (err) {
                 return rej(err);
             }
-            res({
+            let object: any = {
                 qrCodeUrl: text,
                 secret: {
                     base32: secret.base32,
                 },
-            });
+            };
+            if (process.env.NODE_ENV === 'development') {
+                object.secret = secret;
+            }
+            res(object);
         });
     });
 }

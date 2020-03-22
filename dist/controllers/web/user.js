@@ -99,8 +99,11 @@ let WWWUsersController = class WWWUsersController extends controller_1.default {
         ViewData.page.username = userData.username;
         return ViewData;
     }
-    async trade(filteredUserId) {
-        let ViewData = new this.WWWTemplate({ title: '' });
+    async trade(userInfo, filteredUserId) {
+        if (userInfo.userId === filteredUserId) {
+            throw new this.Conflict('UserCannotBeTradedWith');
+        }
+        let ViewData = new this.WWWTemplate({ title: 'Trade' });
         let userData = await this.user.getInfo(filteredUserId, ["userId", "username", 'accountStatus']);
         if (userData.accountStatus === model.user.accountStatus.deleted) {
             throw new this.NotFound('InvalidUserId');
@@ -154,9 +157,10 @@ __decorate([
     swagger_1.Summary('Open trade request with a user'),
     common_1.Render('trade'),
     common_1.UseBefore(Auth_1.YesAuth),
-    __param(0, common_1.PathParams('userId', Number)),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [model.UserSession, Number]),
     __metadata("design:returntype", Promise)
 ], WWWUsersController.prototype, "trade", null);
 __decorate([

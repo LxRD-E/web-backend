@@ -39,7 +39,7 @@ export class LoginRequestOK {
     @Required()
     username: string;
     @Required()
-    isTwoFactorRequied: boolean;
+    isTwoFactorRequired: boolean;
     @PropertyType(String)
     twoFactor: string;
 }

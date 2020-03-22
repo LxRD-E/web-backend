@@ -1,9 +1,24 @@
+@{
+    // view settings below
+    model.ad = false;
+}
 @html.extend('layouts/default', function(model) {
+    @html.block('aboveContent', function(model) {
+        <div class="row" style="background-color:rgb(71,195,91);color:white;">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12" style="padding-top:1rem;padding-bottom:1rem;">
+                        <p><span class="font-weight-bold">NOTICE:</span> We are opening up support to <span class="font-weight-bold">PayPal</span>, although it is on a per-user basis. If you would like to pay with PayPal, you can <a href="/support">open up a support ticket here</a>.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    })
     @html.block('content', function(model) {
         <div class="row" style="padding-top:1rem;">
             <div class="col-8">
                 <h1>Buy Currency</h1>
-                <p>Use currency to customize your avatar with our <span style="font-weight:800">@model.page.catalogCount</span> Catalog Items, purchase in-game products, or use the currency conversion system.</p>
+                <p>Use currency with cryptocurrencies to customize your avatar with our <span style="font-weight:800">@model.page.catalogCount</span> Catalog Items, purchase in-game products, or use the currency conversion system.</p>
             </div>
             <div class="col-4">
                 <img style="width:100%;display:block;margin:0 auto;max-width:200px;" src="https://cdn.hindigamer.club/thumbnails/6c3cc1cd3848ca16e937688530995970c735a72fc5e3c0f54ab8c12e06ac604c0d2a885dcd010529d6f409fb7bfbc4fe.png" />
@@ -35,7 +50,7 @@
         </div>
         <div class="row" style="margin-top:4rem;">
             <div class="col-12">
-                <p class="text-center">Pay safely with crypto-currencies using CoinPayments. All purchases go towards supporting the development of our Website, Game Engine, and Catalog Library.</p>
+                <p class="text-center">Can't pay with cryptocurrencies? We offer a PayPal service based on a per-user basis. You can open up a support ticket <a href="/support">here</a> to start a PayPal transaction. All purchases go towards supporting the development of our Website, Game Engine, and Catalog Library.</p>
                 <p class="text-center" style="font-size:0.75rem;padding-top:1rem;">All prices listed in USD (US Dollars) unless otherwise specified. Read our Refund Policy <a href="/support/refund-policy">here</a>, and read our Terms of Service <a href="/terms">here</a>. All items listed for sale are Virtual In-Game Items.</p>
             </div>
         </div>

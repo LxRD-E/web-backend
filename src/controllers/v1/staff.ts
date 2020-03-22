@@ -1140,7 +1140,7 @@ export class StaffController extends controller {
         // update status to delete
         await this.user.updateStatusByid(userStatusId, '[ Content Deleted ]');
         // update current status
-        await this.user.updateStatus(info.userId, '[ Content Deleted ]');
+        await this.user.updateStatusWithoutInsert(info.userId, '[ Content Deleted ]');
         // return ok
         return {
             success: true,

@@ -611,6 +611,30 @@ let StaffController = class StaffController extends controller_1.default {
             success: true,
         };
     }
+    async latestAbuseReports(userInfo) {
+        this.validate(userInfo, 1);
+        let pendingAbuseReports = await this.reportAbuse.latestReportedUserStatuses();
+        return pendingAbuseReports;
+    }
+    async updateAbuseReportStatus(userInfo, reportId, status) {
+        this.validate(userInfo, 1);
+        if (!model.reportAbuse.ReportStatus[status]) {
+            throw new this.BadRequest('InvalidStatus');
+        }
+        await this.reportAbuse.updateUserStatusReportStatus(reportId, status);
+        return {
+            success: true,
+        };
+    }
+    async deleteUserStatusId(userInfo, userStatusId) {
+        this.validate(userInfo, 1);
+        let info = await this.user.getStatusById(userStatusId);
+        await this.user.updateStatusByid(userStatusId, '[ Content Deleted ]');
+        await this.user.updateStatusWithoutInsert(info.userId, '[ Content Deleted ]');
+        return {
+            success: true,
+        };
+    }
 };
 __decorate([
     common_1.Get('/user/:userId/transactions'),
@@ -1033,6 +1057,40 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "updateGroupStatus", null);
+__decorate([
+    common_1.Get('/feed/friends/abuse-reports'),
+    swagger_1.Summary('Get latest abuse reports for friend feed'),
+    common_1.Use(Auth_1.YesAuth),
+    swagger_1.ReturnsArray(200, { type: model.reportAbuse.ReportedStatusEntry }),
+    __param(0, common_1.Locals('userInfo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "latestAbuseReports", null);
+__decorate([
+    common_1.Patch('/feed/friends/abuse-report/:reportId/'),
+    swagger_1.Summary('Update a friends feed abuse-report status'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    swagger_1.Returns(200, { description: 'Abuse report has been updated' }),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('reportId', Number)),
+    __param(2, common_1.Required()),
+    __param(2, common_1.BodyParams('status', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "updateAbuseReportStatus", null);
+__decorate([
+    common_1.Delete('/feed/friends/:userStatusId'),
+    swagger_1.Summary('Delete a userStatusId'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    swagger_1.Returns(200, { description: 'Status Deleted' }),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('userStatusId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "deleteUserStatusId", null);
 StaffController = __decorate([
     common_1.Controller('/staff'),
     __metadata("design:paramtypes", [])

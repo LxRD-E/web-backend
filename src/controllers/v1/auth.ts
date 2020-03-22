@@ -28,6 +28,16 @@ export default class AuthController extends controller {
         super();
     }
 
+    @Get('/current-user')
+    @Summary('Get the current authenticated user')
+    @Use(YesAuth)
+    @Returns(200, {type: model.UserSession})
+    public getCurrentUser(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+    ) {
+        return userInfo;
+    }
+
     @Put('/request/password-reset')
     @Summary('Request a password reset')
     @Description('Limited to 5 attempts per hour. Uses RecaptchaV2')
@@ -134,7 +144,7 @@ export default class AuthController extends controller {
     @Post('/login')
     @Summary('Login to an account')
     @Description('Note that there is a limit of 25 attempts per hour, per IP address')
-    @Returns(200, { type: model.auth.LoginRequestOK, description: 'Session will be set, unless "isTwoFactorRequired" is true. "twoFactor" is only defined if "isTwoFactorRequied" is true. If "twoFactor" is not undefined, the user will be required to grab their TOTP token and enter it, then the "twoFactor" string and TOTP token should be POSTed to /login/two-factor to complete the login flow'})
+    @Returns(200, { type: model.auth.LoginRequestOK, description: 'Session will be set, unless "isTwoFactorRequired" is true. "twoFactor" is only defined if "isTwoFactorRequired" is true. If "twoFactor" is not undefined, the user will be required to grab their TOTP token and enter it, then the "twoFactor" string and TOTP token should be POSTed to /login/two-factor to complete the login flow'})
     @Returns(400, { description: 'InvalidUsernameOrPassword: Invalid Credentials\n', type: model.Error })
     @Returns(409, { description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error })
     @Returns(429, {type: model.Error, description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n'})
@@ -177,7 +187,7 @@ export default class AuthController extends controller {
                         success: true,
                         userId: userId,
                         username: userData.username,
-                        isTwoFactorRequied: true,
+                        isTwoFactorRequired: true,
                         twoFactor: jwtInfo,
                     };
                 }
@@ -189,7 +199,7 @@ export default class AuthController extends controller {
                 return {
                     userId: userId,
                     username: userData.username,
-                    isTwoFactorRequied: false,
+                    isTwoFactorRequired: false,
                 };
             } else {
                 throw new Error('Invalid password submitted');
@@ -367,16 +377,17 @@ export default class AuthController extends controller {
         @BodyParams(model.auth.SignupRequest) body: model.auth.SignupRequest,
         @HeaderParams('cf-connecting-ip', String) userIp: string,
         @Session() session: Express.Session,
+        @Req() req: Req,
     ) {
         /**
          * Check if signed up recently
          */
-        /*
+        
         const signedUpInPast24Hours = await this.user.checkForIpSignup(userIp);
         if (signedUpInPast24Hours) {
             throw new this.BadRequest('OneAccountPerIP');;
         }
-        */
+        
         let birthArray = body.birth;
         let username = body.username;
         let password = body.password;
@@ -475,6 +486,15 @@ export default class AuthController extends controller {
         session.userdata.id = userId;
         session.userdata.username = username;
         session.userdata.passwordUpdated = 0;
+        // Options for dev env
+        if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+            let verifiedEmail = req.headers['x-verified-email'] as string;
+            if (verifiedEmail) {
+                // add verified email
+                await this.settings.insertNewEmail(userId, verifiedEmail, 'example_code');
+                await this.settings.markEmailAsVerified(userId);
+            }
+        }
         return {
             userId: userId,
             username: username,

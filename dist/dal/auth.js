@@ -226,12 +226,16 @@ exports.generateTOTPSecret = () => {
             if (err) {
                 return rej(err);
             }
-            res({
+            let object = {
                 qrCodeUrl: text,
                 secret: {
                     base32: secret.base32,
                 },
-            });
+            };
+            if (process.env.NODE_ENV === 'development') {
+                object.secret = secret;
+            }
+            res(object);
         });
     });
 };
@@ -413,9 +417,17 @@ exports.multiGetOgTagsForYoutubeLinks = async (data) => {
             if (title && title.length > 64) {
                 title = title.slice(0, 64 - '...'.length) + '...';
             }
-            if (thumbnailUrl) {
-                let imageUrlWithProxy = jwt.sign({ url: thumbnailUrl }, config_1.default.jwt.imageProxy);
-                thumbnailUrl = '/api/v1/feed/preview-proxy?url=' + encodeURIComponent(imageUrlWithProxy);
+            if (thumbnailUrl && typeof thumbnailUrl === 'string') {
+                if (thumbnailUrl.slice(0, 'https://'.length).toLowerCase() === 'https://') {
+                    let imageUrlWithProxy = jwt.sign({ url: thumbnailUrl }, config_1.default.jwt.imageProxy);
+                    thumbnailUrl = '/api/v1/feed/preview-proxy?url=' + encodeURIComponent(imageUrlWithProxy);
+                }
+                else {
+                    thumbnailUrl = null;
+                }
+            }
+            else {
+                thumbnailUrl = null;
             }
             newDataArr[index]['ogInfo'] = {
                 thumbnailUrl: thumbnailUrl,

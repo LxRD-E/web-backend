@@ -377,9 +377,16 @@ pre > code {
 @media only screen and (min-width: 1680px) {
     div.staff-sidebar {
         display: block!important;
+        z-index: 2;
     }
     a.staff-sidebar-button {
         display: none!important;
+    }
+}
+@media only screen and (max-width: 1680px) {
+    div.staff-sidebar {
+        box-shadow: 0 0 18px 14px rgba(0, 0, 0, 0.25);
+        z-index:1029;
     }
 }
 
@@ -388,11 +395,14 @@ a.staff-sidebar-button {
 }
 
 div.staff-sidebar {
-    margin-top: -214px;
     float: left;
     position:absolute;
     width:250px;
     display: none;
+    height:100%;
+    /*z-index:1029;*/
+    min-height: 100vh;
+    margin-top: 0;
 }
 
 p.staff-item {
@@ -402,9 +412,6 @@ p.staff-item {
     padding-bottom:0;
 }
 
-a.staff-item > p.staff-item:hover { 
-    color: rgba(255,255,255,0.45);
-}
 
 div.staff-sidebar > div.card > div.card-body > h3 {
     margin-bottom:0;

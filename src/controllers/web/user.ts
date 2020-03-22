@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Render, Redirect, PathParams, QueryParams, UseBefore } from '@tsed/common';
+import { Controller, Get, Post, Render, Redirect, PathParams, QueryParams, UseBefore, Locals } from '@tsed/common';
 import { Summary } from '@tsed/swagger';
 import controller from '../controller';
 import * as model from '../../models/models';
@@ -140,10 +140,14 @@ export class WWWUsersController extends controller {
     @Render('trade')
     @UseBefore(YesAuth)
     public async trade(
+        @Locals('userInfo') userInfo: model.UserSession,
         @PathParams('userId', Number) filteredUserId: number
     ) {
+        if (userInfo.userId === filteredUserId) {
+            throw new this.Conflict('UserCannotBeTradedWith');
+        }
         // Create View Data
-        let ViewData = new this.WWWTemplate({ title: '' });
+        let ViewData = new this.WWWTemplate({ title: 'Trade' });
         // Grab user info
         let userData = await this.user.getInfo(filteredUserId, ["userId", "username", 'accountStatus']);
         // If deleted, throw 404

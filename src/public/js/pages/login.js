@@ -12,7 +12,7 @@ $(document).on('click', '#signInButton', function() {
         $('#signInButton').attr("disabled","disabled");
         request("/auth/login", "POST", JSON.stringify({username:username,password:password}))
             .then(function(d) {
-                if (d.isTwoFactorRequied) {
+                if (d.isTwoFactorRequired) {
                     twoFactorJwt = d.twoFactor;
                     $('#login-row').empty().append(`
                     <div class="col-12">

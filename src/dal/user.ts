@@ -887,7 +887,27 @@ class UsersDAL extends _init {
      * @param userIdTwo User to send Friend Request to, aka requestee
      */
     public async sendFriendRequest(userIdOne: number, userIdTwo: number): Promise<void> {
-        await this.knex("friend_request").insert({"userid_requester": userIdOne,"userid_requestee":userIdTwo});
+        await this.knex.transaction(async (trx) => {
+            // confirm requests dont already exist
+            let firstUserAlreadyRequested = await trx('friend_request').select('id').where({
+                'userid_requester': userIdOne,
+                'userid_requestee': userIdTwo,
+            }).limit(1).forUpdate('friend_request');
+            if (firstUserAlreadyRequested[0]) {
+                throw new Error('userIdOne has already created this request.');
+            }
+            
+            let secondUserAlreadyRequested = await trx('friend_request').select('id').where({
+                'userid_requestee': userIdOne,
+                'userid_requester': userIdTwo,
+            }).limit(1).forUpdate('friend_request');
+            if (secondUserAlreadyRequested[0]) {
+                throw new Error('userIdTwo has already created this request.');
+            }
+            await trx('friend_request').insert({"userid_requester": userIdOne,"userid_requestee":userIdTwo}).forUpdate('friend_request');
+
+            await trx.commit();
+        });
     }
 
     /**
@@ -1047,6 +1067,15 @@ class UsersDAL extends _init {
             "date": this.moment().format('YYYY-MM-DD HH:mm:ss'),
         });
         return idOfStatus[0];
+    }
+
+    /**
+     * Update users user_status but dont make a new status for the user
+     * @param userId 
+     * @param newStatus 
+     */
+    public async updateStatusWithoutInsert(userId: number, newStatus: string): Promise<void> {
+        await this.knex("users").update({"user_status":newStatus}).where({"users.id":userId});
     }
 
     /**

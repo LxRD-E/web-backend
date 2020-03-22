@@ -55,6 +55,10 @@ export const getCspString = (): string => {
  * Generate CSP with nonce middleware
  */
 export const generateCspWithNonce = async (req: Request, res: Response, next: NextFunction, randomBytesFunction = randomBytes): Promise<void> => {
+    res.set({
+        'x-lb-origin': os.hostname()+'-'+process.pid.toString(),
+    })
+    res.locals['x-lb-origin'] = os.hostname()+'-'+process.pid.toString();
     // temp
     if (process.env.NODE_ENV === 'development'  && !req.headers['cf-connecting-ip']) {
         req.headers['cf-connecting-ip'] = '127.0.0.1';
@@ -66,7 +70,7 @@ export const generateCspWithNonce = async (req: Request, res: Response, next: Ne
         'X-Frame-Options': 'DENY',
         'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
         'X-Content-Type-Options': 'nosniff',
-        'X-XSS-Protection': '1; mode=block',
+        'X-XSS-Protection': '0',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'X-Environment': environment,
         // 'X-Process-ID': processId,

@@ -484,7 +484,7 @@ let GameController = class GameController extends controller_1.default {
 __decorate([
     common_1.Get('/search'),
     swagger_1.Summary('Get all games'),
-    swagger_1.ReturnsArray(200, { type: model.game.GameSearchResult }),
+    swagger_1.Returns(200, { type: model.game.GameSearchResult }),
     __param(0, common_1.QueryParams('offset', Number)),
     __param(1, common_1.QueryParams('limit', Number)),
     __param(2, common_1.QueryParams('sortBy', Number)),

@@ -629,7 +629,24 @@ class UsersDAL extends _init_1.default {
         };
     }
     async sendFriendRequest(userIdOne, userIdTwo) {
-        await this.knex("friend_request").insert({ "userid_requester": userIdOne, "userid_requestee": userIdTwo });
+        await this.knex.transaction(async (trx) => {
+            let firstUserAlreadyRequested = await trx('friend_request').select('id').where({
+                'userid_requester': userIdOne,
+                'userid_requestee': userIdTwo,
+            }).limit(1).forUpdate('friend_request');
+            if (firstUserAlreadyRequested[0]) {
+                throw new Error('userIdOne has already created this request.');
+            }
+            let secondUserAlreadyRequested = await trx('friend_request').select('id').where({
+                'userid_requestee': userIdOne,
+                'userid_requester': userIdTwo,
+            }).limit(1).forUpdate('friend_request');
+            if (secondUserAlreadyRequested[0]) {
+                throw new Error('userIdTwo has already created this request.');
+            }
+            await trx('friend_request').insert({ "userid_requester": userIdOne, "userid_requestee": userIdTwo }).forUpdate('friend_request');
+            await trx.commit();
+        });
     }
     async createFriendship(userIdOne, userIdTwo) {
         const date = this.moment().format('YYYY-MM-DD HH:mm:ss');
@@ -709,6 +726,9 @@ class UsersDAL extends _init_1.default {
             "date": this.moment().format('YYYY-MM-DD HH:mm:ss'),
         });
         return idOfStatus[0];
+    }
+    async updateStatusWithoutInsert(userId, newStatus) {
+        await this.knex("users").update({ "user_status": newStatus }).where({ "users.id": userId });
     }
     async search(offset, limit, sort, sortBy, query) {
         const search = this.knex("users").select(['id as userId', 'username', 'user_status as status', 'user_joindate as joinDate', 'user_lastonline as lastOnline', 'user_staff as staff']).limit(limit).offset(offset).orderBy(sortBy, sort);

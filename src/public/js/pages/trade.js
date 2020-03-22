@@ -9,7 +9,7 @@ getUserInventoryAndWriteToDisplay(traderId, "partner");
 var uSelected = [];
 $(document).on('click', '.addItemToTradeyou', function() {
     console.log($(this).find(".card").css("border"));
-    if ($(this).find(".card").css("border") === "2px solid rgb(40, 167, 69)") {
+    if ($(this).find(".card").css("border") === "4px solid rgb(40, 167, 69)") {
         $(this).find(".card").css("border", "1px solid rgba(0, 0, 0, 0.125)");
         for (var i = uSelected.length - 1; i >= 0; --i) {
             if (uSelected[i].attr("data-uid") == $(this).attr("data-uid")) {
@@ -20,7 +20,7 @@ $(document).on('click', '.addItemToTradeyou', function() {
         if (uSelected.length >= 4) {
             warning("You can only select up to 4 items, per person, to trade at once. Please remove an item, and try again.");
         }else{
-            $(this).find(".card").css("border", "2px solid rgb(40, 167, 69)");
+            $(this).find(".card").css("border", "4px solid rgb(40, 167, 69)");
             uSelected.push($(this));
         }
     }
@@ -28,7 +28,7 @@ $(document).on('click', '.addItemToTradeyou', function() {
 var partnerSelected = [];
 $(document).on('click', '.addItemToTradepartner', function() {
     console.log($(this).find(".card").css("border"));
-    if ($(this).find(".card").css("border") === "2px solid rgb(40, 167, 69)") {
+    if ($(this).find(".card").css("border") === "4px solid rgb(40, 167, 69)") {
         $(this).find(".card").css("border", "1px solid rgba(0, 0, 0, 0.125)");
         for (var i = partnerSelected.length - 1; i >= 0; --i) {
             if (partnerSelected[i].attr("data-uid") == $(this).attr("data-uid")) {
@@ -39,7 +39,7 @@ $(document).on('click', '.addItemToTradepartner', function() {
         if (partnerSelected.length >= 4) {
             warning("You can only select up to 4 items, per person, to trade at once. Please remove an item, and try again.");
         }else{
-            $(this).find(".card").css("border", "2px solid rgb(40, 167, 69)");
+            $(this).find(".card").css("border", "4px solid rgb(40, 167, 69)");
             partnerSelected.push($(this));
         }
     }
@@ -49,6 +49,7 @@ $(document).on('click', '#sendTradeRequest', function() {
     // Verify
     if (partnerSelected.length >= 1 && uSelected.length >= 1) {
         questionYesNo("Are you sure you'd like to send this trade?", function(data) {
+            loading();
             var requestItems = [];
             var myItems = [];
             $.each(partnerSelected, function(index, value) {
@@ -59,7 +60,9 @@ $(document).on('click', '#sendTradeRequest', function() {
             });
             request("/user/"+traderId+"/trade/request", "PUT", JSON.stringify({"requestedItems":requestItems,"requesterItems":myItems}))
                 .then(function(data) {
-                    success("Your Trade Request has been Created.");
+                    success("Your Trade Request has been Created.", () => {
+                        window.history.back();
+                    });
                 })
                 .catch(function(e) {
                     console.log(e);
@@ -108,12 +111,12 @@ function getUserInventoryAndWriteToDisplay(userid, type) {
             div = $('#tradePartnerInventory');
         }
         request("/user/"+userid+"/inventory/collectibles?limit=100&sort=desc&offset="+offset)
-            .then(function(d) {
-                d = d["items"];
+            .then(function(results) {
+                let d = results["items"];
                 if (d.length <= 0 && offset === 0) {
                     div.html('<div class="col-sm-12"><h5>This user does not have any trade-able items.</h5></div>');
                 }else{
-                    if (d.length >= 25) {
+                    if (d.length >= 100) {
                         recurseOverInventory(offset+100);
                     }
                     console.log(d.length);
@@ -124,7 +127,7 @@ function getUserInventoryAndWriteToDisplay(userid, type) {
                         }else{
                             value.serial = "<p style='font-size:0.75rem;'>Serial: N/A</p>";
                         }
-                        div.append('<div style="display:none;padding:0.25rem;margin-bottom:0;cursor:pointer;" class="col-4 col-md-3 col-lg-2 addItemToTrade'+type+'" data-uid="'+value.userInventoryId+'" data-catalogid="'+value.catalogId+'" id="user_inventory_item_'+index+'"><div class="card" style="margin:0;"><img data-catalogid="'+value.catalogId+'" style="width:100%;" /> <div class="card-body" style="padding:0.75rem;"><div class="card-title text-left text-truncate" style="margin-bottom:0;"><a href="/catalog/'+value.catalogId+'/" target="_blank">'+value.catalogName+'</a><p style="font-size:0.75rem;" title="Average Sales Price" class="average-sales-toolip">ASP: '+number_format(value.averagePrice)+'</p>'+value.serial+'</div></div></div></div>');
+                        div.append('<div style="display:none;padding:0.25rem;margin-bottom:0;cursor:pointer;" class="col-4 col-md-3 col-lg-2 addItemToTrade'+type+'" data-uid="'+value.userInventoryId+'" data-catalogid="'+value.catalogId+'" id="user_inventory_item_'+index+'"><div class="card" style="margin:0;"><img data-catalogid="'+value.catalogId+'" style="width:100%;" /> <div class="card-body" style="padding:0.75rem;"><div class="card-title text-left text-truncate" style="margin-bottom:0;font-size:0.85rem;"><a class="normal" href="/catalog/'+value.catalogId+'/" target="_blank">'+value.catalogName+'</a><p style="font-size:0.65rem;"><span title="Average Sales Price" class="average-sales-toolip">ASP: '+number_format(value.averagePrice)+'</span></p>'+value.serial+'</div></div></div></div>');
                         catalogIdsRequest.push(value.catalogId);
                         $('.addItemToTrade'+type).show();
                     });

@@ -18,7 +18,7 @@ exports.csp = {
     'form-action': `'self'`,
     'media-src': `'none'`,
     'frame-ancestors': `'self'`,
-    'img-src': `'self' data: https://cdn.hindigamer.club/ https://hindigamerclub-game.ewr1.vultrobjects.com/`,
+    'img-src': `'self' data: https://cdn.hindigamer.club/ https://hindigamerclub-game.ewr1.vultrobjects.com/ https://www.google-analytics.com/`,
     'connect-src': `'self' ws://localhost:8080/ https://sentry.io/`,
     'object-src': `'none'`,
     'base-uri': `'self'`,
@@ -34,6 +34,10 @@ exports.getCspString = () => {
     return cspString;
 };
 exports.generateCspWithNonce = async (req, res, next, randomBytesFunction = randomBytes) => {
+    res.set({
+        'x-lb-origin': os.hostname() + '-' + process.pid.toString(),
+    });
+    res.locals['x-lb-origin'] = os.hostname() + '-' + process.pid.toString();
     if (process.env.NODE_ENV === 'development' && !req.headers['cf-connecting-ip']) {
         req.headers['cf-connecting-ip'] = '127.0.0.1';
     }
@@ -44,7 +48,7 @@ exports.generateCspWithNonce = async (req, res, next, randomBytesFunction = rand
         'X-Frame-Options': 'DENY',
         'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
         'X-Content-Type-Options': 'nosniff',
-        'X-XSS-Protection': '1; mode=block',
+        'X-XSS-Protection': '0',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'X-Environment': exports.environment,
         'X-Permitted-Cross-Domain-Policies': 'none',

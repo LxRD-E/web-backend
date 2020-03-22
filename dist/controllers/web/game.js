@@ -83,6 +83,8 @@ let WWWGameController = class WWWGameController extends controller_1.default {
         ViewData.title = gameInfo.gameName;
         ViewData.page.gameGenreString = model.game.GameGenres[gameInfo.genre];
         ViewData.page.genres = model.game.GameGenres;
+        ViewData.page.GameGenreDescriptions = model.game.GameGenreDescriptions;
+        ViewData.page.GameGenreThumbnails = model.game.GameGenreThumbnails;
         let possibleGenres = [];
         for (const genre in model.game.GameGenres) {
             let numberVal = parseInt(genre, 10);

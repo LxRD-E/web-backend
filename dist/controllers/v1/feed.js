@@ -21,6 +21,7 @@ const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 const moment = require("moment");
 const model = require("../../models/models");
+const middleware = require("../../middleware/middleware");
 const auth_1 = require("../../dal/auth");
 const controller_1 = require("../controller");
 const Auth_1 = require("../../middleware/Auth");
@@ -70,12 +71,17 @@ let FeedController = class FeedController extends controller_1.default {
         let userAgeInfo = await this.user.getInfo(userInfo.userId, ['birthDate']);
         let userAge = moment(userAgeInfo.birthDate);
         if (userAge.isSameOrBefore(moment().subtract(13, 'years'))) {
-            urlsToMatch.push();
+            urlsToMatch.push(/https:\/\/discord\.gg\/([a-zA-Z\d-_+\/]+)/g, /https:\/\/discordapp\.com\/([a-zA-Z\d-_+\/]+)/g, /https:\/\/www\.facebook\.com\/([a-zA-Z\d-_\+\?\&\.]+)/g, /https:\/\/facebook\.com\/([a-zA-Z\d-_\+\?\&\.]+)/g);
             if (userAge.isSameOrBefore(moment().subtract(18, 'years'))) {
                 urlsToMatch = [
                     /(https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/g
                 ];
             }
+        }
+        if (userInfo.staff >= 1) {
+            urlsToMatch = [
+                /(https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/g
+            ];
         }
         let idsArray = ids.split(',');
         let numberArrOfIDs = [];
@@ -96,9 +102,11 @@ let FeedController = class FeedController extends controller_1.default {
         let jobsToProcess = [];
         for (const statusData of multiGetStatuses) {
             const processStatus = async (statusData) => {
-                let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
-                if (!info.areFriends && userInfo.userId !== statusData.userId) {
-                    throw new this.BadRequest('InvalidStatusId');
+                if (userInfo.staff >= 1 === false) {
+                    let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
+                    if (!info.areFriends && userInfo.userId !== statusData.userId) {
+                        throw new this.BadRequest('InvalidStatusId');
+                    }
                 }
                 let urls = undefined;
                 for (const matchItem of urlsToMatch) {
@@ -148,11 +156,6 @@ let FeedController = class FeedController extends controller_1.default {
         return feed;
     }
     async getUsersWhoReactedToStatus(userInfo, statusId) {
-        let statusData = await this.user.getStatusById(statusId);
-        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
-        if (!info.areFriends && userInfo.userId !== statusData.userId) {
-            throw new this.BadRequest('InvalidStatusId');
-        }
         let usersWhoReacted = await this.user.getUsersWhoReactedToStatus(statusId, '❤️');
         return usersWhoReacted;
     }
@@ -164,40 +167,20 @@ let FeedController = class FeedController extends controller_1.default {
         if (!canPost) {
             throw new this.Conflict('Cooldown');
         }
-        let statusData = await this.user.getStatusById(statusId);
-        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
-        if (!info.areFriends && userInfo.userId !== statusData.userId) {
-            throw new this.BadRequest('InvalidStatusId');
-        }
         await this.user.addCommentToStatus(statusId, userInfo.userId, comment);
         return {
             success: true,
         };
     }
-    async getCommentsForStatus(userInfo, statusId, offset = 0, limit = 25) {
-        let statusData = await this.user.getStatusById(statusId);
-        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
-        if (!info.areFriends && userInfo.userId !== statusData.userId) {
-            throw new this.BadRequest('InvalidStatusId');
-        }
+    async getCommentsForStatus(statusId, offset = 0, limit = 25) {
         let comments = await this.user.getCommentsToStatus(statusId, offset, limit);
         return comments;
     }
     async getRepliesToComment(userInfo, statusId, commentId, limit = 100, offset = 0) {
-        let statusData = await this.user.getStatusById(statusId);
-        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
-        if (!info.areFriends && userInfo.userId !== statusData.userId) {
-            throw new this.BadRequest('InvalidStatusId');
-        }
         let comments = await this.user.getRepliesToStatusComment(commentId, offset, limit);
         return comments;
     }
     async replyToUserStatusComment(userInfo, reply, statusId, commentId) {
-        let statusData = await this.user.getStatusById(statusId);
-        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
-        if (!info.areFriends && userInfo.userId !== statusData.userId) {
-            throw new this.BadRequest('InvalidStatusId');
-        }
         if (!reply || !reply.replace(/\s+/g, '') || reply.length > 4096) {
             throw new this.BadRequest('InvalidReply');
         }
@@ -220,11 +203,6 @@ let FeedController = class FeedController extends controller_1.default {
         if (reactionType !== 'heart') {
             throw new this.BadRequest('InvalidReactionType');
         }
-        let statusData = await this.user.getStatusById(statusId);
-        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
-        if (!info.areFriends && userInfo.userId !== statusData.userId) {
-            throw new this.BadRequest('InvalidStatusId');
-        }
         if (await this.user.checkIfAlreadyReacted(statusId, userInfo.userId, '❤️')) {
             throw new this.Conflict('AlreadyReactedToStatus');
         }
@@ -236,11 +214,6 @@ let FeedController = class FeedController extends controller_1.default {
     async deleteReactionToStatus(userInfo, statusId, reactionType) {
         if (reactionType !== 'heart') {
             throw new this.BadRequest('InvalidReactionType');
-        }
-        let statusData = await this.user.getStatusById(statusId);
-        let info = await this.user.getFriendshipStatus(userInfo.userId, statusData.userId);
-        if (!info.areFriends && userInfo.userId !== statusData.userId) {
-            throw new this.BadRequest('InvalidStatusId');
         }
         if (!await this.user.checkIfAlreadyReacted(statusId, userInfo.userId, '❤️')) {
             throw new this.Conflict('NotReactedToStatus');
@@ -320,7 +293,7 @@ __decorate([
 __decorate([
     common_1.Get('/friends/:userStatusId/reactions'),
     swagger_1.Summary('Get a list of users who hearted the {userStatusId}. Only returns the first 25 users.'),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, middleware.feed.ConfirmPermissionForStatus),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userStatusId', Number)),
     __metadata("design:type", Function),
@@ -330,7 +303,7 @@ __decorate([
 __decorate([
     common_1.Post('/friends/:userStatusId/comment'),
     swagger_1.Summary('Add a comment to the {userStatusId}'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.feed.ConfirmPermissionForStatus),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userStatusId', Number)),
     __param(2, common_1.BodyParams('comment', String)),
@@ -342,19 +315,18 @@ __decorate([
     common_1.Get('/friends/:userStatusId/comments'),
     swagger_1.Summary('Get comments to the {userStatusId}'),
     swagger_1.ReturnsArray(200, { type: model.user.UserStatusComment }),
-    common_1.Use(Auth_1.YesAuth),
-    __param(0, common_1.Locals('userInfo')),
-    __param(1, common_1.PathParams('userStatusId', Number)),
-    __param(2, common_1.QueryParams('offset', Number)),
-    __param(3, common_1.QueryParams('limit', Number)),
+    common_1.Use(Auth_1.YesAuth, middleware.feed.ConfirmPermissionForStatus),
+    __param(0, common_1.PathParams('userStatusId', Number)),
+    __param(1, common_1.QueryParams('offset', Number)),
+    __param(2, common_1.QueryParams('limit', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number, Number]),
+    __metadata("design:paramtypes", [Number, Number, Number]),
     __metadata("design:returntype", Promise)
 ], FeedController.prototype, "getCommentsForStatus", null);
 __decorate([
     common_1.Get('/friends/:userStatusId/comment/:commentId/replies'),
     swagger_1.Summary('Get replies to a {commentId}'),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, middleware.feed.ConfirmPermissionForStatus),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userStatusId', Number)),
     __param(2, common_1.PathParams('commentId', Number)),
@@ -367,7 +339,7 @@ __decorate([
 __decorate([
     common_1.Post('/friends/:userStatusId/comment/:commentId/reply'),
     swagger_1.Summary('Post a reply to a {commentId}'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.feed.ConfirmPermissionForStatus),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.BodyParams('reply', String)),
@@ -380,7 +352,7 @@ __decorate([
 __decorate([
     common_1.Post('/friends/:userStatusId/react'),
     swagger_1.Summary('Add a heart reaction to the {userStatusId}'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.feed.ConfirmPermissionForStatus),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userStatusId', Number)),
     __param(2, common_1.BodyParams('reactionType', String)),
@@ -391,7 +363,7 @@ __decorate([
 __decorate([
     common_1.Delete('/friends/:userStatusId/react'),
     swagger_1.Summary('Delete your reaction to a {userStatusId}'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.feed.ConfirmPermissionForStatus),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userStatusId', Number)),
     __param(2, common_1.BodyParams('reactionType', String)),

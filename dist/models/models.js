@@ -52,6 +52,8 @@ const support = require("./v1/support");
 exports.support = support;
 const feed = require("./v1/feed");
 exports.feed = feed;
+const reportAbuse = require("./v1/report-abuse");
+exports.reportAbuse = reportAbuse;
 const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 class _errorData {
@@ -78,5 +80,41 @@ __decorate([
 exports.Error = Error;
 class UserSession {
 }
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserSession.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], UserSession.prototype, "username", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserSession.prototype, "passwordChanged", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserSession.prototype, "banned", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserSession.prototype, "theme", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserSession.prototype, "primaryBalance", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserSession.prototype, "secondaryBalance", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserSession.prototype, "staff", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], UserSession.prototype, "dailyAward", void 0);
 exports.UserSession = UserSession;
 

@@ -1,9 +1,10 @@
 <!doctype html>
 <html lang="en">
-  <head>
+    <head>
         <!-- Meta -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="x-lb-origin" content="@model['x-lb-origin']">
         @html.block('meta')
 
         <!-- Prefetch -->
@@ -193,6 +194,9 @@
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">@model.userInfo.username</a>
                         <div class="dropdown-menu dropdown-menu-right fade" aria-labelledby="navbarDropdown">
                             <a class="dropdown-item" href="/dashboard"><i class="fas fa-home"></i> Home</a>
+                            @if (model.userInfo && model.userInfo.staff >= 1) {
+                                <a class="dropdown-item staff-sidebar-button" href="#"><i class="fas fa-lock"></i> Staff</a>
+                            }
                             @html.block('extraNavItemBelowHome')
                             <a class="dropdown-item" href="/users/@model.userInfo.userId/profile"><i class="fas fa-id-card"></i> My Profile</a>
                             <a class="dropdown-item" href="/avatar"><i class="fas fa-user-tag"></i> My Avatar</a>
@@ -256,6 +260,67 @@
             </div>
         }
 
+
+        @if (model.userInfo && model.userInfo.staff >= 1) {
+            <div class="staff-sidebar">
+                <div class="card" style="height:100%;min-height: 100vh;">
+                    <div class="card-body" style="height:100%;">
+                        <h3 style="font-size:1rem;">GENERAL</h3>
+                        <a class="normal" href="/staff/banner">
+                            <p class="staff-item">BANNER</p>
+                        </a>
+                        <a class="normal" href="/staff/tickets">
+                            <p class="staff-item">VIEW TICKETS</p>
+                        </a>
+                        <a class="normal" href="/staff/create">
+                            <p class="staff-item">CREATE ITEM</p>
+                        </a>
+                        <a class="normal" href="/staff/forums">
+                            <p class="staff-item">FORUMS</p>
+                        </a>
+
+                        <div class="seperator-staff"></div>
+
+                        <h3 style="font-size:1rem;">ABUSE REPORTS</h3>
+                        <a class="normal" href="/staff/report-abuse/user-status">
+                            <p class="staff-item">USER STATUS</p>
+                        </a>
+
+                        <div class="seperator-staff"></div>
+
+                        <h3 style="font-size:1rem;">USER</h3>
+                        <a class="normal" href="/staff/user/search">
+                            <p class="staff-item">SEARCH</p>
+                        </a>
+                        <a class="normal" href="/staff/ban">
+                            <p class="staff-item">BAN</p>
+                        </a>
+                        <a class="normal" href="/staff/unban">
+                            <p class="staff-item">UNBAN</p>
+                        </a>
+                        <a class="normal" href="/staff/password">
+                            <p class="staff-item">RESET PASSWORD</p>
+                        </a>
+                        <a class="normal" href="/staff/give">
+                            <p class="staff-item">GIVE ITEM</p>
+                        </a>
+                        <a class="normal" href="/staff/give/currency">
+                            <p class="staff-item">GIVE CURRENCY</p>
+                        </a>
+
+                        <div class="seperator-staff"></div>
+
+                        <h3 style="font-size:1rem;">ECONOMY</h3>
+                        <a class="normal" href="/staff/currency-product">
+                            <p class="staff-item">CURRENCY PRODUCTS</p>
+                        </a>
+
+                    </div>
+                </div>
+            </div>
+        }
+
+
         @html.block('aboveLeaderboardAd')
 
         @if (model && typeof model.ad === 'boolean' && model.ad === false) {
@@ -266,9 +331,6 @@
                 <div style="padding-top:130px;" class="whitespace-ad"></div>
             </div>
         }
-
-        <!-- Nav -->
-
 
         @html.block('aboveContent')
 
@@ -384,6 +446,10 @@
         }
         <!-- gdpr cookie prompt -->
         <script nonce="@model.nonce" src="/js/misc/cookies.js?v=@model.v"></script>
+        @if (model.userInfo && model.userInfo.staff >= 1) {
+            <!-- staff userinf -->
+            <script src="/js/pages/staff/_staff.js?v=@model.v" nonce="@model.nonce"></script>
+        }
         <!-- Page Specific JS -->
         @html.block('jsInternal')
         @html.block('js')

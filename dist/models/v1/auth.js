@@ -77,7 +77,7 @@ __decorate([
 __decorate([
     common_1.Required(),
     __metadata("design:type", Boolean)
-], LoginRequestOK.prototype, "isTwoFactorRequied", void 0);
+], LoginRequestOK.prototype, "isTwoFactorRequired", void 0);
 __decorate([
     common_1.PropertyType(String),
     __metadata("design:type", String)

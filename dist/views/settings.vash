@@ -1,6 +1,10 @@
+@{
+    // view settings below
+    model.ad = false;
+}
 @html.extend('layouts/default', function(model) {
   @html.block('content', function(model) {
-      <div class="row">
+      <div class="row" style="margin-top:1rem;margin-bottom:1rem;">
             <div class="col-12">
                 <h1>Settings</h1>
             </div>

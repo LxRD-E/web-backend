@@ -283,4 +283,82 @@ export class WWWStaffController extends controller {
         }
         return new this.WWWTemplate({title: 'View Tickets Awaiting Response', userInfo: userInfo});
     }
+
+    @Get('/staff/user/search')
+    @Use(YesAuth)
+    @Render('staff/user/search')
+    public async searchUsers(
+        @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
+    ) {
+        const staff = userInfo.staff >= 1 ? true : false;
+        if (!staff) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        return new this.WWWTemplate({title: 'Search Users', userInfo: userInfo});
+    }
+
+    @Get('/staff/user/search_results')
+    @Use(YesAuth)
+    @Render('staff/user/search_results')
+    public async searchUsersResults(
+        @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
+        @Req() req: Req,
+    ) {
+        const staff = userInfo.staff >= 1 ? true : false;
+        if (!staff) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        let query: string;
+        let column: string;
+        if (req.query.email) {
+            query = req.query.email;
+            column = 'email';
+        }
+        if (req.query.username) {
+            query = req.query.username;
+            column= 'username';
+        }
+        if (req.query.userId) {
+            query = req.query.userId;
+            column = 'userId';
+        }
+        if (!column || !query) {
+            throw new this.BadRequest('SchemaValidationFailed');
+        }
+        let results: {userId: number; username: string}[] = [];
+        console.log(column);
+        if (column === 'email') {
+            try {
+                let result = await this.settings.getUserByEmail(query)
+                results.push(result);
+            }catch(e) {
+
+            }
+        }else if (column === 'username') {
+            try {
+                let result = await this.user.userNameToId(query);
+                results.push({
+                    userId: result,
+                    username: query,
+                });
+            }catch(e) {
+
+            }
+        }else if (column === 'userId') {
+            try {
+                let result = await this.user.getInfo(parseInt(query, 10), ['userId','username']);
+                results.push({
+                    userId: result.userId,
+                    username: result.username,
+                });
+            }catch(e){
+                console.error(e);
+            }
+        }
+        return new this.WWWTemplate({title: 'Search Users', page: {
+            results: results,
+            column: column,
+            query: query,
+        }});
+    }
 }

@@ -1,0 +1,27 @@
+{
+    "config": {
+        "target": "http://localhost:3000",
+        "phases": [
+            {
+                "duration": 60,
+                "arrivalRate": 20
+            }
+        ],
+        "defaults": {
+            "headers": {
+                "x-ratelimit-bypass": "true"
+            }
+        }
+    },
+    "scenarios": [
+        {
+            "flow": [
+                {
+                    "get": {
+                        "url": "/api/v1/user/1/info"
+                    }
+                }
+            ]
+        }
+    ]
+}

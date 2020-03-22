@@ -31,6 +31,9 @@ let AuthController = class AuthController extends controller_1.default {
     constructor() {
         super();
     }
+    getCurrentUser(userInfo) {
+        return userInfo;
+    }
     async requestPasswordReset(res, emailProvided) {
         let email = this.auth.verifyEmail(emailProvided);
         if (!email) {
@@ -131,7 +134,7 @@ let AuthController = class AuthController extends controller_1.default {
                         success: true,
                         userId: userId,
                         username: userData.username,
-                        isTwoFactorRequied: true,
+                        isTwoFactorRequired: true,
                         twoFactor: jwtInfo,
                     };
                 }
@@ -142,7 +145,7 @@ let AuthController = class AuthController extends controller_1.default {
                 return {
                     userId: userId,
                     username: userData.username,
-                    isTwoFactorRequied: false,
+                    isTwoFactorRequired: false,
                 };
             }
             else {
@@ -241,7 +244,12 @@ let AuthController = class AuthController extends controller_1.default {
         }
         return { success: true };
     }
-    async signup(body, userIp, session) {
+    async signup(body, userIp, session, req) {
+        const signedUpInPast24Hours = await this.user.checkForIpSignup(userIp);
+        if (signedUpInPast24Hours) {
+            throw new this.BadRequest('OneAccountPerIP');
+            ;
+        }
         let birthArray = body.birth;
         let username = body.username;
         let password = body.password;
@@ -333,6 +341,13 @@ let AuthController = class AuthController extends controller_1.default {
         session.userdata.id = userId;
         session.userdata.username = username;
         session.userdata.passwordUpdated = 0;
+        if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+            let verifiedEmail = req.headers['x-verified-email'];
+            if (verifiedEmail) {
+                await this.settings.insertNewEmail(userId, verifiedEmail, 'example_code');
+                await this.settings.markEmailAsVerified(userId);
+            }
+        }
         return {
             userId: userId,
             username: username,
@@ -474,6 +489,16 @@ let AuthController = class AuthController extends controller_1.default {
     }
 };
 __decorate([
+    common_1.Get('/current-user'),
+    swagger_1.Summary('Get the current authenticated user'),
+    common_1.Use(Auth_1.YesAuth),
+    swagger_1.Returns(200, { type: model.UserSession }),
+    __param(0, common_1.Locals('userInfo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "getCurrentUser", null);
+__decorate([
     common_1.Put('/request/password-reset'),
     swagger_1.Summary('Request a password reset'),
     swagger_1.Description('Limited to 5 attempts per hour. Uses RecaptchaV2'),
@@ -505,7 +530,7 @@ __decorate([
     common_1.Post('/login'),
     swagger_1.Summary('Login to an account'),
     swagger_1.Description('Note that there is a limit of 25 attempts per hour, per IP address'),
-    swagger_1.Returns(200, { type: model.auth.LoginRequestOK, description: 'Session will be set, unless "isTwoFactorRequired" is true. "twoFactor" is only defined if "isTwoFactorRequied" is true. If "twoFactor" is not undefined, the user will be required to grab their TOTP token and enter it, then the "twoFactor" string and TOTP token should be POSTed to /login/two-factor to complete the login flow' }),
+    swagger_1.Returns(200, { type: model.auth.LoginRequestOK, description: 'Session will be set, unless "isTwoFactorRequired" is true. "twoFactor" is only defined if "isTwoFactorRequired" is true. If "twoFactor" is not undefined, the user will be required to grab their TOTP token and enter it, then the "twoFactor" string and TOTP token should be POSTed to /login/two-factor to complete the login flow' }),
     swagger_1.Returns(400, { description: 'InvalidUsernameOrPassword: Invalid Credentials\n', type: model.Error }),
     swagger_1.Returns(409, { description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error }),
     swagger_1.Returns(429, { type: model.Error, description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n' }),
@@ -598,8 +623,9 @@ __decorate([
     __param(0, common_1.BodyParams(model.auth.SignupRequest)),
     __param(1, common_1.HeaderParams('cf-connecting-ip', String)),
     __param(2, common_1.Session()),
+    __param(3, common_1.Req()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.auth.SignupRequest, String, Object]),
+    __metadata("design:paramtypes", [model.auth.SignupRequest, String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "signup", null);
 __decorate([
