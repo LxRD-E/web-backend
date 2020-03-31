@@ -22,6 +22,7 @@ let mysqlConfig = {
 const knexSystem = knexLibrary(mysqlConfig as any);
 export default knexSystem;
 
+/*
 if (process.env.NODE_ENV === 'production') {
     setInterval(() => {
         console.log('== start debug stats ==');
@@ -47,3 +48,4 @@ if (process.env.NODE_ENV === 'production') {
     }, 5000);
     
 }
+*/

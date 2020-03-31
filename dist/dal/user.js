@@ -748,11 +748,7 @@ class UsersDAL extends _init_1.default {
         return forumData;
     }
     async incrementPostCount(userId) {
-        const userInfo = await this.getInfo(userId, ['forumPostCount']);
-        const currentCount = userInfo.forumPostCount;
-        await this.knex("users").update({
-            'forum_postcount': currentCount + 1,
-        }).where({ 'id': userId });
+        await this.knex("users").where({ 'id': userId }).increment('forum_postcount');
     }
     async updatePassword(userId, newPasswordHash) {
         const encryptedPasswordHash = auth_1.encryptPasswordHash(newPasswordHash);

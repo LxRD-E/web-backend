@@ -33,11 +33,12 @@ exports.hostName = os.hostname();
 exports.getCspString = () => {
     return cspString;
 };
+exports.lbOrigin = crypto.randomBytes(8).toString('base64');
 exports.generateCspWithNonce = async (req, res, next, randomBytesFunction = randomBytes) => {
     res.set({
-        'x-lb-origin': os.hostname() + '-' + process.pid.toString(),
+        'x-lb-origin': exports.lbOrigin,
     });
-    res.locals['x-lb-origin'] = os.hostname() + '-' + process.pid.toString();
+    res.locals['x-lb-origin'] = exports.lbOrigin;
     if (process.env.NODE_ENV === 'development' && !req.headers['cf-connecting-ip']) {
         req.headers['cf-connecting-ip'] = '127.0.0.1';
     }

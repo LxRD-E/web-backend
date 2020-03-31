@@ -385,7 +385,7 @@ let CatalogController = class CatalogController extends controller_1.default {
         })();
         return { success: true, id: catalogId };
     }
-    async forceThumbnailRegen(userInfo, catalogId) {
+    async forceThumbnailRegen(userInfo, catalogId, yieldUntilComplete = false, setThumbnailOnFinish = true) {
         let category;
         try {
             const catalogData = await this.catalog.getInfo(catalogId, ['catalogId', 'category']);
@@ -417,16 +417,33 @@ let CatalogController = class CatalogController extends controller_1.default {
                 else {
                     url = await this.avatar.renderAvatar('avatar', json);
                 }
-                await this.catalog.deleteThumbnail(catalogId);
-                await this.catalog.uploadThumbnail(catalogId, url);
+                if (setThumbnailOnFinish) {
+                    await this.catalog.deleteThumbnail(catalogId);
+                    await this.catalog.uploadThumbnail(catalogId, url);
+                }
+                else {
+                    return url;
+                }
             }
             catch (e) {
-                console.log(e);
+                console.error(e);
+                throw e;
             }
         };
-        regenAvatar().then().catch(e => {
-            console.error(e);
-        });
+        if (yieldUntilComplete) {
+            let data = await regenAvatar();
+            if (!setThumbnailOnFinish) {
+                return {
+                    success: true,
+                    url: data,
+                };
+            }
+        }
+        else {
+            regenAvatar().then().catch(e => {
+                console.error(e);
+            });
+        }
         return { success: true };
     }
     async create(userInfo, uploadedFiles, uploadAsStaff, category, isForSale, price, currency, name, description, groupId, isCollectible, stock) {
@@ -718,7 +735,7 @@ __decorate([
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('catalogId', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number]),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Boolean, Boolean]),
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "forceThumbnailRegen", null);
 __decorate([

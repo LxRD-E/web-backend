@@ -166,13 +166,18 @@ let ForumController = class ForumController extends controller_1.default {
         if (bodyWithoutWhiteSpace.length < 3) {
             throw new this.BadRequest('InvalidBody');
         }
-        const canUserPost = await this.forum.canUserPost(userInfo.userId);
-        if (!canUserPost) {
-            throw new this.BadRequest('Cooldown');
+        let threadId;
+        try {
+            threadId = await this.forum.createThread(subData.categoryId, subData.subCategoryId, title, userInfo.userId, isLocked, isPinned, body);
         }
-        let threadId = await this.forum.createThread(subData.categoryId, subData.subCategoryId, title, userInfo.userId, isLocked, isPinned);
-        await this.forum.createPost(threadId, subData.categoryId, subData.subCategoryId, userInfo.userId, body);
-        await this.user.incrementPostCount(userInfo.userId);
+        catch (e) {
+            if (e.message) {
+                if (e.message === 'Cooldown') {
+                    throw new this.Conflict('Cooldown');
+                }
+            }
+            throw e;
+        }
         return {
             'success': true,
             'threadId': threadId,
@@ -214,12 +219,18 @@ let ForumController = class ForumController extends controller_1.default {
         if (bodyWithoutWhiteSpace.length < 3) {
             throw new this.BadRequest('InvalidBody');
         }
-        const canUserPost = await this.forum.canUserPost(userInfo.userId);
-        if (!canUserPost) {
-            throw new this.BadRequest('Cooldown');
+        let postId;
+        try {
+            postId = await this.forum.createPost(numericId, subData.categoryId, subData.subCategoryId, userInfo.userId, body);
         }
-        const postId = await this.forum.createPost(numericId, subData.categoryId, subData.subCategoryId, userInfo.userId, body);
-        await this.user.incrementPostCount(userInfo.userId);
+        catch (e) {
+            if (e.message) {
+                if (e.message === 'Cooldown') {
+                    throw new this.BadRequest('Cooldown');
+                }
+            }
+            throw e;
+        }
         return {
             'success': true,
             'postId': postId,

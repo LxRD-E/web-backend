@@ -589,7 +589,6 @@ class CatalogDAL extends _init_1.default {
                 }
             }
         }
-        console.log(JSON.stringify(object));
         return object;
     }
 }

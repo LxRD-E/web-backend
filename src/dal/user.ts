@@ -1111,13 +1111,10 @@ class UsersDAL extends _init {
 
     /**
      * Increment a user's Post Count
+     * @deprecated Use transactions instead
      */
     public async incrementPostCount(userId: number): Promise<void> {
-        const userInfo = await this.getInfo(userId, ['forumPostCount']);
-        const currentCount = userInfo.forumPostCount;
-        await this.knex("users").update({
-            'forum_postcount': currentCount + 1,
-        }).where({'id': userId});
+        await this.knex("users").where({'id': userId}).increment('forum_postcount');
     }
 
     /**

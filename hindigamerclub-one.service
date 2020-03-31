@@ -4,7 +4,7 @@
 # sudo systemctl start hindigamerclub-one.service
 # sudo systemctl status hindigamerclub-one.service
 # to view logs:
-# sudo journalctl -u hindigamerclub-one.service
+# sudo journalctl -u hindigamerclub-one.service -u hindigamerclub-two.service -f -o json
 [Unit]
 Description=Hindi Gamer Club Web/API Daemon 1
 # After=mysql.service redis.service

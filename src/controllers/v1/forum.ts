@@ -102,7 +102,7 @@ export class ForumController extends controller {
         if (userInfo) {
             rank = userInfo.staff;
         }
-        let subData;
+        let subData: model.forum.SubCategories;
         try {
             subData = await this.forum.getSubCategoryById(numericId);
             if (subData.permissions.read > rank) {
@@ -232,15 +232,17 @@ export class ForumController extends controller {
             throw new this.BadRequest('InvalidBody');
         }
         // Create thread
-        const canUserPost = await this.forum.canUserPost(userInfo.userId);
-        if (!canUserPost) {
-            throw new this.BadRequest('Cooldown');
+        let threadId: number;
+        try {
+            threadId = await this.forum.createThread(subData.categoryId, subData.subCategoryId, title, userInfo.userId, isLocked, isPinned, body)
+        }catch(e) {
+            if (e.message) {
+                if (e.message === 'Cooldown') {
+                    throw new this.Conflict('Cooldown');
+                }
+            }
+            throw e;
         }
-        let threadId = await this.forum.createThread(subData.categoryId, subData.subCategoryId, title, userInfo.userId, isLocked, isPinned);
-        // Create First Post (aka body)
-        await this.forum.createPost(threadId, subData.categoryId, subData.subCategoryId, userInfo.userId, body);
-        // Increment Post Count
-        await this.user.incrementPostCount(userInfo.userId);
         // Return success
         return {
             'success': true,
@@ -294,15 +296,18 @@ export class ForumController extends controller {
         if (bodyWithoutWhiteSpace.length < 3) {
             throw new this.BadRequest('InvalidBody');
         }
-        // Create Post
-        const canUserPost = await this.forum.canUserPost(userInfo.userId);
-        if (!canUserPost) {
-            throw new this.BadRequest('Cooldown');
-        }
         // Create Post (aka body)
-        const postId = await this.forum.createPost(numericId, subData.categoryId, subData.subCategoryId, userInfo.userId, body);
-        // Increment Post Count
-        await this.user.incrementPostCount(userInfo.userId);
+        let postId: number;
+        try {
+            postId = await this.forum.createPost(numericId, subData.categoryId, subData.subCategoryId, userInfo.userId, body);
+        }catch(e) {
+            if (e.message) {
+                if (e.message === 'Cooldown') {
+                    throw new this.BadRequest('Cooldown');
+                }
+            }
+            throw e;
+        }
         // Return success
         return {
             'success': true,

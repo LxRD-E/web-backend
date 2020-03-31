@@ -226,26 +226,76 @@ class ForumDAL extends _init {
     }
 
     /**
-     * Create a thread. Does not create body
+     * Create a thread. Also creates the thread's corresponding post containing the body of the thread
      * @returns threadId
+     * @throws Cooldown
      */
-    public async createThread(categoryId: number, subCategoryId: number, title: string, userId: number, locked: Forum.threadLocked, pinned: Forum.threadPinned): Promise<number> {
-        const time = this.moment().format('YYYY-MM-DD HH:mm:ss');
-        const id = await this.knex("forum_threads").insert({
-            'category': categoryId,
-            'sub_category': subCategoryId,
-            'title': title,
-            'userid': userId,
-            'thread_locked': locked,
-            'thread_pinned': pinned,
-            'thread_deleted': Forum.postDeleted.false,
-            'date_created': time,
-            'date_edited': time,
-        })
-        if (!id[0]) {
-            throw false;
-        }
-        return id[0] as number;
+    public async createThread(
+        categoryId: number, 
+        subCategoryId: number, 
+        title: string, 
+        userId: number, 
+        locked: Forum.threadLocked, 
+        pinned: Forum.threadPinned, 
+        body: string
+    ): Promise<number> {
+        let threadId: number;
+        await this.knex.transaction(async (trx) => {
+            // confirm user isnt in cooldown
+            const latestPost = await trx("forum_posts").select("date_created").where({
+                'userid': userId
+            }).orderBy("id", "desc").limit(1).forUpdate('users','forum_posts','forum_threads');;
+            if (!latestPost[0]) {
+                // Can post
+            }else{
+                if (this.moment().isSameOrAfter(this.moment(latestPost[0]["date_created"]).add(30, "seconds"))) {
+                    // Can post
+                }else{
+                    // Cannot post
+                    throw new Error('Cooldown');
+                }
+            }
+            // Get time
+            const time = this.moment().format('YYYY-MM-DD HH:mm:ss');
+            // Insert thread
+            const id = await trx("forum_threads").insert({
+                'category': categoryId,
+                'sub_category': subCategoryId,
+                'title': title,
+                'userid': userId,
+                'thread_locked': locked,
+                'thread_pinned': pinned,
+                'thread_deleted': Forum.postDeleted.false,
+                'date_created': time,
+                'date_edited': time,
+            }).forUpdate('users','forum_posts','forum_threads');
+            if (!id[0]) {
+                throw new Error('Thread not created due to unknown error.');
+            }
+            threadId = id[0] as number;
+            // Create post
+            const postId = await trx("forum_posts").insert({
+                'category': categoryId,
+                'sub_category': subCategoryId,
+                'threadid': threadId,
+                'userid': userId,
+                'date_created': time,
+                'date_edited': time,
+                'post_body': body,
+                'post_deleted': Forum.postDeleted.false,
+            }).forUpdate('users','forum_posts','forum_threads');
+            if (!postId[0]) {
+                throw new Error('Post not created due to unknown error.');
+            }
+
+            // Increment user thread count
+            await trx("users").increment('forum_postcount').where({'id': userId}).forUpdate('users','forum_posts','forum_threads');
+
+            // commit transaction
+            await trx.commit();
+        });
+        // return the generated threadId
+        return threadId;
     }
 
     /**
@@ -268,26 +318,47 @@ class ForumDAL extends _init {
      * @returns postId
      */
     public async createPost(threadId: number, categoryId: number, subCategoryId: number, userId: number, body: string): Promise<number> {
-        const time = this.moment().format('YYYY-MM-DD HH:mm:ss');
-        const id = await this.knex("forum_posts").insert({
-            'category': categoryId,
-            'sub_category': subCategoryId,
-            'threadid': threadId,
-            'userid': userId,
-            'date_created': time,
-            'date_edited': time,
-            'post_body': body,
-            'post_deleted': Forum.postDeleted.false,
-        })
-        if (!id[0]) {
-            throw false;
-        }
-        return id[0] as number;
+        let postId: number;
+        await this.knex.transaction(async (trx) => {
+            const latestPost = await trx("forum_posts").select("date_created").where({'userid': userId}).orderBy("id", "desc").limit(1).forUpdate('users','forum_posts');;
+            if (!latestPost[0]) {
+                // User can post
+            }else{
+                if (this.moment().isSameOrAfter(this.moment(latestPost[0]["date_created"]).add(30, "seconds"))) {
+                    // User can post
+                }else{
+                    // User cannot post
+                    throw new Error('Cooldown');
+                }
+            }
+            const time = this.moment().format('YYYY-MM-DD HH:mm:ss');
+            const id = await trx("forum_posts").insert({
+                'category': categoryId,
+                'sub_category': subCategoryId,
+                'threadid': threadId,
+                'userid': userId,
+                'date_created': time,
+                'date_edited': time,
+                'post_body': body,
+                'post_deleted': Forum.postDeleted.false,
+            }).forUpdate('users','forum_posts');
+            if (!id[0] || typeof id[0] !== 'number') {
+                throw new Error('Post not created due to unknown reason.');
+            }
+            postId = id[0];
+            // increment post count
+            await trx("users").increment('forum_postcount').where({'id': userId}).forUpdate('users','forum_posts');
+            // commit
+            await trx.commit();
+        });
+        
+        return postId;
     }
 
     /**
      * Grab a user's latest post and see if they are within the cooldown range
      * @param userId 
+     * @deprecated Use transactions instead of this method
      */
     public async canUserPost(userId: number): Promise<boolean> {
         const latestPost = await this.knex("forum_posts").select("date_created").where({'userid': userId}).orderBy("id", "desc").limit(1);
@@ -299,7 +370,7 @@ class ForumDAL extends _init {
         }
         return false;
     }
-
+    
     /**
      * Delete a post
      */

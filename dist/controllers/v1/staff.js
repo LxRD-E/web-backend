@@ -379,18 +379,16 @@ let StaffController = class StaffController extends controller_1.default {
             'success': true,
         };
     }
-    async regenAvatar(userInfo, userId) {
+    async regenAvatar(userInfo, userId, allowHashes = false, yieldUntilComplete = false, setUserUrl = true) {
         this.validate(userInfo, 1);
         const numericUserId = Filter_1.filterId(userId);
         if (!numericUserId) {
             throw new this.BadRequest('InvalidUserId');
         }
-        (async () => {
+        const renderAvatar = async () => {
             try {
                 const avatar = await this.user.getAvatar(numericUserId);
                 const avatarColors = await this.user.getAvatarColors(numericUserId);
-                console.log(avatar);
-                console.log(avatarColors);
                 const catalogIds = [];
                 for (const asset of avatar) {
                     const info = await this.catalog.getInfo(asset.catalogId, ['status']);
@@ -414,13 +412,42 @@ let StaffController = class StaffController extends controller_1.default {
                     avatarColors[0].torsob,
                 ];
                 const avatarObject = await this.catalog.generateAvatarJsonFromCatalogIds(numericUserId, catalogIds, legrgb, headrgb, torsorgb);
-                const URL = await this.avatar.renderAvatar('avatar', avatarObject);
-                await this.user.addUserThumbnail(numericUserId, URL);
+                let url;
+                if (allowHashes) {
+                    let _internalUrl = await this.avatar.getThumbnailHashUrl(avatarObject);
+                    if (_internalUrl) {
+                        url = _internalUrl;
+                    }
+                    else {
+                        url = await this.avatar.renderAvatar('avatar', avatarObject);
+                    }
+                }
+                else {
+                    url = await this.avatar.renderAvatar('avatar', avatarObject);
+                }
+                if (setUserUrl) {
+                    await this.user.addUserThumbnail(numericUserId, url);
+                }
+                return url;
             }
             catch (e) {
-                console.log(e);
+                console.error(e);
+                throw e;
             }
-        })();
+        };
+        if (yieldUntilComplete) {
+            let url = await renderAvatar();
+            return {
+                success: true,
+                url: url,
+            };
+        }
+        else {
+            renderAvatar().then(d => {
+            }).catch(err => {
+                console.error(err);
+            });
+        }
         return {
             'success': true,
         };
@@ -815,8 +842,9 @@ __decorate([
     common_1.UseBefore(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
+    __param(2, common_1.QueryParams('allowHashes', Boolean)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number]),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Boolean, Boolean, Boolean]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "regenAvatar", null);
 __decorate([

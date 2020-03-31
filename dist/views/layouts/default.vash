@@ -266,6 +266,9 @@
                 <div class="card" style="height:100%;min-height: 100vh;">
                     <div class="card-body" style="height:100%;">
                         <h3 style="font-size:1rem;">GENERAL</h3>
+                        <a class="normal" href="/staff/catalog">
+                            <p class="staff-item">PENDING ITEMS</p>
+                        </a>
                         <a class="normal" href="/staff/banner">
                             <p class="staff-item">BANNER</p>
                         </a>

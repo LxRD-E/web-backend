@@ -240,9 +240,8 @@ class AvatarDAL extends _init {
                 // err
             }
         }
+        console.log(request.status, request.statusText);
         console.log(request.data);
-        console.log(request.statusText);
-        console.log(request.status);
         if (typeof body === 'string' || body.error || body.success === false || body.image == null) {
             throw Error('No url was specified in body.');
         }
@@ -338,7 +337,7 @@ class AvatarDAL extends _init {
      * @param thumbnailJson 
      */
     public createThumbnailHash(thumbnailJson: Avatar.JsonArrayInterfaceWithAssets): string {
-        console.log(JSON.stringify(thumbnailJson));
+        // console.log(JSON.stringify(thumbnailJson));
         // Duplicate json object
         const jsonString = JSON.parse(JSON.stringify(thumbnailJson)) as Avatar.JsonArrayInterfaceWithAssets;
         // Set UserID to 0

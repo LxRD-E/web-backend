@@ -143,9 +143,8 @@ class AvatarDAL extends _init_1.default {
             catch {
             }
         }
+        console.log(request.status, request.statusText);
         console.log(request.data);
-        console.log(request.statusText);
-        console.log(request.status);
         if (typeof body === 'string' || body.error || body.success === false || body.image == null) {
             throw Error('No url was specified in body.');
         }
@@ -171,7 +170,6 @@ class AvatarDAL extends _init_1.default {
         });
     }
     createThumbnailHash(thumbnailJson) {
-        console.log(JSON.stringify(thumbnailJson));
         const jsonString = JSON.parse(JSON.stringify(thumbnailJson));
         jsonString.UserId = 0;
         const hash = crypto.createHash('sha256').update(JSON.stringify(jsonString)).digest('hex');

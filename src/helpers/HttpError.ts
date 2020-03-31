@@ -157,6 +157,7 @@ export enum HttpErrors {
     InvalidReportReason,
 };
 import os = require('os');
+import {lbOrigin} from '../middleware/Any';
 // @Locals('userInfo') userInfo: model.user.UserInfo,
 export const ErrorTemplate = (title: string, body: string): string => {
     return `
@@ -164,7 +165,7 @@ export const ErrorTemplate = (title: string, body: string): string => {
     <html lang="en">
     <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="x-lb-origin" content="${os.hostname()+'-'+process.pid.toString()}">
+    <meta name="x-lb-origin" content="${lbOrigin}">
     <title>${title} - Hindi Gamer Club</title>
     <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,600,700,900" rel="stylesheet">
     <style>

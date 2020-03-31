@@ -114,23 +114,55 @@ class ForumDAL extends _init_1.default {
         });
         return posts[0]["Total"];
     }
-    async createThread(categoryId, subCategoryId, title, userId, locked, pinned) {
-        const time = this.moment().format('YYYY-MM-DD HH:mm:ss');
-        const id = await this.knex("forum_threads").insert({
-            'category': categoryId,
-            'sub_category': subCategoryId,
-            'title': title,
-            'userid': userId,
-            'thread_locked': locked,
-            'thread_pinned': pinned,
-            'thread_deleted': Forum.postDeleted.false,
-            'date_created': time,
-            'date_edited': time,
+    async createThread(categoryId, subCategoryId, title, userId, locked, pinned, body) {
+        let threadId;
+        await this.knex.transaction(async (trx) => {
+            const latestPost = await trx("forum_posts").select("date_created").where({
+                'userid': userId
+            }).orderBy("id", "desc").limit(1).forUpdate('users', 'forum_posts', 'forum_threads');
+            ;
+            if (!latestPost[0]) {
+            }
+            else {
+                if (this.moment().isSameOrAfter(this.moment(latestPost[0]["date_created"]).add(30, "seconds"))) {
+                }
+                else {
+                    throw new Error('Cooldown');
+                }
+            }
+            const time = this.moment().format('YYYY-MM-DD HH:mm:ss');
+            const id = await trx("forum_threads").insert({
+                'category': categoryId,
+                'sub_category': subCategoryId,
+                'title': title,
+                'userid': userId,
+                'thread_locked': locked,
+                'thread_pinned': pinned,
+                'thread_deleted': Forum.postDeleted.false,
+                'date_created': time,
+                'date_edited': time,
+            }).forUpdate('users', 'forum_posts', 'forum_threads');
+            if (!id[0]) {
+                throw new Error('Thread not created due to unknown error.');
+            }
+            threadId = id[0];
+            const postId = await trx("forum_posts").insert({
+                'category': categoryId,
+                'sub_category': subCategoryId,
+                'threadid': threadId,
+                'userid': userId,
+                'date_created': time,
+                'date_edited': time,
+                'post_body': body,
+                'post_deleted': Forum.postDeleted.false,
+            }).forUpdate('users', 'forum_posts', 'forum_threads');
+            if (!postId[0]) {
+                throw new Error('Post not created due to unknown error.');
+            }
+            await trx("users").increment('forum_postcount').where({ 'id': userId }).forUpdate('users', 'forum_posts', 'forum_threads');
+            await trx.commit();
         });
-        if (!id[0]) {
-            throw false;
-        }
-        return id[0];
+        return threadId;
     }
     async updateThreadStates(threadId, isPinned, isLocked) {
         await this.knex('forum_threads').update({
@@ -141,21 +173,38 @@ class ForumDAL extends _init_1.default {
         }).limit(1);
     }
     async createPost(threadId, categoryId, subCategoryId, userId, body) {
-        const time = this.moment().format('YYYY-MM-DD HH:mm:ss');
-        const id = await this.knex("forum_posts").insert({
-            'category': categoryId,
-            'sub_category': subCategoryId,
-            'threadid': threadId,
-            'userid': userId,
-            'date_created': time,
-            'date_edited': time,
-            'post_body': body,
-            'post_deleted': Forum.postDeleted.false,
+        let postId;
+        await this.knex.transaction(async (trx) => {
+            const latestPost = await trx("forum_posts").select("date_created").where({ 'userid': userId }).orderBy("id", "desc").limit(1).forUpdate('users', 'forum_posts');
+            ;
+            if (!latestPost[0]) {
+            }
+            else {
+                if (this.moment().isSameOrAfter(this.moment(latestPost[0]["date_created"]).add(30, "seconds"))) {
+                }
+                else {
+                    throw new Error('Cooldown');
+                }
+            }
+            const time = this.moment().format('YYYY-MM-DD HH:mm:ss');
+            const id = await trx("forum_posts").insert({
+                'category': categoryId,
+                'sub_category': subCategoryId,
+                'threadid': threadId,
+                'userid': userId,
+                'date_created': time,
+                'date_edited': time,
+                'post_body': body,
+                'post_deleted': Forum.postDeleted.false,
+            }).forUpdate('users', 'forum_posts');
+            if (!id[0] || typeof id[0] !== 'number') {
+                throw new Error('Post not created due to unknown reason.');
+            }
+            postId = id[0];
+            await trx("users").increment('forum_postcount').where({ 'id': userId }).forUpdate('users', 'forum_posts');
+            await trx.commit();
         });
-        if (!id[0]) {
-            throw false;
-        }
-        return id[0];
+        return postId;
     }
     async canUserPost(userId) {
         const latestPost = await this.knex("forum_posts").select("date_created").where({ 'userid': userId }).orderBy("id", "desc").limit(1);

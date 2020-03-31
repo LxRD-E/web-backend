@@ -51,14 +51,15 @@ export const getCspString = (): string => {
     return cspString;
 }
 
+export const lbOrigin = crypto.randomBytes(8).toString('base64');
 /**
  * Generate CSP with nonce middleware
  */
 export const generateCspWithNonce = async (req: Request, res: Response, next: NextFunction, randomBytesFunction = randomBytes): Promise<void> => {
     res.set({
-        'x-lb-origin': os.hostname()+'-'+process.pid.toString(),
+        'x-lb-origin':lbOrigin,
     })
-    res.locals['x-lb-origin'] = os.hostname()+'-'+process.pid.toString();
+    res.locals['x-lb-origin'] = lbOrigin;
     // temp
     if (process.env.NODE_ENV === 'development'  && !req.headers['cf-connecting-ip']) {
         req.headers['cf-connecting-ip'] = '127.0.0.1';

@@ -511,8 +511,10 @@ export class CatalogController extends controller {
     @UseBefore(YesAuth)
     public async forceThumbnailRegen(
         @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('catalogId', Number) catalogId: number
-    ): Promise<{ success: true }> {
+        @PathParams('catalogId', Number) catalogId: number,
+        yieldUntilComplete: boolean = false,
+        setThumbnailOnFinish: boolean = true,
+    ): Promise<{ success: true; url?: string; }> {
         let category;
         try {
             const catalogData = await this.catalog.getInfo(catalogId, ['catalogId', 'category']);
@@ -524,7 +526,7 @@ export class CatalogController extends controller {
         if (userData.staff < 1) {
             throw new this.BadRequest('InvalidPermissions');
         }
-        const regenAvatar = async () => {
+        const regenAvatar = async (): Promise<string> => {
             try {
                 const json = await this.catalog.generateAvatarJsonFromCatalogIds(catalogId, [catalogId]);
                 if (!json) {
@@ -541,17 +543,32 @@ export class CatalogController extends controller {
                     // Generate Thumb
                     url = await this.avatar.renderAvatar('avatar', json);
                 }
-                // Delete Old Thumb
-                await this.catalog.deleteThumbnail(catalogId);
-                // Upload/Save thumb
-                await this.catalog.uploadThumbnail(catalogId, url);
+                if (setThumbnailOnFinish) {
+                    // Delete Old Thumb
+                    await this.catalog.deleteThumbnail(catalogId);
+                    // Upload/Save thumb
+                    await this.catalog.uploadThumbnail(catalogId, url);
+                }else{
+                    return url;
+                }
             } catch (e) {
-                console.log(e);
+                console.error(e);
+                throw e;
             }
         }
-        regenAvatar().then().catch(e => {
-            console.error(e);
-        });
+        if (yieldUntilComplete) {
+            let data = await regenAvatar();
+            if (!setThumbnailOnFinish) {
+                return {
+                    success: true,
+                    url: data,
+                }
+            }
+        }else{
+            regenAvatar().then().catch(e => {
+                console.error(e);
+            });
+        }
         // Give OK
         return { success: true };
     }
