@@ -149,13 +149,21 @@ let WWWForumController = class WWWForumController extends controller_1.default {
         catch (e) {
             throw new this.BadRequest('InvalidThreadId');
         }
+        let forumCategory;
+        try {
+            forumCategory = await this.forum.getCategoryById(forumSubCategory.categoryId);
+        }
+        catch (e) {
+            throw new this.BadRequest('InvalidThreadId');
+        }
         if (typeof page !== 'number' || page <= 0) {
             page = 1;
         }
-        ViewData.title = threadInfo.title + " :: " + forumSubCategory.title;
+        ViewData.page.categoryName = forumCategory.title;
         ViewData.page.subCategoryId = forumSubCategory.subCategoryId;
         ViewData.page.subCategoryName = forumSubCategory.title;
         ViewData.page.page = page;
+        ViewData.title = threadInfo.title + " :: " + forumSubCategory.title;
         ViewData.page.threadTitle = threadInfo.title;
         ViewData.page.threadId = threadInfo.threadId;
         ViewData.page.threadLocked = threadInfo.threadLocked;

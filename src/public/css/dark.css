@@ -167,3 +167,7 @@ a.normal:hover > p {
 a.normal > p {
     transition: all 0.1s;
 }
+
+div.trade-card-hover:hover > div.card {
+    border: 1px solid white!important;
+}

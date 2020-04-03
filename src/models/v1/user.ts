@@ -444,6 +444,10 @@ export class UserCollectibleInventory extends UserInventory {
     @Required()
     averagePrice: number;
 }
+export class UserCollectibleInventoryResponseInternal {
+    areMoreAvailable: boolean;
+    data: UserCollectibleInventory[];
+}
 /**
  * Full user inventory table
  */
@@ -628,7 +632,7 @@ export class UserInventoryResponse {
 
 export class UserCollectibleInventoryResponse { 
     @Required()
-    total: number; 
+    areMoreAvailable: boolean;
     @Required()
     @PropertyType(UserCollectibleInventory)
     items: UserCollectibleInventory[] 
@@ -680,4 +684,9 @@ export class UserModerationAction {
     @Required()
     @Description('Whether or not the account was terminated')
     terminated: 0|1;
+}
+
+export class GenericCount {
+    @Required()
+    total: number;
 }

@@ -13,34 +13,44 @@ import _init from './_init';
 export default class AdDAL extends _init {
 
     /**
-     * Get a semi-random ad. Will prefer ads with higher bid
+     * Get a semi-random ad. Will prefer ads with higher bid. This will increment the ad view count
      * @throws {e.message.NoAdvertismentsAvailable} - No advertisment was available
      */
     public async getRandomAd(adDisplayType: model.ad.AdType): Promise<model.ad.Advertisment> {
-        let randomAds = await this.knex('user_ads')
-            .select('id as adId','bid_amount as bidAmount','updated_at as updatedAt','image_url as imageUrl','title')
-            .where('updated_at','>=', this.knexTime(this.moment().subtract(24, 'hours')))
-            .andWhere('moderation_status','=',model.ad.ModerationStatus.Approved)
-            .andWhere('bid_amount','>',0)
-            .andWhere('ad_displaytype', '=',adDisplayType);
-        if (randomAds.length === 0) {
-            throw new Error('NoAdvertismentsAvailable');
-        }
-        // weighted random (lol this is so bad performance wise, but I hope someone can improve it in the future :D)
-        let randomAdsArr = [];
-        for (const ad of randomAds) {
-            let bid = ad.bidAmount;
-            let curBid = 0;
-            while (curBid <= bid) {
-                randomAdsArr.push(ad);
-                curBid++;
-            }
-        }
-        let adChosen = _.sample(randomAdsArr);
         let modelToUse = new model.ad.Advertisment();
-        modelToUse.adId = adChosen.adId;
-        modelToUse.imageUrl = adChosen.imageUrl;
-        modelToUse.title = adChosen.title;
+        await this.knex.transaction(async (trx) => {
+            let randomAds = await trx('user_ads')
+                .select('id as adId','bid_amount as bidAmount','updated_at as updatedAt','image_url as imageUrl','title')
+                .where('updated_at','>=', this.knexTime(this.moment().subtract(24, 'hours')))
+                .andWhere('moderation_status','=',model.ad.ModerationStatus.Approved)
+                .andWhere('bid_amount','>',0)
+                .andWhere('ad_displaytype', '=',adDisplayType)
+                .forUpdate('user_ads');
+            if (randomAds.length === 0) {
+                throw new Error('NoAdvertismentsAvailable');
+            }
+            // weighted random (lol this is so bad performance wise, but I hope someone can improve it in the future :D)
+            let randomAdsArr = [];
+            for (const ad of randomAds) {
+                let bid = ad.bidAmount;
+                let curBid = 0;
+                while (curBid <= bid) {
+                    randomAdsArr.push(ad);
+                    curBid++;
+                }
+            }
+            let adChosen: model.ad.Advertisment = _.sample(randomAdsArr);
+            modelToUse.adId = adChosen.adId;
+            modelToUse.imageUrl = adChosen.imageUrl;
+            modelToUse.title = adChosen.title;
+
+            // increment
+            await trx('user_ads').increment('views').increment('total_views').where({'id': adChosen.adId}).forUpdate('user_ads');
+            // commit
+            await trx.commit();
+            // return ad model
+            return modelToUse;
+        });
         return modelToUse;
     }
 
@@ -159,11 +169,19 @@ export default class AdDAL extends _init {
         await this.knex.raw(`UPDATE user_ads SET total_bid_amount = total_bid_amount + ? WHERE user_ads.id = ?`, [amount, adId]);
     }
 
+    /**
+     * @deprecated - Please use transactions instead
+     * @param adId 
+     */
     public async incrementAdViewCount(adId: number): Promise<void> {
         await this.knex.raw(`UPDATE user_ads SET total_views = total_views + 1 WHERE user_ads.id = ?`, [adId]);
         await this.knex.raw(`UPDATE user_ads SET views = views + 1 WHERE user_ads.id = ?`, [adId]);
     }
 
+    /**
+     * @deprecated - Please use transacitons instead
+     * @param adId 
+     */
     public async incrementAdClickCount(adId: number): Promise<void> {
         await this.knex.raw(`UPDATE user_ads SET total_clicks = total_clicks + 1 WHERE user_ads.id = ?`, [adId]);
         await this.knex.raw(`UPDATE user_ads SET clicks = clicks + 1 WHERE user_ads.id = ?`, [adId]);

@@ -158,6 +158,7 @@ var HttpErrors;
     HttpErrors[HttpErrors["NotReactedToStatus"] = 153] = "NotReactedToStatus";
     HttpErrors[HttpErrors["InvalidGroupStatus"] = 154] = "InvalidGroupStatus";
     HttpErrors[HttpErrors["InvalidReportReason"] = 155] = "InvalidReportReason";
+    HttpErrors[HttpErrors["SearchQueryTooLarge"] = 156] = "SearchQueryTooLarge";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 ;
 const Any_1 = require("../middleware/Any");

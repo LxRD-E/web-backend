@@ -115,13 +115,14 @@ export class WWWGroupController extends controller {
                 viewData.page = {
                     groupStatus: 1,
                     groupId: filteredId,
+                    groupEncodedName: urlEncode('Locked Group'),
                 };
                 return viewData;
             }
         } catch (e) {
             return res.redirect("/404");
         }
-        let viewData = new this.WWWTemplate({'title': ''});
+        let viewData = new this.WWWTemplate({'title': groupData.groupName});
         viewData.page.groupId = groupData.groupId;
         viewData.page.groupName = groupData.groupName;
         viewData.page.groupEncodedName = urlEncode(groupData.groupName);
@@ -131,7 +132,6 @@ export class WWWGroupController extends controller {
         viewData.page.groupIconCatalogId = groupData.groupIconCatalogId;
         viewData.userInfo = userInfo;
 
-        viewData.title = groupData.groupName;
         return viewData;
     }
 

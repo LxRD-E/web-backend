@@ -679,8 +679,44 @@ class UsersDAL extends _init_1.default {
         return count[0]["Total"];
     }
     async getCollectibleInventory(id, offset, limit, orderBy) {
-        const inventory = await this.knex('user_inventory').where({ 'user_inventory.user_id': id, 'catalog.is_collectible': Catalog.collectible.true }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial', 'catalog.average_price as averagePrice').orderBy('user_inventory.id', orderBy).limit(limit).offset(offset);
-        return inventory;
+        const inventory = await this.knex('user_inventory')
+            .where({
+            'user_inventory.user_id': id,
+            'catalog.is_collectible': Catalog.collectible.true
+        }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial', 'catalog.average_price as averagePrice').orderBy('user_inventory.id', orderBy).limit(limit + 1).offset(offset);
+        if (inventory.length > limit) {
+            return {
+                areMoreAvailable: true,
+                items: inventory.slice(0, limit),
+            };
+        }
+        else {
+            return {
+                areMoreAvailable: false,
+                items: inventory,
+            };
+        }
+    }
+    async searchCollectibleInventory(id, query, offset, limit) {
+        query = query.replace('%', '\%');
+        const inventory = await this.knex('user_inventory')
+            .where({
+            'user_inventory.user_id': id,
+            'catalog.is_collectible': Catalog.collectible.true
+        }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial', 'catalog.average_price as averagePrice').limit(limit + 1).offset(offset)
+            .where('catalog.name', 'like', '%' + query + '%');
+        if (inventory.length > limit) {
+            return {
+                areMoreAvailable: true,
+                items: inventory.slice(0, limit),
+            };
+        }
+        else {
+            return {
+                areMoreAvailable: false,
+                items: inventory,
+            };
+        }
     }
     async countCollectibleInventory(id) {
         const count = await this.knex('user_inventory').where({ 'user_inventory.user_id': id, 'catalog.is_collectible': Catalog.collectible.true }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').count("user_inventory.id as Total");

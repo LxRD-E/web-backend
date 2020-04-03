@@ -31,7 +31,13 @@ let UsersController = class UsersController extends controller_1.default {
         super();
     }
     async getInfo(id) {
-        const userInfo = await this.user.getInfo(id);
+        let userInfo;
+        try {
+            userInfo = await this.user.getInfo(id);
+        }
+        catch (e) {
+            throw new this.BadRequest('InvalidUserId');
+        }
         if (userInfo.accountStatus === model.user.accountStatus.deleted) {
             throw new this.BadRequest('InvalidUserId');
         }
@@ -39,13 +45,14 @@ let UsersController = class UsersController extends controller_1.default {
     }
     async getInfoByUsername(userName) {
         let userId;
+        let userInfo;
         try {
             userId = await this.user.userNameToId(userName);
+            userInfo = await this.user.getInfo(userId);
         }
         catch (e) {
             throw new this.BadRequest('InvalidUsername');
         }
-        const userInfo = await this.user.getInfo(userId);
         if (userInfo.accountStatus === model.user.accountStatus.deleted) {
             throw new this.BadRequest('InvalidUsername');
         }
@@ -311,7 +318,22 @@ let UsersController = class UsersController extends controller_1.default {
             items: items,
         };
     }
-    async getCollectibleInventory(id, offset = 0, limit = 100, sort = 'asc') {
+    async countCollectibleInventory(userId) {
+        try {
+            const info = await this.user.getInfo(userId, ["accountStatus"]);
+            if (info.accountStatus === model.user.accountStatus.deleted) {
+                throw new Error('InvalidUserId');
+            }
+        }
+        catch (e) {
+            throw new this.BadRequest('InvalidUserId');
+        }
+        const totalInventoryCount = await this.user.countCollectibleInventory(userId);
+        return {
+            total: totalInventoryCount,
+        };
+    }
+    async getCollectibleInventory(id, query, offset = 0, limit = 100, sort = 'asc') {
         try {
             const info = await this.user.getInfo(id, ["accountStatus"]);
             if (info.accountStatus === model.user.accountStatus.deleted) {
@@ -321,12 +343,17 @@ let UsersController = class UsersController extends controller_1.default {
         catch (e) {
             throw new this.BadRequest('InvalidUserId');
         }
-        const items = await this.user.getCollectibleInventory(id, offset, limit, sort);
-        const totalInventoryCount = await this.user.countCollectibleInventory(id);
-        return {
-            total: totalInventoryCount,
-            items: items,
-        };
+        if (query && query.length >= 32) {
+            throw new this.BadRequest('SearchQueryTooLarge');
+        }
+        let items;
+        if (!query) {
+            items = await this.user.getCollectibleInventory(id, offset, limit, sort);
+        }
+        else {
+            items = await this.user.searchCollectibleInventory(id, query, offset, limit);
+        }
+        return items;
     }
     async getOwnedItemsByCatalogId(userId, catalogId) {
         console.log('check if owns');
@@ -651,16 +678,29 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getInventory", null);
 __decorate([
+    common_1.Get('/:userId/inventory/collectibles/count'),
+    swagger_1.Summary('Count user collectibles'),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: userId is terminated or invalid\n' }),
+    swagger_1.Returns(200, { type: model.user.GenericCount }),
+    __param(0, common_1.PathParams('userId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "countCollectibleInventory", null);
+__decorate([
     common_1.Get('/:userId/inventory/collectibles'),
     swagger_1.Summary('Get a user\'s collectible inventory'),
-    swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\n' }),
+    swagger_1.Description('If query is specified, the sort parameter is ignored.'),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nSearchQueryTooLarge: Search query is too large or otherwise invalid\n' }),
     swagger_1.Returns(200, { type: model.user.UserCollectibleInventoryResponse }),
     __param(0, common_1.PathParams('userId', Number)),
-    __param(1, common_1.QueryParams('offset', Number)),
-    __param(2, common_1.QueryParams('limit', Number)),
-    __param(3, common_1.QueryParams('sort', String)),
+    __param(1, swagger_1.Description('The optional search query. This will be used to search for collectible item names')),
+    __param(1, common_1.QueryParams('query', String)),
+    __param(2, common_1.QueryParams('offset', Number)),
+    __param(3, common_1.QueryParams('limit', Number)),
+    __param(4, common_1.QueryParams('sort', String)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number, Number, Object]),
+    __metadata("design:paramtypes", [Number, String, Number, Number, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getCollectibleInventory", null);
 __decorate([

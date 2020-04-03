@@ -155,6 +155,7 @@ export enum HttpErrors {
     NotReactedToStatus,
     InvalidGroupStatus,
     InvalidReportReason,
+    SearchQueryTooLarge,
 };
 import os = require('os');
 import {lbOrigin} from '../middleware/Any';

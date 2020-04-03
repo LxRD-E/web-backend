@@ -1,15 +1,18 @@
 import { Request, Response } from "@tsed/common";
 import { NextFunction } from "express";
 import { ErrorTemplate } from '../helpers/HttpError';
-const redis = require('redis');
+import redis = require('redis');
 import { RateLimiterRedis } from 'rate-limiter-flexible';
 import config from '../helpers/config';
-const redisClient = redis.createClient({
-    host: config.redis.host || '127.0.0.1',
-    port: config.redis.port || 6379,
-    password: config.redis.pass || '',
-    enable_offline_queue: false,
-});
+let redisClient: redis.RedisClient;
+if (process.env.NODE_ENV !== 'test') {
+    redisClient = redis.createClient({
+        host: config.redis.host || '127.0.0.1',
+        port: config.redis.port || 6379,
+        password: config.redis.pass || '',
+        enable_offline_queue: false,
+    });
+}
 /*
 const rateLimiter = new RateLimiterRedis({
     storeClient: redisClient,
@@ -67,12 +70,15 @@ const rateLimitTypeConfigs = {
         storeClient: redisClient,
     },
 }
-const rateLimitTypes = {
-    'default': new RateLimiterRedis(rateLimitTypeConfigs.default),
-    'loginAttempt': new RateLimiterRedis(rateLimitTypeConfigs.loginAttempt),
-    'twoFactorEnableOrDisable': new RateLimiterRedis(rateLimitTypeConfigs.twoFactorEnableOrDisable),
-    'sendFriendRequest': new RateLimiterRedis(rateLimitTypeConfigs.sendFriendRequest),
-    'passwordResetAttempt': new RateLimiterRedis(rateLimitTypeConfigs.passwordResetAttempt),
+let rateLimitTypes;
+if (process.env.NODE_ENV !== 'test') {
+    rateLimitTypes = {
+        'default': new RateLimiterRedis(rateLimitTypeConfigs.default),
+        'loginAttempt': new RateLimiterRedis(rateLimitTypeConfigs.loginAttempt),
+        'twoFactorEnableOrDisable': new RateLimiterRedis(rateLimitTypeConfigs.twoFactorEnableOrDisable),
+        'sendFriendRequest': new RateLimiterRedis(rateLimitTypeConfigs.sendFriendRequest),
+        'passwordResetAttempt': new RateLimiterRedis(rateLimitTypeConfigs.passwordResetAttempt),
+    }
 }
 
 export const RateLimiterMiddleware = (typeOfRateLimit: 'default'|'loginAttempt'|'twoFactorEnableOrDisable'|'sendFriendRequest'|'passwordResetAttempt' = 'default') => {

@@ -161,7 +161,7 @@ export class WWWForumController extends controller {
         }catch(e) {
             throw new this.BadRequest('InvalidThreadId');
         }
-        let forumSubCategory
+        let forumSubCategory: model.forum.SubCategories;
         try {
             forumSubCategory = await this.forum.getSubCategoryById(threadInfo.subCategoryId);
             if (forumSubCategory.permissions.read > rank) {
@@ -170,14 +170,23 @@ export class WWWForumController extends controller {
         }catch(e) {
             throw new this.BadRequest('InvalidThreadId');
         }
+        let forumCategory: model.forum.Categories;
+        try {
+            forumCategory = await this.forum.getCategoryById(forumSubCategory.categoryId);
+        }catch(e) {
+            throw new this.BadRequest('InvalidThreadId');
+        }
         if (typeof page !== 'number' || page <= 0) {
             page = 1;
         }
-        ViewData.title = threadInfo.title + " :: " + forumSubCategory.title;
+        // category info
+        ViewData.page.categoryName = forumCategory.title;
+        // subcategory info
         ViewData.page.subCategoryId = forumSubCategory.subCategoryId;
         ViewData.page.subCategoryName = forumSubCategory.title;
         ViewData.page.page = page;
-
+        // thread info
+        ViewData.title = threadInfo.title + " :: " + forumSubCategory.title;
         ViewData.page.threadTitle = threadInfo.title;
         ViewData.page.threadId = threadInfo.threadId;
         ViewData.page.threadLocked = threadInfo.threadLocked;

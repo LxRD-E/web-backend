@@ -434,6 +434,9 @@ __decorate([
     __metadata("design:type", Number)
 ], UserCollectibleInventory.prototype, "averagePrice", void 0);
 exports.UserCollectibleInventory = UserCollectibleInventory;
+class UserCollectibleInventoryResponseInternal {
+}
+exports.UserCollectibleInventoryResponseInternal = UserCollectibleInventoryResponseInternal;
 class UserGroups extends Groups.groupDetails {
 }
 __decorate([
@@ -612,8 +615,8 @@ class UserCollectibleInventoryResponse {
 }
 __decorate([
     common_1.Required(),
-    __metadata("design:type", Number)
-], UserCollectibleInventoryResponse.prototype, "total", void 0);
+    __metadata("design:type", Boolean)
+], UserCollectibleInventoryResponse.prototype, "areMoreAvailable", void 0);
 __decorate([
     common_1.Required(),
     common_1.PropertyType(UserCollectibleInventory),
@@ -698,4 +701,11 @@ __decorate([
     __metadata("design:type", Number)
 ], UserModerationAction.prototype, "terminated", void 0);
 exports.UserModerationAction = UserModerationAction;
+class GenericCount {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GenericCount.prototype, "total", void 0);
+exports.GenericCount = GenericCount;
 

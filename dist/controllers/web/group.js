@@ -89,6 +89,7 @@ let WWWGroupController = class WWWGroupController extends controller_1.default {
                 viewData.page = {
                     groupStatus: 1,
                     groupId: filteredId,
+                    groupEncodedName: Filter_1.urlEncode('Locked Group'),
                 };
                 return viewData;
             }
@@ -96,7 +97,7 @@ let WWWGroupController = class WWWGroupController extends controller_1.default {
         catch (e) {
             return res.redirect("/404");
         }
-        let viewData = new this.WWWTemplate({ 'title': '' });
+        let viewData = new this.WWWTemplate({ 'title': groupData.groupName });
         viewData.page.groupId = groupData.groupId;
         viewData.page.groupName = groupData.groupName;
         viewData.page.groupEncodedName = Filter_1.urlEncode(groupData.groupName);
@@ -105,7 +106,6 @@ let WWWGroupController = class WWWGroupController extends controller_1.default {
         viewData.page.groupDescription = groupData.groupDescription;
         viewData.page.groupIconCatalogId = groupData.groupIconCatalogId;
         viewData.userInfo = userInfo;
-        viewData.title = groupData.groupName;
         return viewData;
     }
     async groupManage(userInfo, res, filteredId, groupName) {

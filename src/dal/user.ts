@@ -972,9 +972,100 @@ class UsersDAL extends _init {
      * @param category Category Enum
      * @param offset Offset
      */
-    public async getCollectibleInventory(id: number, offset: number, limit: number, orderBy: 'asc'|'desc'): Promise<Array<users.UserCollectibleInventory>> {
-        const inventory = await this.knex('user_inventory').where({ 'user_inventory.user_id': id,'catalog.is_collectible': Catalog.collectible.true }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId','user_inventory.catalog_id as catalogId','user_inventory.price as price','catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial','catalog.average_price as averagePrice').orderBy('user_inventory.id', orderBy).limit(limit).offset(offset);
-        return inventory as users.UserCollectibleInventory[];
+    public async getCollectibleInventory(
+        id: number, 
+        offset: number, 
+        limit: number, 
+        orderBy: 'asc'|'desc'
+    ): Promise<users.UserCollectibleInventoryResponse> {
+        // grab inventory with limit+1
+        const inventory = await this.knex('user_inventory')
+        .where({ 
+            'user_inventory.user_id': id,
+            'catalog.is_collectible': Catalog.collectible.true 
+        }).innerJoin(
+            'catalog', 
+            'catalog.id', 
+            '=', 
+            'user_inventory.catalog_id'
+        ).select(
+            'user_inventory.id as userInventoryId',
+            'user_inventory.catalog_id as catalogId',
+            'user_inventory.price as price',
+            'catalog.name as catalogName',
+            'catalog.is_collectible as collectible', 
+            'catalog.category', 
+            'user_inventory.serial',
+            'catalog.average_price as averagePrice'
+        ).orderBy(
+            'user_inventory.id', 
+            orderBy
+        ).limit(limit+1).offset(offset);
+        // if more than limit returned, more are available
+        if (inventory.length > limit) {
+            return {
+                areMoreAvailable: true,
+                items: inventory.slice(0,limit),
+            }
+        }else{
+            // less than limit returned, so no more available
+            return {
+                areMoreAvailable: false,
+                items: inventory,
+            }
+        }
+    }
+
+    /**
+     * Search a user's collectible inventory sorted by category
+     * @param id User ID
+     */
+    public async searchCollectibleInventory(
+        id: number, 
+        query: string, 
+        offset: number, 
+        limit: number
+    ): Promise<users.UserCollectibleInventoryResponse> {
+        // temporary until we find a better solution...
+        query = query.replace('%','\%');
+        // grab inventory with limit+1
+        const inventory = await this.knex('user_inventory')
+        .where({ 
+            'user_inventory.user_id': id,
+            'catalog.is_collectible': Catalog.collectible.true 
+        }).innerJoin(
+            'catalog', 
+            'catalog.id', 
+            '=', 
+            'user_inventory.catalog_id'
+        ).select(
+            'user_inventory.id as userInventoryId',
+            'user_inventory.catalog_id as catalogId',
+            'user_inventory.price as price',
+            'catalog.name as catalogName', 
+            'catalog.is_collectible as collectible', 
+            'catalog.category', 
+            'user_inventory.serial',
+            'catalog.average_price as averagePrice'
+        ).limit(limit+1).offset(offset)
+        .where(
+            'catalog.name',
+            'like',
+            '%'+query+'%'
+        );
+        // if more than limit returned, more are available
+        if (inventory.length > limit) {
+            return {
+                areMoreAvailable: true,
+                items: inventory.slice(0,limit),
+            }
+        }else{
+            // less than limit returned, so no more available
+            return {
+                areMoreAvailable: false,
+                items: inventory,
+            }
+        }
     }
 
     /**

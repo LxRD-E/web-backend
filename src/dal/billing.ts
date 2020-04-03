@@ -4,10 +4,13 @@
 import * as Billing from '../models/v1/billing';
 import Config from '../helpers/config'
 import Coinpayments = require('coinpayments');
-const coinpaymentsClient = new Coinpayments({
-    key: Config.coinpayments.public,
-    secret: Config.coinpayments.private,
-});
+let coinpaymentsClient;
+if (process.env.NODE_ENV !== 'test') {
+    coinpaymentsClient = new Coinpayments({
+        key: Config.coinpayments.public,
+        secret: Config.coinpayments.private,
+    });
+}
 const { verify } = require('coinpayments-ipn');
 
 /*eslint-disable */

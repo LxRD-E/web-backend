@@ -12,6 +12,7 @@
     "start": "cross-env ENV_FILE=production node -r ./env -r module-alias/register ./dist/server.js",
     "test": "cross-env ENV_FILE=test nyc mocha dist/tests/**/*.test.js --exit",
     "test:integration": "cross-env ENV_FILE=test mocha tests/integration/**/*.test.js --exit",
+    "test:unit": "nyc cross-env ENV_FILE=test mocha tests/unit/**/*.test.js --exit",
     "test:load": "artillery run tests/load/generic.json"
   },
   "keywords": [],

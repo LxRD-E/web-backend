@@ -42,9 +42,9 @@ let AdController = class AdController extends controller_1.default {
             ad = await this.ad.getRandomAd(adDisplayType);
         }
         catch (e) {
+            console.log(e);
             throw new this.Conflict('NoAdvertisementAvailable');
         }
-        await this.ad.incrementAdViewCount(ad.adId);
         return ad;
     }
     async clickAd(adId, res) {

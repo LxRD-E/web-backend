@@ -152,14 +152,14 @@ const loadGoup = () => {
                 var userids = [];
                 d.forEach(function(k) {
                     userids.push(k.userId);
-                    var customstyle = 'style="width:100%;"';
+                    var customstyle = 'style="width:100%;padding-top:0.15rem;padding-bottom:0.15rem;font-size:0.75rem;margin-top:0.5rem;"';
                     if (!window.managegroup) {
-                        customstyle = 'style="display:none;width:100%;"'; 
+                        customstyle = 'style="display:none;width:100%;margin-top:0.5rem;padding-top:0.15rem;padding-bottom:0.15rem;font-size:0.75rem;"'; 
                     }
                     if (!k.wallPost) {
                         k.wallPost = "";
                     }
-                    $('#hasGroupWallPostsDisplay').append('<div class="row"><div style="" class="col-6 col-sm-3 col-lg-2"><img style="width:100%;" data-userid="'+k.userId+'"><a class="normal" href="/users/'+k.userId+'/profile"><h6 class="text-center text-truncate" data-userid="'+k.userId+'" style="font-size:0.75rem;font-weight:600;"></h6></a><button type="button" class="btn btn-success deletePost" data-id="'+k.wallPostId+'" '+customstyle+'>Delete</button></div><div class="col-6 col-sm-9 col-lg-10"><p style="font-size:0.85rem;white-space: pre-wrap;font-weight:500;">'+xss(k.wallPost)+'</p><p class="text-left text-truncate" style="font-size: 0.75rem;font-weight:600;opacity:0.45;">'+moment(k["date"]).fromNow()+'</p></div><div class="col-12"><hr /></div></div>');
+                    $('#hasGroupWallPostsDisplay').append('<div class="row"><div style="" class="col-6 col-sm-3 col-lg-2"><img style="width:100%;" data-userid="'+k.userId+'"><a class="normal" href="/users/'+k.userId+'/profile"><h6 class="text-center text-truncate" data-userid="'+k.userId+'" style="font-size:0.75rem;font-weight:600;"></h6></a><button type="button" class="btn btn-outline-success deletePost" data-id="'+k.wallPostId+'" '+customstyle+'>Delete</button></div><div class="col-6 col-sm-9 col-lg-10"><p style="font-size:0.85rem;white-space: pre-wrap;font-weight:500;">'+xss(k.wallPost)+'</p><p class="text-left text-truncate" style="font-size: 0.75rem;font-weight:600;opacity:0.45;">'+moment(k["date"]).fromNow()+'</p></div><div class="col-12"><hr /></div></div>');
                 });
                 setUserThumbs(userids);
                 setUserNames(userids);
@@ -388,10 +388,14 @@ const loadGoup = () => {
     }
 }
 
-let status = parseInt($('#groupdata').attr('data-status'), 10);
-if (status === 1) {
-    // throw new Error('Group is locked.');
+let groupStatus = parseInt($('#groupdata').attr('data-status'), 10);
 
+// parseInt() is failing in dist? Im really not sure, but we have to check it as
+// both a number and a string for some reason anyway.
+if (groupStatus === 1 || groupStatus === '1') {
+    // If the group is locked and the user is a member,
+    // show the "leave group" button. Otherwise, show
+    // nothing.
     request("/group/"+groupid+"/role", "GET")
         .then(function(roleData) {
             if (roleData.rank !== 0) {
@@ -402,5 +406,8 @@ if (status === 1) {
             console.error(e);
         });
 }else{
+    // Group is OK, so load everything
     loadGoup();
 }
+// setup page
+window.history.replaceState(null, null, "/groups/"+$('#groupdata').attr("data-groupid")+"/"+$('#groupdata').attr("data-encoded-name")+"/");

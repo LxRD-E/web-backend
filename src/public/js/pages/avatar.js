@@ -8,8 +8,11 @@ var outfitTabOpen = false;
 const pollForChanges = () => {
     request("/avatar/poll", "GET")
         .then((d) => {
-            $('#userAvatarImage').attr('src', d.url);
-            $('#userAvatarImage').css('opacity', '1');
+            if ($('#userAvatarImage').attr('src') !== d.url) {
+                $('#userAvatarImage').attr('src', d.url);
+                $('#userAvatarImage').css('opacity', '1');
+            }
+            
             // OK
             pollForChanges();
         })

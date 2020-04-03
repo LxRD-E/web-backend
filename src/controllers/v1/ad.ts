@@ -50,10 +50,9 @@ export default class AdController extends controller {
         try {
             ad = await this.ad.getRandomAd(adDisplayType);
         }catch(e){
+            console.log(e);
             throw new this.Conflict('NoAdvertisementAvailable');
         }
-        // Increment
-        await this.ad.incrementAdViewCount(ad.adId);
         // Return
         return ad;
     }

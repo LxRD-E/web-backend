@@ -1,26 +1,36 @@
 import config from './config';
 import knexLibrary = require('knex');
-let mysqlConfig = {
-    debug: false,
-    client: 'mysql',
-    connection: config["mysql"],
-    /**
-     * TODO: play around with these to determine optimal values
-     *
+let thingToExport: knexLibrary<any, unknown[]>;
+if (process.env.NODE_ENV !== 'test') {
+    let mysqlConfig = {
+        debug: false,
+        client: 'mysql',
+        connection: config["mysql"],
+        /**
+         * TODO: play around with these to determine optimal values
+         *
+        pool: {
+            max: 50,
+            min: 1,
+        }
+        */
+    propagateCreateError: false,
     pool: {
+        propagateCreateError: false,
         max: 50,
         min: 1,
     }
-    */
-   propagateCreateError: false,
-   pool: {
-       propagateCreateError: false,
-       max: 50,
-       min: 1,
-   }
+    }
+    const knexSystem = knexLibrary(mysqlConfig as any);
+    thingToExport = knexSystem;
+}else{
+    const func: any = (table: string) => {
+        console.error('process.env is test; knex should not be accessed. exiting with code 1');
+        process.exit(1);
+    }
+    thingToExport = func;
 }
-const knexSystem = knexLibrary(mysqlConfig as any);
-export default knexSystem;
+export default thingToExport;
 
 /*
 if (process.env.NODE_ENV === 'production') {

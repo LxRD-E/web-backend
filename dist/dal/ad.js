@@ -7,29 +7,35 @@ const config_1 = require("../helpers/config");
 const _init_1 = require("./_init");
 class AdDAL extends _init_1.default {
     async getRandomAd(adDisplayType) {
-        let randomAds = await this.knex('user_ads')
-            .select('id as adId', 'bid_amount as bidAmount', 'updated_at as updatedAt', 'image_url as imageUrl', 'title')
-            .where('updated_at', '>=', this.knexTime(this.moment().subtract(24, 'hours')))
-            .andWhere('moderation_status', '=', model.ad.ModerationStatus.Approved)
-            .andWhere('bid_amount', '>', 0)
-            .andWhere('ad_displaytype', '=', adDisplayType);
-        if (randomAds.length === 0) {
-            throw new Error('NoAdvertismentsAvailable');
-        }
-        let randomAdsArr = [];
-        for (const ad of randomAds) {
-            let bid = ad.bidAmount;
-            let curBid = 0;
-            while (curBid <= bid) {
-                randomAdsArr.push(ad);
-                curBid++;
-            }
-        }
-        let adChosen = _.sample(randomAdsArr);
         let modelToUse = new model.ad.Advertisment();
-        modelToUse.adId = adChosen.adId;
-        modelToUse.imageUrl = adChosen.imageUrl;
-        modelToUse.title = adChosen.title;
+        await this.knex.transaction(async (trx) => {
+            let randomAds = await trx('user_ads')
+                .select('id as adId', 'bid_amount as bidAmount', 'updated_at as updatedAt', 'image_url as imageUrl', 'title')
+                .where('updated_at', '>=', this.knexTime(this.moment().subtract(24, 'hours')))
+                .andWhere('moderation_status', '=', model.ad.ModerationStatus.Approved)
+                .andWhere('bid_amount', '>', 0)
+                .andWhere('ad_displaytype', '=', adDisplayType)
+                .forUpdate('user_ads');
+            if (randomAds.length === 0) {
+                throw new Error('NoAdvertismentsAvailable');
+            }
+            let randomAdsArr = [];
+            for (const ad of randomAds) {
+                let bid = ad.bidAmount;
+                let curBid = 0;
+                while (curBid <= bid) {
+                    randomAdsArr.push(ad);
+                    curBid++;
+                }
+            }
+            let adChosen = _.sample(randomAdsArr);
+            modelToUse.adId = adChosen.adId;
+            modelToUse.imageUrl = adChosen.imageUrl;
+            modelToUse.title = adChosen.title;
+            await trx('user_ads').increment('views').increment('total_views').where({ 'id': adChosen.adId }).forUpdate('user_ads');
+            await trx.commit();
+            return modelToUse;
+        });
         return modelToUse;
     }
     async getAdById(adId) {

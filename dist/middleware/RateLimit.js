@@ -1,15 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const HttpError_1 = require("../helpers/HttpError");
-const redis = require('redis');
+const redis = require("redis");
 const rate_limiter_flexible_1 = require("rate-limiter-flexible");
 const config_1 = require("../helpers/config");
-const redisClient = redis.createClient({
-    host: config_1.default.redis.host || '127.0.0.1',
-    port: config_1.default.redis.port || 6379,
-    password: config_1.default.redis.pass || '',
-    enable_offline_queue: false,
-});
+let redisClient;
+if (process.env.NODE_ENV !== 'test') {
+    redisClient = redis.createClient({
+        host: config_1.default.redis.host || '127.0.0.1',
+        port: config_1.default.redis.port || 6379,
+        password: config_1.default.redis.pass || '',
+        enable_offline_queue: false,
+    });
+}
 const rateLimitTypeConfigs = {
     'default': {
         keyPrefix: 'default_',
@@ -52,13 +55,16 @@ const rateLimitTypeConfigs = {
         storeClient: redisClient,
     },
 };
-const rateLimitTypes = {
-    'default': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.default),
-    'loginAttempt': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.loginAttempt),
-    'twoFactorEnableOrDisable': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.twoFactorEnableOrDisable),
-    'sendFriendRequest': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.sendFriendRequest),
-    'passwordResetAttempt': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.passwordResetAttempt),
-};
+let rateLimitTypes;
+if (process.env.NODE_ENV !== 'test') {
+    rateLimitTypes = {
+        'default': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.default),
+        'loginAttempt': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.loginAttempt),
+        'twoFactorEnableOrDisable': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.twoFactorEnableOrDisable),
+        'sendFriendRequest': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.sendFriendRequest),
+        'passwordResetAttempt': new rate_limiter_flexible_1.RateLimiterRedis(rateLimitTypeConfigs.passwordResetAttempt),
+    };
+}
 exports.RateLimiterMiddleware = (typeOfRateLimit = 'default') => {
     return (req, res, next) => {
         let ip = req.headers['cf-connecting-ip'] || req.connection.remoteAddress;

@@ -3,10 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Billing = require("../models/v1/billing");
 const config_1 = require("../helpers/config");
 const Coinpayments = require("coinpayments");
-const coinpaymentsClient = new Coinpayments({
-    key: config_1.default.coinpayments.public,
-    secret: config_1.default.coinpayments.private,
-});
+let coinpaymentsClient;
+if (process.env.NODE_ENV !== 'test') {
+    coinpaymentsClient = new Coinpayments({
+        key: config_1.default.coinpayments.public,
+        secret: config_1.default.coinpayments.private,
+    });
+}
 const { verify } = require('coinpayments-ipn');
 const checkoutNodeJssdk = require("@paypal/checkout-server-sdk");
 const _init_1 = require("./_init");

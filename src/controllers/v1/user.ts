@@ -32,7 +32,12 @@ export class UsersController extends controller {
     public async getInfo(
         @PathParams('userId', Number) id: number
     ) {
-        const userInfo = await this.user.getInfo(id);
+        let userInfo;
+        try {
+            userInfo = await this.user.getInfo(id);
+        }catch(e) {
+            throw new this.BadRequest('InvalidUserId');
+        }
         if (userInfo.accountStatus === model.user.accountStatus.deleted) {
             throw new this.BadRequest('InvalidUserId');
         }
@@ -48,12 +53,13 @@ export class UsersController extends controller {
         @QueryParams('username', String) userName: string
     ) {
         let userId;
+        let userInfo: model.user.UserInfo;
         try {
             userId = await this.user.userNameToId(userName);
+            userInfo = await this.user.getInfo(userId);
         } catch (e) {
             throw new this.BadRequest('InvalidUsername');
         }
-        const userInfo = await this.user.getInfo(userId);
         if (userInfo.accountStatus === model.user.accountStatus.deleted) {
             throw new this.BadRequest('InvalidUsername');
         }
@@ -446,16 +452,40 @@ export class UsersController extends controller {
         };
     }
 
+    @Get('/:userId/inventory/collectibles/count')
+    @Summary('Count user collectibles')
+    @Returns(400, {type: model.Error, description: 'InvalidUserId: userId is terminated or invalid\n'})
+    @Returns(200, {type: model.user.GenericCount})
+    public async countCollectibleInventory(
+        @PathParams('userId', Number) userId: number,
+    ): Promise<model.user.GenericCount> {
+        try {
+            const info = await this.user.getInfo(userId, ["accountStatus"]);
+            if (info.accountStatus === model.user.accountStatus.deleted) {
+                throw new Error('InvalidUserId');
+            }
+        } catch (e) {
+            throw new this.BadRequest('InvalidUserId');
+        }
+        const totalInventoryCount = await this.user.countCollectibleInventory(userId);
+        return {
+            total: totalInventoryCount,
+        };
+    }
+
     @Get('/:userId/inventory/collectibles')
     @Summary('Get a user\'s collectible inventory')
-    @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\n' })
+    @Description('If query is specified, the sort parameter is ignored.')
+    @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nSearchQueryTooLarge: Search query is too large or otherwise invalid\n' })
     @Returns(200, { type: model.user.UserCollectibleInventoryResponse })
     public async getCollectibleInventory(
         @PathParams('userId', Number) id: number,
+        @Description('The optional search query. This will be used to search for collectible item names')
+        @QueryParams('query', String) query?: string,
         @QueryParams('offset', Number) offset: number = 0,
         @QueryParams('limit', Number) limit: number = 100,
         @QueryParams('sort', String) sort: any = 'asc',
-    ) {
+    ): Promise<model.user.UserCollectibleInventoryResponse> {
         // Verify User Exists
         try {
             const info = await this.user.getInfo(id, ["accountStatus"]);
@@ -465,13 +495,18 @@ export class UsersController extends controller {
         } catch (e) {
             throw new this.BadRequest('InvalidUserId');
         }
-        // Grab Friends
-        const items = await this.user.getCollectibleInventory(id, offset, limit, sort);
-        const totalInventoryCount = await this.user.countCollectibleInventory(id);
-        return {
-            total: totalInventoryCount,
-            items: items,
-        };
+        // confirm size
+        if (query && query.length >= 32) {
+            throw new this.BadRequest('SearchQueryTooLarge');
+        }
+        // Grab items
+        let items: model.user.UserCollectibleInventoryResponse;
+        if (!query) {
+            items = await this.user.getCollectibleInventory(id, offset, limit, sort);
+        }else{
+            items = await this.user.searchCollectibleInventory(id, query, offset, limit);
+        }
+        return items;
     }
 
     @Get('/:userId/owns/:catalogId')
