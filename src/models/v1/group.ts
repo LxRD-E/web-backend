@@ -71,12 +71,14 @@ export class MultiGetNames {
      * The Group's ID
      */
     @Required()
+    @Description('The groups ID')
     groupId: number;
     /**
      * The Group's name
      */
     @Required()
-    catalogName: string;
+    @Description('The groups name')
+    groupName: string;
 }
 /**
  * Group Roleset Info

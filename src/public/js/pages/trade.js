@@ -37,11 +37,9 @@ const loadItems = (data) => {
         return;
     }
     data.isLoading = true;
-    console.log('append to div');
     let oldHeight = $(data.div).innerHeight();
     let paddTop = Math.round((oldHeight / 2)-16)+'px';
     let paddBottom =  Math.round((oldHeight / 2)-16)+'px';
-    console.log(paddTop);
     $(data.div).empty()
     $(data.div).append(`
     
@@ -93,7 +91,7 @@ const loadItems = (data) => {
             data-catalogid="${item.catalogId}"
             data-averageprice="${item.averagePrice}"
             >
-                <div class="card" style="background:none;">
+                <div class="card">
                     ${serial}
                     <img src="${window.subsitutionimageurl}" style="width:100%;height:auto;margin:0 auto;display:block;max-width:100px;" data-catalogid="${item.catalogId}" />
                     <p style="font-size:0.85rem;font-weight:500;" class="text-truncate">${xss(item.catalogName)}</p>
@@ -289,7 +287,7 @@ const setupOfferArea = () => {
         <div class="col-12 remove-item-requester-items item-in-trade-request-or-offer-sidebar" style="cursor:pointer;" data-userinventoryid="${item.userInventoryId}">
             <div class="row">
                 <div class="col-4">
-                    <img src="${window.subsitutionimageurl}" style="width:100%;height:auto;display:block;margin:0 auto;" data-catalogid="${item.catalogId}" />
+                    <img src="${window.subsitutionimageurl}" style="width:100%;height:auto;display:block;margin:0 auto;max-width:70px;" data-catalogid="${item.catalogId}" />
                 </div>
                 <div class="col-8">
                     <p style="font-size:0.85rem;margin-bottom:0;font-weight:600;">${xss(item.catalogName)}</p>
@@ -389,7 +387,7 @@ const setupRequestArea = () => {
         <div class="col-12 remove-item-requestee-items item-in-trade-request-or-offer-sidebar" style="cursor:pointer;" data-userinventoryid="${item.userInventoryId}">
             <div class="row">
                 <div class="col-4">
-                    <img src="${window.subsitutionimageurl}" style="width:100%;height:auto;display:block;margin:0 auto;" data-catalogid="${item.catalogId}" />
+                    <img src="${window.subsitutionimageurl}" style="width:100%;height:auto;display:block;margin:0 auto;max-width:70px;" data-catalogid="${item.catalogId}" />
                 </div>
                 <div class="col-8">
                     <p style="font-size:0.85rem;margin-bottom:0;font-weight:600;">${xss(item.catalogName)}</p>
@@ -457,17 +455,18 @@ $(document).on('click', '.remove-item-requestee-items', function(e) {
 
 $(document).on('click', '#send-trade', function(e) {
     questionYesNo('Are you sure you want to send this trade?', function(e) {
+        loading();
         let requesteeUserInventoryIds = [];
         CurrentOffer.forEach(i => requesteeUserInventoryIds.push(i.userInventoryId));
         let requestedUserInventoryIds = [];
         CurrentRequest.forEach(i => requestedUserInventoryIds.push(i.userInventoryId));
         //questionYesNo('Sending trade...', function() {
             request('/user/'+traderId+'/trade/request', 'PUT', {
-                requesterItems: requesteeUserInventoryIds,
+                offerItems: requesteeUserInventoryIds,
                 requestedItems: requestedUserInventoryIds,
             }).then(d => {
                 success('Your trade has been sent. You can review its status in the trades page.', () => {
-                    window.history.back();
+                    window.location.reload();
                 })
             })
             .catch(e => {

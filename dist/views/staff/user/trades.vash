@@ -1,0 +1,30 @@
+@html.extend('layouts/default', function(model) {
+    @html.block('css', function(model) {
+        <style>
+            .swal2-popup {
+                    width: 48em!important;
+            }
+        </style>
+    })
+  @html.block('content', function(model) {
+      <div id="impersonator-info" data-userid="@model.page.userId"></div>
+      <div class="row" style="padding-top:1rem;">
+        <div class="col-sm-12"><h1>@model.page.username's Trades</h1></div>
+      </div>
+      <div class="btn-group" role="TradesTab" aria-label="Trades Tab" style="width:100%;">
+        <button type="button" class="btn btn-success openTrades">Inbound</button>
+        <button type="button" class="btn btn-success openTrades">Outbound</button>
+        <button type="button" class="btn btn-success openTrades">Completed</button>
+        <button type="button" class="btn btn-success openTrades">Inactive</button>
+    </div>
+      <div class="row" id="tradesGrid">
+
+      </div>
+
+
+        
+  })
+  @html.block('js', function(model) {
+      <script nonce="@model.nonce" src="/js/pages/staff/user/trades.js?v=@model.v"></script>
+  })
+})

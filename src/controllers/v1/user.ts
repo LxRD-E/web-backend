@@ -35,7 +35,7 @@ export class UsersController extends controller {
         let userInfo;
         try {
             userInfo = await this.user.getInfo(id);
-        }catch(e) {
+        } catch (e) {
             throw new this.BadRequest('InvalidUserId');
         }
         if (userInfo.accountStatus === model.user.accountStatus.deleted) {
@@ -265,7 +265,7 @@ export class UsersController extends controller {
 
     @Get('/friend/metadata')
     @Summary('Get friendship metadata')
-    @Returns(200, {type: model.user.FriendshipMetadata})
+    @Returns(200, { type: model.user.FriendshipMetadata })
     public getFriendshipMetadata() {
         let metaInfo = new model.user.FriendshipMetadata();
         metaInfo.maxFriendships = model.user.MAX_FRIENDS;
@@ -299,7 +299,7 @@ export class UsersController extends controller {
     @Summary('Send a friend request to a user')
     @Returns(200, { description: 'Request Sent' })
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nCannotSendRequest: You cannot send a friend request right now\n' })
-    @Returns(409, {type: model.Error, description: 'AuthenticatedUserIsAtMaxFriends: Authenticated user is at the maximum amount of friends\nOtherUserIsAtMaxFriends: The user you are trying to friend is at the maximum amount of friends\n'})
+    @Returns(409, { type: model.Error, description: 'AuthenticatedUserIsAtMaxFriends: Authenticated user is at the maximum amount of friends\nOtherUserIsAtMaxFriends: The user you are trying to friend is at the maximum amount of friends\n' })
     @Use(csrf, YesAuth, RateLimiterMiddleware('sendFriendRequest'))
     public async sendFriendRequest(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -335,7 +335,7 @@ export class UsersController extends controller {
     @Put('/:userId/friend')
     @Summary('Accept a friend request')
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nNoPendingRequest: There is no friend request to accept\n' })
-    @Returns(409, {type: model.Error, description: 'AuthenticatedUserIsAtMaxFriends: Authenticated user is at the maximum amount of friends\nOtherUserIsAtMaxFriends: The user you are trying to friend is at the maximum amount of friends\n'})
+    @Returns(409, { type: model.Error, description: 'AuthenticatedUserIsAtMaxFriends: Authenticated user is at the maximum amount of friends\nOtherUserIsAtMaxFriends: The user you are trying to friend is at the maximum amount of friends\n' })
     @Use(csrf, YesAuth)
     public async acceptFriendRequest(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -350,16 +350,16 @@ export class UsersController extends controller {
         } catch (e) {
             throw new this.BadRequest('InvalidUserId');
         }
-         // Check if authenticated user is at max friends 
-         let friendCount = await this.user.countFriends(userInfo.userId);
-         if (friendCount >= model.user.MAX_FRIENDS) {
-             throw new this.Conflict('AuthenticatedUserIsAtMaxFriends');
-         }
-         // Check if user to send request to is at max friends
-         let friendsCountForOtherUser = await this.user.countFriends(userId);
-         if (friendsCountForOtherUser >= model.user.MAX_FRIENDS) {
-             throw new this.Conflict('OtherUserIsAtMaxFriends');
-         }
+        // Check if authenticated user is at max friends 
+        let friendCount = await this.user.countFriends(userInfo.userId);
+        if (friendCount >= model.user.MAX_FRIENDS) {
+            throw new this.Conflict('AuthenticatedUserIsAtMaxFriends');
+        }
+        // Check if user to send request to is at max friends
+        let friendsCountForOtherUser = await this.user.countFriends(userId);
+        if (friendsCountForOtherUser >= model.user.MAX_FRIENDS) {
+            throw new this.Conflict('OtherUserIsAtMaxFriends');
+        }
         let canSend = await this.user.getFriendshipStatus(userInfo.userId, userId);
         if (canSend.canAcceptFriendRequest) {
             await this.user.createFriendship(userInfo.userId, userId);
@@ -402,8 +402,8 @@ export class UsersController extends controller {
 
     @Get('/:userId/past-usernames')
     @Summary('Get the past usernames of the {userId}')
-    @ReturnsArray(200, {type: model.user.PastUsernames})
-    @Returns(400, {type: model.Error, description: 'InvalidUserId: UserId is invalid\n'})
+    @ReturnsArray(200, { type: model.user.PastUsernames })
+    @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is invalid\n' })
     public async getPastUsernames(
         @PathParams('userId', Number) userId: number,
     ) {
@@ -454,8 +454,8 @@ export class UsersController extends controller {
 
     @Get('/:userId/inventory/collectibles/count')
     @Summary('Count user collectibles')
-    @Returns(400, {type: model.Error, description: 'InvalidUserId: userId is terminated or invalid\n'})
-    @Returns(200, {type: model.user.GenericCount})
+    @Returns(400, { type: model.Error, description: 'InvalidUserId: userId is terminated or invalid\n' })
+    @Returns(200, { type: model.user.GenericCount })
     public async countCollectibleInventory(
         @PathParams('userId', Number) userId: number,
     ): Promise<model.user.GenericCount> {
@@ -503,7 +503,7 @@ export class UsersController extends controller {
         let items: model.user.UserCollectibleInventoryResponse;
         if (!query) {
             items = await this.user.getCollectibleInventory(id, offset, limit, sort);
-        }else{
+        } else {
             items = await this.user.searchCollectibleInventory(id, query, offset, limit);
         }
         return items;
@@ -524,7 +524,7 @@ export class UsersController extends controller {
             if (info.accountStatus === model.user.accountStatus.deleted) {
                 throw new this.BadRequest('InvalidUserId')
             }
-        }catch(e) {
+        } catch (e) {
             throw new this.BadRequest('InvalidUserId');
         }
         const ownedItems = await this.user.getUserInventoryByCatalogId(userId, catalogId);
@@ -625,102 +625,108 @@ export class UsersController extends controller {
 
     @Put('/:userId/trade/request')
     @Summary('Create a trade request')
-    @Description('requesterItems and requestedItems should both be arrays of userInventoryIds')
+    @Description('offerItems and requestedItems should both be arrays of userInventoryIds')
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nInvalidItemsSpecified: One or more of the userInventoryId(s) are invalid\n' })
     @Returns(409, { type: model.Error, description: 'CannotTradeWithUser: Authenticated user has trading disabled or partner has trading disabled\nTooManyPendingTrades: You have too many pending trades with this user\n' })
     @Use(csrf, YesAuth, TwoStepMiddleware('TradeRequest'))
     public async createTradeRequest(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('userId', Number) partnerUserId: number,
-        @BodyParams('requesterItems', Array) requesteeItems: number[], 
-        @BodyParams('requestedItems', Array) requestedItems: number[],
         @Req() req: Req,
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Required()
+        @Description('The userId to open a trade with')
+        @PathParams('userId', Number) partnerUserId: number,
+        @Required()
+        @BodyParams(model.user.CreateTradeRequest) body: model.user.CreateTradeRequest,
     ) {
-        const partnerInfo = await this.user.getInfo(partnerUserId, ['userId', 'accountStatus', 'tradingEnabled']);
-        if (partnerInfo.accountStatus === model.user.accountStatus.deleted || partnerInfo.accountStatus === model.user.accountStatus.terminated) {
-            throw new this.BadRequest('InvalidUserId');
-        }
-        const localInfo = await this.user.getInfo(userInfo.userId, ['tradingEnabled']);
-        // Check if user has Tradeing Disabled
-        if (localInfo.tradingEnabled === model.user.tradingEnabled.false) {
-            throw new this.Conflict('CannotTradeWithUser');
-        }
-        // Check if Partner has Trading Disabled
-        if (partnerInfo.tradingEnabled === model.user.tradingEnabled.false) {
-            throw new this.Conflict('CannotTradeWithUser');
-        }
-        // If partner is current user
-        if (partnerInfo.userId === userInfo.userId) {
-            throw new this.Conflict('CannotTradeWithUser');
-        }
-        if (!Array.isArray(requestedItems) || !Array.isArray(requesteeItems) || requesteeItems.length < 1 || requesteeItems.length > 4 || requestedItems.length < 1 || requestedItems.length > 4) {
-            throw new this.BadRequest('InvalidItemsSpecified');
-        }
-        const safeRequestedItems: model.economy.TradeItemObject[] = [];
-        // Check Items User is Requesting
-        for (const unsafeInventoryId of requestedItems) {
-            const userInventoryId = filterId(unsafeInventoryId) as number;
-            if (!userInventoryId) {
+        await this.transaction(async (trx) => {
+            let requestedItems = body.requestedItems;
+            let offerItems = body.offerItems;
+            const partnerInfo = await trx.user.getInfo(partnerUserId, ['userId', 'accountStatus', 'tradingEnabled']);
+            if (partnerInfo.accountStatus === model.user.accountStatus.deleted || partnerInfo.accountStatus === model.user.accountStatus.terminated) {
+                throw new this.BadRequest('InvalidUserId');
+            }
+            const localInfo = await trx.user.getInfo(userInfo.userId, ['tradingEnabled']);
+            // Check if user has Tradeing Disabled
+            if (localInfo.tradingEnabled === model.user.tradingEnabled.false) {
+                throw new this.Conflict('CannotTradeWithUser');
+            }
+            // Check if Partner has Trading Disabled
+            if (partnerInfo.tradingEnabled === model.user.tradingEnabled.false) {
+                throw new this.Conflict('CannotTradeWithUser');
+            }
+            // If partner is current user
+            if (partnerInfo.userId === userInfo.userId) {
+                throw new this.Conflict('CannotTradeWithUser');
+            }
+            if (!Array.isArray(requestedItems) || !Array.isArray(offerItems) || offerItems.length < 1 || offerItems.length > 4 || requestedItems.length < 1 || requestedItems.length > 4) {
                 throw new this.BadRequest('InvalidItemsSpecified');
             }
-            // Verify item exists and is owned by parter
-            const info = await this.catalog.getItemByUserInventoryId(userInventoryId);
-            if (info.userId !== partnerUserId) {
-                // Owned by someone else
-                throw new this.BadRequest('InvalidItemsSpecified');
+            const safeRequestedItems: model.economy.TradeItemObject[] = [];
+            // Check Items User is Requesting
+            for (const unsafeInventoryId of requestedItems) {
+                const userInventoryId = filterId(unsafeInventoryId) as number;
+                if (!userInventoryId) {
+                    throw new this.BadRequest('InvalidItemsSpecified');
+                }
+                // Verify item exists and is owned by partner
+                const info = await trx.catalog.getItemByUserInventoryId(userInventoryId);
+                if (info.userId !== partnerUserId) {
+                    // Owned by someone else
+                    throw new this.BadRequest('InvalidItemsSpecified');
+                }
+                if (info.collectible === model.catalog.collectible.false) {
+                    // Not collectible
+                    throw new this.BadRequest('InvalidItemsSpecified');
+                }
+                safeRequestedItems.push({
+                    'catalogId': info.catalogId,
+                    'userInventoryId': userInventoryId,
+                });
             }
-            if (info.collectible === model.catalog.collectible.false) {
-                // Not collectible
-                throw new this.BadRequest('InvalidItemsSpecified');
+            const safeRequesteeItems: model.economy.TradeItemObject[] = [];
+            // Check Items user is Providing
+            for (const unsafeInventoryId of offerItems) {
+                const userInventoryId = filterId(unsafeInventoryId) as number;
+                if (!userInventoryId) {
+                    throw new this.BadRequest('InvalidItemsSpecified');
+                }
+                // Verify item exists and is owned by authenticated user
+                const info = await trx.catalog.getItemByUserInventoryId(userInventoryId);
+                if (info.userId !== userInfo.userId) {
+                    // Owned by someone else
+                    throw new this.BadRequest('InvalidItemsSpecified');
+                }
+                if (info.collectible === model.catalog.collectible.false) {
+                    // Not collectible
+                    throw new this.BadRequest('InvalidItemsSpecified');
+                }
+                safeRequesteeItems.push({
+                    'userInventoryId': userInventoryId,
+                    'catalogId': info.catalogId,
+                });
             }
-            safeRequestedItems.push({
-                'catalogId': info.catalogId,
-                'userInventoryId': userInventoryId,
-            });
-        }
-        const safeRequesteeItems: model.economy.TradeItemObject[] = [];
-        // Check Items user is Providing
-        for (const unsafeInventoryId of requesteeItems) {
-            const userInventoryId = filterId(unsafeInventoryId) as number;
-            if (!userInventoryId) {
-                throw new this.BadRequest('InvalidItemsSpecified');
+            // Create Trade
+            // Count outbound/inbound trades between users
+            const count = await trx.economy.countPendingTradesBetweenUsers(userInfo.userId, partnerUserId);
+            // Confirm they arent spamming trades
+            if (count >= 6) {
+                throw new this.Conflict('TooManyPendingTrades');
             }
-            // Verify item exists and is owned by parter
-            const info = await this.catalog.getItemByUserInventoryId(userInventoryId);
-            if (info.userId !== userInfo.userId) {
-                // Owned by someone else
-                throw new this.BadRequest('InvalidItemsSpecified');
+            // Create
+            const tradeId = await trx.economy.createTrade(userInfo.userId, partnerUserId);
+            // Add Requested Items
+            await trx.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requested, safeRequestedItems);
+            // Add Self Items
+            await trx.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requester, safeRequesteeItems);
+            // Send Message to Partner
+            await trx.notification.createMessage(partnerUserId, 1, 'Trade Request from ' + userInfo.username, "Hi,\n" + userInfo.username + " has sent you a new trade request. You can view it in the trades tab.");
+            // Log ip
+            let ip = req.ip;
+            if (req.headers['cf-connecting-ip']) {
+                ip = req.headers['cf-connecting-ip'] as string;
             }
-            if (info.collectible === model.catalog.collectible.false) {
-                // Not collectible
-                throw new this.BadRequest('InvalidItemsSpecified');
-            }
-            safeRequesteeItems.push({
-                'userInventoryId': userInventoryId,
-                'catalogId': info.catalogId,
-            });
-        }
-        // Create Trade
-        // Count outbound/inbound trades between users
-        const count = await this.economy.countPendingTradesBetweenUsers(userInfo.userId, partnerUserId);
-        // Confirm they arent spamming trades
-        if (count >= 6) {
-            throw new this.Conflict('TooManyPendingTrades');
-        }
-        // Create
-        const tradeId = await this.economy.createTrade(userInfo.userId, partnerUserId);
-        // Add Requested Items
-        await this.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requested, safeRequestedItems);
-        // Add Self Items
-        await this.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requester, safeRequesteeItems);
-        // Send Message to Partner
-        await this.notification.createMessage(partnerUserId, 1, 'Trade Request from ' + userInfo.username, "Hi,\n" + userInfo.username + " has sent you a new trade request. You can view it in the trades tab.");
-        // Log ip
-        let ip = req.ip;
-        if (req.headers['cf-connecting-ip']) {
-            ip = req.headers['cf-connecting-ip'] as string;
-        }
-        await this.user.logUserIp(userInfo.userId, ip, model.user.ipAddressActions.TradeSent);
+            await trx.user.logUserIp(userInfo.userId, ip, model.user.ipAddressActions.TradeSent);
+        });
         // Return Success
         return {
             'success': true,

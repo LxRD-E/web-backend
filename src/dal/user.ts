@@ -26,7 +26,7 @@ class UsersDAL extends _init {
      * @param id User's ID
      * @param specificColumns Specific Columns from the Table to grab
      */
-    public async getInfo(id: number, specificColumns?: Array<'userId' | 'username' | 'passwordChanged' | 'primaryBalance' | 'secondaryBalance' | 'membership' | 'dailyAward' | 'status' | 'blurb' | 'joinDate' | 'lastOnline' | 'birthDate' | 'theme' | 'tradingEnabled' | 'staff' | 'banned' | 'forumPostCount' | 'forumSignature' | 'accountStatus' | '2faEnabled'>): Promise<users.UserInfo> {
+    public async getInfo(id: number, specificColumns?: Array<'userId' | 'username' | 'passwordChanged' | 'primaryBalance' | 'secondaryBalance' | 'membership' | 'dailyAward' | 'status' | 'blurb' | 'joinDate' | 'lastOnline' | 'birthDate' | 'theme' | 'tradingEnabled' | 'staff' | 'banned' | 'forumPostCount' | 'forumSignature' | 'accountStatus' | '2faEnabled'>, forUpdate?: string[]): Promise<users.UserInfo> {
         if (!specificColumns) {
             specificColumns = ['userId', 'username', 'status', 'joinDate', 'blurb', 'lastOnline', 'banned', 'membership', 'tradingEnabled', 'staff', 'accountStatus'];
         }
@@ -79,7 +79,11 @@ class UsersDAL extends _init {
                 array[index] = '2fa_enabled as 2faEnabled';
             }
         });
-        const userInfoSelect = await this.knex('users').select(specificColumns).where({'users.id': id });
+        let query = this.knex('users').select(specificColumns).where({'users.id': id });
+        if (forUpdate) {
+            query = query.forUpdate(forUpdate);
+        }
+        const userInfoSelect = await query;
         const userInfoData = userInfoSelect[0] as users.UserInfo;
         if (userInfoData === undefined) {
             throw false;
@@ -1086,8 +1090,12 @@ class UsersDAL extends _init {
      * @param userId User ID
      * @param catalogId Catalog Item's ID
      */
-    public async getUserInventoryByCatalogId(userId: number, catalogId: number): Promise<Array<users.UserInventory>> {
-        const inventory = await this.knex('user_inventory').where({ 'user_inventory.user_id': userId, 'user_inventory.catalog_id': catalogId }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId','user_inventory.catalog_id as catalogId','user_inventory.price as price','catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial').orderBy('user_inventory.id', "desc");
+    public async getUserInventoryByCatalogId(userId: number, catalogId: number, forUpdate?: string[]): Promise<Array<users.UserInventory>> {
+        let query = this.knex('user_inventory').where({ 'user_inventory.user_id': userId, 'user_inventory.catalog_id': catalogId }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId','user_inventory.catalog_id as catalogId','user_inventory.price as price','catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial').orderBy('user_inventory.id', "desc");
+        if (forUpdate) {
+            query = query.forUpdate(forUpdate);
+        }
+        const inventory = await query;
         return inventory as users.UserInventory[];
     }
 

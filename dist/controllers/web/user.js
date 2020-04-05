@@ -99,14 +99,29 @@ let WWWUsersController = class WWWUsersController extends controller_1.default {
         ViewData.page.username = userData.username;
         return ViewData;
     }
+    async games(filteredUserId) {
+        let ViewData = new this.WWWTemplate({ title: '' });
+        let userData = await this.user.getInfo(filteredUserId, ["userId", "username", 'accountStatus']);
+        if (userData.accountStatus === model.user.accountStatus.deleted) {
+            throw new this.NotFound('InvalidUserId');
+        }
+        ViewData.title = userData.username + "'s Games";
+        ViewData.page = {};
+        ViewData.page.userId = userData.userId;
+        ViewData.page.username = userData.username;
+        return ViewData;
+    }
     async trade(userInfo, filteredUserId) {
         if (userInfo.userId === filteredUserId) {
             throw new this.Conflict('UserCannotBeTradedWith');
         }
         let ViewData = new this.WWWTemplate({ title: 'Trade' });
-        let userData = await this.user.getInfo(filteredUserId, ["userId", "username", 'accountStatus']);
+        let userData = await this.user.getInfo(filteredUserId, ["userId", "username", 'accountStatus', 'tradingEnabled']);
         if (userData.accountStatus === model.user.accountStatus.deleted) {
-            throw new this.NotFound('InvalidUserId');
+            throw new this.Conflict('UserCannotBeTradedWith');
+        }
+        if (userData.tradingEnabled !== model.user.tradingEnabled.true) {
+            throw new this.Conflict('UserCannotBeTradedWith');
         }
         ViewData.title = 'Open Trade with ' + userData.username;
         ViewData.page = {};
@@ -153,10 +168,19 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], WWWUsersController.prototype, "groups", null);
 __decorate([
+    common_1.Get('/users/:userId/games'),
+    swagger_1.Summary('Get user\'s games'),
+    common_1.Render('profile_games'),
+    __param(0, common_1.PathParams('userId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], WWWUsersController.prototype, "games", null);
+__decorate([
     common_1.Get('/users/:userId/trade'),
     swagger_1.Summary('Open trade request with a user'),
     common_1.Render('trade'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),

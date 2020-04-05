@@ -220,6 +220,31 @@ export class WWWStaffController extends controller {
         return ViewData;
     }
 
+    @Get('/staff/user/trades')
+    @UseBefore(YesAuth)
+    @Render('staff/user/trades')
+    public async moderationTrades(
+        @Locals('userInfo') localUserData: UserModel.SessionUserInfo,
+        @Required()
+        @QueryParams('userId', Number) userId: number
+    ) {
+        const staff = localUserData.staff > 1 ? true : false;
+        if (!staff) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        let userInfo;
+        try {
+            userInfo = await this.user.getInfo(userId, ['userId','username']);
+        }catch(e) {
+            console.log(e);
+            throw new this.BadRequest('InvalidUserId');
+        }
+        let ViewData = new WWWTemplate({'title': userInfo.username+"'s Trades"});
+        ViewData.page.userId = userInfo.userId;
+        ViewData.page.username = userInfo.username;
+        return ViewData;
+    }
+
     @Get('/staff/groups/manage')
     @UseBefore(YesAuth)
     @Render('staff/groups/manage')

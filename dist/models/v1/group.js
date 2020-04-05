@@ -99,12 +99,14 @@ class MultiGetNames {
 }
 __decorate([
     common_1.Required(),
+    swagger_1.Description('The groups ID'),
     __metadata("design:type", Number)
 ], MultiGetNames.prototype, "groupId", void 0);
 __decorate([
     common_1.Required(),
+    swagger_1.Description('The groups name'),
     __metadata("design:type", String)
-], MultiGetNames.prototype, "catalogName", void 0);
+], MultiGetNames.prototype, "groupName", void 0);
 exports.MultiGetNames = MultiGetNames;
 class roleInfo {
 }

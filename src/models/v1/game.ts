@@ -166,9 +166,15 @@ export class GameSearchResultEntry {
     @Required()
     playerCount: number;
     @Required()
+    visitCount: number;
+    @Required()
+    genre: GameGenres;
+    @Required()
     creatorId: number;
     @Required()
     creatorType: Catalog.creatorType;
+    @Required()
+    createdAt: string;
     @Required()
     updatedAt: string;
 }
@@ -202,6 +208,11 @@ export class GameServer {
     playerCount: number;
     @Required()
     isClosed: GameClosed;
+}
+
+export class GameSearchCreatorConstraint {
+    creatorType: number;
+    creatorId: number;
 }
 
 export const SIMPLE_CRYPTO_JS = `

@@ -24,7 +24,8 @@ class CatalogDAL extends _init {
     /**
      * Retrieve Multiple Statuses from UserIds at once
      */
-    public async getInfo(id: number, specificColumns?: Array<'catalogId'|'catalogName'|'description'|'price'|'averagePrice'|'dateCreated'|'currency'|'category'|'collectible'|'maxSales'|'forSale'|'status'|'creatorId'|'creatorType'|'userId'>): Promise<catalog.CatalogInfo> {
+    public async getInfo(id: number, specificColumns?: Array<'catalogId'|'catalogName'|'description'|'price'|'averagePrice'|'dateCreated'|'currency'|'category'|'collectible'|'maxSales'|'forSale'|'status'|'creatorId'|'creatorType'|'userId'>, forUpdate?: string[]): Promise<catalog.CatalogInfo> {
+        console.log(this.knex.name);
         if (!specificColumns) {
             specificColumns = ['catalogId','catalogName','description','price','averagePrice','forSale','maxSales','collectible','status','creatorId','creatorType','userId'];
         }
@@ -53,7 +54,11 @@ class CatalogDAL extends _init {
                 array[index] = 'creator_type as creatorType';
             }
         });
-        const CatalogInfo = await this.knex('catalog').select(specificColumns).where({'catalog.id':id});
+        let query = this.knex('catalog').select(specificColumns).where({'catalog.id':id});
+        if (forUpdate) {
+            query = query.forUpdate(forUpdate);
+        }
+        const CatalogInfo = await query;
         if (!CatalogInfo[0]) {
             throw false;
         }
@@ -203,7 +208,7 @@ class CatalogDAL extends _init {
      * @param catalogId Catalog ID
      */
     public async getComments(catalogId: number, offset: number): Promise<catalog.Comments[]> {
-        const Comments = await this.knex("catalog_comments").select("id as commentId","catalog_id as catalogId","userid as userId","date","comment").where({"catalog_id":catalogId}).limit(25).offset(offset).orderBy('id', 'desc');
+        const Comments = await this.knex("catalog_comments").select("id as commentId","catalog_id as catalogId","userid as userId","date","comment").where({"catalog_id":catalogId,'is_deleted': 0}).limit(25).offset(offset).orderBy('id', 'desc');
         return Comments as catalog.Comments[];
     }
 
@@ -580,8 +585,12 @@ class CatalogDAL extends _init {
      * Get User Inventory Item Details by it's userInventoryId
      * @param userInventoryId Item ID
      */
-    public async getItemByUserInventoryId(userInventoryId: number): Promise<Users.FullUserInventory> {
-        const items = await this.knex('user_inventory').where({ 'user_inventory.id': userInventoryId }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId','user_inventory.catalog_id as catalogId','user_inventory.price as price','catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial', 'user_inventory.user_id as userId').orderBy('user_inventory.price', 'asc').limit(1);
+    public async getItemByUserInventoryId(userInventoryId: number, forUpdate?: string[]): Promise<Users.FullUserInventory> {
+        let query = this.knex('user_inventory').where({ 'user_inventory.id': userInventoryId }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId','user_inventory.catalog_id as catalogId','user_inventory.price as price','catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial', 'user_inventory.user_id as userId').orderBy('user_inventory.price', 'asc').limit(1);
+        if (forUpdate) {
+            query = query.forUpdate(forUpdate);
+        }
+        const items = await query;
         if (!items[0]) {
             throw false;
         }
@@ -610,6 +619,32 @@ class CatalogDAL extends _init {
             'date': this.moment().format('YYYY-MM-DD HH:mm:ss'),
             'comment': comment,
         });
+    }
+
+    /**
+     * Get a Comment on a Catalog Item
+     */
+    public async getComment(catalogId: number, commentId: number): Promise<catalog.CatalogItemComment> {
+        let comment = await this.knex('catalog_comments').select('userid as userId','date','comment','is_deleted as isDeleted').where({
+            'id': commentId
+        }).limit(1);
+        if (!comment[0]) {
+            throw new Error('InvalidCommentId');
+        }
+        if (comment[0] && comment[0].catalogId !== catalogId) {
+            throw new Error('InvalidCommentId');
+        }
+        return comment[0];
+    }
+
+    /**
+     * Delete a Comment on a Catalog Item
+     */
+    public async deleteComment(catalogId: number, commentId: number): Promise<void> {
+        await this.knex('catalog_comments').delete().where({
+            'id': commentId,
+            'is_deleted':1,
+        }).limit(1);
     }
 
     private addBuffersIfNotExists(uploadedFiles: any[], maxFileSize: number): Promise<void> {
@@ -645,7 +680,6 @@ class CatalogDAL extends _init {
      */
     public async sortFileUploads(uploadedFiles: any, maxFileSize = 5 * 1024 * 1024): Promise<catalog.FilesInterface> {
         await this.addBuffersIfNotExists(uploadedFiles, maxFileSize);
-        console.log(uploadedFiles);
         interface UploadedFile {
             fieldname: string;
             size: number;

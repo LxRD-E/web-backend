@@ -295,6 +295,25 @@ let CatalogController = class CatalogController extends controller_1.default {
         await this.catalog.createComment(catalogId, userInfo.userId, comment);
         return { success: true };
     }
+    async deleteComment(userInfo, catalogId, commentId) {
+        let info;
+        try {
+            info = await this.catalog.getComment(catalogId, commentId);
+            if (info.isDeleted === 1) {
+                throw new Error('CommentAlreadyDeleted');
+            }
+        }
+        catch (e) {
+            throw new this.BadRequest('InvalidCommentId');
+        }
+        if (info.userId !== userInfo.userId && userInfo.staff >= 1 === false) {
+            throw new this.BadRequest('InvalidCommentId');
+        }
+        await this.catalog.deleteComment(catalogId, commentId);
+        return {
+            success: true,
+        };
+    }
     async getCharts(catalogId) {
         try {
             const itemInfo = await this.catalog.getInfo(catalogId, ['catalogId', 'collectible']);
@@ -363,7 +382,7 @@ let CatalogController = class CatalogController extends controller_1.default {
             }
             await this.catalog.createCatalogAsset(catalogId, userInfo.userId, model.catalog.assetType.MTL, catalogId.toString(), 'mtl');
         }
-        (async () => {
+        const reRenderItem = async () => {
             try {
                 let url;
                 const json = await this.catalog.generateAvatarJsonFromCatalogIds(catalogId, [catalogId]);
@@ -382,7 +401,12 @@ let CatalogController = class CatalogController extends controller_1.default {
             catch (e) {
                 console.log(e);
             }
-        })();
+        };
+        reRenderItem().then(d => {
+        })
+            .catch(e => {
+            console.error(e);
+        });
         return { success: true, id: catalogId };
     }
     async forceThumbnailRegen(userInfo, catalogId, yieldUntilComplete = false, setThumbnailOnFinish = true) {
@@ -446,7 +470,7 @@ let CatalogController = class CatalogController extends controller_1.default {
         }
         return { success: true };
     }
-    async create(userInfo, uploadedFiles, uploadAsStaff, category, isForSale, price, currency, name, description, groupId, isCollectible, stock) {
+    async create(userInfo, uploadedFiles, category, isForSale, price, currency, name, description, groupId, isCollectible, stock, uploadAsStaff) {
         let staffMode = false;
         if (userInfo.staff >= 2 && uploadAsStaff === "true") {
             staffMode = true;
@@ -688,10 +712,9 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "getComments", null);
 __decorate([
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
     common_1.Post('/:catalogId/comment'),
     swagger_1.Summary('Create a comment for a catalog item'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('catalogId', Number)),
     __param(2, common_1.Required()),
@@ -700,6 +723,18 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "createComment", null);
+__decorate([
+    common_1.Delete('/:catalogId/comment/:commentId'),
+    swagger_1.Summary('Delete a catalog item comment'),
+    swagger_1.Description('This endpoint is meant for users wishing to delete their own comments, although it will also delete comments made by any user, as long as the requester is a staff member'),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidCommentId CommentId is invalid\n' }),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('catalogId', Number)),
+    __param(2, common_1.PathParams('commentId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.UserSession, Number, Number]),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "deleteComment", null);
 __decorate([
     swagger_1.Summary('Get charts for a collectible catalog item'),
     common_1.Get('/:catalogId/charts'),
@@ -718,9 +753,10 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "getSellers", null);
 __decorate([
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
     common_1.Patch('/:catalogId/files'),
+    swagger_1.Summary('Update a catalog item\'s files'),
+    swagger_1.Description('Restricted to staff use only'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('catalogId', Number)),
     __param(2, multipartfiles_1.MultipartFile()),
@@ -739,24 +775,28 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "forceThumbnailRegen", null);
 __decorate([
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
-    swagger_1.Summary('Create a catalog item'),
     common_1.Post('/create'),
+    swagger_1.Summary('Create a catalog item'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    swagger_1.Returns(200, { description: 'OK', type: model.catalog.CatalogCreationSuccessResponse }),
+    swagger_1.Returns(400, { description: 'InvalidOBJSpecified: OBJ required for category but not specified or invalid\nInvalidMTLSpecified: MTL required for category but not specified or invalid\nNoFileSpecified: No file was specified in the request\nInvalidCategory: Category is invalid or not allowed for current user\nInvalidPrice: Price is not valid\nInvalidCurrency: Currency is not valid\nConstraintPriceTooHigh: Price is too high\nInvalidCatalogName: Catalog Name is too large, too small, or otherwise invalid\nInvalidCatalogDescription: Description is too large or otherwise invalid\nInvalidPermissions: User does not have permission to upload to the groupId specified\n', type: model.Error }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, multipartfiles_1.MultipartFile()),
-    __param(2, common_1.BodyParams('uploadAsStaff', String)),
-    __param(3, common_1.BodyParams('category', Number)),
-    __param(4, common_1.BodyParams('isForSale', Number)),
-    __param(5, common_1.BodyParams('price', Number)),
-    __param(6, common_1.BodyParams('currency', Number)),
-    __param(7, common_1.BodyParams('name', String)),
-    __param(8, common_1.BodyParams('description', String)),
-    __param(9, common_1.BodyParams('groupId')),
-    __param(10, common_1.BodyParams('is_collectible')),
-    __param(11, common_1.BodyParams('stock')),
+    __param(2, common_1.BodyParams('category', Number)),
+    __param(3, common_1.BodyParams('isForSale', Number)),
+    __param(4, common_1.BodyParams('price', Number)),
+    __param(5, common_1.BodyParams('currency', Number)),
+    __param(6, swagger_1.Description('Must be between 3 and 32 characters')),
+    __param(6, common_1.BodyParams('name', String)),
+    __param(7, swagger_1.Description('Must be between 0 and 256 characters')),
+    __param(7, common_1.BodyParams('description', String)),
+    __param(8, common_1.BodyParams('groupId')),
+    __param(9, common_1.BodyParams('is_collectible')),
+    __param(10, common_1.BodyParams('stock')),
+    __param(11, swagger_1.Description('This parameter is silently ignored if userInfo.staff >= 2 is false')),
+    __param(11, common_1.BodyParams('uploadAsStaff', String)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Array, String, Number, Number, Number, Number, String, String, String, String, String]),
+    __metadata("design:paramtypes", [model.user.UserInfo, Array, Number, Number, Number, Number, String, String, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "create", null);
 CatalogController = __decorate([

@@ -16,6 +16,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const economy_1 = require("./economy");
 const common_1 = require("@tsed/common");
+const swagger_1 = require("@tsed/swagger");
 var category;
 (function (category) {
     category[category["Hat"] = 1] = "Hat";
@@ -61,6 +62,38 @@ var creatorType;
     creatorType[creatorType["User"] = 0] = "User";
     creatorType[creatorType["Group"] = 1] = "Group";
 })(creatorType = exports.creatorType || (exports.creatorType = {}));
+class CatalogCreationSuccessResponse {
+}
+__decorate([
+    common_1.Required(),
+    swagger_1.Example(true),
+    __metadata("design:type", Boolean)
+], CatalogCreationSuccessResponse.prototype, "success", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('the id of the catalogItem created'),
+    __metadata("design:type", Number)
+], CatalogCreationSuccessResponse.prototype, "id", void 0);
+exports.CatalogCreationSuccessResponse = CatalogCreationSuccessResponse;
+class CatalogItemComment {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], CatalogItemComment.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], CatalogItemComment.prototype, "date", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], CatalogItemComment.prototype, "comment", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], CatalogItemComment.prototype, "isDeleted", void 0);
+exports.CatalogItemComment = CatalogItemComment;
 class SearchResults {
 }
 __decorate([

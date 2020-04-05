@@ -9,9 +9,9 @@ import * as model from '../../models/models';
 import { filterOffset, filterId } from '../../helpers/Filter';
 /// import {invalidParam} from '../../middleware/paramsvalidate';
 // Autoload
-import { Controller, Get, PathParams, QueryParams, BodyParams, Required, Res, Patch, UseBeforeEach, UseBefore, Locals, Post, Put } from '@tsed/common';
+import { Controller, Get, PathParams, QueryParams, BodyParams, Required, Res, Patch, UseBeforeEach, UseBefore, Locals, Post, Put, Use, Enum, Delete } from '@tsed/common';
 import controller from '../controller';
-import { Summary, Description } from '@tsed/swagger';
+import { Summary, Description, Returns } from '@tsed/swagger';
 import { csrf } from '../../dal/auth';
 import { YesAuth } from '../../middleware/Auth';
 import { MultipartFile } from '@tsed/multipartfiles';
@@ -350,10 +350,9 @@ export class CatalogController extends controller {
     /**
      * Create a Comment on a Catalog Item
      */
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
     @Post('/:catalogId/comment')
     @Summary('Create a comment for a catalog item')
+    @Use(csrf, YesAuth)
     public async createComment(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('catalogId', Number) catalogId: number,
@@ -370,6 +369,35 @@ export class CatalogController extends controller {
         }
         await this.catalog.createComment(catalogId, userInfo.userId, comment);
         return { success: true };
+    }
+
+    @Delete('/:catalogId/comment/:commentId')
+    @Summary('Delete a catalog item comment')
+    @Description('This endpoint is meant for users wishing to delete their own comments, although it will also delete comments made by any user, as long as the requester is a staff member')
+    @Returns(400, {type: model.Error, description: 'InvalidCommentId CommentId is invalid\n'})
+    public async deleteComment(
+        @Locals('userInfo') userInfo: model.UserSession,
+        @PathParams('catalogId', Number) catalogId: number,
+        @PathParams('commentId', Number) commentId: number,
+    ) {
+        let info: model.catalog.CatalogItemComment;
+        try {
+            info = await this.catalog.getComment(catalogId, commentId);
+            if (info.isDeleted === 1) {
+                throw new Error('CommentAlreadyDeleted');
+            }
+        }catch(e) {
+            throw new this.BadRequest('InvalidCommentId');
+        }
+        if (info.userId !== userInfo.userId && userInfo.staff >= 1 === false) {
+            throw new this.BadRequest('InvalidCommentId');
+        }
+        // delete
+        await this.catalog.deleteComment(catalogId, commentId);
+        // ok
+        return {
+            success: true,
+        };
     }
 
     /**
@@ -427,9 +455,10 @@ export class CatalogController extends controller {
     /**
      * Update an item's files. This endpoint is restricted for staff use only
      */
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
     @Patch('/:catalogId/files')
+    @Summary('Update a catalog item\'s files')
+    @Description('Restricted to staff use only')
+    @Use(csrf,YesAuth)
     public async updateItemFiles(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('catalogId', Number) catalogId: number,
@@ -475,7 +504,7 @@ export class CatalogController extends controller {
             }
             await this.catalog.createCatalogAsset(catalogId, userInfo.userId, model.catalog.assetType.MTL, catalogId.toString(), 'mtl');
         }
-        (async (): Promise<void> => {
+        const reRenderItem = async () => {
             // Begin Background Render
             try {
                 let url;
@@ -495,7 +524,13 @@ export class CatalogController extends controller {
             } catch (e) {
                 console.log(e);
             }
-        })();
+        };
+        reRenderItem().then(d => {
+
+        })
+        .catch(e => {
+            console.error(e);
+        })
         // Return Success
         return { success: true, id: catalogId };
     }
@@ -578,23 +613,27 @@ export class CatalogController extends controller {
      * Create a Catalog Item
      * @param uploadAsStaff Upload the item as System?
      */
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
-    @Summary('Create a catalog item')
     @Post('/create')
+    @Summary('Create a catalog item')
+    @Use(csrf, YesAuth)
+    @Returns(200, {description: 'OK', type: model.catalog.CatalogCreationSuccessResponse})
+    @Returns(400, {description: 'InvalidOBJSpecified: OBJ required for category but not specified or invalid\nInvalidMTLSpecified: MTL required for category but not specified or invalid\nNoFileSpecified: No file was specified in the request\nInvalidCategory: Category is invalid or not allowed for current user\nInvalidPrice: Price is not valid\nInvalidCurrency: Currency is not valid\nConstraintPriceTooHigh: Price is too high\nInvalidCatalogName: Catalog Name is too large, too small, or otherwise invalid\nInvalidCatalogDescription: Description is too large or otherwise invalid\nInvalidPermissions: User does not have permission to upload to the groupId specified\n',type: model.Error})
     public async create(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @MultipartFile() uploadedFiles: Express.Multer.File[],
-        @BodyParams('uploadAsStaff', String) uploadAsStaff: string,
         @BodyParams('category', Number) category: number,
         @BodyParams('isForSale', Number) isForSale: number,
         @BodyParams('price', Number) price: number,
         @BodyParams('currency', Number) currency: number,
+        @Description('Must be between 3 and 32 characters')
         @BodyParams('name', String) name: string,
+        @Description('Must be between 0 and 256 characters')
         @BodyParams('description', String) description: string,
         @BodyParams('groupId') groupId?: string,
         @BodyParams('is_collectible') isCollectible?: string,
-        @BodyParams('stock') stock?: string
+        @BodyParams('stock') stock?: string,
+        @Description('This parameter is silently ignored if userInfo.staff >= 2 is false')
+        @BodyParams('uploadAsStaff', String) uploadAsStaff?: string,
     ): Promise<{ success: true; id: number }> {
         let staffMode = false;
         if (userInfo.staff >= 2 && uploadAsStaff === "true") {
@@ -719,7 +758,7 @@ export class CatalogController extends controller {
             // Begin Background Render
             try {
                 const json = await this.catalog.generateAvatarJsonFromCatalogIds(catalogId, [catalogId]);
-                let url;
+                let url: string;
                 if (category === model.catalog.category.Gear) {
                     url = await this.avatar.renderAvatar('item', json);
                 } else if (category === model.catalog.category.Hat) {
@@ -739,6 +778,51 @@ export class CatalogController extends controller {
         });
         // Return Success
         return { success: true, id: catalogId };
+    }
+
+    @Delete('/:catalogId/inventory')
+    @Summary('Delete a userInventoryItem owned by the authenticated user')
+    @Description('This will delete all userInventoryItems with the catalogId specified that belong to the authenticated user')
+    @Returns(400, {type: model.Error, description: 'InvalidCatalogId: The catalogId specified is invalid\n'})
+    @Returns(409, {type: model.Error, description: 'ItemCannotBeDeleted: This item cannot be deleted\n'})
+    @Use(csrf, YesAuth)
+    public async deleteCatalogItem(
+        @Locals('userInfo') userInfo: model.UserSession,
+        @PathParams('catalogId', Number) catalogId: number,
+    ) {
+        const forUpdate = [
+            'user_inventory'
+        ];
+        await this.transaction(async (trx) => {
+            let item: model.catalog.CatalogInfo;
+            try {
+                item = await trx.catalog.getInfo(catalogId, ['category','catalogId'], forUpdate);
+            }catch(e) {
+                throw new this.BadRequest('InvalidCatalogId');
+            }
+            let allowedCategories = [
+                model.catalog.category.TShirt,
+                model.catalog.category.Shirt,
+                model.catalog.category.Pants,
+            ];
+            let allowedForDeletion = false;
+            for (const cat of allowedCategories) {
+                if (item.category === cat) {
+                    allowedForDeletion = true;
+                }
+            }
+            if (!allowedForDeletion) {
+                throw new this.Conflict('ItemCannotBeDeleted');
+            }
+            // grab all items
+            let userItems = await trx.user.getUserInventoryByCatalogId(userInfo.userId, item.catalogId, forUpdate);
+            // delete
+            for (const userItem of userItems) {
+                await trx.catalog.deleteUserInventoryId(userItem.userInventoryId);
+            }
+            // OK
+        });
+        return {};
     }
 
     private temporarilyDisabledCatalogMethods = `

@@ -68,6 +68,7 @@ if (userData.attr("data-authenticated") === "true") {
                     // Hide Buy Button
                     $('.primaryPurchaseButton').attr("disabled", "disabled");
                     $('.primaryPurchaseButton').html("You already own this item.");
+                    $('#onClickDeleteItem').show();
                 }
             }
         })
@@ -434,3 +435,21 @@ function makeChart(data) {
 	});
 	chart.render();
 }
+
+$(document).on('click', '#onClickDeleteItem', function(e) {
+    questionYesNoHtml('<p>Are you sure you would like to <span style="font-weight:700;">permanently delete</span> this item from your inventory?</p> <p style="margin-top:1rem;font-size:0.75rem;text-align:center;">You will not be refunded for your purchase.</p>', () => {
+        loading();
+        request('/catalog/'+catalogid+'/inventory','DELETE', {}).then(d => {
+            success('This item has been deleted from your inventory.', () => {
+                window.location.reload();
+            })
+        })
+        .catch(e => {
+            warning(e.responseJSON.message);
+        })
+    });
+    $('button.swal2-confirm').attr('disabled','disabled');
+    setTimeout(() => {
+        $('button.swal2-confirm').removeAttr('disabled');
+    }, 1000);
+});

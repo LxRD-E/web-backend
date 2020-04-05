@@ -10,7 +10,7 @@ const _init_1 = require("./_init");
 const passwordEncryptionKey = config_1.default.encryptionKeys.password;
 const ipEncryptionKey = config_1.default.encryptionKeys.ip;
 class UsersDAL extends _init_1.default {
-    async getInfo(id, specificColumns) {
+    async getInfo(id, specificColumns, forUpdate) {
         if (!specificColumns) {
             specificColumns = ['userId', 'username', 'status', 'joinDate', 'blurb', 'lastOnline', 'banned', 'membership', 'tradingEnabled', 'staff', 'accountStatus'];
         }
@@ -85,7 +85,11 @@ class UsersDAL extends _init_1.default {
                 array[index] = '2fa_enabled as 2faEnabled';
             }
         });
-        const userInfoSelect = await this.knex('users').select(specificColumns).where({ 'users.id': id });
+        let query = this.knex('users').select(specificColumns).where({ 'users.id': id });
+        if (forUpdate) {
+            query = query.forUpdate(forUpdate);
+        }
+        const userInfoSelect = await query;
         const userInfoData = userInfoSelect[0];
         if (userInfoData === undefined) {
             throw false;
@@ -725,8 +729,12 @@ class UsersDAL extends _init_1.default {
         }
         return count[0]["Total"];
     }
-    async getUserInventoryByCatalogId(userId, catalogId) {
-        const inventory = await this.knex('user_inventory').where({ 'user_inventory.user_id': userId, 'user_inventory.catalog_id': catalogId }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial').orderBy('user_inventory.id', "desc");
+    async getUserInventoryByCatalogId(userId, catalogId, forUpdate) {
+        let query = this.knex('user_inventory').where({ 'user_inventory.user_id': userId, 'user_inventory.catalog_id': catalogId }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial').orderBy('user_inventory.id', "desc");
+        if (forUpdate) {
+            query = query.forUpdate(forUpdate);
+        }
+        const inventory = await query;
         return inventory;
     }
     async getItemByInventoryId(userInventoryId) {

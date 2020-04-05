@@ -12,7 +12,7 @@ request("/settings", "GET")
                 if (data.email.email === null) {
                     $('#email-status').html('( No Email Added )')
                 }else{
-                    $('#email-status').html('( Unverified; Check your inbox! )')
+                    $('#email-status').html('( Unverified; Check your inbox! Or, <a href="#" id="send-verification-email">Click Me</a> to resend a verification email. )')
                 }
             }else if (data.email.status === 1) {
                 $('#email-status').html('( Verified )')
@@ -178,7 +178,7 @@ request("/settings", "GET")
     });
 
 
-$(document).on('change', '#newEmailValue', function(e) {
+$(document).on('keypress', '#newEmailValue', function(e) {
     $('#updateEmailClick').removeAttr('disabled');
 });
 
@@ -195,7 +195,7 @@ $(document).on("click", "#updateEmailClick", function() {
         });
 });
 
-$(document).on('change', '#newForumSignatureValue', function() {
+$(document).on('keydown', '#newForumSignatureValue', function() {
     $('#updateForumSignatureClick').removeAttr('disabled');
 });
 $(document).on("click", "#updateForumSignatureClick", function() {
@@ -211,7 +211,7 @@ $(document).on("click", "#updateForumSignatureClick", function() {
         });
 });
 
-$(document).on('change', '#selectThemeOption', function() {
+$(document).on('keypress', '#selectThemeOption', function() {
     $('#updateThemeClick').removeAttr('disabled');
 });
 $(document).on("click", "#updateThemeClick", function() {
@@ -239,7 +239,7 @@ $(document).on("click", "#updateThemeClick", function() {
         });
 });
 
-$(document).on('change', '#selectTradingOption', function() {
+$(document).on('keypress', '#selectTradingOption', function() {
     $('#updateTradingClick').removeAttr('disabled');
 });
 $(document).on("click", "#updateTradingClick", function() {
@@ -257,7 +257,7 @@ $(document).on("click", "#updateTradingClick", function() {
 });
 
 
-$(document).on('change', '#newBlurbValue', function() {
+$(document).on('keypress', '#newBlurbValue', function() {
     $('#updateBlurbClick').removeAttr('disabled');
 });
 $(document).on("click", "#updateBlurbClick", function() {
@@ -274,7 +274,7 @@ $(document).on("click", "#updateBlurbClick", function() {
         });
 });
 
-$(document).on('change', '#newPasswordValue', function() {
+$(document).on('keypress', '#newPasswordValue', function() {
     $('#updatePasswordClick').removeAttr('disabled');
 });
 
@@ -300,7 +300,7 @@ $(document).on("click", "#updatePasswordClick", function() {
 });
 
 
-$(document).on('change', '#newUsernameValue', function(e) {
+$(document).on('keypress', '#newUsernameValue', function(e) {
     $('#updateUsernameClick').removeAttr('disabled');
 });
 
@@ -338,4 +338,16 @@ $(document).on('click', '#birthDateValue', function(e) {
         $(this).attr('data-visible','true');
         $(this).html($(this).attr('data-birthdate') + ' (click to hide)');
     }
+});
+
+$(document).on('click', '#send-verification-email', function(e) {
+    e.preventDefault();
+    loading();
+    request('/settings/email/verification/resend', 'POST', {}).then(d => {
+        success('A new verification email has been sent to you. Please check your mailbox spam folder if you can\'t find it.', () => {
+            window.location.reload();
+        })
+    }).catch(e => {
+        warning(e.responseJSON.message);
+    })
 });

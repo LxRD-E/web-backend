@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Render, Redirect, PathParams, QueryParams, UseBefore, Locals } from '@tsed/common';
+import { Controller, Get, Post, Render, Redirect, PathParams, QueryParams, UseBefore, Locals, Use } from '@tsed/common';
 import { Summary } from '@tsed/swagger';
 import controller from '../controller';
 import * as model from '../../models/models';
@@ -135,10 +135,32 @@ export class WWWUsersController extends controller {
         return ViewData;
     }
 
+    @Get('/users/:userId/games')
+    @Summary('Get user\'s games')
+    @Render('profile_games')
+    public async games(
+        @PathParams('userId', Number) filteredUserId: number
+    ) {
+        // Create View Data
+        let ViewData = new this.WWWTemplate({ title: '' });
+        // Grab user info
+        let userData = await this.user.getInfo(filteredUserId, ["userId", "username", 'accountStatus']);
+        // If deleted, throw 404
+        if (userData.accountStatus === model.user.accountStatus.deleted) {
+            throw new this.NotFound('InvalidUserId');
+        }
+
+        ViewData.title = userData.username + "'s Games";
+        ViewData.page = {};
+        ViewData.page.userId = userData.userId;
+        ViewData.page.username = userData.username;
+        return ViewData;
+    }
+
     @Get('/users/:userId/trade')
     @Summary('Open trade request with a user')
     @Render('trade')
-    @UseBefore(YesAuth)
+    @Use(YesAuth)
     public async trade(
         @Locals('userInfo') userInfo: model.UserSession,
         @PathParams('userId', Number) filteredUserId: number
@@ -149,10 +171,14 @@ export class WWWUsersController extends controller {
         // Create View Data
         let ViewData = new this.WWWTemplate({ title: 'Trade' });
         // Grab user info
-        let userData = await this.user.getInfo(filteredUserId, ["userId", "username", 'accountStatus']);
-        // If deleted, throw 404
+        let userData = await this.user.getInfo(filteredUserId, ["userId", "username", 'accountStatus', 'tradingEnabled']);
+        // If deleted, throw UserCannotBeTradedWith error
         if (userData.accountStatus === model.user.accountStatus.deleted) {
-            throw new this.NotFound('InvalidUserId');
+            throw new this.Conflict('UserCannotBeTradedWith');
+        }
+        // if doesnt trade, throw UserCannotBeTradedWith error
+        if (userData.tradingEnabled !== model.user.tradingEnabled.true) {
+            throw new this.Conflict('UserCannotBeTradedWith');
         }
 
         ViewData.title = 'Open Trade with '+userData.username;

@@ -1,3 +1,4 @@
+var currentUserId = $('#impersonator-info').attr('data-userid')
 var curDisplay = "";
 var partnerUserId = 1;
 var knownUsersArray = {};
@@ -27,7 +28,7 @@ $('#transactionsBodyDisplay').parent().parent().append('<button type="button" cl
 function loadTrades(type, offset) {
     $('#tradesGrid').empty();
     $('.loadMoreButtonClick').hide();
-    request("/economy/trades/"+type+"/?offset="+offset, "GET")
+    request("/staff/trades/"+type+"/?offset="+offset+"&userId="+currentUserId, "GET")
         .then(function(data) {
             if (data.length <= 0) {
                 $('#tradesGrid').append("<div class='col-sm-12'><p class='text-center' style='margin-top:1rem;'>There are no trades to display!</p></div>");
@@ -81,7 +82,7 @@ $(document).on('click', '.reviewTradeData', function() {
     var date = $(this).attr("data-date");
     var partnerUserId = parseInt($(this).attr("data-useridone"));
     // Get Data with Catalog Info
-    request("/economy/trades/"+id+"/items", "GET")
+    request("/staff/trades/"+id+"/items?userId="+currentUserId, "GET")
         .then(function(d) {
             var itemsToGiveHtml = ``;
             var itemsToRecieveHtml = ``;
@@ -183,7 +184,7 @@ $(document).on('click', '.reviewTradeData', function() {
                     }else if (d.dismiss && d.dismiss === "cancel") {
                         questionYesNo("Are you sure you want to cancel this trade?", function() {
                             loading();
-                            request("/economy/trades/"+id, "DELETE")
+                            request("/staff/trades/"+id+'?userId='+currentUserId, "DELETE")
                                 .then(function(d) {
                                     success("The trade has been deleted", function() {
                                         loadTrades(type, 0);
@@ -197,7 +198,7 @@ $(document).on('click', '.reviewTradeData', function() {
                     }else if (d.value) {
                         questionYesNo("Are you sure you want to accept this trade?", function() {
                             loading();
-                            request("/economy/trades/"+id, "POST")
+                            request("/staff/trades/"+id+'?userId='+currentUserId, "POST")
                                 .then(function(d) {
                                     success("The trade has been accepted! You can view your new item(s) in your inventory.", function() {
                                         loadTrades(type, 0);

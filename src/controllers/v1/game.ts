@@ -270,32 +270,53 @@ export default class GameController extends controller {
     @Get('/search')
     @Summary('Get all games')
     @Returns(200, { type: model.game.GameSearchResult })
+    @Returns(400, {type: model.Error, description: 'InvalidCreatorType: CreatorType is invalid\nInvalidSortBy: Sort by value is invalid\nInvalidGenre: Genre is invalid\n'})
     public async getGames(
+        @Description('Default: 0')
         @QueryParams('offset', Number) offset: number = 0,
+        @Description('Default: 25')
         @QueryParams('limit', Number) limit: number = 25,
+        @Description('Default: 1')
         @QueryParams('sortBy', Number) sortBy: number = 1,
+        @Description('Default: 1')
         @QueryParams('genre', Number) genre: number = 1,
+        @QueryParams('creatorId', Number) creatorId?: number,
+        @QueryParams('creatorType', Number) creatorType?: number,
     ) {
         if (!model.game.GameSortOptions[sortBy]) {
             throw new this.BadRequest('InvalidSortBy');
         }
-        let games: model.game.GameSearchResult;
+        if (!model.game.GameGenres[genre]) {
+            throw new this.BadRequest('InvalidGenre');
+        }
+        if (typeof creatorType === 'number' && !model.catalog.creatorType[creatorType]) {
+            throw new this.BadRequest('InvalidCreatorType');
+        }
         // Filter through sort options, seeing which one was chosen
-
-        // Featured sort (subject to change at any time)
+        let creatorConstraint: model.game.GameSearchCreatorConstraint|undefined = undefined;
+        if (typeof creatorType === 'number' && typeof creatorId === 'number') {
+            creatorConstraint = new model.game.GameSearchCreatorConstraint;
+            creatorConstraint.creatorId = creatorId;
+            creatorConstraint.creatorType = creatorType;
+        }
+        let sortCol = '';
+        let sortMode: 'asc'|'desc' = 'desc';
         if (sortBy === model.game.GameSortOptions.Featured) {
+            // Featured sort (subject to change at any time)
             // TODO: revise this to something more specific
-            games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
-            // Top players sort (pretty easy; sorted by most to least players)
+            sortCol = 'player_count';
         } else if (sortBy === model.game.GameSortOptions['Top Players']) {
-            games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
-            // Sort by most recently updated
+            // Top players sort (pretty easy; sorted by most to least players)
+            sortCol = 'player_count';
         } else if (sortBy === model.game.GameSortOptions['Recently Updated']) {
-            games = await this.game.getGames(offset, limit, 'desc', 'updated_at', genre);
-            // No sort specified, so error
+            // Sort by most recently updated
+            sortCol = 'updated_at';
         } else {
+            // No sort specified (or invalid), so error
             throw new this.BadRequest('InvalidSortBy');
         }
+        // Grab results
+        let games = await this.game.getGames(offset, limit, sortMode, sortCol, genre, creatorConstraint);
         // Return results
         return games;
     }

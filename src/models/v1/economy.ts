@@ -1,4 +1,4 @@
-import { Required, PropertyType } from "@tsed/common";
+import { Required, PropertyType, AllowTypes } from "@tsed/common";
 import { Description } from "@tsed/swagger";
 
 export const RESELL_ITEM_FEE = 30;
@@ -107,6 +107,12 @@ export class TradeItems {
     userInventoryId: number;
     @Required()
     catalogId: number;
+    @Required()
+    @AllowTypes('number','null')
+    serial: number|null;
+    @Required()
+    @Description('Average sales price of the item')
+    averageSalesPrice: number;
 }
 
 /**
@@ -234,5 +240,5 @@ export class TradeItemsResponse {
     'requested': TradeItems[];
     @Required()
     @PropertyType(TradeItems)
-    'requestee': TradeItems[];
+    'offer': TradeItems[];
 }

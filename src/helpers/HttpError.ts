@@ -156,6 +156,12 @@ export enum HttpErrors {
     InvalidGroupStatus,
     InvalidReportReason,
     SearchQueryTooLarge,
+    NoEmailAttached,
+    EmailAlreadyVerified,
+    InvalidCreatorType,
+    UserCannotBeTradedWith,
+    InvalidCommentId,
+    ItemCannotBeDeleted,
 };
 import os = require('os');
 import {lbOrigin} from '../middleware/Any';

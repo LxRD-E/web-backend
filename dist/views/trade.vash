@@ -116,7 +116,12 @@
                     </div>
                 </div>
             </div> 
-            <div class="col-12" style="margin-top:1rem;">
+        </div>
+        <div class="row">
+            <div class="col-12 col-md-8">
+            
+            </div>
+            <div class="col-12 col-md-4" style="margin-top:1rem;">
                 <button class="btn btn-success" id="send-trade" style="width:100%;" disabled="disabled">SEND</button>
             </div>
         </div>

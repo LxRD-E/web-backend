@@ -118,7 +118,7 @@ class SettingsDAL extends _init {
      * Get a user's email info
      * @param userId 
      */
-    public async getUserEmail(userId: number): Promise<model.settings.EmailModel> {
+    public async getUserEmail(userId: number): Promise<model.settings.EmailModel|undefined> {
         const info = await this.knex("user_emails").select(
             "userid as userId",
             "verification_code as verificationCode",
@@ -129,7 +129,7 @@ class SettingsDAL extends _init {
         if (info[0] && info[0]["email"]) {
             info[0]["email"] = await decrypt(info[0]["email"], emailEncryptionKey);
         }
-        return info[0] as model.settings.EmailModel;
+        return info[0];
     }
 
     /**

@@ -230,11 +230,23 @@ __decorate([
 __decorate([
     common_1.Required(),
     __metadata("design:type", Number)
+], GameSearchResultEntry.prototype, "visitCount", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GameSearchResultEntry.prototype, "genre", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
 ], GameSearchResultEntry.prototype, "creatorId", void 0);
 __decorate([
     common_1.Required(),
     __metadata("design:type", Number)
 ], GameSearchResultEntry.prototype, "creatorType", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], GameSearchResultEntry.prototype, "createdAt", void 0);
 __decorate([
     common_1.Required(),
     __metadata("design:type", String)
@@ -290,6 +302,9 @@ __decorate([
     __metadata("design:type", Number)
 ], GameServer.prototype, "isClosed", void 0);
 exports.GameServer = GameServer;
+class GameSearchCreatorConstraint {
+}
+exports.GameSearchCreatorConstraint = GameSearchCreatorConstraint;
 exports.SIMPLE_CRYPTO_JS = `
 
 (function webpackUniversalModuleDefinition(root, factory) {

@@ -18,7 +18,7 @@ if (process.env.NODE_ENV !== 'test') {
     pool: {
         propagateCreateError: false,
         max: 50,
-        min: 1,
+        min: 3,
     }
     }
     const knexSystem = knexLibrary(mysqlConfig as any);

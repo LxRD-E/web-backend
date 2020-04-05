@@ -1366,52 +1366,58 @@ export class GroupsController extends controller {
         if (currency !== 1 && currency !== 2) {
             throw new this.BadRequest('InvalidCurrency');
         }
-        // Confirm group is valid
-        let groupInfo;
-        try {
-            groupInfo = await this.group.getInfo(groupId);
-        } catch (e) {
-            throw new this.BadRequest('InvalidGroupId');
-        }
-        // Confirm requester is owner
-        if (groupInfo.groupOwnerUserId !== userInfo.userId) {
-            throw new this.BadRequest('InvalidGroupPermissions');
-        }
-        // Begin
-        try {
-            const payoutUserInfo = await this.user.getInfo(userId, ['banned']);
-            if (payoutUserInfo.banned) {
-                throw false;
+        await this.transaction(async (trx) => {
+            const forUpdate = [
+                'groups',
+                'users',
+            ];
+            // Confirm group is valid
+            let groupInfo: model.group.groupDetails;
+            try {
+                groupInfo = await trx.group.getInfo(groupId, forUpdate);
+            } catch (e) {
+                throw new this.BadRequest('InvalidGroupId');
             }
-        } catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
-        const userRole = await this.group.getUserRole(groupId, userId);
-        if (userRole.rank === 0) {
-            throw new this.BadRequest('InvalidGroupPermissions');
-        }
-        // Grab Funds
-        const groupFunds = await this.group.getGroupFunds(groupId);
-        if (currency === 1) {
-            if (groupFunds.Primary < amount) {
-                throw new this.BadRequest('NotEnoughCurrency');
+            // Confirm requester is owner
+            if (groupInfo.groupOwnerUserId !== userInfo.userId) {
+                throw new this.BadRequest('InvalidGroupPermissions');
             }
-        } else if (currency === 2) {
-            if (groupFunds.Secondary < amount) {
-                throw new this.BadRequest('NotEnoughCurrency');
+            // Begin
+            try {
+                const payoutUserInfo = await trx.user.getInfo(userId, ['banned'], forUpdate);
+                if (payoutUserInfo.banned) {
+                    throw false;
+                }
+            } catch (e) {
+                throw new this.BadRequest('InvalidUserId');
             }
-        }
-        // Subtract from group
-        await this.economy.subtractFromGroupBalance(groupId, amount, currency);
-        // Give to User
-        await this.economy.addToUserBalance(userId, amount, currency);
-        // Create Group Transaciton
-        await this.economy.createTransaction(groupId, userId, -amount, currency, model.economy.transactionType.SpendGroupFunds, "Group Funds Payout", model.catalog.creatorType.User, model.catalog.creatorType.Group);
-        // Create User Transaction
-        await this.economy.createTransaction(userId, groupId, amount, currency, model.economy.transactionType.SpendGroupFunds, "Group Funds Payout", model.catalog.creatorType.Group, model.catalog.creatorType.User);
-        // Return success
-        return ({
-            'success': true,
+            const userRole = await trx.group.getUserRole(groupId, userId, forUpdate);
+            if (userRole.rank === 0) {
+                throw new this.BadRequest('InvalidGroupPermissions');
+            }
+            // Grab Funds
+            const groupFunds = await trx.group.getGroupFunds(groupId, forUpdate);
+            if (currency === 1) {
+                if (groupFunds.Primary < amount) {
+                    throw new this.BadRequest('NotEnoughCurrency');
+                }
+            } else if (currency === 2) {
+                if (groupFunds.Secondary < amount) {
+                    throw new this.BadRequest('NotEnoughCurrency');
+                }
+            }
+            // Subtract from group
+            await trx.economy.subtractFromGroupBalance(groupId, amount, currency);
+            // Give to User
+            await trx.economy.addToUserBalance(userId, amount, currency);
+            // Create Group Transaciton
+            await trx.economy.createTransaction(groupId, userId, -amount, currency, model.economy.transactionType.SpendGroupFunds, "Group Funds Payout", model.catalog.creatorType.User, model.catalog.creatorType.Group);
+            // Create User Transaction
+            await trx.economy.createTransaction(userId, groupId, amount, currency, model.economy.transactionType.SpendGroupFunds, "Group Funds Payout", model.catalog.creatorType.Group, model.catalog.creatorType.User);
         });
+        // Return success
+        return {
+            'success': true,
+        };
     }
 }

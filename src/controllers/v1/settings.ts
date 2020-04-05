@@ -9,10 +9,11 @@ import * as model from '../../models/models';
 // Autoload
 import controller from '../controller';
 // TSED
-import { Locals, Required, BodyParams, Get, UseBefore, Patch, OverrideMiddleware, Post, UseBeforeEach, Session, Controller } from '@tsed/common';
+import { Locals, Required, BodyParams, Get, UseBefore, Patch, OverrideMiddleware, Post, UseBeforeEach, Session, Controller, Use } from '@tsed/common';
 import { YesAuth } from '../../middleware/Auth';
 import { Summary, Returns } from '@tsed/swagger';
 import { csrf } from '../../dal/auth';
+import { RateLimiterMiddleware } from '../../middleware/RateLimit';
 /**
  * Settings Controller
  */
@@ -76,6 +77,46 @@ export default class SettingsController extends controller {
         return settingsObject;
     }
 
+    @Post('/email/verification/resend')
+    @Summary('Request a verification email resend')
+    @Returns(409, {type: model.Error, description: 'FloodCheck: Try again later\nNoEmailAttached: There is no email attached to this account\nEmailAlreadyVerified: The email attached to this account is already verified\n'})
+    @Use(csrf, YesAuth)
+    public async requestVerificationEmailResend(
+        @Locals('userInfo') UserInfo: model.user.UserInfo,
+    ) {
+        let userEmail = await this.settings.getUserEmail(UserInfo.userId);
+        if (!userEmail) {
+            throw new this.Conflict('NoEmailAttached');
+        }
+        if (userEmail.status !== model.user.emailVerificationType.false) {
+            throw new this.Conflict('EmailAlreadyVerified');
+        }
+        if (!moment().isSameOrAfter(moment(userEmail.date).add(1.15, "hours"))) {
+            throw new this.Conflict('FloodCheck');
+        }
+        // Token Generator
+        let emailToken = await new Promise<string>((resolve, reject): void => {
+            crypto.randomBytes(128, function (err, buffer) {
+                if (err) {
+                    reject();
+                } else {
+                    resolve(buffer.toString('hex'));
+                }
+            });
+        });
+        let newEmail = await this.settings.insertNewEmail(UserInfo.userId, userEmail.email, emailToken);
+        // Send Verify Request
+        try {
+            // We don't await this since it can delay requests by a factor of many seconds, so it's better to just send of the request, tell the user it worked, then hope the email was valid.
+            this.settings.sendEmail(userEmail.email, "Email Verification", "Thank you for adding a new email to your account. Visit this link to verify it: https://hindigamer.club/email/verify?code=" + emailToken, "<h5>Hello,</h5><p>Thank you for adding a new email to your account. Please click <a href=\"https://hindigamer.club/email/verify?code=" + emailToken + "\">here</a> to verify it. If you did not request this, you can ignore this email.<br>Thanks!</p>").then().catch(e => {
+                console.error('Error sending password verification email', e);
+            });
+        } catch (e) {
+            console.error('email verification caught exception',e);
+        }
+        // Return Success
+        return { success: true };
+    }
     /**
      * Update the Authenticated User's Email
      * @param newEmail 
@@ -144,7 +185,7 @@ export default class SettingsController extends controller {
         let latestEmail;
         try {
             latestEmail = await this.settings.getUserEmail(userInfo.userId);
-            if (moment().isSameOrBefore(moment(latestEmail.date).add(3, "hours"))) {
+            if (moment().isSameOrBefore(moment(latestEmail.date).add(1, "hours"))) {
                 if (crypto.timingSafeEqual(Buffer.from(code), Buffer.from(latestEmail.verificationCode))) {
                     await this.settings.markEmailAsVerified(userInfo.userId);
                     return { success: true };

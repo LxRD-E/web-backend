@@ -325,7 +325,7 @@ describe('/api/v1/economy/{catalogId}/buy', () => {
         assert.strictEqual(purchaseAgainCorrectInfo.data.error.code, 'ItemNoLongerForSale', 'error code for forth purchase attempt should be ItemNoLongerForSale');
         // good
     }).timeout(5000);
-    it('Should attempt to purchase a collectible catalog item 10 times at once, but only have one attempt succeed due to race condition preventions', async () => {
+    it('Should attempt to purchase a still for-sale collectible catalog item 10 times at once, but only have one attempt succeed due to race condition preventions', async () => {
         const CATALOG_ID = 1058;
         const EXPECTED_PRICE = 10;
         const EXPECTED_CURRENCY = 2;
@@ -412,8 +412,8 @@ describe('/api/v1/economy/{catalogId}/buy', () => {
                 resp = item;
                 twoHundredResponseCount++;
             }else{
-                assert.strictEqual(item.status, 409);
-                assert.strictEqual(item.data.error.code, 'Cooldown');
+                assert.strictEqual(item.status, 409, 'error status should be 409');
+                assert.strictEqual(item.data.error.code, 'AlreadyOwns', 'error code should inform user that they do not have enough currency (NotEnoughCurrency)');
             }
         }
         assert.strictEqual(twoHundredResponseCount, 1, '200 response count should be exactly 1');
@@ -450,7 +450,7 @@ describe('/api/v1/economy/{catalogId}/buy', () => {
         assert.strictEqual(inv.data.items.length, 1, 'collectible inventory should only contain 1 item');
         // good
     }).timeout(5000);
-    it('Should attempt to purchase a collectible catalog item 3 times at once, but only have one attempt succeed due to race condition preventions', async () => {
+    it('Should attempt to purchase a still for-sale collectible catalog item 3 times at once, but only have one attempt succeed due to race condition preventions', async () => {
         const CATALOG_ID = 1058;
         const EXPECTED_PRICE = 10;
         const EXPECTED_CURRENCY = 2;
@@ -496,7 +496,7 @@ describe('/api/v1/economy/{catalogId}/buy', () => {
                 twoHundredResponseCount++;
             }else{
                 assert.strictEqual(item.status, 409, 'response code should be 409 if it is not 200');
-                assert.strictEqual(item.data.error.code, 'Cooldown', 'error code should be Cooldown');
+                assert.strictEqual(item.data.error.code, 'AlreadyOwns', 'error code should inform user they already own the item');
             }
         }
         assert.strictEqual(twoHundredResponseCount, 1, '200 response count should be exactly 1');
@@ -571,4 +571,210 @@ describe('/api/v1/economy/{catalogId}/buy', () => {
         assert.strictEqual(inv.data.items.length, 0, 'inventory should contain 0 items');
         // good
     }).timeout(5000);
+});
+
+describe('POST /api/v1/economy/trades/{tradeId}', () => {
+    it('Should allow user1 to buy a collectible item, user2 to buy a collectible item, user1 to send a trade to user2, and user2 should be able to accept the trade and own item', async () => {
+        let userOne = await account({
+            verifiedEmail: true,
+        });
+        let userTwo = await account({
+            verifiedEmail: true,
+        });
+
+        const CATALOG_ID = 1058;
+        const EXPECTED_PRICE = 10;
+        const EXPECTED_CURRENCY = 2;
+        const EXPECTED_SELLERID = 1;
+
+        // buy user1's item
+        let buyOne = await userOne.post('/economy/'+CATALOG_ID+'/buy', {
+            userInventoryId: 0,
+            expectedSellerId: EXPECTED_SELLERID,
+            expectedPrice: EXPECTED_PRICE,
+            expectedCurrency: EXPECTED_CURRENCY,
+        });
+        assert.strictEqual(buyOne.status, 200);
+        // buy user2's item
+        let buyTwo = await userTwo.post('/economy/'+CATALOG_ID+'/buy', {
+            userInventoryId: 0,
+            expectedSellerId: EXPECTED_SELLERID,
+            expectedPrice: EXPECTED_PRICE,
+            expectedCurrency: EXPECTED_CURRENCY,
+        });
+        assert.strictEqual(buyTwo.status, 200);
+
+        // grab user1 info
+        let userOneInfo = await userOne.get('/auth/current-user');
+        let userOneId = userOneInfo.data.userId;
+        // grab inventory of user1
+        let userOneInv = await userOne.get('/user/'+userOneId+'/inventory/collectibles?sort=desc&limit=100');
+        assert.strictEqual(userOneInv.status, 200);
+        // grab userInventoryId of item
+        let offerUserInventoryId = userOneInv.data.items[0]['userInventoryId'];
+        // do same for user2
+        let userTwoInfo = await userTwo.get('/auth/current-user');
+        let userTwoId = userTwoInfo.data.userId;
+        let userTwoInv = await userTwo.get('/user/'+userTwoId+'/inventory/collectibles?sort=desc&limit=100');
+        assert.strictEqual(userTwoInv.status, 200);
+        let requestUserInventoryId = userTwoInv.data.items[0]['userInventoryId'];
+
+        // create trade
+        let create = await userOne.put('/user/'+userTwoId+'/trade/request', {
+            offerItems: [
+                offerUserInventoryId,
+            ],
+            requestedItems: [
+                requestUserInventoryId,
+            ],
+            // no currency in trade ...
+        });
+        assert.strictEqual(create.status, 200);
+
+        // user two grab trades
+        let trades = await userTwo.get('/economy/trades/inbound');
+        assert.strictEqual(trades.status, 200);
+        let firstTradeId = trades.data[0]['tradeId'];
+        // accept trade
+        let accept = await userTwo.post('/economy/trades/'+firstTradeId, {});
+        assert.strictEqual(accept.status, 200);
+
+        let userOneNewInvenory = await userOne.get('/user/'+userOneId+'/inventory/collectibles?sort=desc&limit=100');
+        assert.strictEqual(userOneNewInvenory.status, 200);
+        assert.strictEqual(userOneNewInvenory.data.items[0]['userInventoryId'], requestUserInventoryId);
+
+        let userTwoNewInventory = await userTwo.get('/user/'+userTwoId+'/inventory/collectibles?sort=desc&limit=100');
+        assert.strictEqual(userTwoNewInventory.status, 200);
+        assert.strictEqual(userTwoNewInventory.data.items[0]['userInventoryId'], offerUserInventoryId);
+        // pass
+    });
+    it('Should allow user1 to buy a collectible item, user2 to buy a collectible item, user1 to send 4 trades to user2, and then user2 accept all 4 at once but only have one go through due to race condition prevention', async () => {
+        let userOne = await account({
+            verifiedEmail: true,
+        });
+        let userTwo = await account({
+            verifiedEmail: true,
+        });
+
+        const CATALOG_ID = 1058;
+        const EXPECTED_PRICE = 10;
+        const EXPECTED_CURRENCY = 2;
+        const EXPECTED_SELLERID = 1;
+
+        // buy user1's item
+        let buyOne = await userOne.post('/economy/'+CATALOG_ID+'/buy', {
+            userInventoryId: 0,
+            expectedSellerId: EXPECTED_SELLERID,
+            expectedPrice: EXPECTED_PRICE,
+            expectedCurrency: EXPECTED_CURRENCY,
+        });
+        assert.strictEqual(buyOne.status, 200);
+        // buy user2's item
+        let buyTwo = await userTwo.post('/economy/'+CATALOG_ID+'/buy', {
+            userInventoryId: 0,
+            expectedSellerId: EXPECTED_SELLERID,
+            expectedPrice: EXPECTED_PRICE,
+            expectedCurrency: EXPECTED_CURRENCY,
+        });
+        assert.strictEqual(buyTwo.status, 200);
+
+        // grab user1 info
+        let userOneInfo = await userOne.get('/auth/current-user');
+        let userOneId = userOneInfo.data.userId;
+        // grab inventory of user1
+        let userOneInv = await userOne.get('/user/'+userOneId+'/inventory/collectibles?sort=desc&limit=100');
+        assert.strictEqual(userOneInv.status, 200);
+        // grab userInventoryId of item
+        let offerUserInventoryId = userOneInv.data.items[0]['userInventoryId'];
+        // do same for user2
+        let userTwoInfo = await userTwo.get('/auth/current-user');
+        let userTwoId = userTwoInfo.data.userId;
+        let userTwoInv = await userTwo.get('/user/'+userTwoId+'/inventory/collectibles?sort=desc&limit=100');
+        assert.strictEqual(userTwoInv.status, 200);
+        let requestUserInventoryId = userTwoInv.data.items[0]['userInventoryId'];
+
+        // create trades
+        let create = await userOne.put('/user/'+userTwoId+'/trade/request', {
+            offerItems: [
+                offerUserInventoryId,
+            ],
+            requestedItems: [
+                requestUserInventoryId,
+            ],
+            // no currency in trade ...
+        });
+        assert.strictEqual(create.status, 200);
+        // create trades
+        let createTwo = await userOne.put('/user/'+userTwoId+'/trade/request', {
+            offerItems: [
+                offerUserInventoryId,
+            ],
+            requestedItems: [
+                requestUserInventoryId,
+            ],
+            // no currency in trade ...
+        });
+        assert.strictEqual(createTwo.status, 200);
+        // create trades
+        let createThree = await userOne.put('/user/'+userTwoId+'/trade/request', {
+            offerItems: [
+                offerUserInventoryId,
+            ],
+            requestedItems: [
+                requestUserInventoryId,
+            ],
+            // no currency in trade ...
+        });
+        assert.strictEqual(createThree.status, 200);
+        // create trades
+        let createFour = await userOne.put('/user/'+userTwoId+'/trade/request', {
+            offerItems: [
+                offerUserInventoryId,
+            ],
+            requestedItems: [
+                requestUserInventoryId,
+            ],
+            // no currency in trade ...
+        });
+        assert.strictEqual(createFour.status, 200);
+
+        // user two grab trades
+        let trades = await userTwo.get('/economy/trades/inbound');
+        assert.strictEqual(trades.status, 200);
+        let promises = [];
+        for (const item of trades.data) {
+            promises.push((async () => {
+                /**
+                 * @type {any}
+                 */
+                let data = await userTwo.post('/economy/trades/'+item.tradeId, {});
+                data.tradeId = item.tradeId;
+                return data;
+            })())
+        }
+        let results = await Promise.all(promises);
+        let okRespones = 0;
+        let acceptedTradeId = 0;
+        for (const item of results) {
+            if (item.status === 200) {
+                acceptedTradeId = item.tradeId;
+                okRespones++;
+            }else{
+                assert.strictEqual(item.status, 409, '409 error with code OneOrMoreItemsNotAvailable should be returned');
+                assert.strictEqual(item.data.error.code, 'OneOrMoreItemsNotAvailable', 'error code: OneOrMoreItemsNotAvailable should be returned');
+            }
+        }
+        assert.strictEqual(okRespones, 1, 'only one trade should go through');
+
+        let userOneNewInvenory = await userOne.get('/user/'+userOneId+'/inventory/collectibles?sort=desc&limit=100');
+        assert.strictEqual(userOneNewInvenory.status, 200);
+        assert.strictEqual(userOneNewInvenory.data.items[0]['userInventoryId'], requestUserInventoryId);
+        assert.strictEqual(userOneNewInvenory.data.items.length, 1, 'user one should have one item');
+
+        let userTwoNewInventory = await userTwo.get('/user/'+userTwoId+'/inventory/collectibles?sort=desc&limit=100');
+        assert.strictEqual(userTwoNewInventory.status, 200);
+        assert.strictEqual(userTwoNewInventory.data.items[0]['userInventoryId'], offerUserInventoryId);
+        assert.strictEqual(userTwoNewInventory.data.items.length, 1, 'user two should have one item');
+        // pass
+    });
 });

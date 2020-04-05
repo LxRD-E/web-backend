@@ -5,11 +5,17 @@ import redis from '../helpers/ioredis';
 import ioredis = require('ioredis');
 import moment = require('moment');
 
+import { NotFound, BadRequest, Conflict, Unauthorized } from 'ts-httpexceptions';
 /**
  * **Database Access Layer**
  * Provides access to knex and redis for DAL services.
  */
 export default class DAL {
+    // HTTP Exceptions
+    public NotFound = NotFound;
+    public BadRequest = BadRequest;
+    public Conflict = Conflict;
+    public Unauthorized = Unauthorized;
     public knex: Knex;
     public redis: ioredis.Redis;
     public moment: (inp?: moment.MomentInput, format?: moment.MomentFormatSpecification, strict?: boolean) => moment.Moment;

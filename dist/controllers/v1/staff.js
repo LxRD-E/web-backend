@@ -662,6 +662,45 @@ let StaffController = class StaffController extends controller_1.default {
             success: true,
         };
     }
+    async getTradeItems(userInfo, numericTradeId, userId) {
+        if (userInfo.staff >= 2 === false) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        let tradeInfo;
+        try {
+            tradeInfo = await this.economy.getTradeById(numericTradeId);
+        }
+        catch (e) {
+            throw new this.BadRequest('InvalidTradeId');
+        }
+        if (tradeInfo.userIdOne === userId) {
+            const requestedTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requested, numericTradeId);
+            const requesteeTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requester, numericTradeId);
+            return { 'requested': requestedTradeItems, 'offer': requesteeTradeItems };
+        }
+        else if (tradeInfo.userIdTwo === userId) {
+            const requestedTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requester, numericTradeId);
+            const requesteeTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requested, numericTradeId);
+            return { 'requested': requestedTradeItems, 'offer': requesteeTradeItems };
+        }
+        else {
+            throw new this.BadRequest('InvalidTradeId');
+        }
+    }
+    async getTrades(userInfo, tradeType, userId, offset = 0) {
+        if (userInfo.staff >= 2 === false) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        let tradeValue;
+        if (tradeType !== 'inbound' && tradeType !== 'outbound' && tradeType !== 'completed' && tradeType !== 'inactive') {
+            throw new this.BadRequest('InvalidTradeType');
+        }
+        else {
+            tradeValue = tradeType;
+        }
+        const trades = await this.economy.getTrades(userId, tradeValue, offset);
+        return trades;
+    }
 };
 __decorate([
     common_1.Get('/user/:userId/transactions'),
@@ -1119,6 +1158,38 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "deleteUserStatusId", null);
+__decorate([
+    common_1.Get('/trades/:tradeId/items'),
+    swagger_1.Summary('Get the items involved in a specific tradeId'),
+    swagger_1.Description('Requestee is authenticated user, requested is the partner involved with the trade'),
+    swagger_1.Returns(200, { type: model.economy.TradeItemsResponse }),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidTradeId: TradeId is invalid or you do not have permission to view it\n' }),
+    common_1.UseBeforeEach(Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('tradeId', Number)),
+    __param(2, common_1.Required()),
+    __param(2, swagger_1.Description('userId to impersonate')),
+    __param(2, common_1.QueryParams('userId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "getTradeItems", null);
+__decorate([
+    common_1.Get('/trades/:type'),
+    swagger_1.Summary('Get user trades'),
+    common_1.UseBefore(Auth_1.YesAuth),
+    swagger_1.ReturnsArray(200, { type: model.economy.TradeInfo }),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidTradeType: TradeType must be one of: inbound,outbound,completed,inactive\n' }),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('type', String)),
+    __param(2, common_1.Required()),
+    __param(2, swagger_1.Description('userId to impersonate')),
+    __param(2, common_1.QueryParams('userId', Number)),
+    __param(3, common_1.QueryParams('offset', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, String, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "getTrades", null);
 StaffController = __decorate([
     common_1.Controller('/staff'),
     __metadata("design:paramtypes", [])

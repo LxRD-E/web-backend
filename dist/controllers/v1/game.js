@@ -239,23 +239,37 @@ const script = jsObfuse.obfuscate(`
     `, scriptOptions);
 let code = COPYRIGHT_DISCLAIMER + '\n' + script.getObfuscatedCode();
 let GameController = class GameController extends controller_1.default {
-    async getGames(offset = 0, limit = 25, sortBy = 1, genre = 1) {
+    async getGames(offset = 0, limit = 25, sortBy = 1, genre = 1, creatorId, creatorType) {
         if (!model.game.GameSortOptions[sortBy]) {
             throw new this.BadRequest('InvalidSortBy');
         }
-        let games;
+        if (!model.game.GameGenres[genre]) {
+            throw new this.BadRequest('InvalidGenre');
+        }
+        if (typeof creatorType === 'number' && !model.catalog.creatorType[creatorType]) {
+            throw new this.BadRequest('InvalidCreatorType');
+        }
+        let creatorConstraint = undefined;
+        if (typeof creatorType === 'number' && typeof creatorId === 'number') {
+            creatorConstraint = new model.game.GameSearchCreatorConstraint;
+            creatorConstraint.creatorId = creatorId;
+            creatorConstraint.creatorType = creatorType;
+        }
+        let sortCol = '';
+        let sortMode = 'desc';
         if (sortBy === model.game.GameSortOptions.Featured) {
-            games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
+            sortCol = 'player_count';
         }
         else if (sortBy === model.game.GameSortOptions['Top Players']) {
-            games = await this.game.getGames(offset, limit, 'desc', 'player_count', genre);
+            sortCol = 'player_count';
         }
         else if (sortBy === model.game.GameSortOptions['Recently Updated']) {
-            games = await this.game.getGames(offset, limit, 'desc', 'updated_at', genre);
+            sortCol = 'updated_at';
         }
         else {
             throw new this.BadRequest('InvalidSortBy');
         }
+        let games = await this.game.getGames(offset, limit, sortMode, sortCol, genre, creatorConstraint);
         return games;
     }
     async getGameThumbnail(gameId) {
@@ -485,12 +499,19 @@ __decorate([
     common_1.Get('/search'),
     swagger_1.Summary('Get all games'),
     swagger_1.Returns(200, { type: model.game.GameSearchResult }),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidCreatorType: CreatorType is invalid\nInvalidSortBy: Sort by value is invalid\nInvalidGenre: Genre is invalid\n' }),
+    __param(0, swagger_1.Description('Default: 0')),
     __param(0, common_1.QueryParams('offset', Number)),
+    __param(1, swagger_1.Description('Default: 25')),
     __param(1, common_1.QueryParams('limit', Number)),
+    __param(2, swagger_1.Description('Default: 1')),
     __param(2, common_1.QueryParams('sortBy', Number)),
+    __param(3, swagger_1.Description('Default: 1')),
     __param(3, common_1.QueryParams('genre', Number)),
+    __param(4, common_1.QueryParams('creatorId', Number)),
+    __param(5, common_1.QueryParams('creatorType', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number, Number, Number]),
+    __metadata("design:paramtypes", [Number, Number, Number, Number, Number, Number]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "getGames", null);
 __decorate([

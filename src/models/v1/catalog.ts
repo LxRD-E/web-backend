@@ -3,6 +3,7 @@
  */
 import {currencyType} from './economy';
 import { PropertyType, Required } from '@tsed/common';
+import { Example, Description } from '@tsed/swagger';
 /**
  * Enums
  */
@@ -133,6 +134,24 @@ export interface FilesInterface {
     jpg: boolean|Buffer;
     obj: boolean|Buffer;
     mtl: boolean|Buffer;
+}
+export class CatalogCreationSuccessResponse {
+    @Required()
+    @Example(true)
+    success: true;
+    @Required()
+    @Description('the id of the catalogItem created')
+    id: number;
+}
+export class CatalogItemComment {
+    @Required()
+    userId: number;
+    @Required()
+    date: string;
+    @Required()
+    comment: string;
+    @Required()
+    isDeleted: 0|1;
 }
 export class SearchResults {
     @Required()

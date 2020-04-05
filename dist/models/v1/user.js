@@ -708,4 +708,31 @@ __decorate([
     __metadata("design:type", Number)
 ], GenericCount.prototype, "total", void 0);
 exports.GenericCount = GenericCount;
+class CreateTradeRequest {
+}
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('An array of userInventoryIds that the authenticated user wishes to offer'),
+    common_1.PropertyType(Number),
+    common_1.MinItems(1),
+    common_1.MaxItems(4),
+    __metadata("design:type", Array)
+], CreateTradeRequest.prototype, "offerItems", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('An array of userInventoryIds that the userId wants in return for their offer'),
+    common_1.PropertyType(Number),
+    common_1.MinItems(1),
+    common_1.MaxItems(4),
+    __metadata("design:type", Array)
+], CreateTradeRequest.prototype, "requestedItems", void 0);
+__decorate([
+    swagger_1.Description('Primary currency in addition to the items that the user wishes to offer'),
+    __metadata("design:type", Number)
+], CreateTradeRequest.prototype, "offerPrimary", void 0);
+__decorate([
+    swagger_1.Description('Primary currency the authenticated user wishes to obtain'),
+    __metadata("design:type", Number)
+], CreateTradeRequest.prototype, "requestPrimary", void 0);
+exports.CreateTradeRequest = CreateTradeRequest;
 

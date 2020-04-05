@@ -279,6 +279,9 @@ const errorTransform = (errCode) => {
         case 'Cooldown': {
             return 'You cannot perform this action right now. Try again later.';
         }
+        case 'ItemCannotBeDeleted': {
+            return 'This item cannot be deleted.'
+        }
     }
     return 'An unknown error has ocurred. Please try again later, or contact support.';
 }

@@ -818,47 +818,53 @@ let GroupsController = class GroupsController extends controller_1.default {
         if (currency !== 1 && currency !== 2) {
             throw new this.BadRequest('InvalidCurrency');
         }
-        let groupInfo;
-        try {
-            groupInfo = await this.group.getInfo(groupId);
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidGroupId');
-        }
-        if (groupInfo.groupOwnerUserId !== userInfo.userId) {
-            throw new this.BadRequest('InvalidGroupPermissions');
-        }
-        try {
-            const payoutUserInfo = await this.user.getInfo(userId, ['banned']);
-            if (payoutUserInfo.banned) {
-                throw false;
+        await this.transaction(async (trx) => {
+            const forUpdate = [
+                'groups',
+                'users',
+            ];
+            let groupInfo;
+            try {
+                groupInfo = await trx.group.getInfo(groupId, forUpdate);
             }
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
-        const userRole = await this.group.getUserRole(groupId, userId);
-        if (userRole.rank === 0) {
-            throw new this.BadRequest('InvalidGroupPermissions');
-        }
-        const groupFunds = await this.group.getGroupFunds(groupId);
-        if (currency === 1) {
-            if (groupFunds.Primary < amount) {
-                throw new this.BadRequest('NotEnoughCurrency');
+            catch (e) {
+                throw new this.BadRequest('InvalidGroupId');
             }
-        }
-        else if (currency === 2) {
-            if (groupFunds.Secondary < amount) {
-                throw new this.BadRequest('NotEnoughCurrency');
+            if (groupInfo.groupOwnerUserId !== userInfo.userId) {
+                throw new this.BadRequest('InvalidGroupPermissions');
             }
-        }
-        await this.economy.subtractFromGroupBalance(groupId, amount, currency);
-        await this.economy.addToUserBalance(userId, amount, currency);
-        await this.economy.createTransaction(groupId, userId, -amount, currency, model.economy.transactionType.SpendGroupFunds, "Group Funds Payout", model.catalog.creatorType.User, model.catalog.creatorType.Group);
-        await this.economy.createTransaction(userId, groupId, amount, currency, model.economy.transactionType.SpendGroupFunds, "Group Funds Payout", model.catalog.creatorType.Group, model.catalog.creatorType.User);
-        return ({
-            'success': true,
+            try {
+                const payoutUserInfo = await trx.user.getInfo(userId, ['banned'], forUpdate);
+                if (payoutUserInfo.banned) {
+                    throw false;
+                }
+            }
+            catch (e) {
+                throw new this.BadRequest('InvalidUserId');
+            }
+            const userRole = await trx.group.getUserRole(groupId, userId, forUpdate);
+            if (userRole.rank === 0) {
+                throw new this.BadRequest('InvalidGroupPermissions');
+            }
+            const groupFunds = await trx.group.getGroupFunds(groupId, forUpdate);
+            if (currency === 1) {
+                if (groupFunds.Primary < amount) {
+                    throw new this.BadRequest('NotEnoughCurrency');
+                }
+            }
+            else if (currency === 2) {
+                if (groupFunds.Secondary < amount) {
+                    throw new this.BadRequest('NotEnoughCurrency');
+                }
+            }
+            await trx.economy.subtractFromGroupBalance(groupId, amount, currency);
+            await trx.economy.addToUserBalance(userId, amount, currency);
+            await trx.economy.createTransaction(groupId, userId, -amount, currency, model.economy.transactionType.SpendGroupFunds, "Group Funds Payout", model.catalog.creatorType.User, model.catalog.creatorType.Group);
+            await trx.economy.createTransaction(userId, groupId, amount, currency, model.economy.transactionType.SpendGroupFunds, "Group Funds Payout", model.catalog.creatorType.Group, model.catalog.creatorType.User);
         });
+        return {
+            'success': true,
+        };
     }
 };
 __decorate([

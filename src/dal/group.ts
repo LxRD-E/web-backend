@@ -31,12 +31,16 @@ class GroupsDAL extends _init {
     /**
      * Get a Group's Info
      */
-    public async getInfo(groupId: number): Promise<groups.groupDetails> {
-        const info = await this.knex("groups").select("groups.id as groupId","groups.name as groupName","groups.description as groupDescription","groups.owner_userid as groupOwnerUserId","groups.membercount as groupMemberCount","groups.thumbnail_catalogid as groupIconCatalogId","groups.status as groupStatus", 'groups.approval_required as groupMembershipApprovalRequired').where({"groups.id":groupId}).limit(1);
-        if (!info[0]) {
+    public async getInfo(groupId: number, forUpdate?: string[]): Promise<groups.groupDetails> {
+        let info = this.knex("groups").select("groups.id as groupId","groups.name as groupName","groups.description as groupDescription","groups.owner_userid as groupOwnerUserId","groups.membercount as groupMemberCount","groups.thumbnail_catalogid as groupIconCatalogId","groups.status as groupStatus", 'groups.approval_required as groupMembershipApprovalRequired').where({"groups.id":groupId}).limit(1);
+        if (forUpdate) {
+            info = info.forUpdate(forUpdate);
+        }
+        const results = await info;
+        if (!results[0]) {
             throw false;
         }
-        return info[0] as groups.groupDetails;
+        return results[0] as groups.groupDetails;
     }
 
     /**
@@ -55,8 +59,12 @@ class GroupsDAL extends _init {
      * Get a RoleSetID's Info by it's ID
      * @param roleSetId 
      */
-    public async getRoleById(roleSetId: number): Promise<groups.roleInfo> {
-        const rolesetInfo = await this.knex("group_roles").select("id as roleSetId","name","description","groupid as groupId", "rank", "permission_get_wall as getWall", "permission_post_wall as postWall", "permission_get_shout as getShout","permission_post_shout as postShout", "permission_manage_group as manage").where({"id": roleSetId});
+    public async getRoleById(roleSetId: number, forUpdate?: string[]): Promise<groups.roleInfo> {
+        let rolesetInfoQuery = this.knex("group_roles").select("id as roleSetId","name","description","groupid as groupId", "rank", "permission_get_wall as getWall", "permission_post_wall as postWall", "permission_get_shout as getShout","permission_post_shout as postShout", "permission_manage_group as manage").where({"id": roleSetId});
+        if (forUpdate) {
+            rolesetInfoQuery = rolesetInfoQuery.forUpdate(forUpdate);
+        }
+        const rolesetInfo = await rolesetInfoQuery;
         // If role doesn't exist
         if (!rolesetInfo[0]) {
             throw false;
@@ -70,8 +78,12 @@ class GroupsDAL extends _init {
      * @param groupId 
      * @param rank 
      */
-    public async getRoleSetByRank(groupId: number, rank: number): Promise<groups.roleInfo> {
-        const role = await this.knex("group_roles").select("id as roleSetId","name","description","groupid as groupId", "rank", "permission_get_wall as getWall", "permission_post_wall as postWall", "permission_get_shout as getShout","permission_post_shout as postShout", "permission_manage_group as manage").where({"groupid":groupId,"rank":rank});
+    public async getRoleSetByRank(groupId: number, rank: number, forUpdate?: string[]): Promise<groups.roleInfo> {
+        let roleQuery = this.knex("group_roles").select("id as roleSetId","name","description","groupid as groupId", "rank", "permission_get_wall as getWall", "permission_post_wall as postWall", "permission_get_shout as getShout","permission_post_shout as postShout", "permission_manage_group as manage").where({"groupid":groupId,"rank":rank});
+        if (forUpdate) {
+            roleQuery = roleQuery.forUpdate(forUpdate);
+        }
+        const role = await roleQuery;
         if (!role[0]) {
             throw new Error('InvalidRankOrGroupId');
         }
@@ -83,13 +95,17 @@ class GroupsDAL extends _init {
      * @param groupId 
      * @param userId 
      */
-    public async getUserRole(groupId: number, userId: number): Promise<groups.roleInfo> {
-        const roleset = await this.knex("group_members").select("roleid as roleSetId").where({"groupid":groupId,"userid":userId});
+    public async getUserRole(groupId: number, userId: number, forUpdate?: string[]): Promise<groups.roleInfo> {
+        let rolesetQuery = this.knex("group_members").select("roleid as roleSetId").where({"groupid":groupId,"userid":userId});
+        if (forUpdate) {
+            rolesetQuery = rolesetQuery.forUpdate(forUpdate);
+        }
+        const roleset = await rolesetQuery;
         if (!roleset[0]) {
-            const roleSet = await this.getRoleSetByRank(groupId, 0);
+            const roleSet = await this.getRoleSetByRank(groupId, 0, forUpdate);
             return roleSet;
         }
-        const role = await this.getRoleById(roleset[0].roleSetId);
+        const role = await this.getRoleById(roleset[0].roleSetId, forUpdate);
         return role;
     }
 
@@ -535,9 +551,13 @@ class GroupsDAL extends _init {
      * Get a Group's Funds
      * @param groupId 
      */
-    public async getGroupFunds(groupId: number): Promise<groups.GroupFunds> {
-        const funds = await this.knex("groups").select("balance_one as Primary","balance_two as Secondary").where({'id': groupId});
-        return funds[0] as groups.GroupFunds;
+    public async getGroupFunds(groupId: number, forUpdate?: string[]): Promise<groups.GroupFunds> {
+        let funds = this.knex("groups").select("balance_one as Primary","balance_two as Secondary").where({'id': groupId});
+        if (forUpdate) {
+            funds = funds.forUpdate(forUpdate);
+        }
+        const result = await funds;
+        return result[0] as groups.GroupFunds;
     }
 }
 

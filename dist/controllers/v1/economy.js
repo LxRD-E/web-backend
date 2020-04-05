@@ -236,6 +236,7 @@ let EconomyController = class EconomyController extends controller_1.default {
         }
     }
     async buy(userInfo, catalogIdStr, userInventoryIdStr, sellerUserIdStr, expectedPriceStr, expectedCurrencyStr, req) {
+        console.log(`${req.id} start buy()`);
         let ipAddress = req.ip;
         if (req.headers['cf-connecting-ip']) {
             ipAddress = req.headers['cf-connecting-ip'];
@@ -245,340 +246,197 @@ let EconomyController = class EconomyController extends controller_1.default {
         const sellerUserId = parseInt(sellerUserIdStr);
         const expectedPrice = parseInt(expectedPriceStr);
         const expectedCurrency = parseInt(expectedCurrencyStr);
-        const unlockEconomy = async () => {
-            await this.economy.unlockUserEconomy(userInfo.userId);
-        };
         const emailStatus = await this.settings.getUserEmail(userInfo.userId);
         if (!emailStatus || emailStatus.status !== model.user.emailVerificationType.true) {
-            await unlockEconomy();
             throw new this.Conflict('ConstraintEmailVerificationRequired');
         }
-        if (userInventoryId === 0) {
-            let catalogItemInfo;
-            try {
-                catalogItemInfo = await this.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'creatorId', 'creatorType', 'price', 'currency', 'maxSales', 'collectible', 'catalogName']);
-            }
-            catch (e) {
-                throw new this.BadRequest('InvalidCatalogId');
-            }
-            if (catalogItemInfo.forSale === model.catalog.isForSale.false) {
-                throw new this.BadRequest('NoLongerForSale');
-            }
-            if (catalogItemInfo.creatorId !== sellerUserId) {
-                throw new this.BadRequest('SellerHasChanged');
-            }
-            if (catalogItemInfo.price !== expectedPrice) {
-                throw new this.BadRequest('PriceHasChanged');
-            }
-            if (catalogItemInfo.currency !== expectedCurrency) {
-                throw new this.BadRequest('CurrencyHasChanged');
-            }
-            try {
-                await this.economy.lockUserEconomy(userInfo.userId);
-            }
-            catch (e) {
-                console.error(e);
-                throw new this.Conflict('Cooldown');
-            }
-            let serial = null;
-            if (catalogItemInfo.collectible === model.catalog.collectible.true && catalogItemInfo.maxSales !== 0) {
-                const sales = await this.catalog.countSales(catalogItemInfo.catalogId);
-                if (sales >= catalogItemInfo.maxSales) {
-                    await this.catalog.updateIsForSale(catalogItemInfo.catalogId, model.catalog.isForSale.false);
-                    await unlockEconomy();
-                    throw new this.BadRequest('NoLongerForSale');
-                }
-                else {
-                    serial = sales + 1;
-                    if (serial >= catalogItemInfo.maxSales) {
-                        await this.catalog.updateIsForSale(catalogItemInfo.catalogId, model.catalog.isForSale.false);
-                    }
-                }
-            }
-            let owns = await this.user.getUserInventoryByCatalogId(userInfo.userId, catalogItemInfo.catalogId);
-            if (owns[0]) {
-                await unlockEconomy();
-                throw new this.Conflict('AlreadyOwns');
-            }
-            let expectedBalanceAfterTransaction = 0;
-            if (catalogItemInfo.currency === model.economy.currencyType.primary) {
-                const balance = userInfo.primaryBalance;
-                if (catalogItemInfo.price > balance) {
-                    await unlockEconomy();
-                    throw new this.BadRequest('NotEnoughCurrency');
-                }
-                expectedBalanceAfterTransaction = userInfo.primaryBalance - catalogItemInfo.price;
-            }
-            else if (catalogItemInfo.currency === model.economy.currencyType.secondary) {
-                const balance = userInfo.secondaryBalance;
-                if (catalogItemInfo.price > balance) {
-                    await unlockEconomy();
-                    throw new this.BadRequest('NotEnoughCurrency');
-                }
-                expectedBalanceAfterTransaction = userInfo.secondaryBalance - catalogItemInfo.price;
-            }
-            else {
-                await unlockEconomy();
-                throw new this.BadRequest('InvalidCurrencySpecified');
-            }
-            let inventoryId = await this.catalog.createItemForUserInventory(userInfo.userId, catalogItemInfo.catalogId, serial);
-            const amtToSubtractFromSeller = Math.abs(catalogItemInfo.price * 0.3);
-            const amtToSeller = catalogItemInfo.price - amtToSubtractFromSeller;
-            let transactionIdForBuyer = 0;
-            let transactionIdForSeller = 0;
-            try {
-                await this.economy.subtractFromUserBalance(userInfo.userId, catalogItemInfo.price, catalogItemInfo.currency);
-                if (catalogItemInfo.creatorType === model.catalog.creatorType.User) {
-                    transactionIdForSeller = await this.economy.createTransaction(userInfo.userId, catalogItemInfo.creatorId, -catalogItemInfo.price, catalogItemInfo.currency, model.economy.transactionType.PurchaseOfItem, "Purchase of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
-                }
-                else {
-                    transactionIdForSeller = await this.economy.createTransaction(userInfo.userId, catalogItemInfo.creatorId, -catalogItemInfo.price, catalogItemInfo.currency, model.economy.transactionType.PurchaseOfItem, "Purchase of " + catalogItemInfo.catalogName, model.catalog.creatorType.Group, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
-                }
-            }
-            catch (e) {
-                let currentError = e;
-                if (e === model.economy.userBalanceErrors.NotEnoughCurrency) {
-                    let deletionError = e;
-                    while (typeof deletionError !== 'undefined') {
-                        try {
-                            await this.catalog.deleteUserInventoryId(inventoryId);
-                            if (transactionIdForSeller) {
-                                await this.economy.deleteTransaction(transactionIdForSeller);
-                            }
-                            deletionError = undefined;
-                        }
-                        catch (_anotherDeletionError) {
-                            deletionError = _anotherDeletionError;
-                        }
-                    }
-                    await unlockEconomy();
-                    throw new this.BadRequest('NotEnoughCurrency');
-                }
-                while (typeof currentError !== 'undefined') {
+        console.log(`${req.id} start transaction`);
+        try {
+            await this.transaction(async (trx) => {
+                const forUpdate = [
+                    'users',
+                    'catalog',
+                    'user_inventory',
+                ];
+                if (userInventoryId === 0) {
+                    console.log(`${req.id} get info`);
+                    let catalogItemInfo;
                     try {
-                        await this.catalog.deleteUserInventoryId(inventoryId);
-                        if (transactionIdForSeller) {
-                            await this.economy.deleteTransaction(transactionIdForSeller);
-                        }
-                        currentError = undefined;
-                    }
-                    catch (moreErrors) {
-                        currentError = moreErrors;
-                    }
-                }
-                throw e;
-            }
-            try {
-                if (catalogItemInfo.creatorType === model.catalog.creatorType.User) {
-                    await this.economy.addToUserBalance(catalogItemInfo.creatorId, amtToSeller, catalogItemInfo.currency);
-                    try {
-                        transactionIdForBuyer = await this.economy.createTransaction(catalogItemInfo.creatorId, userInfo.userId, amtToSeller, catalogItemInfo.currency, model.economy.transactionType.SaleOfItem, "Sale of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
+                        catalogItemInfo = await trx.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'creatorId', 'creatorType', 'price', 'currency', 'maxSales', 'collectible', 'catalogName'], forUpdate);
                     }
                     catch (e) {
-                        let transactionError = e;
-                        while (typeof transactionError !== 'undefined' && typeof transactionError !== 'number') {
-                            try {
-                                await this.economy.subtractFromUserBalance(catalogItemInfo.creatorId, amtToSeller, catalogItemInfo.currency);
-                            }
-                            catch (_internalError) {
-                                transactionError = _internalError;
-                            }
-                        }
-                        throw e;
+                        throw new this.BadRequest('InvalidCatalogId');
                     }
-                }
-                else if (catalogItemInfo.creatorType === model.catalog.creatorType.Group) {
-                    await this.economy.addToGroupBalance(catalogItemInfo.creatorId, amtToSeller, catalogItemInfo.currency);
-                    try {
-                        transactionIdForBuyer = await this.economy.createTransaction(catalogItemInfo.creatorId, userInfo.userId, amtToSeller, catalogItemInfo.currency, model.economy.transactionType.SaleOfItem, "Sale of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.Group, catalogItemInfo.catalogId, inventoryId);
+                    if (catalogItemInfo.forSale === model.catalog.isForSale.false) {
+                        throw new this.BadRequest('NoLongerForSale');
                     }
-                    catch (e) {
-                        let transactionError = e;
-                        while (typeof transactionError !== 'undefined' && typeof transactionError !== 'number') {
-                            try {
-                                await this.economy.subtractFromGroupBalance(catalogItemInfo.creatorId, amtToSeller, catalogItemInfo.currency);
-                            }
-                            catch (_internalError) {
-                                transactionError = _internalError;
-                            }
-                        }
-                        throw e;
+                    if (catalogItemInfo.creatorId !== sellerUserId) {
+                        throw new this.BadRequest('SellerHasChanged');
                     }
-                }
-            }
-            catch (e) {
-                let generalRollbackError = e;
-                while (typeof generalRollbackError !== 'undefined') {
-                    try {
-                        await this.catalog.deleteUserInventoryId(inventoryId);
-                        await this.economy.deleteTransaction(transactionIdForBuyer);
-                        await this.economy.addToUserBalance(userInfo.userId, catalogItemInfo.price, catalogItemInfo.currency);
+                    if (catalogItemInfo.price !== expectedPrice) {
+                        throw new this.BadRequest('PriceHasChanged');
                     }
-                    catch (_internalRollbackError) {
-                        generalRollbackError = _internalRollbackError;
+                    if (catalogItemInfo.currency !== expectedCurrency) {
+                        throw new this.BadRequest('CurrencyHasChanged');
                     }
-                }
-                await unlockEconomy();
-                throw e;
-            }
-            try {
-                await this.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem);
-            }
-            catch (e) {
-            }
-            const reverseTransaction = async () => {
-                let generalRollbackError = new Error('UnexpectedBalanceChange');
-                while (typeof generalRollbackError !== 'undefined') {
-                    try {
-                        await this.catalog.deleteUserInventoryId(inventoryId);
-                        await this.economy.deleteTransaction(transactionIdForBuyer);
-                        await this.economy.deleteTransaction(transactionIdForSeller);
-                        await this.economy.addToUserBalance(userInfo.userId, catalogItemInfo.price, catalogItemInfo.currency);
-                        if (catalogItemInfo.creatorType === model.catalog.creatorType.Group) {
-                            await this.economy.subtractFromGroupBalance(catalogItemInfo.creatorId, amtToSeller, catalogItemInfo.currency);
-                        }
-                        else if (catalogItemInfo.creatorType === model.catalog.creatorType.User) {
-                            await this.economy.subtractFromUserBalance(catalogItemInfo.creatorId, amtToSeller, catalogItemInfo.currency);
+                    console.log(`${req.id} if serialed collectible`);
+                    let serial = null;
+                    if (catalogItemInfo.collectible === model.catalog.collectible.true && catalogItemInfo.maxSales !== 0) {
+                        const sales = await trx.catalog.countSales(catalogItemInfo.catalogId);
+                        if (sales >= catalogItemInfo.maxSales) {
+                            await trx.catalog.updateIsForSale(catalogItemInfo.catalogId, model.catalog.isForSale.false);
+                            throw new this.BadRequest('NoLongerForSale');
                         }
                         else {
-                            throw new Error('NotImplemented');
+                            serial = sales + 1;
+                            if (serial >= catalogItemInfo.maxSales) {
+                                await trx.catalog.updateIsForSale(catalogItemInfo.catalogId, model.catalog.isForSale.false);
+                            }
                         }
-                        generalRollbackError = undefined;
                     }
-                    catch (_internalRollbackError) {
-                        generalRollbackError = _internalRollbackError;
+                    console.log(`${req.id} check if owns`);
+                    let owns = await trx.user.getUserInventoryByCatalogId(userInfo.userId, catalogItemInfo.catalogId, forUpdate);
+                    if (owns[0]) {
+                        throw new this.Conflict('AlreadyOwns');
                     }
+                    console.log(`${req.id} does not own`);
+                    console.log(`${req.id} check if has enough currency`);
+                    const newUserInfo = await this.user.getInfo(userInfo.userId, ['primaryBalance', 'secondaryBalance'], forUpdate);
+                    if (catalogItemInfo.currency === model.economy.currencyType.primary) {
+                        const balance = newUserInfo.primaryBalance;
+                        if (catalogItemInfo.price > balance) {
+                            throw new this.BadRequest('NotEnoughCurrency');
+                        }
+                    }
+                    else if (catalogItemInfo.currency === model.economy.currencyType.secondary) {
+                        const balance = newUserInfo.secondaryBalance;
+                        if (catalogItemInfo.price > balance) {
+                            throw new this.BadRequest('NotEnoughCurrency');
+                        }
+                    }
+                    else {
+                        throw new this.BadRequest('InvalidCurrencySpecified');
+                    }
+                    console.log(`${req.id} has enough currency. creating item for user`);
+                    let inventoryId = await trx.catalog.createItemForUserInventory(userInfo.userId, catalogItemInfo.catalogId, serial);
+                    const amtToSubtractFromSeller = Math.abs(catalogItemInfo.price * 0.3);
+                    const amtToSeller = catalogItemInfo.price - amtToSubtractFromSeller;
+                    let transactionIdForBuyer = 0;
+                    let transactionIdForSeller = 0;
+                    console.log(`${req.id} subtracting balance from user`);
+                    await trx.economy.subtractFromUserBalance(userInfo.userId, catalogItemInfo.price, catalogItemInfo.currency);
+                    console.log(`${req.id} create transaction`);
+                    if (catalogItemInfo.creatorType === model.catalog.creatorType.User) {
+                        transactionIdForSeller = await trx.economy.createTransaction(userInfo.userId, catalogItemInfo.creatorId, -catalogItemInfo.price, catalogItemInfo.currency, model.economy.transactionType.PurchaseOfItem, "Purchase of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
+                    }
+                    else {
+                        transactionIdForSeller = await trx.economy.createTransaction(userInfo.userId, catalogItemInfo.creatorId, -catalogItemInfo.price, catalogItemInfo.currency, model.economy.transactionType.PurchaseOfItem, "Purchase of " + catalogItemInfo.catalogName, model.catalog.creatorType.Group, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
+                    }
+                    console.log(`${req.id} transaction created. giving money to seller`);
+                    if (catalogItemInfo.creatorType === model.catalog.creatorType.User) {
+                        await trx.economy.addToUserBalance(catalogItemInfo.creatorId, amtToSeller, catalogItemInfo.currency);
+                        transactionIdForBuyer = await trx.economy.createTransaction(catalogItemInfo.creatorId, userInfo.userId, amtToSeller, catalogItemInfo.currency, model.economy.transactionType.SaleOfItem, "Sale of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
+                    }
+                    else if (catalogItemInfo.creatorType === model.catalog.creatorType.Group) {
+                        await trx.economy.addToGroupBalance(catalogItemInfo.creatorId, amtToSeller, catalogItemInfo.currency);
+                        transactionIdForBuyer = await trx.economy.createTransaction(catalogItemInfo.creatorId, userInfo.userId, amtToSeller, catalogItemInfo.currency, model.economy.transactionType.SaleOfItem, "Sale of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.Group, catalogItemInfo.catalogId, inventoryId);
+                    }
+                    console.log(`${req.id} gave money to seller. now log ip`);
+                    this.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem).then(d => {
+                    }).catch(e => {
+                        console.error(e);
+                    });
+                    console.log(`${req.id} return success`);
+                    return { success: true };
                 }
-            };
-            if (catalogItemInfo.currency === model.economy.currencyType.primary) {
-                let userBalanceFinal = await this.user.getInfo(userInfo.userId, ['primaryBalance']);
-                if (userBalanceFinal.primaryBalance !== expectedBalanceAfterTransaction) {
-                    await reverseTransaction();
-                    await unlockEconomy();
-                    throw new Error('UnexpectedBalanceChange');
+                else {
+                    let catalogItemInfo;
+                    try {
+                        catalogItemInfo = await trx.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'maxSales', 'collectible', 'catalogName'], forUpdate);
+                    }
+                    catch (e) {
+                        throw new this.BadRequest('InvalidCatalogId');
+                    }
+                    if (catalogItemInfo.forSale === model.catalog.isForSale.true) {
+                        throw new this.BadRequest('ItemStillForSale');
+                    }
+                    if (expectedCurrency !== model.economy.currencyType.primary) {
+                        throw new this.BadRequest('InvalidCurrency');
+                    }
+                    let usedItemInfo;
+                    try {
+                        usedItemInfo = await trx.catalog.getItemByUserInventoryId(userInventoryId, forUpdate);
+                    }
+                    catch (e) {
+                        throw new this.BadRequest('InvalidUserInventoryId');
+                    }
+                    if (usedItemInfo.price !== expectedPrice) {
+                        throw new this.BadRequest('PriceHasChanged');
+                    }
+                    if (usedItemInfo.userId !== sellerUserId) {
+                        throw new this.BadRequest('SellerHasChanged');
+                    }
+                    if (usedItemInfo.catalogId !== catalogItemInfo.catalogId) {
+                        throw new this.BadRequest('InvalidCatalogId');
+                    }
+                    if (usedItemInfo.price <= 0) {
+                        throw new this.BadRequest('ItemNoLongerForSale');
+                    }
+                    if (usedItemInfo.userId === userInfo.userId) {
+                        throw new this.BadRequest('InvalidUserId');
+                    }
+                    let sellerInfo;
+                    try {
+                        sellerInfo = await trx.user.getInfo(usedItemInfo.userId, undefined, forUpdate);
+                        if (sellerInfo.accountStatus === model.user.accountStatus.deleted || sellerInfo.accountStatus === model.user.accountStatus.terminated) {
+                            throw new Error('ItemNoLongerForSale');
+                        }
+                    }
+                    catch (e) {
+                        await trx.user.editItemPrice(userInventoryId, 0);
+                        throw new this.BadRequest('ItemNoLongerForSale');
+                    }
+                    const balance = userInfo.primaryBalance;
+                    if (usedItemInfo.price > balance) {
+                        throw new this.BadRequest('NotEnoughCurrency');
+                    }
+                    await trx.catalog.updateUserInventoryIdOwner(usedItemInfo.userInventoryId, userInfo.userId);
+                    await trx.economy.subtractFromUserBalance(userInfo.userId, usedItemInfo.price, model.economy.currencyType.primary);
+                    await trx.economy.createTransaction(userInfo.userId, usedItemInfo.userId, -usedItemInfo.price, model.economy.currencyType.primary, model.economy.transactionType.PurchaseOfItem, "Purchase of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, usedItemInfo.userInventoryId);
+                    const amtToSubtractFromSeller = Math.abs(usedItemInfo.price * 0.3);
+                    const amtToSeller = usedItemInfo.price - amtToSubtractFromSeller;
+                    await trx.economy.addToUserBalance(usedItemInfo.userId, amtToSeller, model.economy.currencyType.primary);
+                    await trx.economy.createTransaction(usedItemInfo.userId, userInfo.userId, amtToSeller, model.economy.currencyType.primary, model.economy.transactionType.SaleOfItem, "Sale of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, usedItemInfo.userInventoryId);
+                    await trx.user.editItemPrice(usedItemInfo.userInventoryId, 0);
+                    const backgroundTasksAfterPurchase = async () => {
+                        try {
+                            await this.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem);
+                            const averagePrice = await this.catalog.calculateAveragePrice(catalogItemInfo.catalogId);
+                            console.log("Price: " + averagePrice);
+                            await this.catalog.setAveragePrice(catalogItemInfo.catalogId, averagePrice);
+                        }
+                        catch (e) {
+                            console.error(e);
+                        }
+                    };
+                    backgroundTasksAfterPurchase().then(d => {
+                    })
+                        .catch(e => {
+                    });
+                    this.regenAvatarAfterItemTransferOwners(usedItemInfo.userId, usedItemInfo.catalogId).then(d => {
+                        console.log(d);
+                    }).catch(e => {
+                        console.error(e);
+                    });
+                    return;
                 }
-            }
-            else if (catalogItemInfo.currency === model.economy.currencyType.secondary) {
-                let userBalanceFinal = await this.user.getInfo(userInfo.userId, ['secondaryBalance']);
-                if (userBalanceFinal.secondaryBalance !== expectedBalanceAfterTransaction) {
-                    await reverseTransaction();
-                    await unlockEconomy();
-                    throw new Error('UnexpectedBalanceChange');
-                }
-            }
-            await unlockEconomy();
-            return { success: true };
-        }
-        else {
-            let catalogItemInfo;
-            try {
-                catalogItemInfo = await this.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'maxSales', 'collectible', 'catalogName']);
-            }
-            catch (e) {
-                throw new this.BadRequest('InvalidCatalogId');
-            }
-            if (catalogItemInfo.forSale === model.catalog.isForSale.true) {
-                throw new this.BadRequest('ItemStillForSale');
-            }
-            if (expectedCurrency !== model.economy.currencyType.primary) {
-                throw new this.BadRequest('InvalidCurrency');
-            }
-            let usedItemInfo;
-            try {
-                usedItemInfo = await this.catalog.getItemByUserInventoryId(userInventoryId);
-            }
-            catch (e) {
-                throw new this.BadRequest('InvalidUserInventoryId');
-            }
-            if (usedItemInfo.price !== expectedPrice) {
-                throw new this.BadRequest('PriceHasChanged');
-            }
-            if (usedItemInfo.userId !== sellerUserId) {
-                throw new this.BadRequest('SellerHasChanged');
-            }
-            if (usedItemInfo.catalogId !== catalogItemInfo.catalogId) {
-                throw new this.BadRequest('InvalidCatalogId');
-            }
-            if (usedItemInfo.price <= 0) {
-                throw new this.BadRequest('ItemNoLongerForSale');
-            }
-            if (usedItemInfo.userId === userInfo.userId) {
-                throw new this.BadRequest('InvalidUserId');
-            }
-            try {
-                await this.economy.lockUserEconomy(userInfo.userId);
-            }
-            catch (e) {
-                console.error(e);
-                throw new this.Conflict('Cooldown');
-            }
-            let sellerInfo;
-            try {
-                sellerInfo = await this.user.getInfo(usedItemInfo.userId);
-                if (sellerInfo.accountStatus === model.user.accountStatus.deleted || sellerInfo.accountStatus === model.user.accountStatus.terminated) {
-                    throw false;
-                }
-            }
-            catch (e) {
-                await unlockEconomy();
-                await this.user.editItemPrice(userInventoryId, 0);
-                throw new this.BadRequest('ItemNoLongerForSale');
-            }
-            const balance = userInfo.primaryBalance;
-            if (usedItemInfo.price > balance) {
-                await unlockEconomy();
-                throw new this.BadRequest('NotEnoughCurrency');
-            }
-            await this.catalog.updateUserInventoryIdOwner(usedItemInfo.userInventoryId, userInfo.userId);
-            try {
-                await this.economy.subtractFromUserBalance(userInfo.userId, usedItemInfo.price, model.economy.currencyType.primary);
-                await this.economy.createTransaction(userInfo.userId, usedItemInfo.userId, -usedItemInfo.price, model.economy.currencyType.primary, model.economy.transactionType.PurchaseOfItem, "Purchase of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, usedItemInfo.userInventoryId);
-            }
-            catch (e) {
-                await this.catalog.updateUserInventoryIdOwner(usedItemInfo.userInventoryId, usedItemInfo.userId);
-                if (e === model.economy.userBalanceErrors.NotEnoughCurrency) {
-                    await unlockEconomy();
-                    throw new this.BadRequest('NotEnoughCurrency');
-                }
-                throw e;
-            }
-            const amtToSubtractFromSeller = Math.abs(usedItemInfo.price * 0.3);
-            const amtToSeller = usedItemInfo.price - amtToSubtractFromSeller;
-            try {
-                await this.economy.addToUserBalance(usedItemInfo.userId, amtToSeller, model.economy.currencyType.primary);
-                await this.economy.createTransaction(usedItemInfo.userId, userInfo.userId, amtToSeller, model.economy.currencyType.primary, model.economy.transactionType.SaleOfItem, "Sale of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, usedItemInfo.userInventoryId);
-            }
-            catch (e) {
-                await this.catalog.updateUserInventoryIdOwner(usedItemInfo.userInventoryId, usedItemInfo.userId);
-                await this.economy.addToUserBalance(userInfo.userId, usedItemInfo.price, model.economy.currencyType.primary);
-                await this.economy.createTransaction(userInfo.userId, usedItemInfo.userId, usedItemInfo.price, model.economy.currencyType.primary, model.economy.transactionType.Refund, "Refund", model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, usedItemInfo.userInventoryId);
-                await unlockEconomy();
-                throw e;
-            }
-            try {
-                await this.user.editItemPrice(usedItemInfo.userInventoryId, 0);
-            }
-            catch (e) {
-                await unlockEconomy();
-                throw e;
-            }
-            try {
-                await this.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem);
-                const averagePrice = await this.catalog.calculateAveragePrice(catalogItemInfo.catalogId);
-                console.log("Price: " + averagePrice);
-                await this.catalog.setAveragePrice(catalogItemInfo.catalogId, averagePrice);
-            }
-            catch (e) {
-                console.error(e);
-            }
-            this.regenAvatarAfterItemTransferOwners(usedItemInfo.userId, usedItemInfo.catalogId).then(d => {
-                console.log(d);
-            }).catch(e => {
-                console.error(e);
             });
-            await unlockEconomy();
-            return { success: true };
         }
+        catch (e) {
+            console.log(`${req.id} got error`, e);
+            throw e;
+        }
+        return { success: true };
     }
     async getTradeItems(userInfo, numericTradeId) {
         if (!numericTradeId) {
@@ -594,12 +452,12 @@ let EconomyController = class EconomyController extends controller_1.default {
         if (tradeInfo.userIdOne === userInfo.userId) {
             const requestedTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requested, numericTradeId);
             const requesteeTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requester, numericTradeId);
-            return { 'requested': requestedTradeItems, 'requestee': requesteeTradeItems };
+            return { 'requested': requestedTradeItems, 'offer': requesteeTradeItems };
         }
         else if (tradeInfo.userIdTwo === userInfo.userId) {
             const requestedTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requester, numericTradeId);
             const requesteeTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requested, numericTradeId);
-            return { 'requested': requestedTradeItems, 'requestee': requesteeTradeItems };
+            return { 'requested': requestedTradeItems, 'offer': requesteeTradeItems };
         }
         else {
             throw new this.BadRequest('InvalidTradeId');
@@ -609,197 +467,166 @@ let EconomyController = class EconomyController extends controller_1.default {
         if (!numericTradeId) {
             throw new this.BadRequest('InvalidTradeId');
         }
-        let tradeInfo = await this.economy.getTradeById(numericTradeId);
-        if (tradeInfo.status !== model.economy.tradeStatus.Pending) {
-            throw new this.BadRequest('InvalidTradeId');
-        }
-        if (tradeInfo.userIdTwo === userInfo.userId) {
-            await this.notification.createMessage(tradeInfo.userIdOne, 1, 'Trade Declined', 'Hello,\n' + userInfo.username + ' has declined your trade. You may view it in the Inactive tab of your trades.');
-        }
-        if (tradeInfo.userIdOne === userInfo.userId || tradeInfo.userIdTwo === userInfo.userId) {
-            await this.economy.declineTradeById(numericTradeId);
-            return { success: true };
-        }
-        else {
-            throw new this.BadRequest('InvalidTradeId');
-        }
+        await this.transaction(async (trx) => {
+            let tradeInfo = await trx.economy.getTradeById(numericTradeId);
+            if (tradeInfo.status !== model.economy.tradeStatus.Pending) {
+                throw new this.BadRequest('InvalidTradeId');
+            }
+            if (tradeInfo.userIdTwo === userInfo.userId) {
+                await trx.notification.createMessage(tradeInfo.userIdOne, 1, 'Trade Declined', 'Hello,\n' + userInfo.username + ' has declined your trade. You may view it in the Inactive tab of your trades.');
+            }
+            if (tradeInfo.userIdOne === userInfo.userId || tradeInfo.userIdTwo === userInfo.userId) {
+                await trx.economy.declineTradeById(numericTradeId);
+                return;
+            }
+            else {
+                throw new this.BadRequest('InvalidTradeId');
+            }
+        });
+        return {};
     }
     async acceptTrade(userInfo, numericTradeId) {
         if (!numericTradeId) {
             throw new this.BadRequest('InvalidTradeId');
         }
-        let tradeInfo;
-        try {
-            tradeInfo = await this.economy.getTradeById(numericTradeId);
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidTradeId');
-        }
-        if (tradeInfo.status !== model.economy.tradeStatus.Pending) {
-            throw new this.BadRequest('InvalidTradeId');
-        }
-        if (tradeInfo.userIdTwo === userInfo.userId) {
-            const unlockEconomy = async () => {
-                let _internalErrors = undefined;
-                try {
-                    await this.economy.unlockUserEconomy(userInfo.userId);
-                }
-                catch (e) {
-                    _internalErrors = e;
-                }
-                try {
-                    await this.economy.unlockUserEconomy(tradeInfo.userIdOne);
-                }
-                catch (e) {
-                    if (_internalErrors) {
-                        throw _internalErrors;
-                    }
-                    throw e;
-                }
-            };
+        const forUpdate = [
+            'users',
+            'trades',
+            'user_inventory',
+        ];
+        await this.transaction(async (trx) => {
+            let tradeInfo;
             try {
-                await this.economy.lockUserEconomy(userInfo.userId);
-                try {
-                    await this.economy.lockUserEconomy(tradeInfo.userIdOne);
-                }
-                catch (e) {
-                    try {
-                        await unlockEconomy();
-                    }
-                    catch (e) {
-                        throw e;
-                    }
-                    throw e;
-                }
+                tradeInfo = await trx.economy.getTradeById(numericTradeId, forUpdate);
             }
             catch (e) {
-                console.error(e);
-                throw new this.Conflict('Cooldown');
+                throw new this.BadRequest('InvalidTradeId');
             }
-            let partnerInfo = await this.user.getInfo(tradeInfo.userIdOne, ['accountStatus']);
-            if (partnerInfo.accountStatus === model.user.accountStatus.deleted || partnerInfo.accountStatus === model.user.accountStatus.terminated) {
-                await unlockEconomy();
-                throw new this.BadRequest('InvalidPartnerId');
+            if (tradeInfo.status !== model.economy.tradeStatus.Pending) {
+                throw new this.BadRequest('InvalidTradeId');
             }
-            const requestedTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requester, numericTradeId);
-            if (requestedTradeItems.length < 1) {
-                await unlockEconomy();
-                throw new Error('Internal');
-            }
-            const requesteeTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requested, numericTradeId);
-            if (requesteeTradeItems.length < 1) {
-                await unlockEconomy();
-                throw new Error('Internal');
-            }
-            const verifyOwnershipOfItems = (userId, items) => {
-                return new Promise((resolve, reject) => {
-                    const promises = [];
-                    for (const item of items) {
-                        promises.push(this.catalog.getItemByUserInventoryId(item["userInventoryId"]));
-                    }
-                    Promise.all(promises)
-                        .then((results) => {
-                        for (const result of results) {
-                            if (result.userId !== userId) {
-                                console.log(result.userId);
-                                console.log(userId);
-                                reject(0);
-                                return;
-                            }
-                        }
-                        resolve();
-                    })
-                        .catch((e) => {
-                        reject(e);
-                    });
-                });
-            };
-            const swapOwnersOfItems = (userId, items) => {
-                return new Promise((resolve, reject) => {
-                    const promises = [];
-                    for (const item of items) {
-                        promises.push(this.catalog.updateUserInventoryIdOwner(item["userInventoryId"], userId), this.user.editItemPrice(item["userInventoryId"], 0));
-                    }
-                    Promise.all(promises)
-                        .then(() => {
-                        resolve();
-                    })
-                        .catch(() => {
-                        reject();
-                    });
-                });
-            };
-            try {
-                const OwnershipValidation = [
-                    verifyOwnershipOfItems(tradeInfo.userIdOne, requestedTradeItems),
-                    verifyOwnershipOfItems(tradeInfo.userIdTwo, requesteeTradeItems),
-                ];
-                await Promise.all(OwnershipValidation);
-                try {
-                    const OwnershipSwap = [
-                        swapOwnersOfItems(tradeInfo.userIdTwo, requestedTradeItems),
-                        swapOwnersOfItems(tradeInfo.userIdOne, requesteeTradeItems),
-                    ];
-                    await Promise.all(OwnershipSwap);
+            if (tradeInfo.userIdTwo === userInfo.userId) {
+                let partnerInfo = await trx.user.getInfo(tradeInfo.userIdOne, ['accountStatus'], forUpdate);
+                if (partnerInfo.accountStatus === model.user.accountStatus.deleted || partnerInfo.accountStatus === model.user.accountStatus.terminated) {
+                    throw new this.BadRequest('InvalidPartnerId');
                 }
-                catch (e) {
+                const requestedTradeItems = await trx.economy.getTradeItems(model.economy.tradeSides.Requester, numericTradeId);
+                if (requestedTradeItems.length < 1) {
+                    throw new Error('Internal');
+                }
+                const requesteeTradeItems = await trx.economy.getTradeItems(model.economy.tradeSides.Requested, numericTradeId);
+                if (requesteeTradeItems.length < 1) {
+                    throw new Error('Internal');
+                }
+                const verifyOwnershipOfItems = (userId, items) => {
+                    return new Promise((resolve, reject) => {
+                        const promises = [];
+                        for (const item of items) {
+                            promises.push(trx.catalog.getItemByUserInventoryId(item["userInventoryId"], forUpdate));
+                        }
+                        Promise.all(promises)
+                            .then((results) => {
+                            for (const result of results) {
+                                if (result.userId !== userId) {
+                                    console.log(result.userId);
+                                    console.log(userId);
+                                    reject(0);
+                                    return;
+                                }
+                            }
+                            resolve();
+                        })
+                            .catch((e) => {
+                            reject(e);
+                        });
+                    });
+                };
+                const swapOwnersOfItems = (userId, items) => {
+                    return new Promise((resolve, reject) => {
+                        const promises = [];
+                        for (const item of items) {
+                            promises.push(trx.catalog.updateUserInventoryIdOwner(item["userInventoryId"], userId), trx.user.editItemPrice(item["userInventoryId"], 0));
+                        }
+                        Promise.all(promises)
+                            .then(() => {
+                            resolve();
+                        })
+                            .catch(() => {
+                            reject();
+                        });
+                    });
+                };
+                try {
+                    const OwnershipValidation = [
+                        verifyOwnershipOfItems(tradeInfo.userIdOne, requestedTradeItems),
+                        verifyOwnershipOfItems(tradeInfo.userIdTwo, requesteeTradeItems),
+                    ];
+                    await Promise.all(OwnershipValidation);
                     try {
                         const OwnershipSwap = [
-                            swapOwnersOfItems(tradeInfo.userIdOne, requestedTradeItems),
-                            swapOwnersOfItems(tradeInfo.userIdTwo, requesteeTradeItems),
+                            swapOwnersOfItems(tradeInfo.userIdTwo, requestedTradeItems),
+                            swapOwnersOfItems(tradeInfo.userIdOne, requesteeTradeItems),
                         ];
                         await Promise.all(OwnershipSwap);
                     }
                     catch (e) {
+                        try {
+                            const OwnershipSwap = [
+                                swapOwnersOfItems(tradeInfo.userIdOne, requestedTradeItems),
+                                swapOwnersOfItems(tradeInfo.userIdTwo, requesteeTradeItems),
+                            ];
+                            await Promise.all(OwnershipSwap);
+                        }
+                        catch (e) {
+                            throw e;
+                        }
                         throw e;
                     }
-                    throw e;
-                }
-                await this.economy.markTradeAccepted(numericTradeId);
-                (async () => {
-                    try {
-                        const s = requestedTradeItems.length > 1 ? 's' : '';
-                        await this.notification.createMessage(tradeInfo.userIdOne, 1, 'Trade Accepted', 'Hello,\n' + userInfo.username + ' has accepted your trade. You can view your new item' + s + ' in your inventory.');
-                    }
-                    catch (e) {
-                    }
-                    try {
-                        const itemIdsOne = [];
-                        for (const item of requestedTradeItems) {
-                            itemIdsOne.push(item.catalogId);
+                    await trx.economy.markTradeAccepted(numericTradeId);
+                    (async () => {
+                        try {
+                            const s = requestedTradeItems.length > 1 ? 's' : '';
+                            await trx.notification.createMessage(tradeInfo.userIdOne, 1, 'Trade Accepted', 'Hello,\n' + userInfo.username + ' has accepted your trade. You can view your new item' + s + ' in your inventory.');
                         }
-                        const itemIdsTwo = [];
-                        for (const item of requesteeTradeItems) {
-                            itemIdsTwo.push(item.catalogId);
+                        catch (e) {
                         }
-                        (async () => {
-                            await this.regenAvatarAfterItemTransferOwners(tradeInfo.userIdOne, itemIdsOne);
-                        })();
-                        (async () => {
-                            await this.regenAvatarAfterItemTransferOwners(tradeInfo.userIdTwo, itemIdsTwo);
-                        })();
-                    }
-                    catch (e) {
-                        console.log(e);
-                    }
-                })();
-                await unlockEconomy();
-                return { success: true };
-            }
-            catch (e) {
-                try {
-                    await this.economy.declineTradeById(numericTradeId);
+                        try {
+                            const itemIdsOne = [];
+                            for (const item of requestedTradeItems) {
+                                itemIdsOne.push(item.catalogId);
+                            }
+                            const itemIdsTwo = [];
+                            for (const item of requesteeTradeItems) {
+                                itemIdsTwo.push(item.catalogId);
+                            }
+                            (async () => {
+                                await this.regenAvatarAfterItemTransferOwners(tradeInfo.userIdOne, itemIdsOne);
+                            })();
+                            (async () => {
+                                await this.regenAvatarAfterItemTransferOwners(tradeInfo.userIdTwo, itemIdsTwo);
+                            })();
+                        }
+                        catch (e) {
+                            console.log(e);
+                        }
+                    })();
+                    return;
                 }
                 catch (e) {
-                    throw e;
+                    try {
+                        await trx.economy.declineTradeById(numericTradeId);
+                    }
+                    catch (e) {
+                        throw e;
+                    }
+                    throw new this.Conflict('OneOrMoreItemsNotAvailable');
                 }
-                await unlockEconomy();
-                throw new this.Conflict('OneOrMoreItemsNotAvailable');
             }
-        }
-        else {
-            throw new this.BadRequest('NotAuthorized');
-        }
+            else {
+                throw new this.BadRequest('NotAuthorized');
+            }
+        });
+        return {};
     }
 };
 __decorate([

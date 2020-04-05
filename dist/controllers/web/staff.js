@@ -152,6 +152,24 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
         ViewData.page.twoFactorEnabled = twoFactorEnabled;
         return ViewData;
     }
+    async moderationTrades(localUserData, userId) {
+        const staff = localUserData.staff > 1 ? true : false;
+        if (!staff) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        let userInfo;
+        try {
+            userInfo = await this.user.getInfo(userId, ['userId', 'username']);
+        }
+        catch (e) {
+            console.log(e);
+            throw new this.BadRequest('InvalidUserId');
+        }
+        let ViewData = new Www_1.WWWTemplate({ 'title': userInfo.username + "'s Trades" });
+        ViewData.page.userId = userInfo.userId;
+        ViewData.page.username = userInfo.username;
+        return ViewData;
+    }
     async moderationGroup(localUserData, groupId) {
         const staff = localUserData.staff >= 2 ? true : false;
         if (!staff) {
@@ -383,6 +401,17 @@ __decorate([
     __metadata("design:paramtypes", [UserModel.SessionUserInfo, Number]),
     __metadata("design:returntype", Promise)
 ], WWWStaffController.prototype, "moderationProfile", null);
+__decorate([
+    common_1.Get('/staff/user/trades'),
+    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Render('staff/user/trades'),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Required()),
+    __param(1, common_1.QueryParams('userId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [UserModel.SessionUserInfo, Number]),
+    __metadata("design:returntype", Promise)
+], WWWStaffController.prototype, "moderationTrades", null);
 __decorate([
     common_1.Get('/staff/groups/manage'),
     common_1.UseBefore(Auth_1.YesAuth),

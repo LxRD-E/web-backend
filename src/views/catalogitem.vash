@@ -159,12 +159,21 @@
                         <p style="margin-bottom:0;"><span style="font-weight:600;">Average Sales Price: </span><span class="formatNumber" data-price="@model.page.averagePrice" data-currency="1">@model.page.averageSalesPrice</span></p>
                         } }
                         <p style="margin-bottom:0;"><span style="font-weight:600;">Release Date: </span> <span class="formatDateNoTime" data-date="@model.page.dateCreated"></span></p>
-                        <p style="margin-bottom:0;"><span style="font-weight:600;">Owners: </span>@model.page.sales</p>
+                        <p style="margin-bottom:0;">
+                            <span style="font-weight:600;">Owners: </span>@model.page.sales
+                        </p>
+
                         <div class="row">
-                                        <div class="col sm-12">
-                                            <a style="opacity:0.5;margin-bottom:0;color:black;display:none;" href="#" id="onClickSellitem"><i class="fas fa-exchange-alt"></i> Sell Yours</a>
-                                        </div>
-                                    </div>
+                            <div class="col-12">
+                                <a style="opacity:0.5;margin-bottom:0;color:black;display:none;" href="#" id="onClickDeleteItem">Delete from inventory</a>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <a style="opacity:0.5;margin-bottom:0;color:black;display:none;" href="#" id="onClickSellitem"><i class="fas fa-exchange-alt"></i> Sell Yours</a>
+                            </div>
+                        </div>
                     </div>
 
                 </div>

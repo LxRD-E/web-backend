@@ -22,8 +22,9 @@ const Www_1 = require("../models/v2/Www");
 const xss = require("xss");
 const moment = require("moment");
 const Filter_1 = require("../helpers/Filter");
+const knex_1 = require("../helpers/knex");
 class StandardController {
-    constructor() {
+    constructor(knexOverload) {
         this.NotFound = ts_httpexceptions_1.NotFound;
         this.BadRequest = ts_httpexceptions_1.BadRequest;
         this.Conflict = ts_httpexceptions_1.Conflict;
@@ -49,7 +50,42 @@ class StandardController {
         this.ad = new ad_1.default();
         this.support = new support_1.default();
         this.reportAbuse = new report_abuse_1.default();
+        if (knexOverload) {
+            console.log('overloading knex');
+            this.user.knex = knexOverload;
+            this.mod.knex = knexOverload;
+            this.group.knex = knexOverload;
+            this.game.knex = knexOverload;
+            this.forum.knex = knexOverload;
+            this.economy.knex = knexOverload;
+            this.chat.knex = knexOverload;
+            this.catalog.knex = knexOverload;
+            this.billing.knex = knexOverload;
+            this.avatar.knex = knexOverload;
+            this.notification.knex = knexOverload;
+            this.settings.knex = knexOverload;
+            this.staff.knex = knexOverload;
+            this.ad.knex = knexOverload;
+            this.support.knex = knexOverload;
+            this.reportAbuse.knex = knexOverload;
+        }
+    }
+    transaction(callback) {
+        return knex_1.default.transaction(async (trx) => {
+            const newController = new StandardController(trx);
+            try {
+                await callback(newController);
+            }
+            catch (e) {
+                if (typeof e !== 'object') {
+                    console.log('found the one that isnt an object, ', e);
+                }
+                throw e;
+            }
+        });
     }
 }
 exports.default = StandardController;
+class IStandardControllerTRX extends StandardController {
+}
 

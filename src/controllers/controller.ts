@@ -21,7 +21,8 @@ import { WWWTemplate } from '../models/v2/Www';
 import xss = require('xss');
 import moment = require('moment');
 import {numberWithCommas} from '../helpers/Filter';
-
+import Knex = require('knex');
+import knex from '../helpers/knex';
 /**
  * Standard controller that all other controllers should extend.
  * 
@@ -56,7 +57,45 @@ export default class StandardController {
     public ad = new ad();
     public support = new support();
     public reportAbuse = new reportAbuse();
-    constructor() {
-
+    /**
+     * Begin a transaction while using normal controller services
+     * This method will call trx.commit() internally
+     */
+    public transaction(callback: (arg1: IStandardControllerTRX) => Promise<any>): Promise<void> {
+        return knex.transaction(async (trx) => {
+            const newController: IStandardControllerTRX = new StandardController(trx);
+            try {
+                await callback(newController);
+            }catch(e) {
+                if (typeof e !== 'object') {
+                    console.log('found the one that isnt an object, ',e);
+                }
+                throw e;
+            }
+        });
     }
+    constructor(knexOverload?: Knex) {
+        if (knexOverload) {
+            console.log('overloading knex');
+            this.user.knex = knexOverload;
+            this.mod.knex = knexOverload;
+            this.group.knex = knexOverload;
+            this.game.knex = knexOverload;
+            this.forum.knex = knexOverload;
+            this.economy.knex = knexOverload;
+            this.chat.knex = knexOverload;
+            this.catalog.knex = knexOverload;
+            this.billing.knex = knexOverload;
+            this.avatar.knex = knexOverload;
+            this.notification.knex = knexOverload;
+            this.settings.knex = knexOverload;
+            this.staff.knex = knexOverload;
+            this.ad.knex = knexOverload;
+            this.support.knex = knexOverload;
+            this.reportAbuse.knex = knexOverload;
+        }
+    }
+}
+
+class IStandardControllerTRX extends StandardController {
 }

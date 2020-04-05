@@ -12,51 +12,40 @@ class EconomyDAL extends _init_1.default {
         });
     }
     async lockUserEconomy(userId) {
-        try {
-            await this.knex.transaction(async (trx) => {
-                let lockStatus = await trx('users').select('economy_lock', 'economy_lock_date').where({
-                    'id': userId,
-                }).forUpdate('users');
-                let info = lockStatus[0];
-                console.log('user lock status', info);
-                if (info.economy_lock === 1) {
-                    let lockDateBad = this.moment(info.economy_lock_date).add(10, 'seconds').isSameOrAfter(this.moment());
-                    console.log(lockDateBad);
-                    if (lockDateBad) {
-                        throw new Error("CouldNotAquireLockDueToLockNotExpired");
-                    }
+        await this.knex.transaction(async (trx) => {
+            let lockStatus = await trx('users').select('economy_lock', 'economy_lock_date').where({
+                'id': userId,
+            }).forUpdate('users');
+            let info = lockStatus[0];
+            console.log('user lock status', info);
+            if (info.economy_lock === 1) {
+                let lockDateBad = this.moment(info.economy_lock_date).add(10, 'seconds').isSameOrAfter(this.moment());
+                console.log(lockDateBad);
+                if (lockDateBad) {
+                    throw new Error("CouldNotAquireLockDueToLockNotExpired");
                 }
-                let dateToLock = this.knexTime();
-                let results = await trx('users').update({
-                    'economy_lock': 1,
-                    'economy_lock_date': dateToLock,
-                }).where({
-                    'id': userId,
-                });
-                console.log(results);
-                let newStatus = await trx('users').select('economy_lock', 'economy_lock_date').where({
-                    'id': userId,
-                }).forUpdate('users');
-                console.log(newStatus);
-                console.log(dateToLock);
-                let timeLockedAt = newStatus[0]['economy_lock_date'].toISOString();
-                let dateWeLockedAt = new Date(dateToLock).toISOString();
-                console.log(newStatus);
-                console.log(dateToLock);
-                if (timeLockedAt !== dateWeLockedAt) {
-                    throw new Error('EconomyLockedByOtherProcess');
-                }
-                try {
-                    await trx.commit();
-                }
-                catch (e) {
-                    throw e;
-                }
+            }
+            let dateToLock = this.knexTime();
+            let results = await trx('users').update({
+                'economy_lock': 1,
+                'economy_lock_date': dateToLock,
+            }).where({
+                'id': userId,
             });
-        }
-        catch (e) {
-            throw e;
-        }
+            console.log(results);
+            let newStatus = await trx('users').select('economy_lock', 'economy_lock_date').where({
+                'id': userId,
+            }).forUpdate('users');
+            console.log(newStatus);
+            console.log(dateToLock);
+            let timeLockedAt = newStatus[0]['economy_lock_date'].toISOString();
+            let dateWeLockedAt = new Date(dateToLock).toISOString();
+            console.log(newStatus);
+            console.log(dateToLock);
+            if (timeLockedAt !== dateWeLockedAt) {
+                throw new Error('EconomyLockedByOtherProcess');
+            }
+        });
     }
     async deleteTransaction(transactionId) {
         await this.knex('transactions').delete().where({
@@ -108,13 +97,12 @@ class EconomyDAL extends _init_1.default {
             else {
                 throw economy.userBalanceErrors.InvalidCurrencyType;
             }
-            await trx.commit();
         });
     }
     async subtractFromUserBalance(userId, amount, currency) {
         await this.knex.transaction(async (trx) => {
             if (currency === economy.currencyType.primary) {
-                const balance = await trx("users").select("user_balance1").where({ "id": userId }).forUpdate('users');
+                const balance = await trx("users").select("user_balance1").where({ "id": userId });
                 if (balance && balance[0] && balance[0]["user_balance1"] !== undefined) {
                     const currentBalance = balance[0]["user_balance1"];
                     const newBalance = currentBalance - amount;
@@ -128,7 +116,7 @@ class EconomyDAL extends _init_1.default {
                 }
             }
             else if (currency === economy.currencyType.secondary) {
-                const balance = await trx("users").select("user_balance2").where({ "id": userId }).forUpdate('users');
+                const balance = await trx("users").select("user_balance2").where({ "id": userId });
                 if (balance && balance[0] && balance[0]["user_balance2"] !== undefined) {
                     const currentBalance = balance[0]["user_balance2"];
                     const newBalance = currentBalance - amount;
@@ -144,7 +132,6 @@ class EconomyDAL extends _init_1.default {
             else {
                 throw economy.userBalanceErrors.InvalidCurrencyType;
             }
-            await trx.commit();
         });
     }
     async addToGroupBalance(groupId, amount, currency) {
@@ -174,7 +161,6 @@ class EconomyDAL extends _init_1.default {
             else {
                 throw economy.userBalanceErrors.InvalidCurrencyType;
             }
-            await trx.commit();
         });
     }
     async subtractFromGroupBalance(groupId, amount, currency) {
@@ -210,7 +196,6 @@ class EconomyDAL extends _init_1.default {
             else {
                 throw economy.userBalanceErrors.InvalidCurrencyType;
             }
-            await trx.commit();
         });
     }
     async getUserTransactions(userId, offset) {
@@ -315,12 +300,16 @@ class EconomyDAL extends _init_1.default {
         }
         return query;
     }
-    async getTradeById(tradeId) {
-        const query = await this.knex("trades").select('id as tradeId', 'userid_one as userIdOne', 'userid_two as userIdTwo', 'date', 'status').where({ 'id': tradeId });
-        if (!query[0]) {
+    async getTradeById(tradeId, forUpdate) {
+        let query = this.knex("trades").select('id as tradeId', 'userid_one as userIdOne', 'userid_two as userIdTwo', 'date', 'status').where({ 'id': tradeId });
+        if (forUpdate) {
+            query = query.forUpdate(forUpdate);
+        }
+        const res = await query;
+        if (!res[0]) {
             throw false;
         }
-        return query[0];
+        return res[0];
     }
     async declineTradeById(tradeId) {
         await this.knex("trades").update({
@@ -337,7 +326,7 @@ class EconomyDAL extends _init_1.default {
         }).limit(1);
     }
     async getTradeItems(side, tradeId) {
-        const items = await this.knex("trade_items").select("trade_id as tradeId", "userinventory_id as userInventoryId", "catalog_id as catalogId").where({ "trade_id": tradeId, "side": side });
+        const items = await this.knex("trade_items").select("trade_items.trade_id as tradeId", "trade_items.userinventory_id as userInventoryId", "trade_items.catalog_id as catalogId", 'user_inventory.serial', 'catalog.average_price as averageSalesPrice').where({ "trade_id": tradeId, "side": side }).innerJoin('user_inventory', 'user_inventory.id', 'trade_items.userinventory_id').innerJoin('catalog', 'catalog.id', 'trade_items.catalog_id');
         if (!items[0]) {
             throw false;
         }

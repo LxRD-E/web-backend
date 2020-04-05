@@ -63,43 +63,54 @@ class GameDAL extends _init_1.default {
         console.log("Query OK. Returning gameInfo...");
         return gameInfo[0];
     }
-    async getGames(offset, limit, sortMode, sortByColumn, genre) {
+    async getGames(offset, limit, sortMode, sortByColumn, genre, creatorConstraint) {
         let games;
         let total;
+        let extraWhereClause = {};
+        if (creatorConstraint) {
+            extraWhereClause.creator_id = creatorConstraint.creatorId;
+            extraWhereClause.creator_type = creatorConstraint.creatorType;
+        }
+        let columnsToSelect = [
+            'id as gameId',
+            'name as gameName',
+            'description as gameDescription',
+            'player_count as playerCount',
+            'visit_count as visitCount',
+            'genre',
+            'creator_type as creatorType',
+            'creator_id as creatorId',
+            'created_at as createdAt',
+            'updated_at as updatedAt',
+        ];
         if (genre === Game.GameGenres.Any) {
-            games = await this.knex('game').select([
-                'id as gameId',
-                'name as gameName',
-                'description as gameDescription',
-                'player_count as playerCount',
-                'creator_type as creatorType',
-                'creator_id as creatorId',
-                'updated_at as updatedAt',
-            ]).limit(limit).offset(offset).orderBy(sortByColumn, sortMode).where({
+            games = await this.knex('game')
+                .select(columnsToSelect)
+                .limit(limit)
+                .offset(offset)
+                .orderBy(sortByColumn, sortMode)
+                .where({
                 'game_state': Game.GameState.public,
-            });
+            }).andWhere(extraWhereClause);
             let _total = await this.knex('game').count('id as total').where({
                 'game_state': Game.GameState.public,
-            });
+            }).andWhere(extraWhereClause);
             total = _total[0]['total'];
         }
         else {
-            games = await this.knex('game').select([
-                'id as gameId',
-                'name as gameName',
-                'description as gameDescription',
-                'player_count as playerCount',
-                'creator_type as creatorType',
-                'creator_id as creatorId',
-                'updated_at as updatedAt',
-            ]).limit(limit).offset(offset).orderBy(sortByColumn, sortMode).where({
+            games = await this.knex('game')
+                .select(columnsToSelect)
+                .limit(limit)
+                .offset(offset)
+                .orderBy(sortByColumn, sortMode)
+                .where({
                 'game_state': Game.GameState.public,
                 'genre': genre,
-            });
+            }).andWhere(extraWhereClause);
             let _total = await this.knex('game').count('id as total').where({
                 'game_state': Game.GameState.public,
                 'genre': genre,
-            });
+            }).andWhere(extraWhereClause);
             total = _total[0]['total'];
         }
         return {

@@ -21,7 +21,7 @@ class GameDAL extends _init {
      * @param specificColumns 
      */
     public async getInfo(id: number, specificColumns?: Array<
-        'gameId' | 'gameName' | 'gameDescription' | 'maxPlayers'  | 'visitCount' | 'playerCount' | 'likeCount' | 'dislikeCount' | 'gameState' | 'creatorId' | 'creatorType' | 'createdAt' | 'updatedAt' | 'genre'
+        'gameId' | 'gameName' | 'gameDescription' | 'maxPlayers' | 'visitCount' | 'playerCount' | 'likeCount' | 'dislikeCount' | 'gameState' | 'creatorId' | 'creatorType' | 'createdAt' | 'updatedAt' | 'genre'
     >): Promise<Game.GameInfo> {
         if (!specificColumns) {
             specificColumns = ['gameId', 'gameName', 'gameDescription', 'visitCount', 'playerCount', 'likeCount', 'dislikeCount', 'gameState', 'creatorId', 'creatorType', 'genre'];
@@ -71,42 +71,67 @@ class GameDAL extends _init {
      * @param limit 
      * @param sortMode 
      */
-    public async getGames(offset: number, limit: number, sortMode: 'asc'|'desc', sortByColumn: string, genre: number): Promise<Game.GameSearchResult> {
+    public async getGames(
+        offset: number,
+        limit: number,
+        sortMode: 'asc' | 'desc',
+        sortByColumn: string,
+        genre: number,
+        creatorConstraint?: game.GameSearchCreatorConstraint,
+    ): Promise<Game.GameSearchResult> {
         let games;
         let total: number;
+        let extraWhereClause: {
+            'creator_id'?: number,
+            'creator_type'?: number,
+        } = {};
+        if (creatorConstraint) {
+            extraWhereClause.creator_id = creatorConstraint.creatorId;
+            extraWhereClause.creator_type = creatorConstraint.creatorType;
+        }
+        let columnsToSelect = [
+            'id as gameId',
+            'name as gameName',
+            'description as gameDescription',
+            'player_count as playerCount',
+            'visit_count as visitCount',
+            'genre',
+            'creator_type as creatorType',
+            'creator_id as creatorId',
+            'created_at as createdAt',
+            'updated_at as updatedAt',
+        ];
         if (genre === Game.GameGenres.Any) {
-            games = await this.knex('game').select([
-                'id as gameId',
-                'name as gameName',
-                'description as gameDescription',
-                'player_count as playerCount',
-                'creator_type as creatorType',
-                'creator_id as creatorId',
-                'updated_at as updatedAt',
-            ]).limit(limit).offset(offset).orderBy(sortByColumn,sortMode).where({
+            // grab games
+            games = await this.knex('game')
+            .select(columnsToSelect)
+            .limit(limit)
+            .offset(offset)
+            .orderBy(sortByColumn, sortMode)
+            .where({
                 'game_state': Game.GameState.public,
-            });
+            }).andWhere(extraWhereClause);
+            // count games
             let _total = await this.knex('game').count('id as total').where({
                 'game_state': Game.GameState.public,
-            });
+            }).andWhere(extraWhereClause);
             total = _total[0]['total'] as number;
-        }else{
-            games = await this.knex('game').select([
-                'id as gameId',
-                'name as gameName',
-                'description as gameDescription',
-                'player_count as playerCount',
-                'creator_type as creatorType',
-                'creator_id as creatorId',
-                'updated_at as updatedAt',
-            ]).limit(limit).offset(offset).orderBy(sortByColumn,sortMode).where({
+        } else {
+            // grab games
+            games = await this.knex('game')
+            .select(columnsToSelect)
+            .limit(limit)
+            .offset(offset)
+            .orderBy(sortByColumn, sortMode)
+            .where({
                 'game_state': Game.GameState.public,
                 'genre': genre,
-            });
+            }).andWhere(extraWhereClause);
+            // count games
             let _total = await this.knex('game').count('id as total').where({
                 'game_state': Game.GameState.public,
                 'genre': genre,
-            });
+            }).andWhere(extraWhereClause);
             total = _total[0]['total'] as number;
         }
 
@@ -122,7 +147,7 @@ class GameDAL extends _init {
      * @param creatorType 
      */
     public async countGames(creatorId: number, creatorType: Catalog.creatorType): Promise<number> {
-        const count = await this.knex('game').count('id as Total').where({'creator_id': creatorId,'creator_type':creatorType});
+        const count = await this.knex('game').count('id as Total').where({ 'creator_id': creatorId, 'creator_type': creatorType });
         let total = count[0]['Total'] as number;
         if (!total) {
             total = 0;
@@ -185,9 +210,9 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
      * @param gameId 
      */
     public async getGameMap(gameId: number): Promise<Game.Map> {
-        const mapInfo = await this.knex('game_map').select('id as mapId','game_id as gameId','script_url as scriptUrl','created_at as createdAt','updated_at as updatedAt').where({
+        const mapInfo = await this.knex('game_map').select('id as mapId', 'game_id as gameId', 'script_url as scriptUrl', 'created_at as createdAt', 'updated_at as updatedAt').where({
             'game_id': gameId,
-        }).limit(1).orderBy('id','desc');
+        }).limit(1).orderBy('id', 'desc');
         return mapInfo[0];
     }
 
@@ -196,7 +221,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
      * @param gameId 
      */
     public async getGameScripts(gameId: number, type: Game.ScriptType): Promise<Game.Script[]> {
-        const scripts = await this.knex('game_script').select('id as scriptId','game_id as gameId','script_url as scriptUrl','created_at as createdAt','updated_at as updatedAt','script_type as scriptType','name as scriptName').where({
+        const scripts = await this.knex('game_script').select('id as scriptId', 'game_id as gameId', 'script_url as scriptUrl', 'created_at as createdAt', 'updated_at as updatedAt', 'script_type as scriptType', 'name as scriptName').where({
             'game_id': gameId,
             'script_type': type,
         });
@@ -208,7 +233,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
      * @param gameId 
      */
     public async getAllGameScripts(gameId: number): Promise<Game.Script[]> {
-        const scripts = await this.knex('game_script').select('id as scriptId','game_id as gameId','script_url as scriptUrl','created_at as createdAt','updated_at as updatedAt','script_type as scriptType','name as scriptName').where({
+        const scripts = await this.knex('game_script').select('id as scriptId', 'game_id as gameId', 'script_url as scriptUrl', 'created_at as createdAt', 'updated_at as updatedAt', 'script_type as scriptType', 'name as scriptName').where({
             'game_id': gameId,
         });
         return scripts;
@@ -219,7 +244,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
      * @param scriptId 
      */
     public async getGameScript(scriptId: number): Promise<Game.Script> {
-        const scripts = await this.knex('game_script').select('id as scriptId','game_id as gameId','script_url as scriptUrl','created_at as createdAt','updated_at as updatedAt','script_type as scriptType','name as scriptName').where({
+        const scripts = await this.knex('game_script').select('id as scriptId', 'game_id as gameId', 'script_url as scriptUrl', 'created_at as createdAt', 'updated_at as updatedAt', 'script_type as scriptType', 'name as scriptName').where({
             'id': scriptId,
         });
         return scripts[0];
@@ -245,7 +270,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
             'max_players': maxPlayers,
             'updated_at': this.moment().format('YYYY-MM-DD HH:mm:ss'),
             'genre': genre,
-        }).where({'id': gameId}).limit(1);
+        }).where({ 'id': gameId }).limit(1);
     }
 
     /**
@@ -260,7 +285,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
             });
             s3.getObject({
                 Bucket: config.aws.buckets.game,
-                Key: 'maps/'+mapName,
+                Key: 'maps/' + mapName,
             }, function (err, data) {
                 if (err) {
                     console.log(err);
@@ -284,7 +309,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
             });
             s3.getObject({
                 Bucket: config.aws.buckets.game,
-                Key: 'scripts/'+scriptName,
+                Key: 'scripts/' + scriptName,
             }, function (err, data) {
                 if (err) {
                     console.log(err);
@@ -309,7 +334,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
             });
             s3.putObject({
                 Bucket: config.aws.buckets.game,
-                Key: 'maps/'+mapName,
+                Key: 'maps/' + mapName,
                 Body: content,
                 ACL: 'private',
                 ContentType: 'text/plain',
@@ -329,7 +354,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
      * @param content Script Content
      */
     public uploadScript(content: string, scriptName = crypto.randomBytes(64).toString('hex')): Promise<string> {
-        console.log('creating script of name: '+scriptName);
+        console.log('creating script of name: ' + scriptName);
         return new Promise((resolve, reject): void => {
             const s3 = new aws.S3({
                 endpoint: config.aws.endpoint,
@@ -338,7 +363,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
             });
             s3.putObject({
                 Bucket: config.aws.buckets.game,
-                Key: 'scripts/'+scriptName,
+                Key: 'scripts/' + scriptName,
                 Body: content,
                 ACL: 'private',
                 ContentType: 'text/plain',
@@ -366,7 +391,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
             });
             s3.deleteObject({
                 Bucket: config.aws.buckets.game,
-                Key: 'scripts/'+scriptName,
+                Key: 'scripts/' + scriptName,
             }, function (err, data) {
                 if (err) {
                     reject(err)
@@ -382,9 +407,9 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
      * @param userId 
      */
     public async getPlayerServerState(userId: number): Promise<Game.GameServerPlayer> {
-        const player = await this.knex('game_server_player').select('game_server_id as gameServerId','user_id as userId','created_at as createdAt').where({
+        const player = await this.knex('game_server_player').select('game_server_id as gameServerId', 'user_id as userId', 'created_at as createdAt').where({
             'user_id': userId,
-        }).limit(1).orderBy('id','desc');
+        }).limit(1).orderBy('id', 'desc');
         return player[0];
     }
 
@@ -394,10 +419,10 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
      * @param maxCount 
      */
     public async getOpenServersForGame(gameId: number, maxCount: number): Promise<Game.GameServer[]> {
-        const servers = await this.knex('game_server').select('id as gameServerId','game_id as gameId','created_at as createdAt','player_count as playerCount','is_closed as isClosed').where({
+        const servers = await this.knex('game_server').select('id as gameServerId', 'game_id as gameId', 'created_at as createdAt', 'player_count as playerCount', 'is_closed as isClosed').where({
             'is_closed': Game.GameClosed.false,
             'game_id': gameId,
-        }).andWhere('player_count', '<', maxCount).orderBy('player_count','asc');
+        }).andWhere('player_count', '<', maxCount).orderBy('player_count', 'asc');
         return servers;
     }
 
@@ -414,7 +439,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
         await this.knex.raw(`UPDATE game_server SET player_count = player_count + 1 WHERE id = ?`, [gameServerId]);
         const listener = redis();
         listener.on('connect', async () => {
-            await listener.publish('GameServer'+gameServerId, JSON.stringify({
+            await listener.publish('GameServer' + gameServerId, JSON.stringify({
                 event: 'PlayerConnect',
                 userId: userId.toString(),
             }));
@@ -449,19 +474,19 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
                     const content = await this.getScriptContent(script.scriptUrl);
                     entireScript = entireScript + '\n' + content;
                 }
-                await serverPublisher.publish('GameServer'+gameServerId[0].toString(), JSON.stringify({
+                await serverPublisher.publish('GameServer' + gameServerId[0].toString(), JSON.stringify({
                     event: 'serverScript',
                     script: entireScript,
                 }));
-            }else if (ev.event === 'PlayerConnect') {
+            } else if (ev.event === 'PlayerConnect') {
                 // connect
-            }else if (ev.event === 'PlayerDisconnect') {
+            } else if (ev.event === 'PlayerDisconnect') {
                 // disconnect
-            }else if (ev.event === 'shutdown') {
+            } else if (ev.event === 'shutdown') {
                 // shutdown server
                 await this.knex('game_server').update({
                     'is_closed': 1,
-                }).where({'id': gameServerId[0]});
+                }).where({ 'id': gameServerId[0] });
                 // disconnect
                 listener.disconnect();
             }
@@ -477,7 +502,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
      * @param serverId 
      */
     public async getServerById(serverId: number): Promise<Game.GameServer> {
-        const server = await this.knex('game_server').select('id as gameServerId','game_id as gameId','created_at as createdAt','player_count as playerCount','is_closed as isClosed').where({
+        const server = await this.knex('game_server').select('id as gameServerId', 'game_id as gameId', 'created_at as createdAt', 'player_count as playerCount', 'is_closed as isClosed').where({
             'id': serverId,
         })
         return server[0];
@@ -497,11 +522,11 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
             await this.knex('game_server').update({
                 'player_count': 0,
                 'is_closed': Game.GameClosed.true,
-            }).where({'id': serverInfo.gameServerId});
-        }else{
+            }).where({ 'id': serverInfo.gameServerId });
+        } else {
             await this.knex('game_server').update({
                 'player_count': serverInfo.playerCount - 1,
-            }).where({'id': serverInfo.gameServerId});
+            }).where({ 'id': serverInfo.gameServerId });
         }
         await this.knex('game_server_player').delete().where({
             'user_id': userId,
@@ -509,7 +534,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
 
         const listener = redis();
         listener.on('connect', async () => {
-            await listener.publish('GameServer'+server.gameServerId, JSON.stringify({
+            await listener.publish('GameServer' + server.gameServerId, JSON.stringify({
                 event: 'PlayerDisconnect',
                 userId: userId.toString(),
             }));
@@ -525,7 +550,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
         return new Promise((res): void => {
             const listener = redis();
             listener.on('connect', async () => {
-                await listener.subscribe('GameServer'+gameServerId);
+                await listener.subscribe('GameServer' + gameServerId);
                 res(listener);
             });
         });
@@ -573,7 +598,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
      * Get the thumbnail for a game. Returns default thumbnail if pending/declined/not available
      */
     public async getGameThumbnail(gameId: number): Promise<game.GameThumbnail> {
-        let thumbnail = await this.knex('game_thumbnails').select('thumbnail_url','id').where({'game_id': gameId,'moderation_status': game.GameThumbnailModerationStatus.Approved}).orderBy('id','desc');
+        let thumbnail = await this.knex('game_thumbnails').select('thumbnail_url', 'id').where({ 'game_id': gameId, 'moderation_status': game.GameThumbnailModerationStatus.Approved }).orderBy('id', 'desc');
         if (thumbnail[0] && thumbnail[0]['thumbnail_url']) {
             return {
                 url: thumbnail[0]['thumbnail_url'],
@@ -593,9 +618,9 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
      * @param gameIds 
      */
     public async multiGetGameThumbnails(gameIds: number[], ignoreModerationState: boolean = false): Promise<game.GameThumbnail[]> {
-        let object = this.knex('game_thumbnails').select('thumbnail_url as url','moderation_status as moderationStatus', 'game_id as gameId');
+        let object = this.knex('game_thumbnails').select('thumbnail_url as url', 'moderation_status as moderationStatus', 'game_id as gameId');
         for (const item of gameIds) {
-            object = object.orWhere('game_id','=',item);
+            object = object.orWhere('game_id', '=', item);
         }
         let results = await object;
         for (const item of results) {

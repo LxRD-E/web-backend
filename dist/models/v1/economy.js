@@ -130,6 +130,16 @@ __decorate([
     common_1.Required(),
     __metadata("design:type", Number)
 ], TradeItems.prototype, "catalogId", void 0);
+__decorate([
+    common_1.Required(),
+    common_1.AllowTypes('number', 'null'),
+    __metadata("design:type", Number)
+], TradeItems.prototype, "serial", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('Average sales price of the item'),
+    __metadata("design:type", Number)
+], TradeItems.prototype, "averageSalesPrice", void 0);
 exports.TradeItems = TradeItems;
 var currencyType;
 (function (currencyType) {
@@ -195,6 +205,6 @@ __decorate([
     common_1.Required(),
     common_1.PropertyType(TradeItems),
     __metadata("design:type", Array)
-], TradeItemsResponse.prototype, "requestee", void 0);
+], TradeItemsResponse.prototype, "offer", void 0);
 exports.TradeItemsResponse = TradeItemsResponse;
 

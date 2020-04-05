@@ -153,7 +153,7 @@ request("/user/" + userid + "/avatar", "GET")
         if (typeof d["avatar"] !== "undefined" && d["avatar"].length >= 1) {
             var catalogIds = [];
             d["avatar"].forEach(function (k) {
-                $('#userAvatarDiv').append('<div class="col-6 col-lg-3"><img style="width:100%;" data-catalogid="' + k.catalogId + '"><a style="color:#212529;" href="/catalog/' + k.catalogId + '/"><p class="text-center text-truncate" data-catalogid="' + k.catalogId + '"></p></a></div>');
+                $('#userAvatarDiv').append('<div class="col-6 col-md-3 col-lg-2"><a style="color:#212529;" href="/catalog/' + k.catalogId + '/"><img style="width:100%;" data-catalogid="' + k.catalogId + '"><p style="font-size:0.75rem;" class="text-center text-truncate" data-catalogid="' + k.catalogId + '"></p></a></div>');
                 catalogIds.push(k.catalogId);
             });
             setCatalogNames(catalogIds);
@@ -176,4 +176,50 @@ $(document).on('click', '#regenAvatar', function (e) {
         .catch(function (e) {
             warning(e.responseJSON.message);
         })
+});
+
+
+request('/game/search?genre=1&limit=4&offset=0&creatorType=0&creatorId='+userid, 'GET').then(games => {
+    if (games.total === 0) {
+        $('#user-games-div').append(`
+        
+            <div class="col-12">
+                <p>This user has not created any games.</p>
+            </div>
+        
+        `);
+        return;
+    }
+    let gameIds = [];
+    for (const game of games.data) {
+        gameIds.push(game.gameId);
+        $('#user-games-div').append(`
+        
+        <div class="col-6" style="padding-left:1px;padding-right:1px;padding-bottom:1px;">
+            <a href="/game/${game.gameId}/" class="normal">
+                <div class="card" style="background: #f8f9fa;">
+                    <img src="${window.subsitutionimageurl}" data-gameid="${game.gameId}" style="
+                    width: 100%;
+                    object-fit: fill;
+                    display: block;
+                    margin: 0 auto;
+                    height: 150px;" />
+                    <div class="card-body">
+
+                        <h1 style="
+                        overflow: hidden;
+                        font-size: 0.65rem;
+                        margin-bottom: 0;
+                        line-height: 1rem;
+                        height: 1.5rem;
+                        ">${xss(game.gameName)}</h1>
+                        <p style="font-size:0.6rem;"><span class="font-weight-bold">${number_format(game.playerCount)}</span> People Playing</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        `);
+    }
+    setGameThumbs(gameIds);
 });
