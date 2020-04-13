@@ -202,7 +202,7 @@ export default class AdController extends controller {
         // generate random name for ad image
         let randomName = crypto.randomBytes(32).toString('hex')+fileEnding;
         // insert data
-        let adId = await this.ad.createAd(userInfo.userId, 'https://cdn.hindigamer.club/thumbnails/'+randomName, title, adType, adRedirectId, adDisplayType);
+        let adId = await this.ad.createAd(userInfo.userId, 'https://cdn.blockshub.net/thumbnails/'+randomName, title, adType, adRedirectId, adDisplayType);
         // upload image
         await this.ad.uploadAdImage(randomName, imageData, mime);
         // return success 

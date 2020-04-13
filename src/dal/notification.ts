@@ -39,6 +39,24 @@ class NotificationsDAL extends _init {
     }
 
     /**
+     * Mark multiple messages as read
+     * @param userId 
+     * @param messageIds 
+     */
+    public async multiMarkAsRead(userIdTo: number, messageIds: number[]): Promise<void> {
+        let promise = this.knex("user_messages").update({
+            'message_read': Notifications.read.true,
+        });
+        for (const id of messageIds) {
+            promise = promise.orWhere({
+                'id': id,
+                'userid_to': userIdTo,
+            });
+        }
+        await promise;
+    }
+
+    /**
      * Count a user's unread messages
      * @param userIdTo 
      */
@@ -48,6 +66,17 @@ class NotificationsDAL extends _init {
             'message_read': Notifications.read.false,
         }).orderBy('id', 'desc').limit(99);
         return messages[0]["Total"] as number;
+    }
+
+    /**
+     * Count a user's inbound friend requests
+     * @param userIdTo 
+     */
+    public async countInboundFriendRequests(userIdTo: number): Promise<number> {
+        const requests = await this.knex("friend_request").count("id as Total").where({
+            'userid_requestee': userIdTo,
+        }).limit(99);
+        return requests[0]["Total"] as number || 0;
     }
 
     /**

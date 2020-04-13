@@ -130,7 +130,7 @@ export class WWWSupportController extends controller {
                 <div style="margin-top:1rem;"></div>
 
                 <h3>"This content cannot be displayed in an iframe"</h3>
-                <img src="https://cdn.hindigamer.club/static/support-img/Screenshot_1.png" style="width:100%;height: auto;max-width:600px;" />
+                <img src="https://cdn.blockshub.net/static/support-img/Screenshot_1.png" style="width:100%;height: auto;max-width:600px;" />
                 <p>Unfortunately, this error means that your browser is not supported by our game engine. We are currently working on a downloadable game engine to elevate problems like this on older operating systems, but until we release it, you will have to use a more up-to-date web browser such as <a href="https://www.google.com/chrome/" rel="nofollow">Google Chrome</a> or <a rel="nofollow" href="https://www.mozilla.org/firefox/">Mozilla Firefox</a>. If you are using the most up-to-date version of either browser, then your operating system is likely not supported by us.</p>
                 
                 `,
@@ -197,7 +197,7 @@ export class WWWSupportController extends controller {
                 </p>
                 <h3>I can't login!</h3>
                 <p style="margin-bottom:1rem">
-                    If you have a verified email address on your account, you can <a href="/request/password-reset">reset your password here</a>. If you do not recieve a reset password email, your email may have been changed. You can email our support team at <a href="mailto:support@hindigamer.club">support@hindigamer.club</a> from your account's last known email for assistance. If you did not have a verified email, then we will be unable to help you.
+                    If you have a verified email address on your account, you can <a href="/request/password-reset">reset your password here</a>. If you do not recieve a reset password email, your email may have been changed. You can email our support team at <a href="mailto:support@blockshub.net">support@blockshub.net</a> from your account's last known email for assistance. If you did not have a verified email, then we will be unable to help you.
                 </p>
                 <h3>Currency/Items are missing or I think someone's on my account</h3>
                 <p style="margin-bottom:1rem">

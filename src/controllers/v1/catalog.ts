@@ -50,11 +50,11 @@ export class CatalogController extends controller {
     ) {
         // Filter Catalog ID
         if (!id) {
-            return res.redirect("https://cdn.hindigamer.club/thumbnails/d8f9737603db2d077e9c6f2d5bd3eec1db8ff9fc8ef64784a5e4e6580c4519ba.png");
+            return res.redirect("https://cdn.blockshub.net/thumbnails/d8f9737603db2d077e9c6f2d5bd3eec1db8ff9fc8ef64784a5e4e6580c4519ba.png");
         }
         const thumbnail = await this.catalog.getThumbnailById(id);
         if (!thumbnail) {
-            return res.redirect("https://cdn.hindigamer.club/thumbnails/d8f9737603db2d077e9c6f2d5bd3eec1db8ff9fc8ef64784a5e4e6580c4519ba.png");
+            return res.redirect("https://cdn.blockshub.net/thumbnails/d8f9737603db2d077e9c6f2d5bd3eec1db8ff9fc8ef64784a5e4e6580c4519ba.png");
         }
         return res.redirect(thumbnail.url);
     }

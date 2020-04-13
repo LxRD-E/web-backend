@@ -25,8 +25,8 @@ export class WWWUsersController extends controller {
         let usernameChanges = await this.user.getPastUsernames(filteredUserId);
         // Define currency stuff:
         // Currency Variable Check
-        const primarySpan = '<span style="color:#28a745;margin-right: -3px;"><img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/money-green-2.svg"/> </span>';
-        const secondarySpan = '<span style="color:#ffc107;margin-right: -3px;"><img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/coin-stack-yellow.svg"/> </span>';
+        const primarySpan = '<span style="color:#28a745;margin-right: -3px;"><img alt="$" style="height: 1rem;" src="https://cdn.blockshub.net/static/money-green-2.svg"/> </span>';
+        const secondarySpan = '<span style="color:#ffc107;margin-right: -3px;"><img alt="$" style="height: 1rem;" src="https://cdn.blockshub.net/static/coin-stack-yellow.svg"/> </span>';
         // Define XSS Filter
         const xssfilter = new this.xss.FilterXSS({
             whiteList: {

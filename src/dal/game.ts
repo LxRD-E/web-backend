@@ -607,7 +607,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
             };
         }
         return {
-            url: 'https://cdn.hindigamer.club/game/default_assets/Screenshot_5.png',
+            url: 'https://cdn.blockshub.net/game/default_assets/Screenshot_5.png',
             moderationStatus: game.GameThumbnailModerationStatus.Approved,
             gameId: gameId,
         };

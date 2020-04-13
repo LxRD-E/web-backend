@@ -268,7 +268,7 @@ export const decryptPasswordHash = (passwordHash: string): string => {
 
 export const generateTOTPSecret = () => {
     return new Promise((res, rej) => {
-        let secret = speakeasy.generateSecret({length: 32, name: 'Hindi Gamer Club'});
+        let secret = speakeasy.generateSecret({length: 32, name: 'BlocksHub'});
         qrcode.toDataURL(secret.otpauth_url, (err, text) => {
             if (err) {
                 return rej(err);
@@ -420,7 +420,7 @@ export const multiGetOgTagsForYoutubeLinks = async (data: any[]): Promise<OGTags
             allPromises.push(axios.get(url, {
                 maxRedirects: 2,
                 headers: {
-                    'user-agent': 'hindigamer.club bot v1.0.0'
+                    'user-agent': 'blockshub.net bot v1.0.0'
                 }
             }));
             newDataArr.push({

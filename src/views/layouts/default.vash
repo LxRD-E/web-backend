@@ -8,7 +8,7 @@
         @html.block('meta')
 
         <!-- Prefetch -->
-        <link rel="dns-prefetch" href="https://cdn.hindigamer.club">
+        <link rel="dns-prefetch" href="https://cdn.blockshub.net">
         <link rel="dns-prefetch" href="https://cdn.jsdelivr.net/">
         <link rel="dns-prefetch" href="https://fonts.googleapis.com/">
 
@@ -42,7 +42,7 @@
             gtag('config', 'UA-161288601-1');
         </script>
         <!-- Title -->
-        <title>@model.title - Hindi Gamer Club</title>
+        <title>@model.title - BlocksHub</title>
         <!-- SEO -->
         @model.seo
         @html.block('seo')
@@ -107,7 +107,7 @@
             <div class="container">
                 <h3 style="margin:0;padding:0;">
                     <a class="navbar-brand" href="/">
-                        <i class="fab fa-accessible-icon"></i> HINDIGAMER.CLUB
+                        <img src="https://cdn.blockshub.net/static/logo-min-final.png" style="height: 1.6rem;" />
                     </a>
                 </h3>
 
@@ -147,14 +147,23 @@
                 @if (typeof model.userInfo !== 'undefined' && typeof model.userInfo.userId !== "undefined" && model.userInfo.userId !== null) {
                  <ul class="navbar-nav ml-auto">
                     <li class="nav-item displayCurrency">
-                        <a class="nav-link" href="/notifications">
-                            @if (!model.userInfo || model.userInfo.theme !== 1) {
-                                <i class="far fa-envelope-open" style="padding-right:4px;"></i>
-                            }else{
-                                <i class="far fa-envelope-open" style="color:white;padding-right:4px;"></i>
-                            }
-                            <span id="notificationCount">0</span>
-                        </a>
+                            <div class="dropdown">
+                                <a style="font-size: 0.8125rem;padding-top: 1rem;padding-bottom: 1rem;" class="nav-link dropdown-toggle" type="button" id="dropdownNotifications" data-toggle="dropdown" >
+                                    @if (!model.userInfo || model.userInfo.theme !== 1) {
+                                        <i class="far fa-envelope-open" style="padding-right:4px;"></i>
+                                    }else{
+                                        <i class="far fa-envelope-open" style="color:white;padding-right:4px;"></i>
+                                    }
+                                    <span id="notificationCount">0</span>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right" style="height:18rem;max-height:18rem;overflow-y:auto;overflow-x:hidden;width:18rem;" id="notifications-dropdown">
+                                    <div class="row" style="padding-left: 0.5rem;padding-right: 0.5rem;">
+                                        <div class="col-sm-12">
+                                            <p style="padding:0.5rem 1rem;font-size:0.75rem;text-align:center;">You do not have any notifications.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                     </li>
                     <li class="nav-item displayCurrency">
 
@@ -354,7 +363,7 @@
                     <div class="col-12" style="padding: 3rem 0 0 0;">
                         <div class="row" style="padding-bottom:1rem;">
                             <div class="col-12">
-                                <h2 style="">Hindi Gamer Club</h2>
+                                <h2 style="">BlocksHub</h2>
                             </div>
                         </div>
                         <div class="row">
@@ -399,7 +408,7 @@
                                 <div class="mr-auto">
                                     <div class="row justify-content-center">
                                         <div class="col-12">
-                                            <p style="padding-top: 10%;font-size:0.85rem;">&copy; @model.year Hindi Gamer Club</p>
+                                            <p style="padding-top: 10%;font-size:0.85rem;">&copy; @model.year BlocksHub</p>
                                         </div>
                                     </div>
                                 </div>

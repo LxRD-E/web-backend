@@ -66,7 +66,7 @@ export enum GameGenreDescriptions {
 }
 
 export enum GameGenreThumbnails {
-    'https://cdn.hindigamer.club/static/genre/Western-small.jpg' = 14
+    'https://cdn.blockshub.net/static/genre/Western-small.jpg' = 14
 }
 
 export class GameThumbnail {

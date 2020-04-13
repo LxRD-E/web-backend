@@ -36,10 +36,10 @@ if (process.env.NODE_ENV === 'development') {
     );
 } else {
     allowedDomains.push(
-        'https://hindigamer.club/',
-        'https://www.hindigamer.club/',
-        'https://www.hindigamer.club',
-        'https://hindigamer.club',
+        'https://blockshub.net/',
+        'https://www.blockshub.net/',
+        'https://www.blockshub.net',
+        'https://blockshub.net',
     );
 }
 
@@ -66,11 +66,11 @@ const scriptOptions = {
 };
 
 const COPYRIGHT_DISCLAIMER = `/**
- * Copyright (c) Hindi Gamer Club - All Rights Reserved
+ * Copyright (c) BlocksHub - All Rights Reserved
  * Unauthorized copying of this file, via any medium, is strictly prohibited.
  * You are not allowed to copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software.
  * This software includes various open-source libraries which have licenses provided where relevent and required.
- * View our full terms of service here: https://hindigamer.club/terms
+ * View our full terms of service here: https://blockshub.net/terms
  */`;
 let simpleCryptoData = model.game.getSimpleCrypto();
 
@@ -218,7 +218,7 @@ const script = jsObfuse.obfuscate(`
                 
                     // Create and tweak the background material.
                     var backgroundMaterial = new BABYLON.BackgroundMaterial("backgroundMaterial", scene);
-                    backgroundMaterial.reflectionTexture = new BABYLON.CubeTexture("https://cdn.hindigamer.club/game/default_assets/TropicalSunnyDay", scene);
+                    backgroundMaterial.reflectionTexture = new BABYLON.CubeTexture("https://cdn.blockshub.net/game/default_assets/TropicalSunnyDay", scene);
                     backgroundMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
                     skybox.material = backgroundMaterial;
                 
@@ -492,7 +492,7 @@ export default class GameController extends controller {
         // Create game
         const gameId = await this.game.create(userInfo.userId, model.catalog.creatorType.User, gameName, gameDescription);
         // Create thumbnail
-        await this.game.createGameThumbnail(gameId, 'https://cdn.hindigamer.club/game/default_assets/Screenshot_5.png', model.game.GameThumbnailModerationStatus.Approved);
+        await this.game.createGameThumbnail(gameId, 'https://cdn.blockshub.net/game/default_assets/Screenshot_5.png', model.game.GameThumbnailModerationStatus.Approved);
         // Return success
         return {
             success: true,

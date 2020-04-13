@@ -4,7 +4,7 @@
 # to view logs:
 # sudo journalctl -u hindigamerclub-two.service
 [Unit]
-Description=Hindi Gamer Club Web/API Daemon 2
+Description=BlocksHub Web/API Daemon 2
 # After=mysql.service redis.service
 
 [Service]

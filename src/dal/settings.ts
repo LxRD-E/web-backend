@@ -30,8 +30,8 @@ class SettingsDAL extends _init {
             "Messages": [
                 {
                     "From": {
-                        "Email": "support@hindigamer.club",
-                        "Name": "Hindi Gamer Club"
+                        "Email": "support@blockshub.net",
+                        "Name": "BlocksHub"
                     },
                     "To": [
                         {

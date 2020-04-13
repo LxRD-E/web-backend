@@ -3,7 +3,7 @@
         <meta property="og:title" content="@model.page.threadTitle" />
         <meta property="og:type" content="website" />
         <meta name="twitter:title" content="@model.page.threadTitle">
-        <meta name="twitter:description" content="@model.page.threadTitle | A Forum Post on hindigamer.club">
+        <meta name="twitter:description" content="@model.page.threadTitle | A Forum Post on blockshub.net">
     })
     @html.block('content', function(model) {
         @if (model.userInfo) {

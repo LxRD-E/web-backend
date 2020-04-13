@@ -176,6 +176,35 @@ body {
 .navbar-nav> .nav-item > .nav-link {
     border-bottom: 1px solid rgba(255,255,255,0);
 }
+
+
+
+.navbar-nav> .nav-item * .nav-link:hover {
+    transition: all .2s ease-in;
+    color: rgba(71,195,91,1);
+    text-decoration: none;
+}
+.navbar-nav> .nav-item * .nav-link:hover {
+    border-bottom-color:rgba(71,195,91,1);
+}
+.navbar-nav> .nav-item * .nav-link {
+    border-bottom: 1px solid rgba(255,255,255,0);
+}
+.navbar-nav> .nav-item * .nav-link {
+    transition: all .2s ease-in;
+    color: rgba(255,255,255,1);
+    /*padding-left:0;*/
+    font-size: 0.8125rem;
+    color: #16181b;
+    font-weight: 600;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+li.displayCurrency {
+    user-select: none;
+}
+
+
 .dropdown-menu.show > .dropdown-item {
     transition: all .1s ease-in;
 }
@@ -251,7 +280,7 @@ div.navbar {
     top:0;
     left:0;
     padding: .3em 0 1em 40px;
-    list-style-image: url(https://cdn.hindigamer.club/thumbnails/5732f05140448511b9098951e1a47b9d3a8bb0dd384df902f3c519cec1b03edb.png);
+    list-style-image: url(https://cdn.blockshub.net/thumbnails/5732f05140448511b9098951e1a47b9d3a8bb0dd384df902f3c519cec1b03edb.png);
 }
 .dropdown-menu.fade {
     display: block;

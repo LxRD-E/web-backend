@@ -11,7 +11,7 @@
         <div class="row" style="margin-top:1rem;">
             <div class="col-12">
                 <h1><a href="/groups/@model.page.groupId/@model.page.groupEncodedName">@model.page.groupName</a></h1>
-                <p><span style="color:#28a745;"><img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/money-green-2.svg"/> </span> @model.page.Primary <span style="color:#ffc107;"><img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/coin-stack-yellow.svg"/> </span> @model.page.Secondary</p><br>
+                <p><span style="color:#28a745;"><img alt="$" style="height: 1rem;" src="https://cdn.blockshub.net/static/money-green-2.svg"/> </span> @model.page.Primary <span style="color:#ffc107;"><img alt="$" style="height: 1rem;" src="https://cdn.blockshub.net/static/coin-stack-yellow.svg"/> </span> @model.page.Secondary</p><br>
             </div>
         </div>
         <div class="row">

@@ -160,7 +160,7 @@ export default class BillingController extends controller {
     @Summary('Create a Crypto-Currency Currency Transaction')
     @UseBeforeEach(csrf)
     @UseBefore(YesAuth)
-    @Returns(409, {type: model.Error, description: 'EmailVerificationRequired: Your email must be verification before purchasing something off of Hindi Gamer Club\n'})
+    @Returns(409, {type: model.Error, description: 'EmailVerificationRequired: Your email must be verification before purchasing something off of BlocksHub\n'})
     public async createCurrencyPurchaseBitcoin(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()

@@ -70,10 +70,10 @@ export default class AuthController extends controller {
             // insert code
             await this.user.insertPasswordReset(userInfo.userId, stringToken);
             // create url
-            let url = `https://hindigamer.club/reset/password?userId=${userInfo.userId}&code=`+encodeURIComponent(stringToken);
+            let url = `https://blockshub.net/reset/password?userId=${userInfo.userId}&code=`+encodeURIComponent(stringToken);
             // send email
             await this.settings.sendEmail(email, `Password Reset Request`, 
-            `Hello ${userInfo.username}\nYou (or someone else) requested your account's password on Hindi Gamer Club to be reset. Please copy and paste the link below into your browser to reset your password.\n\n${url}\n`,`Hello ${userInfo.username}<br>You (or someone else) requested your account's password on Hindi Gamer Club to be reset. Please click the link below to reset your password.<br><a href="${url}">${url}</a><br>Alternatively, you can copy and paste this URL into your browser<br>${url}<br>`);
+            `Hello ${userInfo.username}\nYou (or someone else) requested your account's password on BlocksHub to be reset. Please copy and paste the link below into your browser to reset your password.\n\n${url}\n`,`Hello ${userInfo.username}<br>You (or someone else) requested your account's password on BlocksHub to be reset. Please click the link below to reset your password.<br><a href="${url}">${url}</a><br>Alternatively, you can copy and paste this URL into your browser<br>${url}<br>`);
         }catch(e) {
             console.error(e);
         }
@@ -370,9 +370,7 @@ export default class AuthController extends controller {
     @Returns(409, { description: 'LogoutRequired: Login Required\nCaptchaValidationFailed: Invalid captcha token, expired, or not provided\n' })
     @Returns(403, { description: 'CSRFValidationFailed: Invalid CSRF Token\n' })
     @Returns(400, { description: 'InvalidBirthDate: Birth Date is invalid\nInvalidUsername: Username is taken or unavailable\nInvalidPassword: Password is too weak\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nOneAccountPerIP: Only one account may be signed up per IP address, every 24 hours\n' })
-    @UseBeforeEach(csrf)
-    @UseBefore(NoAuth)
-    @Use(RecaptchaV2)
+    @Use(csrf, NoAuth, RecaptchaV2)
     public async signup(
         @BodyParams(model.auth.SignupRequest) body: model.auth.SignupRequest,
         @HeaderParams('cf-connecting-ip', String) userIp: string,
@@ -455,7 +453,7 @@ export default class AuthController extends controller {
         }
         // Add Thumbnail
         try {
-            await this.user.addUserThumbnail(userId, "https://cdn.hindigamer.club/thumbnails/b9db56f8457b5e64dae256e5a029541dd2820bb641d280dec9669bbab760fa1077a7106cbff4c445d950f60f6297fba5.png");
+            await this.user.addUserThumbnail(userId, "https://cdn.blockshub.net/thumbnails/b9db56f8457b5e64dae256e5a029541dd2820bb641d280dec9669bbab760fa1077a7106cbff4c445d950f60f6297fba5.png");
         } catch (e) {
             throw e;
         }
@@ -673,13 +671,13 @@ export default class AuthController extends controller {
         if (!returnUrl.slice('https://'.length).match(/\./g)) {
             throw new this.BadRequest('InvalidReturnUrl');
         }
-        // Make sure URL is not hindigamer.club
-        // www.hindigamer.club
-        if (returnUrl.slice(0,'https://www.hindigamer.club'.length) === 'https://www.hindigamer.club') {
+        // Make sure URL is not blockshub.net
+        // www.blockshub.net
+        if (returnUrl.slice(0,'https://www.blockshub.net'.length) === 'https://www.blockshub.net') {
             throw new this.Conflict('AuthenticationServiceBlacklisted');
         }
-        // hindigamer.club
-        if (returnUrl.slice(0,'https://hindigamer.club'.length) === 'https://hindigamer.club') {
+        // blockshub.net
+        if (returnUrl.slice(0,'https://blockshub.net'.length) === 'https://blockshub.net') {
             throw new this.Conflict('AuthenticationServiceBlacklisted');
         }
         // Ok, so now we can generate the JWT
@@ -691,7 +689,7 @@ export default class AuthController extends controller {
 
     @Post('/validate-authentication-code')
     @Summary('Validate an authentication code generated from /api/v1/auth/authenticate-to-service')
-    @Description('No CSRF validation or authentication requirement as this is meant for external services. Note that codes can be redeemed multiple times, by multiple parties. Codes expire after 5 minutes, so you are advised to save the results to a session or something depending on what you are using the code for.\n\nNote: You should always validate the code through this endpoint instead of manually decoding the JWT yourself. If you do not verify it here, the code can very easily be spoofed. View a full tutorial here: https://hindigamer.club/forum/thread/244?page=1')
+    @Description('No CSRF validation or authentication requirement as this is meant for external services. Note that codes can be redeemed multiple times, by multiple parties. Codes expire after 5 minutes, so you are advised to save the results to a session or something depending on what you are using the code for.\n\nNote: You should always validate the code through this endpoint instead of manually decoding the JWT yourself. If you do not verify it here, the code can very easily be spoofed. View a full tutorial here: https://blockshub.net/forum/thread/244?page=1')
     @Returns(200, {type: model.auth.ValidateAuthenticationCodeResponse})
     @Returns(400, {type: model.Error, description: 'InvalidCode: The code is invalid or has expired\n'})
     public async validateAuthenticationCode(

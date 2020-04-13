@@ -92,7 +92,9 @@ $(document).on('click', '.reviewTradeData', function() {
             var showCancel = true;
             var side = 1;
             var catalogThumbsArr = [];
+            var offerASP = 0;
             d["offer"].forEach(function(v) {
+                offerASP+= v.averageSalesPrice;
                 let serialText = '<p style="font-size:0.65rem;text-align:left;">Serial: N/A</p>';
                 if (v.serial) {
                     serialText = '<p style="font-size:0.65rem;text-align:left;">Serial: '+v.serial+'</p>';
@@ -100,7 +102,9 @@ $(document).on('click', '.reviewTradeData', function() {
                 itemsToGiveHtml += '<div class="col-6 col-sm-4 col-md-3"><a href="/catalog/'+v["catalogId"]+'" target="_blank"><img data-catalogid="'+v["catalogId"]+'" style="width: 100%;" /></a><p class="text-truncate" style="font-size: 0.75rem;font-weight:700;text-align:left;" data-catalogid="'+v.catalogId+'">Loading</p>'+serialText+'</div>';
                 catalogThumbsArr.push(v["catalogId"]);
             });
+            var requestASP = 0;
             d["requested"].forEach(function(v) {
+                requestASP+=v.averageSalesPrice;
                 let serialText = '<p style="font-size:0.65rem;text-align:left;">Serial: N/A</p>';
                 if (v.serial) {
                     serialText = '<p style="font-size:0.65rem;text-align:left;">Serial: '+v.serial+'</p>';
@@ -140,11 +144,13 @@ $(document).on('click', '.reviewTradeData', function() {
                   `<div class="row">
                   <div class="col-6 col-md-4"><img data-userid="`+partnerUserId+`" style="width:100%;" /><h5><a href="/users/`+partnerUserId+`/profile" target="_blank">`+userIdToName(partnerUserId)+`</a></h5><p style="font-size: 0.75em;">`+date+`</p></div>
                   <div class="col-6 col-md-8">
-                  <h5>`+itemsGiveMessage+`</h5>
+                  <h5 style="">`+itemsGiveMessage+`</h5>
+                  <p style="font-size:0.75rem;">Total Value: ${offerASP}</p>
                   <div class="row">
                     `+itemsToGiveHtml+`
                   </div>
                   <h5 style="margin-top:1rem;">`+itemsRecevMessage+`</h5>
+                  <p style="font-size:0.75rem;">Total Value: ${requestASP}</p>
                   <div class="row">
                     `+itemsToRecieveHtml+`
                   </div>

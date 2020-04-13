@@ -1,4 +1,4 @@
-window.subsitutionimageurl = "https://cdn.hindigamer.club/thumbnails/d8f9737603db2d077e9c6f2d5bd3eec1db8ff9fc8ef64784a5e4e6580c4519ba.png";
+window.subsitutionimageurl = "https://cdn.blockshub.net/thumbnails/d8f9737603db2d077e9c6f2d5bd3eec1db8ff9fc8ef64784a5e4e6580c4519ba.png";
 // Get UserData
 var userData = $('#userdata');
 
@@ -87,9 +87,9 @@ function formatDate(dat) {
 function formatCurrency(cur, heightData = '1rem') {
     if (cur === 1) {
         // return '<span style="color:#28a745;"><i class="far fa-money-bill-alt"></i> </span>';
-        return '<span style="color:#28a745;"><img alt="$" style="height: '+heightData+';" src="https://cdn.hindigamer.club/static/money-green-2.svg"/> </span>';
+        return '<span style="color:#28a745;"><img alt="$" style="height: '+heightData+';" src="https://cdn.blockshub.net/static/money-green-2.svg"/> </span>';
     } else {
-        return '<span style="color:#ffc107;"><img alt="$" style="height: '+heightData+';" src="https://cdn.hindigamer.club/static/coin-stack-yellow.svg"/> </span>';
+        return '<span style="color:#ffc107;"><img alt="$" style="height: '+heightData+';" src="https://cdn.blockshub.net/static/coin-stack-yellow.svg"/> </span>';
     }
 }
 
@@ -251,12 +251,100 @@ if (userData.attr("data-authenticated") === "true") {
     // Load Notifications
     request('/notifications/count', "GET")
         .then(function (d) {
+            let unreadNotificationIds = [];
             if (d.count >= 100) {
                 d.count = "99+";
             } else {
-                d = d["count"].toString();
+                d = d["unreadMessageCount"].toString();
             }
-            $('#notificationCount').html(d);
+            if (d === '0') {
+
+            }else{
+                $('#notificationCount').html('<span class="badge badge-danger">'+d+'</span>');
+                $('#notifications-dropdown').empty().append(`
+                <div class="row" style="padding-left: 0.5rem;padding-right: 0.5rem;">
+                    <div class="col-sm-12">
+                        <a href="#" id="clear-notifications">
+                            <p style="text-align:right;font-size:0.75rem;">Clear</p>
+                        </a>
+                    </div>
+                    <div class="col-sm-12" id="notifications-area">
+
+                    </div>
+                </div>
+                `);
+                let notificationMessagesLoaded = false;
+                $('#dropdownNotifications').on('click', function(e) {
+                    if (!notificationMessagesLoaded) {
+                        notificationMessagesLoaded = true;
+                        $('#notifications-area').empty().append(`<div class="spinner-border" role="status" style="margin: 2rem auto 0 auto;display:block;"></div>`);
+                        
+                        request('/notifications/messages', 'GET').then(d => {
+                            $('#notifications-area').empty()
+                            let userIds = [];
+                            d.forEach(msg => {
+                                // we only care about unread messages
+                                if (msg.read === 0) {
+                                    // add to unread notifications array so that they will be marked as read
+                                    unreadNotificationIds.push(msg.messageId);
+                                    $('#notifications-area').append(`
+                                    
+                                    <div class="row">
+                                        <div class="col-sm-4">
+                                            <img src="${window.subsitutionimageurl}" style="width:100%;height:100%;" data-userid="${msg.userId}" />
+                                        </div>
+                                        <div class="col-sm-8">
+                                            <p data-userid="${msg.userId}" style="font-weight:600;font-size:0.75rem;">Loading...</p>
+                                            <a href="/notifications">
+                                                <p style="font-size:0.75rem;" class="text-truncate">${msg.subject}</p>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    
+                                    `);
+
+                                    userIds.push(msg.userId);
+                                }
+                            });
+                            setUserNames(userIds);
+                            setUserThumbs(userIds);
+                        })
+                        .catch(e => {
+                            console.error(e);
+                            $('#notifications-area').empty().append(`<p style="margin-top:3rem;font-size:0.75rem;text-align:center;">Oops, lets try that again.</p>`);
+                            notificationMessagesLoaded = false;
+                        })
+                    }
+                });
+            }
+
+            $(document).on('click',"#notifications-dropdown a", ev => {ev.stopPropagation()});
+
+            let clearNotifsPending = false;
+            $(document).on('click', '#clear-notifications', function(e) {
+                e.preventDefault();
+                if (clearNotifsPending || unreadNotificationIds.length === 0) {
+                    return;
+                }
+                clearNotifsPending = true;
+                $('#notifications-dropdown').children().css('opacity','0.5');
+
+                // do web request
+                request('/notifications/message/multi-mark-as-read', 'POST', {
+                    ids: unreadNotificationIds,
+                }).then(d => {
+                    $('#notifications-dropdown').empty().append(`
+                    <div class="row" style="padding-left: 0.5rem;padding-right: 0.5rem;">
+                        <div class="col-sm-12">
+                            <p style="padding:0.5rem 1rem;font-size:0.75rem;text-align:center;">You do not have any notifications.</p>
+                        </div>
+                    </div>`);
+                    $('#notificationCount').html('0');
+                })
+                .catch(e => {
+                    console.error(e);
+                })
+            });
         })
         .catch(function (e) {
 
@@ -1237,12 +1325,12 @@ $('.leaderboard-ad').each(function(e) {
         });
     })
     .catch(e => {
-        // default ad url https://cdn.hindigamer.club/thumbnails/684bc763f1459a12ac64c74d5b6154216f2bf26bd1b76cb976449ffad5e163d8.png
+        // default ad url https://cdn.blockshub.net/thumbnails/684bc763f1459a12ac64c74d5b6154216f2bf26bd1b76cb976449ffad5e163d8.png
         $(this).append(`
         <div class="col-12" style="margin-top:1rem;">
             <div style="display:block;margin:0 auto;max-width:728px;">
                 <a href="/ads">
-                    <img style="width:100%;" src="https://cdn.hindigamer.club/thumbnails/684bc763f1459a12ac64c74d5b6154216f2bf26bd1b76cb976449ffad5e163d8.png" />
+                    <img style="width:100%;" src="https://cdn.blockshub.net/thumbnails/684bc763f1459a12ac64c74d5b6154216f2bf26bd1b76cb976449ffad5e163d8.png" />
                     <p class="ad-alert-text"><i class="fas fa-ad"></i></p>
                 </a>
             </div>
@@ -1267,10 +1355,10 @@ if (window.innerWidth > 991) {
             `);
         })
         .catch(e => {
-            // default ad url https://cdn.hindigamer.club/thumbnails/684bc763f1459a12ac64c74d5b6154216f2bf26bd1b76cb976449ffad5e163d8.png
+            // default ad url https://cdn.blockshub.net/thumbnails/684bc763f1459a12ac64c74d5b6154216f2bf26bd1b76cb976449ffad5e163d8.png
             $(this).append(`
                     <a href="/ads">
-                        <img style="width:160px;height:600px;" src="https://cdn.hindigamer.club/thumbnails/81082ace029ca2526b6a54e6f2d9914b2397a22c3d4e3260de402f872e093f97.png" />
+                        <img style="width:160px;height:600px;" src="https://cdn.blockshub.net/thumbnails/81082ace029ca2526b6a54e6f2d9914b2397a22c3d4e3260de402f872e093f97.png" />
                         <p class="ad-alert-text"><i class="fas fa-ad"></i></p>
                     </a>
             `);

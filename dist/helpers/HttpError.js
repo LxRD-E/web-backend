@@ -164,6 +164,7 @@ var HttpErrors;
     HttpErrors[HttpErrors["InvalidCreatorType"] = 159] = "InvalidCreatorType";
     HttpErrors[HttpErrors["UserCannotBeTradedWith"] = 160] = "UserCannotBeTradedWith";
     HttpErrors[HttpErrors["InvalidCommentId"] = 161] = "InvalidCommentId";
+    HttpErrors[HttpErrors["ItemCannotBeDeleted"] = 162] = "ItemCannotBeDeleted";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 ;
 const Any_1 = require("../middleware/Any");

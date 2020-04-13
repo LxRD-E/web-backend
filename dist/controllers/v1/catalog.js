@@ -605,6 +605,39 @@ let CatalogController = class CatalogController extends controller_1.default {
         });
         return { success: true, id: catalogId };
     }
+    async deleteCatalogItem(userInfo, catalogId) {
+        const forUpdate = [
+            'user_inventory'
+        ];
+        await this.transaction(async (trx) => {
+            let item;
+            try {
+                item = await trx.catalog.getInfo(catalogId, ['category', 'catalogId'], forUpdate);
+            }
+            catch (e) {
+                throw new this.BadRequest('InvalidCatalogId');
+            }
+            let allowedCategories = [
+                model.catalog.category.TShirt,
+                model.catalog.category.Shirt,
+                model.catalog.category.Pants,
+            ];
+            let allowedForDeletion = false;
+            for (const cat of allowedCategories) {
+                if (item.category === cat) {
+                    allowedForDeletion = true;
+                }
+            }
+            if (!allowedForDeletion) {
+                throw new this.Conflict('ItemCannotBeDeleted');
+            }
+            let userItems = await trx.user.getUserInventoryByCatalogId(userInfo.userId, item.catalogId, forUpdate);
+            for (const userItem of userItems) {
+                await trx.catalog.deleteUserInventoryId(userItem.userInventoryId);
+            }
+        });
+        return {};
+    }
 };
 __decorate([
     common_1.Get('/:catalogId/info'),
@@ -799,6 +832,19 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Array, Number, Number, Number, Number, String, String, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "create", null);
+__decorate([
+    common_1.Delete('/:catalogId/inventory'),
+    swagger_1.Summary('Delete a userInventoryItem owned by the authenticated user'),
+    swagger_1.Description('This will delete all userInventoryItems with the catalogId specified that belong to the authenticated user'),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidCatalogId: The catalogId specified is invalid\n' }),
+    swagger_1.Returns(409, { type: model.Error, description: 'ItemCannotBeDeleted: This item cannot be deleted\n' }),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('catalogId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.UserSession, Number]),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "deleteCatalogItem", null);
 CatalogController = __decorate([
     common_1.Controller('/catalog'),
     __metadata("design:paramtypes", [])

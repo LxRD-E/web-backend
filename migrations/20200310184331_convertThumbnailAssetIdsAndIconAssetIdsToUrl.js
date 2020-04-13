@@ -23,7 +23,7 @@ exports.up = async (knex, Promise) => {
         await knex('game_thumbnails').insert({
             game_id: game.id,
             moderation_status: 1,
-            thumbnail_url: 'https://cdn.hindigamer.club/game/default_assets/Screenshot_5.png',
+            thumbnail_url: 'https://cdn.blockshub.net/game/default_assets/Screenshot_5.png',
         });
     }
 };

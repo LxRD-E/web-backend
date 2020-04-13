@@ -80,7 +80,7 @@ $(document).on('click', '#signUpButton', function() {
     var day = parseInt($('#birthDayFormSelect').val());
     if (moment(year+'-'+month+'-'+day, 'YYYY-M-D').isSameOrAfter(moment().subtract(13, 'years'))) {
         console.log(year+'-'+month+'-'+day);
-        return warning('Sorry! You must be 13 years of age or older to join Hindi Gamer Club!');
+        return warning('Sorry! You must be 13 years of age or older to join BlocksHub!');
     }
     var username = $('#username').val();
     var password = $('#password').val();
