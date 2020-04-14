@@ -412,9 +412,10 @@ let ForumController = class ForumController extends controller_1.default {
     async searchThreads(query, offset, limit) {
         const numericOffset = Filter_1.filterOffset(offset);
         const numericLimit = Filter_1.filterLimit(limit);
-        if (!query || query.length >= 32) {
+        if (query.length >= 32) {
             throw new this.BadRequest('InvalidQuery');
         }
+        query = query.replace(/%/g, '\%');
         const results = await this.forum.searchThreads(query, numericOffset, numericLimit);
         return results;
     }

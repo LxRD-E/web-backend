@@ -135,9 +135,9 @@ class UsersDAL extends _init {
     }
 
     /**
-     * Check if a Username is ok for signup, name changes, etc. Returned string corrosponds with AuthError code.
+     * Check if a Username is ok for signup, name changes, etc. Returned string corrosponds with HTTPErrors code, or "OK" if username is good.
      */
-    public async isUsernameOk(username: string): Promise<string> {
+    public isUsernameOk(username: string): string {
         const onlyOneCharacterAllowedOf =  [
             /\ /g,
             /\./g,
@@ -232,8 +232,8 @@ class UsersDAL extends _init {
 
     /**
      * Change a user's name
-     * @param userId 
-     * @param userName 
+     * @param userId The userId
+     * @param userName The new username
      */
     public async changeUserName(userId: number, userName: string): Promise<void> {
         await this.knex('users').update({
@@ -294,7 +294,9 @@ class UsersDAL extends _init {
     }
 
     /**
-     * Grab a user's email metadata. Returns empty object if no email. Use models.settings.getUserEmail for the user's decrypted email address
+     * Grab a user's email metadata. Returns empty object if no email. 
+     * 
+     * @notice Use models.settings.getUserEmail for the user's decrypted email address
      * @param id User ID
      * @param specificColumns Specific Email Columns
      */
@@ -314,7 +316,7 @@ class UsersDAL extends _init {
     }
 
     /**
-     * Mark a user as Online
+     * Update the {user_lastonline} column of a user to the current time
      * @param userId User's ID
      */
     public async logOnlineStatus(id: number): Promise<void> {
@@ -352,7 +354,7 @@ class UsersDAL extends _init {
     }
 
     /**
-     * Encrypt an IP Address
+     * Encrypt an IP Address. This method currently doesn't have to be a promise, but if we move to threading for encryption/decryption, it will need to be async
      * @param ip 
      */
     public async encryptIpAddress(ipAddress: string): Promise<string> {
@@ -362,9 +364,9 @@ class UsersDAL extends _init {
 
     /**
      * Log a User's Ip Address
-     * @param userId 
-     * @param ipAddress 
-     * @param action 
+     * @param userId The userId
+     * @param ipAddress The IP Address to log
+     * @param action Specific IP address action
      */
     public async logUserIp(userId: number, ipAddress: string, action: users.ipAddressActions): Promise<void> {
         const encryptedIP = await this.encryptIpAddress(ipAddress);
@@ -377,7 +379,7 @@ class UsersDAL extends _init {
     }
 
     /**
-     * Get IP Addresses used on an account
+     * Given a userId, this method will return an array of encrypted IP addresses associated with the account.
      * @param userId 
      */
     public async getUserIpAddresses(userId: number): Promise<string[]> {
@@ -400,18 +402,18 @@ class UsersDAL extends _init {
             'ip_address': encryptedIpAddress,
         });
         const userIds = [] as number[];
-        for (const user of ids) {
-            userIds.push(user.userId);
-        }
+        ids.forEach(id => userIds.push(id.userId));
         return userIds;
     }
 
     /**
-     * Check if an IP has signed up in the last 24 hours
+     * Given an IP address, this method will check if it has been used within the last 24 hours for a signup.
+     * 
+     * If it has been used, it will return true. Otherwise, it will return false.
      */
     public async checkForIpSignup(ipAddress: string): Promise<boolean> {
         const encryptedIP = await this.encryptIpAddress(ipAddress);
-        const results = await this.knex("user_ip").select("date").where({'ip_address': encryptedIP}).limit(1).orderBy("id","desc");
+        const results = await this.knex("user_ip").select("date",'id').where({'ip_address': encryptedIP,'action': model.user.ipAddressActions.SignUp}).limit(1).orderBy("id","desc");
         if (!results[0]) {
             return false;
         }

@@ -33,7 +33,7 @@ if (process.env.NODE_ENV === 'development') {
     allowedDomains.push('http://localhost/', 'http://localhost:3000/', 'http://localhost', 'http://localhost:3000');
 }
 else {
-    allowedDomains.push('https://hindigamer.club/', 'https://www.hindigamer.club/', 'https://www.hindigamer.club', 'https://hindigamer.club');
+    allowedDomains.push('https://blockshub.net/', 'https://www.blockshub.net/', 'https://www.blockshub.net', 'https://blockshub.net');
 }
 const scriptOptions = {
     transformObjectKeys: true,
@@ -52,11 +52,11 @@ const scriptOptions = {
     domainLock: allowedDomains,
 };
 const COPYRIGHT_DISCLAIMER = `/**
- * Copyright (c) Hindi Gamer Club - All Rights Reserved
+ * Copyright (c) BlocksHub - All Rights Reserved
  * Unauthorized copying of this file, via any medium, is strictly prohibited.
  * You are not allowed to copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software.
  * This software includes various open-source libraries which have licenses provided where relevent and required.
- * View our full terms of service here: https://hindigamer.club/terms
+ * View our full terms of service here: https://blockshub.net/terms
  */`;
 let simpleCryptoData = model.game.getSimpleCrypto();
 const script = jsObfuse.obfuscate(`
@@ -202,7 +202,7 @@ const script = jsObfuse.obfuscate(`
                 
                     // Create and tweak the background material.
                     var backgroundMaterial = new BABYLON.BackgroundMaterial("backgroundMaterial", scene);
-                    backgroundMaterial.reflectionTexture = new BABYLON.CubeTexture("https://cdn.hindigamer.club/game/default_assets/TropicalSunnyDay", scene);
+                    backgroundMaterial.reflectionTexture = new BABYLON.CubeTexture("https://cdn.blockshub.net/game/default_assets/TropicalSunnyDay", scene);
                     backgroundMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
                     skybox.material = backgroundMaterial;
                 
@@ -375,7 +375,7 @@ let GameController = class GameController extends controller_1.default {
             throw new this.BadRequest('InvalidNameOrDescription');
         }
         const gameId = await this.game.create(userInfo.userId, model.catalog.creatorType.User, gameName, gameDescription);
-        await this.game.createGameThumbnail(gameId, 'https://cdn.hindigamer.club/game/default_assets/Screenshot_5.png', model.game.GameThumbnailModerationStatus.Approved);
+        await this.game.createGameThumbnail(gameId, 'https://cdn.blockshub.net/game/default_assets/Screenshot_5.png', model.game.GameThumbnailModerationStatus.Approved);
         return {
             success: true,
             gameId: gameId,
@@ -560,7 +560,7 @@ __decorate([
 __decorate([
     common_1.Get('/client.js'),
     swagger_1.Summary('Get the primary game client.js'),
-    common_1.Use(Auth_1.NoAuth),
+    common_1.Use(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Res()),
     __metadata("design:type", Function),
@@ -569,7 +569,6 @@ __decorate([
 ], GameController.prototype, "getClientScript", null);
 __decorate([
     common_1.Post('/create'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     swagger_1.Summary('Create a game'),
     swagger_1.Returns(409, { type: model.Error, description: 'InvalidPermissions: User must be staff rank 1 or higher\n' }),
     swagger_1.Returns(400, { type: model.Error, description: 'TooManyGames User has created 5 games already\nInvalidNameOrDescription: Name must be between 1 and 32 characters; description must be less than 512 characters\n' }),

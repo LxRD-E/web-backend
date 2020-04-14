@@ -171,3 +171,7 @@ a.normal > p {
 div.trade-card-hover:hover > div.card {
     border: 1px solid white!important;
 }
+
+a#dropdownNotifications {
+    color: white;
+}

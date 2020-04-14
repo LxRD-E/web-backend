@@ -97,7 +97,7 @@ let SettingsController = class SettingsController extends controller_1.default {
         });
         let newEmail = await this.settings.insertNewEmail(UserInfo.userId, userEmail.email, emailToken);
         try {
-            this.settings.sendEmail(userEmail.email, "Email Verification", "Thank you for adding a new email to your account. Visit this link to verify it: https://hindigamer.club/email/verify?code=" + emailToken, "<h5>Hello,</h5><p>Thank you for adding a new email to your account. Please click <a href=\"https://hindigamer.club/email/verify?code=" + emailToken + "\">here</a> to verify it. If you did not request this, you can ignore this email.<br>Thanks!</p>").then().catch(e => {
+            this.settings.sendEmail(userEmail.email, "Email Verification", "Thank you for adding a new email to your account. Visit this link to verify it: https://blockshub.net/email/verify?code=" + emailToken, "<h5>Hello,</h5><p>Thank you for adding a new email to your account. Please click <a href=\"https://blockshub.net/email/verify?code=" + emailToken + "\">here</a> to verify it. If you did not request this, you can ignore this email.<br>Thanks!</p>").then().catch(e => {
                 console.error('Error sending password verification email', e);
             });
         }
@@ -130,7 +130,7 @@ let SettingsController = class SettingsController extends controller_1.default {
         });
         await this.settings.insertNewEmail(userInfo.userId, newEmail, emailToken);
         try {
-            this.settings.sendEmail(newEmail, "Email Verification", "Thank you for adding a new email to your account. Visit this link to verify it: https://hindigamer.club/email/verify?code=" + emailToken, "<h5>Hello,</h5><p>Thank you for adding a new email to your account. Please click <a href=\"https://hindigamer.club/email/verify?code=" + emailToken + "\">here</a> to verify it. If you did not request this, you can ignore this email.<br>Thanks!</p>").then().catch(e => {
+            this.settings.sendEmail(newEmail, "Email Verification", "Thank you for adding a new email to your account. Visit this link to verify it: https://blockshub.net/email/verify?code=" + emailToken, "<h5>Hello,</h5><p>Thank you for adding a new email to your account. Please click <a href=\"https://blockshub.net/email/verify?code=" + emailToken + "\">here</a> to verify it. If you did not request this, you can ignore this email.<br>Thanks!</p>").then().catch(e => {
                 console.error('Error sending password verification email', e);
             });
         }

@@ -37,10 +37,21 @@ let NotificationsController = class NotificationsController extends controller_1
             'success': true,
         };
     }
-    async countNotifications(userData) {
-        const notifications = await this.notification.countUnreadMessages(userData.userId);
+    async multiMarkAsRead(userData, ids) {
+        if (ids.length >= 100 || ids.length <= 0) {
+            throw new this.BadRequest('InvalidIds');
+        }
+        await this.notification.multiMarkAsRead(userData.userId, ids);
         return {
-            'count': notifications,
+            'success': true,
+        };
+    }
+    async countNotifications(userData) {
+        const notificationsCount = await this.notification.countUnreadMessages(userData.userId);
+        const friendRequestCount = await this.notification.countInboundFriendRequests(userData.userId);
+        return {
+            'unreadMessageCount': notificationsCount,
+            'friendRequestCount': friendRequestCount,
         };
     }
     async getFriendRequests(userData, numericOffset) {
@@ -49,9 +60,9 @@ let NotificationsController = class NotificationsController extends controller_1
     }
 };
 __decorate([
-    common_1.UseBefore(Auth_1.YesAuth),
     common_1.Get('/messages'),
     swagger_1.Summary('Get all messages'),
+    common_1.Use(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.QueryParams('offset', Number)),
     __metadata("design:type", Function),
@@ -59,10 +70,9 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], NotificationsController.prototype, "getMessages", null);
 __decorate([
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
     common_1.Patch('/message/:id/read'),
     swagger_1.Summary('Mark message as read'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('id', Number)),
     __metadata("design:type", Function),
@@ -70,17 +80,30 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], NotificationsController.prototype, "markAsRead", null);
 __decorate([
+    common_1.Post('/message/multi-mark-as-read'),
+    swagger_1.Summary('Mark multiple message as read'),
+    swagger_1.Description('Maxiumum amount of 100 ids can be specified'),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidIds: IDs are invalid\n' }),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Required()),
+    __param(1, common_1.BodyParams('ids', Array)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.SessionUserInfo, Array]),
+    __metadata("design:returntype", Promise)
+], NotificationsController.prototype, "multiMarkAsRead", null);
+__decorate([
     common_1.Get('/count'),
     swagger_1.Summary('Count all unread notifications'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [model.user.SessionUserInfo]),
     __metadata("design:returntype", Promise)
 ], NotificationsController.prototype, "countNotifications", null);
 __decorate([
-    common_1.UseBefore(Auth_1.YesAuth),
     common_1.Get('/requests'),
+    common_1.Use(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.QueryParams('offset', Number)),
     __metadata("design:type", Function),

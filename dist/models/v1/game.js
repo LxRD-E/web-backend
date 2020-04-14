@@ -82,7 +82,7 @@ var GameGenreDescriptions;
 })(GameGenreDescriptions = exports.GameGenreDescriptions || (exports.GameGenreDescriptions = {}));
 var GameGenreThumbnails;
 (function (GameGenreThumbnails) {
-    GameGenreThumbnails[GameGenreThumbnails["https://cdn.hindigamer.club/static/genre/Western-small.jpg"] = 14] = "https://cdn.hindigamer.club/static/genre/Western-small.jpg";
+    GameGenreThumbnails[GameGenreThumbnails["https://cdn.blockshub.net/static/genre/Western-small.jpg"] = 14] = "https://cdn.blockshub.net/static/genre/Western-small.jpg";
 })(GameGenreThumbnails = exports.GameGenreThumbnails || (exports.GameGenreThumbnails = {}));
 class GameThumbnail {
 }

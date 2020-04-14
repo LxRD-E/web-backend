@@ -585,9 +585,10 @@ export class ForumController extends controller {
     ): Promise<model.forum.Threads[]> {
         const numericOffset = filterOffset(offset);
         const numericLimit = filterLimit(limit);
-        if (!query || query.length >= 32) {
+        if (query.length >= 32) {
             throw new this.BadRequest('InvalidQuery');
         }
+        query = query.replace(/%/g, '\%');
         const results = await this.forum.searchThreads(query, numericOffset, numericLimit);
         return results;
     }

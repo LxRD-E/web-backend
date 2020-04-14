@@ -3,7 +3,7 @@ import { Description } from "@tsed/swagger";
 
 // meta stuff
 export const MAX_GROUPS = 100;
-export const MAX_GROUP_ROLES = 18;
+export const MAX_GROUP_ROLES = 22;
 export const MAX_RANK_VALUE = 255;
 export const MIN_RANK_VALUE = 1;
 

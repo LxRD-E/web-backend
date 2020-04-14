@@ -452,7 +452,7 @@ export default class GameController extends controller {
      */
     @Get('/client.js')
     @Summary('Get the primary game client.js')
-    @Use(NoAuth)
+    @Use(YesAuth)
     public async getClientScript(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Res() res: Res,
@@ -466,7 +466,6 @@ export default class GameController extends controller {
      * Create a Game
      */
     @Post('/create')
-    @Use(csrf, YesAuth)
     @Summary('Create a game')
     @Returns(409, { type: model.Error, description: 'InvalidPermissions: User must be staff rank 1 or higher\n' })
     @Returns(400, { type: model.Error, description: 'TooManyGames User has created 5 games already\nInvalidNameOrDescription: Name must be between 1 and 32 characters; description must be less than 512 characters\n' })

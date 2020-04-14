@@ -20,12 +20,30 @@ class NotificationsDAL extends _init_1.default {
             'message_read': Notifications.read.true,
         }).where({ 'id': messageId, 'userid_to': userIdTo });
     }
+    async multiMarkAsRead(userIdTo, messageIds) {
+        let promise = this.knex("user_messages").update({
+            'message_read': Notifications.read.true,
+        });
+        for (const id of messageIds) {
+            promise = promise.orWhere({
+                'id': id,
+                'userid_to': userIdTo,
+            });
+        }
+        await promise;
+    }
     async countUnreadMessages(userIdTo) {
         const messages = await this.knex("user_messages").count("id as Total").where({
             'userid_to': userIdTo,
             'message_read': Notifications.read.false,
         }).orderBy('id', 'desc').limit(99);
         return messages[0]["Total"];
+    }
+    async countInboundFriendRequests(userIdTo) {
+        const requests = await this.knex("friend_request").count("id as Total").where({
+            'userid_requestee': userIdTo,
+        }).limit(99);
+        return requests[0]["Total"] || 0;
     }
     async createMessage(userIdTo, userIdFrom, subject, body) {
         await this.knex('user_messages').insert({

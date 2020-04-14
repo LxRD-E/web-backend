@@ -422,9 +422,6 @@ class ForumDAL extends _init {
             "forum_threads.thread_deleted": Forum.threadDeleted.false,
         }).innerJoin("forum_threads", "forum_threads.id", "forum_posts.threadid"
         ).orderBy(
-            "forum_threads.thread_pinned",
-            'desc',
-        ).orderBy(
             "latestReply", 'desc'
         ).limit(limit).offset(offset).groupBy("forum_threads.id")
         .andWhere(

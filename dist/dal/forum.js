@@ -237,7 +237,7 @@ class ForumDAL extends _init_1.default {
         const threads = await this.knex("forum_posts").select("forum_threads.id as threadId", "forum_threads.title", "forum_threads.userid as userId", "forum_threads.thread_pinned as threadPinned", "forum_threads.sub_category as subCategoryId").max("forum_posts.date_created as latestReply").count("forum_posts.id as postCount").where({
             "forum_posts.post_deleted": Forum.postDeleted.false,
             "forum_threads.thread_deleted": Forum.threadDeleted.false,
-        }).innerJoin("forum_threads", "forum_threads.id", "forum_posts.threadid").orderBy("forum_threads.thread_pinned", 'desc').orderBy("latestReply", 'desc').limit(limit).offset(offset).groupBy("forum_threads.id")
+        }).innerJoin("forum_threads", "forum_threads.id", "forum_posts.threadid").orderBy("latestReply", 'desc').limit(limit).offset(offset).groupBy("forum_threads.id")
             .andWhere('forum_threads.title', 'like', '%' + query + '%');
         return threads;
     }

@@ -89,13 +89,16 @@ let CatalogController = class CatalogController extends controller_1.default {
             throw new this.BadRequest('InvalidCatalogId');
         }
     }
+    getCategories() {
+        return model.catalog.category;
+    }
     async getSoloThumbnailAndRedirect(res, id) {
         if (!id) {
-            return res.redirect("https://cdn.hindigamer.club/thumbnails/d8f9737603db2d077e9c6f2d5bd3eec1db8ff9fc8ef64784a5e4e6580c4519ba.png");
+            return res.redirect("https://cdn.blockshub.net/thumbnails/d8f9737603db2d077e9c6f2d5bd3eec1db8ff9fc8ef64784a5e4e6580c4519ba.png");
         }
         const thumbnail = await this.catalog.getThumbnailById(id);
         if (!thumbnail) {
-            return res.redirect("https://cdn.hindigamer.club/thumbnails/d8f9737603db2d077e9c6f2d5bd3eec1db8ff9fc8ef64784a5e4e6580c4519ba.png");
+            return res.redirect("https://cdn.blockshub.net/thumbnails/d8f9737603db2d077e9c6f2d5bd3eec1db8ff9fc8ef64784a5e4e6580c4519ba.png");
         }
         return res.redirect(thumbnail.url);
     }
@@ -648,6 +651,13 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "getInfo", null);
+__decorate([
+    common_1.Get('/categories'),
+    swagger_1.Summary('Get all catalog item categories'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], CatalogController.prototype, "getCategories", null);
 __decorate([
     common_1.Get('/:catalogId/thumbnail/redirect'),
     swagger_1.Summary('Get catalog item thumbnail and redirect to url. Will redirect to placeholder if invalid catalogId or not available'),

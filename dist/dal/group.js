@@ -198,7 +198,7 @@ class GroupsDAL extends _init_1.default {
         }).where({ "id": roleSetId });
     }
     async createRoleset(groupId, name, description, rank, permissions) {
-        await this.knex("group_roles").insert({
+        let id = await this.knex("group_roles").insert({
             'groupid': groupId,
             'name': name,
             'description': description,
@@ -209,6 +209,7 @@ class GroupsDAL extends _init_1.default {
             'permission_post_shout': permissions.postShout,
             'permission_manage_group': permissions.manage,
         });
+        return id[0];
     }
     async deleteRoleset(roleSetId) {
         await this.knex("group_roles").delete().where({ "id": roleSetId });

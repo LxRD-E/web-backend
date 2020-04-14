@@ -94,7 +94,7 @@ Server = __decorate([
                 showExplorer: false,
                 cssPath: '${rootDir}/public/css/swagger.css',
                 jsPath: '${rootDir}/public/js/swagger.js',
-                operationIdFormat: 'HindiGamerClub.%c.%m',
+                operationIdFormat: 'BlocksHub.%c.%m',
             },
         ],
         logger: {

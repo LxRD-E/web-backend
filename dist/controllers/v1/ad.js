@@ -146,7 +146,7 @@ let AdController = class AdController extends controller_1.default {
             throw new Error('Invalid adType: ' + adType);
         }
         let randomName = crypto.randomBytes(32).toString('hex') + fileEnding;
-        let adId = await this.ad.createAd(userInfo.userId, 'https://cdn.hindigamer.club/thumbnails/' + randomName, title, adType, adRedirectId, adDisplayType);
+        let adId = await this.ad.createAd(userInfo.userId, 'https://cdn.blockshub.net/thumbnails/' + randomName, title, adType, adRedirectId, adDisplayType);
         await this.ad.uploadAdImage(randomName, imageData, mime);
         return {
             success: true,

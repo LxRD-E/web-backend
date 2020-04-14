@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const ioredis_pubsub_1 = require("../helpers/ioredis_pubsub");
-const Chat = require("../models/v1/chat");
+const model = require("../models/models");
 const _init_1 = require("./_init");
 class ChatDAL extends _init_1.default {
     async getConversationByUserId(userIdTo, userIdFrom, offset, limit = 25) {
@@ -23,7 +23,7 @@ class ChatDAL extends _init_1.default {
             'userid_to': userIdTo,
             'date_created': dateStamp,
             'content': content,
-            'read': Chat.MessageRead.false,
+            'read': model.chat.MessageRead.false,
         });
         info['chatMessageId'] = message[0];
         return info;
@@ -58,11 +58,11 @@ class ChatDAL extends _init_1.default {
         });
     }
     async countUnreadMessages(userId) {
-        const total = await this.knex('chat_messages').count('id as Total').where({ 'userid_to': userId, 'read': Chat.MessageRead.false });
+        const total = await this.knex('chat_messages').count('id as Total').where({ 'userid_to': userId, 'read': model.chat.MessageRead.false });
         return total[0]['Total'];
     }
     async markConversationAsRead(userIdTo, userIdFrom) {
-        await this.knex('chat_messages').update({ 'read': Chat.MessageRead.true }).where({ 'userid_to': userIdTo, 'userid_from': userIdFrom });
+        await this.knex('chat_messages').update({ 'read': model.chat.MessageRead.true }).where({ 'userid_to': userIdTo, 'userid_from': userIdFrom });
     }
     subscribeToMessages(userIdTo) {
         return new Promise((resolve, reject) => {

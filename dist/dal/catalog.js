@@ -1,18 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const catalog = require("../models/v1/catalog");
-const Thumbnail = require("../models/v1/thumnails");
+const model = require("../models/models");
 const config_1 = require("../helpers/config");
 const fs = require("fs");
 const fileType = require("file-type");
 const aws = require("aws-sdk");
 const _init_1 = require("./_init");
 class CatalogDAL extends _init_1.default {
-    async getInfo(id, specificColumns, forUpdate) {
-        console.log(this.knex.name);
-        if (!specificColumns) {
-            specificColumns = ['catalogId', 'catalogName', 'description', 'price', 'averagePrice', 'forSale', 'maxSales', 'collectible', 'status', 'creatorId', 'creatorType', 'userId'];
-        }
+    async getInfo(id, specificColumns = ['catalogId', 'catalogName', 'description', 'price', 'averagePrice', 'forSale', 'maxSales', 'collectible', 'status', 'creatorId', 'creatorType', 'userId'], forUpdate) {
         specificColumns.forEach((element, index, array) => {
             if (element === 'catalogId') {
                 array[index] = 'id as catalogId';
@@ -65,7 +60,7 @@ class CatalogDAL extends _init_1.default {
     async multiGetThumbnailsFromIds(ids) {
         const query = this.knex('thumbnails').select('thumbnails.url', 'thumbnails.reference_id as catalogId').innerJoin('catalog', 'catalog.id', 'thumbnails.reference_id');
         ids.forEach((id) => {
-            query.orWhere({ 'thumbnails.reference_id': id, 'thumbnails.type': 'catalog', 'catalog.is_pending': catalog.moderatorStatus.Ready });
+            query.orWhere({ 'thumbnails.reference_id': id, 'thumbnails.type': 'catalog', 'catalog.is_pending': model.catalog.moderatorStatus.Ready });
         });
         const thumbnails = await query;
         return thumbnails;
@@ -79,26 +74,26 @@ class CatalogDAL extends _init_1.default {
         return usernames;
     }
     async getThumbnailById(id) {
-        const thumbnail = await this.knex('thumbnails').select('thumbnails.url', 'thumbnails.reference_id as catalogId', 'thumbnails.id as thumbnailId').where({ 'thumbnails.reference_id': id, 'thumbnails.type': 'catalog', 'catalog.is_pending': catalog.moderatorStatus.Ready }).innerJoin('catalog', 'catalog.id', 'thumbnails.reference_id').orderBy('thumbnails.id', 'desc').limit(1);
+        const thumbnail = await this.knex('thumbnails').select('thumbnails.url', 'thumbnails.reference_id as catalogId', 'thumbnails.id as thumbnailId').where({ 'thumbnails.reference_id': id, 'thumbnails.type': 'catalog', 'catalog.is_pending': model.catalog.moderatorStatus.Ready }).innerJoin('catalog', 'catalog.id', 'thumbnails.reference_id').orderBy('thumbnails.id', 'desc').limit(1);
         return thumbnail[0];
     }
     async countAllItemsForSale() {
-        const count = await this.knex("catalog").count('id as Total').where({ 'catalog.is_for_sale': catalog.isForSale.true }).andWhere('catalog.price', '>', 0);
+        const count = await this.knex("catalog").count('id as Total').where({ 'catalog.is_for_sale': model.catalog.isForSale.true }).andWhere('catalog.price', '>', 0);
         return count[0]['Total'];
     }
     async getCatalog(offset, category, orderBy, orderByType, query) {
         const selectQuery = this.knex("catalog").select("catalog.id as catalogId", "catalog.name as catalogName", "catalog.price", "catalog.currency", "catalog.creator as creatorId", "catalog.creator_type as creatorType", "catalog.original_creatorid as userId", "catalog.is_collectible as collectible", "catalog.max_sales as maxSales").limit(25).offset(offset).orderBy(orderBy, orderByType);
-        if (category === catalog.searchCategory.Any) {
-            selectQuery.where({ "is_for_sale": catalog.isForSale.true, "is_pending": catalog.moderatorStatus.Ready });
+        if (category === model.catalog.searchCategory.Any) {
+            selectQuery.where({ "is_for_sale": model.catalog.isForSale.true, "is_pending": model.catalog.moderatorStatus.Ready });
         }
-        else if (category === catalog.searchCategory.Featured) {
-            selectQuery.where({ "is_for_sale": catalog.isForSale.true, "is_pending": catalog.moderatorStatus.Ready, 'catalog.original_creatorid': 1, 'catalog.creator_type': catalog.creatorType.User });
+        else if (category === model.catalog.searchCategory.Featured) {
+            selectQuery.where({ "is_for_sale": model.catalog.isForSale.true, "is_pending": model.catalog.moderatorStatus.Ready, 'catalog.original_creatorid': 1, 'catalog.creator_type': model.catalog.creatorType.User });
         }
-        else if (category === catalog.searchCategory.Collectibles) {
-            selectQuery.where({ "is_for_sale": catalog.isForSale.false, "is_pending": catalog.moderatorStatus.Ready, "is_collectible": catalog.collectible.true });
+        else if (category === model.catalog.searchCategory.Collectibles) {
+            selectQuery.where({ "is_for_sale": model.catalog.isForSale.false, "is_pending": model.catalog.moderatorStatus.Ready, "is_collectible": model.catalog.collectible.true });
         }
         else {
-            selectQuery.where({ "is_for_sale": catalog.isForSale.true, "is_pending": catalog.moderatorStatus.Ready, "category": category });
+            selectQuery.where({ "is_for_sale": model.catalog.isForSale.true, "is_pending": model.catalog.moderatorStatus.Ready, "category": category });
         }
         if (query) {
             selectQuery.andWhere("name", "like", "%" + query + "%");
@@ -138,8 +133,8 @@ class CatalogDAL extends _init_1.default {
     async getRecommended(catalogId) {
         const itemData = await this.getInfo(catalogId, ['creatorId', 'creatorType']);
         const recommended = await this.knex("catalog").select("catalog.id as catalogId", "catalog.name as catalogName", "catalog.price", "catalog.currency", "catalog.creator as creatorId", "catalog.creator_type as creatorType", "catalog.is_collectible as collectible", "catalog.max_sales as maxSales").limit(6).where({ "creator": itemData.creatorId, "creator_type": itemData.creatorType }).orderBy('id', 'desc').andWhere("catalog.id", "!=", catalogId).andWhere({
-            'is_pending': catalog.moderatorStatus.Ready,
-            'is_for_sale': catalog.isForSale.true,
+            'is_pending': model.catalog.moderatorStatus.Ready,
+            'is_for_sale': model.catalog.isForSale.true,
         });
         return recommended;
     }
@@ -182,7 +177,7 @@ class CatalogDAL extends _init_1.default {
         return items[0]["Total"];
     }
     async createCatalogAsset(catalogId, creatorId, assetType, fileName, fileType) {
-        const creatorType = catalog.creatorType.User;
+        const creatorType = model.catalog.creatorType.User;
         await this.knex('catalog_assets').insert({
             'creatorid': creatorId,
             'creatortype': creatorType,
@@ -208,7 +203,7 @@ class CatalogDAL extends _init_1.default {
     async deleteAsset(assetId) {
         await this.knex('catalog_assets').delete().where({ 'id': assetId }).limit(1);
     }
-    async createUserItem(userId, name, description, isForSale, category, price, currency, isCollectible, maxSales = 0, moderationStatus = catalog.moderatorStatus.Pending) {
+    async createUserItem(userId, name, description, isForSale, category, price, currency, isCollectible, maxSales = 0, moderationStatus = model.catalog.moderatorStatus.Pending) {
         const date = this.moment().format('YYYY-MM-DD HH:mm:ss');
         const id = await this.knex("catalog").insert({
             "name": name,
@@ -219,7 +214,7 @@ class CatalogDAL extends _init_1.default {
             "currency": currency,
             "category": category,
             "creator": userId,
-            "creator_type": catalog.creatorType.User,
+            "creator_type": model.catalog.creatorType.User,
             "is_collectible": isCollectible,
             "max_sales": maxSales,
             "is_for_sale": isForSale,
@@ -228,7 +223,7 @@ class CatalogDAL extends _init_1.default {
         });
         return id[0];
     }
-    async createGroupItem(groupId, userId, name, description, isForSale, category, price, currency, isCollectible, maxSales = 0, moderationStatus = catalog.moderatorStatus.Pending) {
+    async createGroupItem(groupId, userId, name, description, isForSale, category, price, currency, isCollectible, maxSales = 0, moderationStatus = model.catalog.moderatorStatus.Pending) {
         const date = this.moment().format('YYYY-MM-DD HH:mm:ss');
         const id = await this.knex("catalog").insert({
             "name": name,
@@ -239,7 +234,7 @@ class CatalogDAL extends _init_1.default {
             "currency": currency,
             "category": category,
             "creator": groupId,
-            "creator_type": catalog.creatorType.Group,
+            "creator_type": model.catalog.creatorType.Group,
             "is_collectible": isCollectible,
             "max_sales": maxSales,
             "is_for_sale": isForSale,
@@ -310,7 +305,7 @@ class CatalogDAL extends _init_1.default {
     async uploadThumbnail(catalogId, url) {
         await this.knex("thumbnails").insert({
             "reference_id": catalogId,
-            "type": Thumbnail.Type.ItemThumb,
+            "type": model.thumbnails.Type.ItemThumb,
             "url": url,
             "date": this.moment().format('YYYY-MM-DD HH:mm:ss'),
         });
@@ -318,7 +313,7 @@ class CatalogDAL extends _init_1.default {
     async deleteThumbnail(catalogId) {
         await this.knex("thumbnails").delete().where({
             "reference_id": catalogId,
-            "type": Thumbnail.Type.ItemThumb,
+            "type": model.thumbnails.Type.ItemThumb,
         });
     }
     async updateIsForSale(catalogId, newValue) {
@@ -511,14 +506,14 @@ class CatalogDAL extends _init_1.default {
         };
         for (const hat of catalogIds) {
             const catalogInfo = await this.getInfo(hat, ['category']);
-            if (catalogInfo.category === catalog.category.Gear) {
+            if (catalogInfo.category === model.catalog.category.Gear) {
                 object.Gear = true;
             }
-            if (catalogInfo.category === catalog.category.TShirt) {
+            if (catalogInfo.category === model.catalog.category.TShirt) {
                 const assets = await this.getCatalogItemAssets(hat);
                 for (const asset of assets) {
                     switch (asset.assetType) {
-                        case catalog.assetType.Texture: {
+                        case model.catalog.assetType.Texture: {
                             object.TShirt = { Texture: [] };
                             object.TShirt.Texture.push(asset.fileName + '.' + asset.fileType);
                             break;
@@ -526,11 +521,11 @@ class CatalogDAL extends _init_1.default {
                     }
                 }
             }
-            else if (catalogInfo.category === catalog.category.Shirt) {
+            else if (catalogInfo.category === model.catalog.category.Shirt) {
                 const assets = await this.getCatalogItemAssets(hat);
                 for (const asset of assets) {
                     switch (asset.assetType) {
-                        case catalog.assetType.Texture: {
+                        case model.catalog.assetType.Texture: {
                             object.Shirt = { Texture: [] };
                             object.Shirt.Texture.push(asset.fileName + '.' + asset.fileType);
                             break;
@@ -538,11 +533,11 @@ class CatalogDAL extends _init_1.default {
                     }
                 }
             }
-            else if (catalogInfo.category === catalog.category.Faces) {
+            else if (catalogInfo.category === model.catalog.category.Faces) {
                 const assets = await this.getCatalogItemAssets(hat);
                 for (const asset of assets) {
                     switch (asset.assetType) {
-                        case catalog.assetType.Texture: {
+                        case model.catalog.assetType.Texture: {
                             if (asset.fileType === 'jpg') {
                                 break;
                             }
@@ -553,11 +548,11 @@ class CatalogDAL extends _init_1.default {
                     }
                 }
             }
-            else if (catalogInfo.category === catalog.category.Pants) {
+            else if (catalogInfo.category === model.catalog.category.Pants) {
                 const assets = await this.getCatalogItemAssets(hat);
                 for (const asset of assets) {
                     switch (asset.assetType) {
-                        case catalog.assetType.Texture: {
+                        case model.catalog.assetType.Texture: {
                             object.Pants = { Texture: [] };
                             object.Pants.Texture.push(asset.fileName + '.' + asset.fileType);
                             break;
@@ -565,7 +560,7 @@ class CatalogDAL extends _init_1.default {
                     }
                 }
             }
-            else if (catalogInfo.category === catalog.category.Head) {
+            else if (catalogInfo.category === model.catalog.category.Head) {
                 if (!object.Character) {
                     object.Character = {};
                 }
@@ -580,15 +575,15 @@ class CatalogDAL extends _init_1.default {
                 const assets = await this.getCatalogItemAssets(hat);
                 for (const asset of assets) {
                     switch (asset.assetType) {
-                        case catalog.assetType.MTL: {
+                        case model.catalog.assetType.MTL: {
                             arr.MTL.push(asset.fileName + '.' + asset.fileType);
                             break;
                         }
-                        case catalog.assetType.OBJ: {
+                        case model.catalog.assetType.OBJ: {
                             arr.OBJ.push(asset.fileName + '.' + asset.fileType);
                             break;
                         }
-                        case catalog.assetType.Texture: {
+                        case model.catalog.assetType.Texture: {
                             arr.Texture.push(asset.fileName + '.' + asset.fileType);
                             break;
                         }
@@ -599,15 +594,15 @@ class CatalogDAL extends _init_1.default {
                 const assets = await this.getCatalogItemAssets(hat);
                 for (const asset of assets) {
                     switch (asset.assetType) {
-                        case catalog.assetType.MTL: {
+                        case model.catalog.assetType.MTL: {
                             object.Hats.MTL.push(asset.fileName + '.' + asset.fileType);
                             break;
                         }
-                        case catalog.assetType.OBJ: {
+                        case model.catalog.assetType.OBJ: {
                             object.Hats.OBJ.push(asset.fileName + '.' + asset.fileType);
                             break;
                         }
-                        case catalog.assetType.Texture: {
+                        case model.catalog.assetType.Texture: {
                             object.Hats.Texture.push(asset.fileName + '.' + asset.fileType);
                             break;
                         }

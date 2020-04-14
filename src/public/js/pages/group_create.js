@@ -1,3 +1,7 @@
+request('/group/metadata/creation-fee', 'GET').then(fee => {
+    $('#group-cost').html(`${formatCurrency(1,'1rem')} `+number_format(fee.cost))
+});
+
 $(document).on('click', '#createGroupClick', function() {
     //var form = $('#assetsForm')[0];
     //var data = new FormData(form);

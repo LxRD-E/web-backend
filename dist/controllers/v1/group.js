@@ -499,13 +499,13 @@ let GroupsController = class GroupsController extends controller_1.default {
         }
     }
     async createRoleset(userInfo, groupId, rank, name, description, permissions) {
-        if (!rank || rank > 255 || rank <= 0) {
+        if (!rank || rank > model.group.MAX_RANK_VALUE || rank <= model.group.MIN_RANK_VALUE) {
             throw new this.BadRequest('InvalidGroupRank');
         }
-        if (!name || name.length > 32 || name.length < 3) {
+        if (!name || name.length > model.group.ROLE_NAME_MAX_LENGTH || name.length < model.group.ROLE_NAME_MIN_LENGTH) {
             throw new this.BadRequest('InvalidRolesetName');
         }
-        if (!description || description.length > 128) {
+        if (!description || description.length > model.group.ROLE_DESCRIPTION_MAX_LENGTH) {
             throw new this.BadRequest('InvalidRolesetDescription');
         }
         await this.getGroupInfo(groupId);
@@ -516,7 +516,7 @@ let GroupsController = class GroupsController extends controller_1.default {
                 throw new this.BadRequest('InvalidRolesetPermissions');
             }
             const countRoles = await this.group.getRoles(groupId);
-            if (countRoles.length >= 18) {
+            if (countRoles.length >= model.group.MAX_GROUP_ROLES) {
                 throw new this.BadRequest('TooManyRolesets');
             }
             let exists = false;
@@ -531,10 +531,11 @@ let GroupsController = class GroupsController extends controller_1.default {
             if (role.rank <= rank || rank >= 255 || rank <= 0) {
                 throw new this.BadRequest('InvalidGroupRank');
             }
-            await this.group.createRoleset(groupId, name, description, rank, permissions);
-            return ({
+            let id = await this.group.createRoleset(groupId, name, description, rank, permissions);
+            return {
                 success: true,
-            });
+                roleSetId: id,
+            };
         }
         else {
             throw new this.BadRequest('InvalidGroupPermissions');
@@ -688,7 +689,6 @@ let GroupsController = class GroupsController extends controller_1.default {
         }
     }
     async create(userInfo, name, multerFiles, description) {
-        console.log(multerFiles);
         const userData = userInfo;
         if (!name || name.length < 3 || name.length > 32) {
             throw new this.BadRequest('InvalidGroupName');

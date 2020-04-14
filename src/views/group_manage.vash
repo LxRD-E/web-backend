@@ -19,10 +19,11 @@
                 <div class="card">
                     <div class="card-body">
                         <p style="margin-top:0;margin-bottom:1rem;line-height:1;">Options</p>
-                        <button class="btn btn-success group-settings-option text-truncate" data-class-to-toggle="general" style="width:100%;">General</button>
-                        <button class="btn btn-success group-settings-option text-truncate" data-class-to-toggle="member-manage" style="width:100%;opacity:0.5;margin-top:1rem;">Members</button>
-                        <button class="btn btn-success group-settings-option text-truncate" data-class-to-toggle="economy" style="width:100%;opacity:0.5;margin-top:1rem;">Economy</button>
-                        <button class="btn btn-success group-settings-option text-truncate" data-class-to-toggle="logs-view" style="width:100%;opacity:0.5;margin-top:1rem;">Logs</button>
+                        <button class="btn btn-success group-settings-option text-truncate" data-class-to-toggle="general" style="width:100%;border-bottom-left-radius:0;border-bottom-right-radius:0;">General</button>
+                        <button class="btn btn-success group-settings-option text-truncate" data-class-to-toggle="member-manage" style="width:100%;opacity:0.5;border-radius:0;">Members</button>
+                        <button class="btn btn-success group-settings-option text-truncate" data-class-to-toggle="roles-manage" style="width:100%;opacity:0.5;border-radius:0;">Roles</button>
+                        <button class="btn btn-success group-settings-option text-truncate" data-class-to-toggle="economy" style="width:100%;opacity:0.5;border-radius:0;">Economy</button>
+                        <button class="btn btn-success group-settings-option text-truncate" data-class-to-toggle="logs-view" style="width:100%;opacity:0.5;border-top-right-radius:0;border-top-left-radius:0;">Logs</button>
                     </div>
                 </div>
             </div>
@@ -68,7 +69,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 group-settings-panel member-manage" style="display:none;">
+                    <div class="col-12 group-settings-panel roles-manage" style="display:none;">
                         <div class="card">
                             <div class="card-body">
                                 <form>
@@ -162,7 +163,7 @@
                             </div>
                         </div>
                     }
-                                <div class="col-12 group-settings-panel member-manage" style="margin-top:1rem;display:none;">
+                                <div class="col-12 group-settings-panel member-manage" style="margin-top:0;display:none;">
                                     <div class="row">
                                         <div class="col-sm-12">
                                             <div class="card">
@@ -250,17 +251,24 @@
 
 
 
-                                <div class="col-12 group-settings-panel member-manage" style="margin-top:1rem;display:none;">
+                                <div class="col-12 group-settings-panel roles-manage" style="margin-top:1rem;display:none;">
                                     <div class="row">
-                                        <div class="col-sm-12">
+                                        <div class="col-12 col-lg-4">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <div class="row" id="roleset-selection">
+                                                    </div>
+                                                    <div class="row" id="create-role">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-lg-8">
                                             <div class="card">
                                                 <div class="card-body">
                                                     <div class="row">
-                                                        <div class="col-6 col-md-8">
+                                                        <div class="col-12">
                                                             <h3>Group Roles</h3>
-                                                        </div>
-                                                        <div class="col-6 col-md-4">
-                                                            <select class="form-control" id="groupRoleManageSelection"></select>
                                                         </div>
                                                     </div>
                                                     <div class="row" id="groupRolesOptionsDisplay" style="">

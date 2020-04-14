@@ -107,7 +107,7 @@ let MyGEHMiddleware = class MyGEHMiddleware extends common_1.GlobalErrorHandlerM
             return response.status(500).json({ success: false, message: 'An internal server error has ocurred.', error: { code: HttpError_1.HttpErrors[HttpError_1.HttpErrors.InternalServerError] } });
         }
         if (request.accepts('html')) {
-            return response.status(500).send(HttpError_1.ErrorTemplate('500: Internal Server Error', 'Hindi Gamer Club seems to be experiencing some issues right now. Please try again later.')).end();
+            return response.status(500).send(HttpError_1.ErrorTemplate('500: Internal Server Error', 'BlocksHub seems to be experiencing some issues right now. Please try again later.')).end();
         }
         else {
             return response.status(415).json({ success: false, error: { code: HttpError_1.HttpErrors[HttpError_1.HttpErrors.InvalidAcceptHeader] } });

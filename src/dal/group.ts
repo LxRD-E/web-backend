@@ -318,15 +318,15 @@ class GroupsDAL extends _init {
     }
 
     /**
-     * Create a Roleset for a Group
+     * Create a Roleset for a Group. Returns the rolesetId
      * @param groupId 
      * @param name 
      * @param description 
      * @param rank 
      * @param permissions 
      */
-    public async createRoleset(groupId: number, name: string, description: string, rank: number, permissions: groups.groupPermissions): Promise<void> {
-        await this.knex("group_roles").insert({
+    public async createRoleset(groupId: number, name: string, description: string, rank: number, permissions: groups.groupPermissions): Promise<number> {
+        let id = await this.knex("group_roles").insert({
             'groupid': groupId,
             'name': name,
             'description': description,
@@ -337,6 +337,7 @@ class GroupsDAL extends _init {
             'permission_post_shout': permissions.postShout,
             'permission_manage_group': permissions.manage,
         });
+        return id[0];
     }
 
     /**

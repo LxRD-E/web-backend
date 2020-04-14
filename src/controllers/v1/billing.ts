@@ -112,6 +112,7 @@ export default class BillingController extends controller {
         // Give Currency
         await this.economy.addToUserBalance(userInfo.userId, currencyProductInfo.currencyAmount, model.economy.currencyType.primary);
         // Give in-game item (if applicable)
+        let msg = `Hello\nYour currency purchase of ${currencyProductInfo.currencyAmount} currency has successfully completed. `;
         if (currencyProductInfo.bonusCatalogId !== 0) {
             const owned = await this.user.getUserInventoryByCatalogId(userInfo.userId, currencyProductInfo.bonusCatalogId);
             if (owned.length === 0) {
@@ -129,6 +130,8 @@ export default class BillingController extends controller {
                     await this.economy.addToUserBalance(userInfo.userId, newAmount, catalogPriceInfo.currency);
                     // Create Transaction
                     await this.economy.createTransaction(userInfo.userId, 1, newAmount, catalogPriceInfo.currency, model.economy.transactionType.CurrencyPurchaseBonusItemRefund, 'Bonus Item Currency Refund', model.catalog.creatorType.User, model.catalog.creatorType.User, currencyProductInfo.bonusCatalogId);
+                    // add to msg
+                    msg += `You also recieved an additional ${newAmount} Currency since you already owned the bonus item. `;
                 }
             }
         }
@@ -145,6 +148,10 @@ export default class BillingController extends controller {
                 }
             }
         }
+        // finish message
+        msg+=`This message will serve as your official recipt.\n\nThank you for your purchase,\n-BlocksHub`;
+        // create message for user
+        await this.notification.createMessage(userInfo.userId, 1, 'Currency Purchase Complete', msg);
     }
 
     @Get('/accepted-currencies')

@@ -35,10 +35,10 @@ let FeedController = class FeedController extends controller_1.default {
             throw new Error('No Referer Specified');
         }
         let goodReferers = [
-            'https://hindigamer.club',
-            'http://hindigamer.club',
-            'https://www.hindigamer.club',
-            'http://www.hindigamer.club',
+            'https://blockshub.net',
+            'http://blockshub.net',
+            'https://www.blockshub.net',
+            'http://www.blockshub.net',
             'http://localhost:3000',
         ];
         refererValue = refererValue.toLowerCase();

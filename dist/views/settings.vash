@@ -39,7 +39,7 @@
                                     <input type="text" class="form-control" id="newEmailValue" value="" placeholder="Email">
                                 </div>
                                 <div class="col-md-4 col-sm-12">
-                                    <button type="button" class="btn btn-small btn-success" id="updateEmailClick" style="margin:0 auto;display: block;" disabled="disabled">Update</button>
+                                    <button type="button" class="btn btn-small btn-success" id="updateEmailClick" style="margin:0 auto;display: block;">Update</button>
                                 </div>
                             </div>
                         </div>
@@ -56,11 +56,11 @@
                                 <div class="col-md-8 col-sm-12">
                                     <input type="text" class="form-control" id="newUsernameValue" value="" placeholder="New Username">
                                     <small class="form-text text-muted">
-                                    Changing your username costs <span style="color:#28a745;"><img alt="$" style="height: 1rem;" src="https://cdn.hindigamer.club/static/money-green-2.svg"/> </span>1,000 and can only be reversed by purchasing another username change.
+                                    Changing your username costs <span style="color:#28a745;"><img alt="$" style="height: 1rem;" src="https://cdn.blockshub.net/static/money-green-2.svg"/> </span>1,000 and can only be reversed by purchasing another username change.
                                     </small>
                                 </div>
                                 <div class="col-md-4 col-sm-12">
-                                    <button type="button" class="btn btn-small btn-success" id="updateUsernameClick" style="margin:0 auto;display: block;" disabled="disabled">Update</button>
+                                    <button type="button" class="btn btn-small btn-success" id="updateUsernameClick" style="margin:0 auto;display: block;">Update</button>
                                 </div>
                             </div>
                         </div>
@@ -81,7 +81,7 @@
                                     <div class="g-recaptcha" id="rcaptcha" data-sitekey="@model.captchakey"></div>
                                 </div>
                                 <div class="col-md-4 col-sm-12">
-                                    <button type="button" class="btn btn-small btn-success" id="updatePasswordClick" style="margin:0 auto;display: block;" disabled="disabled">Update</button>
+                                    <button type="button" class="btn btn-small btn-success" id="updatePasswordClick" style="margin:0 auto;display: block;">Update</button>
                                 </div>
                             </div>
                         </div>
@@ -101,7 +101,7 @@
                                     </small>
                                 </div>
                                 <div class="col-md-4 col-sm-12">
-                                    <button type="button" class="btn btn-small btn-success" id="updateBlurbClick" style="margin:0 auto;display: block;" disabled="disabled">Update</button>
+                                    <button type="button" class="btn btn-small btn-success" id="updateBlurbClick" style="margin:0 auto;display: block;">Update</button>
                                 </div>
                             </div>
                         </div>
@@ -118,7 +118,7 @@
                                     <textarea class="form-control" id="newForumSignatureValue" rows="3"></textarea>
                                 </div>
                                 <div class="col-md-4 col-sm-12">
-                                    <button type="button" class="btn btn-small btn-success" id="updateForumSignatureClick" style="margin:0 auto;display: block;" disabled="disabled">Update</button>
+                                    <button type="button" class="btn btn-small btn-success" id="updateForumSignatureClick" style="margin:0 auto;display: block;">Update</button>
                                 </div>
                             </div>
                         </div>
@@ -138,7 +138,7 @@
                                     </select>
                                 </div>
                                 <div class="col-md-4 col-sm-12">
-                                    <button type="button" class="btn btn-small btn-success" id="updateTradingClick" style="margin:0 auto;display: block;" disabled="disabled">Update</button>
+                                    <button type="button" class="btn btn-small btn-success" id="updateTradingClick" style="margin:0 auto;display: block;">Update</button>
                                 </div>
                             </div>
                         </div>
@@ -158,7 +158,7 @@
                                     </select>
                                 </div>
                                 <div class="col-md-4 col-sm-12">
-                                    <button type="button" class="btn btn-small btn-success" id="updateThemeClick" style="margin:0 auto;display: block;" disabled="disabled">Update</button>
+                                    <button type="button" class="btn btn-small btn-success" id="updateThemeClick" style="margin:0 auto;display: block;">Update</button>
                                 </div>
                             </div>
                         </div>

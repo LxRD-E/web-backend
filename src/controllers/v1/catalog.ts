@@ -41,6 +41,12 @@ export class CatalogController extends controller {
         }
     }
 
+    @Get('/categories')
+    @Summary('Get all catalog item categories')
+    public getCategories() {
+        return model.catalog.category;
+    }
+
     @Get('/:catalogId/thumbnail/redirect')
     @Summary('Get catalog item thumbnail and redirect to url. Will redirect to placeholder if invalid catalogId or not available')
     public async getSoloThumbnailAndRedirect(

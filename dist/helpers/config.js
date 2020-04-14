@@ -17,5 +17,8 @@ if (process.env.NODE_ENV !== 'test') {
     const configString = JSON.parse(auth_1.decrypt(fs_1.readFileSync(path_1.join(__dirname, '../../config.json')).toString(), secretEncryptionKey, secretEncryptionIV));
     configJson = JSON.parse(JSON.stringify(configString));
 }
+else {
+    console.warn('[warning] empty config ');
+}
 exports.default = configJson;
 

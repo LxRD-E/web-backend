@@ -678,7 +678,7 @@ div.trade-card-hover > div.card {
     padding:8px;
 }
 div.trade-card-hover {
-    cursor:pointer;
+    cursor: pointer;
 }
 
 div.item-in-trade-request-or-offer {
@@ -689,4 +689,8 @@ div.item-in-trade-request-or-offer > div.card {
 }
 div.item-in-trade-request-or-offer > div.card:hover {
     padding: 8px;
+}
+div#roleset-selection p {
+    cursor: pointer;
+    user-select: none;
 }

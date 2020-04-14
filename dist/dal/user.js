@@ -7,6 +7,7 @@ const Thumbnails = require("../models/v1/thumnails");
 const config_1 = require("../helpers/config");
 const auth_1 = require("./auth");
 const _init_1 = require("./_init");
+const model = require("../models/models");
 const passwordEncryptionKey = config_1.default.encryptionKeys.password;
 const ipEncryptionKey = config_1.default.encryptionKeys.ip;
 class UsersDAL extends _init_1.default {
@@ -111,7 +112,7 @@ class UsersDAL extends _init_1.default {
         const username = await this.knex('users_usernames').select('id as userNameId', 'username', 'userid as userId', 'date_created as dateCreated').where({ 'userid': userId }).orderBy('id', 'desc').limit(1);
         return username[0];
     }
-    async isUsernameOk(username) {
+    isUsernameOk(username) {
         const onlyOneCharacterAllowedOf = [
             /\ /g,
             /\./g,
@@ -280,14 +281,12 @@ class UsersDAL extends _init_1.default {
             'ip_address': encryptedIpAddress,
         });
         const userIds = [];
-        for (const user of ids) {
-            userIds.push(user.userId);
-        }
+        ids.forEach(id => userIds.push(id.userId));
         return userIds;
     }
     async checkForIpSignup(ipAddress) {
         const encryptedIP = await this.encryptIpAddress(ipAddress);
-        const results = await this.knex("user_ip").select("date").where({ 'ip_address': encryptedIP }).limit(1).orderBy("id", "desc");
+        const results = await this.knex("user_ip").select("date", 'id').where({ 'ip_address': encryptedIP, 'action': model.user.ipAddressActions.SignUp }).limit(1).orderBy("id", "desc");
         if (!results[0]) {
             return false;
         }

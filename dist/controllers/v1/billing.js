@@ -124,6 +124,7 @@ let BillingController = class BillingController extends controller_1.default {
     async onCurrencyPurchaseSuccess(userInfo, currencyProductInfo) {
         await this.economy.createTransaction(userInfo.userId, 1, currencyProductInfo.currencyAmount, model.economy.currencyType.primary, model.economy.transactionType.RealWorldPurchaseOfCurrency, 'Purchase of ' + currencyProductInfo.currencyAmount, model.catalog.creatorType.User, model.catalog.creatorType.User);
         await this.economy.addToUserBalance(userInfo.userId, currencyProductInfo.currencyAmount, model.economy.currencyType.primary);
+        let msg = `Hello\nYour currency purchase of ${currencyProductInfo.currencyAmount} currency has successfully completed. `;
         if (currencyProductInfo.bonusCatalogId !== 0) {
             const owned = await this.user.getUserInventoryByCatalogId(userInfo.userId, currencyProductInfo.bonusCatalogId);
             if (owned.length === 0) {
@@ -138,6 +139,7 @@ let BillingController = class BillingController extends controller_1.default {
                     newAmount = Math.abs(newAmount / 2);
                     await this.economy.addToUserBalance(userInfo.userId, newAmount, catalogPriceInfo.currency);
                     await this.economy.createTransaction(userInfo.userId, 1, newAmount, catalogPriceInfo.currency, model.economy.transactionType.CurrencyPurchaseBonusItemRefund, 'Bonus Item Currency Refund', model.catalog.creatorType.User, model.catalog.creatorType.User, currencyProductInfo.bonusCatalogId);
+                    msg += `You also recieved an additional ${newAmount} Currency since you already owned the bonus item. `;
                 }
             }
         }
@@ -152,6 +154,8 @@ let BillingController = class BillingController extends controller_1.default {
                 }
             }
         }
+        msg += `This message will serve as your official recipt.\n\nThank you for your purchase,\n-BlocksHub`;
+        await this.notification.createMessage(userInfo.userId, 1, 'Currency Purchase Complete', msg);
     }
     getAcceptedCurrencies() {
         return this.billing.getAcceptedCurrencies();
@@ -217,7 +221,7 @@ __decorate([
     swagger_1.Summary('Create a Crypto-Currency Currency Transaction'),
     common_1.UseBeforeEach(auth_1.csrf),
     common_1.UseBefore(Auth_1.YesAuth),
-    swagger_1.Returns(409, { type: model.Error, description: 'EmailVerificationRequired: Your email must be verification before purchasing something off of Hindi Gamer Club\n' }),
+    swagger_1.Returns(409, { type: model.Error, description: 'EmailVerificationRequired: Your email must be verification before purchasing something off of BlocksHub\n' }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.BodyParams('currencyProductId', Number)),

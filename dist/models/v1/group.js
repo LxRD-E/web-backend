@@ -17,7 +17,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 exports.MAX_GROUPS = 100;
-exports.MAX_GROUP_ROLES = 18;
+exports.MAX_GROUP_ROLES = 22;
 exports.MAX_RANK_VALUE = 255;
 exports.MIN_RANK_VALUE = 1;
 exports.ROLE_NAME_MAX_LENGTH = 32;
