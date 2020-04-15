@@ -62,6 +62,9 @@
                     <div class="col-12" style="margin-top:2rem;">
                         <p id="total-offer-value">Total Value: 0</p>
                     </div>
+                    <div class="col-12">
+                        <input type="text" class="form-control" placeholder="Currency Offer" id="currency-offer" style="font-size:0.85rem;">
+                    </div>
                 </div>
             </div> 
             <div class="col-12 col-md-8" style="border-left: 1px solid rgba(0,0,0,.1);border-right: 1px solid rgba(0,0,0,.1);">
@@ -113,6 +116,9 @@
                 <div class="row">
                     <div class="col-12" style="margin-top:2rem;">
                         <p id="total-request-value">Total Value: 0</p>
+                    </div>
+                    <div class="col-12">
+                        <input type="text" class="form-control" placeholder="Currency Request" id="currency-request" style="font-size:0.85rem;">
                     </div>
                 </div>
             </div> 

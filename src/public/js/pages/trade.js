@@ -15,6 +15,7 @@ const inOffer = (userInventoryId) => {
     }
     return false;
 }
+let currentOfferPrimary = 0;
 /**
  * @type {{userInventoryId: number; catalogId: number; catalogName: string; serial: number|undefined}[]}
  */
@@ -27,6 +28,7 @@ const inRequest = (userInventoryId) => {
     }
     return false;
 }
+let currentRequestPrimary = 0;
 
 /**
  * 
@@ -256,6 +258,16 @@ $('#total-offer-value').html(`Total Value: ${formatCurrency(1, '1rem')} 0`);
 $('#total-request-value').html(`Total Value: ${formatCurrency(1, '1rem')} 0`);
 // add item to authenticated users offer
 const setupOfferArea = () => {
+    let offerTextArea = parseInt($('#currency-offer').val(), 10);
+    if (!offerTextArea) {
+        offerTextArea = 0;
+    }
+    if (offerTextArea >= 1000000) {
+        offerTextArea = 1000000;
+        $('#currency-offer').val(1000000);
+    }
+    currentOfferPrimary = offerTextArea;
+    let totalASP = offerTextArea;
     if (CurrentOffer.length !== 0 && CurrentRequest.length !== 0) {
         $('#send-trade').removeAttr('disabled');
     }else{
@@ -263,7 +275,7 @@ const setupOfferArea = () => {
     }
     $('#offer-items').empty();
     if (CurrentOffer.length === 0) {
-        $('#total-offer-value').html(`Total Value: ${formatCurrency(1, '1rem')} 0`);
+        $('#total-offer-value').html(`Total Value: ${formatCurrency(1, '1rem')} ${number_format(totalASP)}`);
         $('#offer-items').append(`
         
         <div class="col-12">
@@ -274,7 +286,6 @@ const setupOfferArea = () => {
         return;
     }
     let thumbIds = [];
-    let totalASP = 0;
     for (const item of CurrentOffer) {
         totalASP += item.averagePrice;
         thumbIds.push(item.catalogId);
@@ -355,6 +366,16 @@ $(document).on('click', '.remove-item-requester-items', function(e) {
 
 // add item to authenticated users request
 const setupRequestArea = () => {
+    let offerTextArea = parseInt($('#currency-request').val(), 10);
+    if (!offerTextArea) {
+        offerTextArea = 0;
+    }
+    if (offerTextArea >= 1000000) {
+        offerTextArea = 1000000;
+        $('#currency-request').val(1000000);
+    }
+    currentRequestPrimary = offerTextArea;
+    let totalASP = offerTextArea;
     if (CurrentOffer.length !== 0 && CurrentRequest.length !== 0) {
         $('#send-trade').removeAttr('disabled');
     }else{
@@ -362,7 +383,7 @@ const setupRequestArea = () => {
     }
     $('#request-items').empty();
     if (CurrentRequest.length === 0) {
-        $('#total-request-value').html(`Total Value: ${formatCurrency(1, '1rem')} 0`);
+        $('#total-request-value').html(`Total Value: ${formatCurrency(1, '1rem')} ${number_format(totalASP)}`);
         $('#request-items').append(`
         
         <div class="col-12">
@@ -373,7 +394,7 @@ const setupRequestArea = () => {
         return;
     }
     let thumbIds = [];
-    let totalASP = 0;
+    console.log('total asp',totalASP);
     for (const item of CurrentRequest) {
         totalASP += item.averagePrice;
         thumbIds.push(item.catalogId);
@@ -402,6 +423,15 @@ const setupRequestArea = () => {
     $('#total-request-value').html(`Total Value: ${formatCurrency(1, '1rem')} ${number_format(totalASP)}`);
     setCatalogThumbs(thumbIds);
 }
+$(document).on('input', '#currency-request', function(e) {
+    e.preventDefault();
+    setupRequestArea();
+});
+
+$(document).on('input', '#currency-offer', function(e) {
+    e.preventDefault();
+    setupOfferArea();
+});
 $(document).on('click', '.trade-item-requestee-items', function(e) {
     e.preventDefault();
     let data = partnerPager;
@@ -464,6 +494,8 @@ $(document).on('click', '#send-trade', function(e) {
             request('/user/'+traderId+'/trade/request', 'PUT', {
                 offerItems: requesteeUserInventoryIds,
                 requestedItems: requestedUserInventoryIds,
+                requestPrimary: currentRequestPrimary,
+                offerPrimary: currentOfferPrimary,
             }).then(d => {
                 success('Your trade has been sent. You can review its status in the trades page.', () => {
                     window.location.reload();

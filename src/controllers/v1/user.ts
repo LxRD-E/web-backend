@@ -626,12 +626,12 @@ export class UsersController extends controller {
     @Put('/:userId/trade/request')
     @Summary('Create a trade request')
     @Description('offerItems and requestedItems should both be arrays of userInventoryIds')
-    @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nInvalidItemsSpecified: One or more of the userInventoryId(s) are invalid\n' })
-    @Returns(409, { type: model.Error, description: 'CannotTradeWithUser: Authenticated user has trading disabled or partner has trading disabled\nTooManyPendingTrades: You have too many pending trades with this user\n' })
+    @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nInvalidItemsSpecified: One or more of the userInventoryId(s) are invalid\nPrimaryRequestTooLarge: Primary Currency Request is too large\nPrimaryOfferTooLarge: Primary Currency offer is too large\n' })
+    @Returns(409, { type: model.Error, description: 'CannotTradeWithUser: Authenticated user has trading disabled or partner has trading disabled\nTooManyPendingTrades: You have too many pending trades with this user\nNotEnoughPrimaryCurrencyForOffer: User does not have enough currency for this offer\n' })
     @Use(csrf, YesAuth, TwoStepMiddleware('TradeRequest'))
     public async createTradeRequest(
         @Req() req: Req,
-        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Locals('userInfo') userInfo: model.UserSession,
         @Required()
         @Description('The userId to open a trade with')
         @PathParams('userId', Number) partnerUserId: number,
@@ -639,11 +639,30 @@ export class UsersController extends controller {
         @BodyParams(model.user.CreateTradeRequest) body: model.user.CreateTradeRequest,
     ) {
         await this.transaction(async (trx) => {
+            let offerPrimary = 0;
+            if (body.offerPrimary) {
+                offerPrimary = body.offerPrimary;
+            }
+            let requestPrimary = 0;
+            if (body.requestPrimary) {
+                requestPrimary = body.requestPrimary;
+            }
             let requestedItems = body.requestedItems;
             let offerItems = body.offerItems;
             const partnerInfo = await trx.user.getInfo(partnerUserId, ['userId', 'accountStatus', 'tradingEnabled']);
             if (partnerInfo.accountStatus === model.user.accountStatus.deleted || partnerInfo.accountStatus === model.user.accountStatus.terminated) {
                 throw new this.BadRequest('InvalidUserId');
+            }
+            // Check offer primary
+            if (offerPrimary > userInfo.primaryBalance) {
+                throw new this.Conflict('NotEnoughPrimaryCurrencyForOffer');
+            }
+            // Check total offer
+            if (offerPrimary >= 1000000) {
+                throw new this.BadRequest('PrimaryOfferTooLarge');
+            }
+            if (requestPrimary >= 1000000) {
+                throw new this.BadRequest('PrimaryRequestTooLarge');
             }
             const localInfo = await trx.user.getInfo(userInfo.userId, ['tradingEnabled']);
             // Check if user has Tradeing Disabled
@@ -709,11 +728,11 @@ export class UsersController extends controller {
             // Count outbound/inbound trades between users
             const count = await trx.economy.countPendingTradesBetweenUsers(userInfo.userId, partnerUserId);
             // Confirm they arent spamming trades
-            if (count >= 6) {
+            if (count >= 4) {
                 throw new this.Conflict('TooManyPendingTrades');
             }
             // Create
-            const tradeId = await trx.economy.createTrade(userInfo.userId, partnerUserId);
+            const tradeId = await trx.economy.createTrade(userInfo.userId, partnerUserId, offerPrimary, requestPrimary);
             // Add Requested Items
             await trx.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requested, safeRequestedItems);
             // Add Self Items

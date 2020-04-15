@@ -424,11 +424,28 @@ let UsersController = class UsersController extends controller_1.default {
     }
     async createTradeRequest(req, userInfo, partnerUserId, body) {
         await this.transaction(async (trx) => {
+            let offerPrimary = 0;
+            if (body.offerPrimary) {
+                offerPrimary = body.offerPrimary;
+            }
+            let requestPrimary = 0;
+            if (body.requestPrimary) {
+                requestPrimary = body.requestPrimary;
+            }
             let requestedItems = body.requestedItems;
             let offerItems = body.offerItems;
             const partnerInfo = await trx.user.getInfo(partnerUserId, ['userId', 'accountStatus', 'tradingEnabled']);
             if (partnerInfo.accountStatus === model.user.accountStatus.deleted || partnerInfo.accountStatus === model.user.accountStatus.terminated) {
                 throw new this.BadRequest('InvalidUserId');
+            }
+            if (offerPrimary > userInfo.primaryBalance) {
+                throw new this.Conflict('NotEnoughPrimaryCurrencyForOffer');
+            }
+            if (offerPrimary >= 1000000) {
+                throw new this.BadRequest('PrimaryOfferTooLarge');
+            }
+            if (requestPrimary >= 1000000) {
+                throw new this.BadRequest('PrimaryRequestTooLarge');
             }
             const localInfo = await trx.user.getInfo(userInfo.userId, ['tradingEnabled']);
             if (localInfo.tradingEnabled === model.user.tradingEnabled.false) {
@@ -480,10 +497,10 @@ let UsersController = class UsersController extends controller_1.default {
                 });
             }
             const count = await trx.economy.countPendingTradesBetweenUsers(userInfo.userId, partnerUserId);
-            if (count >= 6) {
+            if (count >= 4) {
                 throw new this.Conflict('TooManyPendingTrades');
             }
-            const tradeId = await trx.economy.createTrade(userInfo.userId, partnerUserId);
+            const tradeId = await trx.economy.createTrade(userInfo.userId, partnerUserId, offerPrimary, requestPrimary);
             await trx.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requested, safeRequestedItems);
             await trx.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requester, safeRequesteeItems);
             await trx.notification.createMessage(partnerUserId, 1, 'Trade Request from ' + userInfo.username, "Hi,\n" + userInfo.username + " has sent you a new trade request. You can view it in the trades tab.");
@@ -771,8 +788,8 @@ __decorate([
     common_1.Put('/:userId/trade/request'),
     swagger_1.Summary('Create a trade request'),
     swagger_1.Description('offerItems and requestedItems should both be arrays of userInventoryIds'),
-    swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nInvalidItemsSpecified: One or more of the userInventoryId(s) are invalid\n' }),
-    swagger_1.Returns(409, { type: model.Error, description: 'CannotTradeWithUser: Authenticated user has trading disabled or partner has trading disabled\nTooManyPendingTrades: You have too many pending trades with this user\n' }),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nInvalidItemsSpecified: One or more of the userInventoryId(s) are invalid\nPrimaryRequestTooLarge: Primary Currency Request is too large\nPrimaryOfferTooLarge: Primary Currency offer is too large\n' }),
+    swagger_1.Returns(409, { type: model.Error, description: 'CannotTradeWithUser: Authenticated user has trading disabled or partner has trading disabled\nTooManyPendingTrades: You have too many pending trades with this user\nNotEnoughPrimaryCurrencyForOffer: User does not have enough currency for this offer\n' }),
     common_1.Use(auth_1.csrf, Auth_1.YesAuth, TwoStepCheck_1.default('TradeRequest')),
     __param(0, common_1.Req()),
     __param(1, common_1.Locals('userInfo')),
@@ -782,7 +799,7 @@ __decorate([
     __param(3, common_1.Required()),
     __param(3, common_1.BodyParams(model.user.CreateTradeRequest)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, model.user.UserInfo, Number, model.user.CreateTradeRequest]),
+    __metadata("design:paramtypes", [Object, model.UserSession, Number, model.user.CreateTradeRequest]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "createTradeRequest", null);
 UsersController = __decorate([

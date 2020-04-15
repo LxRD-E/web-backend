@@ -165,6 +165,8 @@ var HttpErrors;
     HttpErrors[HttpErrors["UserCannotBeTradedWith"] = 160] = "UserCannotBeTradedWith";
     HttpErrors[HttpErrors["InvalidCommentId"] = 161] = "InvalidCommentId";
     HttpErrors[HttpErrors["ItemCannotBeDeleted"] = 162] = "ItemCannotBeDeleted";
+    HttpErrors[HttpErrors["NotEnoughPrimaryCurrencyForOffer"] = 163] = "NotEnoughPrimaryCurrencyForOffer";
+    HttpErrors[HttpErrors["TradeCannotBeCompleted"] = 164] = "TradeCannotBeCompleted";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 ;
 const Any_1 = require("../middleware/Any");

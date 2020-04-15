@@ -246,10 +246,6 @@ let EconomyController = class EconomyController extends controller_1.default {
         const sellerUserId = parseInt(sellerUserIdStr);
         const expectedPrice = parseInt(expectedPriceStr);
         const expectedCurrency = parseInt(expectedCurrencyStr);
-        const emailStatus = await this.settings.getUserEmail(userInfo.userId);
-        if (!emailStatus || emailStatus.status !== model.user.emailVerificationType.true) {
-            throw new this.Conflict('ConstraintEmailVerificationRequired');
-        }
         console.log(`${req.id} start transaction`);
         try {
             await this.transaction(async (trx) => {
@@ -447,6 +443,7 @@ let EconomyController = class EconomyController extends controller_1.default {
             tradeInfo = await this.economy.getTradeById(numericTradeId);
         }
         catch (e) {
+            console.log(e);
             throw new this.BadRequest('InvalidTradeId');
         }
         if (tradeInfo.userIdOne === userInfo.userId) {
@@ -562,55 +559,6 @@ let EconomyController = class EconomyController extends controller_1.default {
                         verifyOwnershipOfItems(tradeInfo.userIdTwo, requesteeTradeItems),
                     ];
                     await Promise.all(OwnershipValidation);
-                    try {
-                        const OwnershipSwap = [
-                            swapOwnersOfItems(tradeInfo.userIdTwo, requestedTradeItems),
-                            swapOwnersOfItems(tradeInfo.userIdOne, requesteeTradeItems),
-                        ];
-                        await Promise.all(OwnershipSwap);
-                    }
-                    catch (e) {
-                        try {
-                            const OwnershipSwap = [
-                                swapOwnersOfItems(tradeInfo.userIdOne, requestedTradeItems),
-                                swapOwnersOfItems(tradeInfo.userIdTwo, requesteeTradeItems),
-                            ];
-                            await Promise.all(OwnershipSwap);
-                        }
-                        catch (e) {
-                            throw e;
-                        }
-                        throw e;
-                    }
-                    await trx.economy.markTradeAccepted(numericTradeId);
-                    (async () => {
-                        try {
-                            const s = requestedTradeItems.length > 1 ? 's' : '';
-                            await trx.notification.createMessage(tradeInfo.userIdOne, 1, 'Trade Accepted', 'Hello,\n' + userInfo.username + ' has accepted your trade. You can view your new item' + s + ' in your inventory.');
-                        }
-                        catch (e) {
-                        }
-                        try {
-                            const itemIdsOne = [];
-                            for (const item of requestedTradeItems) {
-                                itemIdsOne.push(item.catalogId);
-                            }
-                            const itemIdsTwo = [];
-                            for (const item of requesteeTradeItems) {
-                                itemIdsTwo.push(item.catalogId);
-                            }
-                            (async () => {
-                                await this.regenAvatarAfterItemTransferOwners(tradeInfo.userIdOne, itemIdsOne);
-                            })();
-                            (async () => {
-                                await this.regenAvatarAfterItemTransferOwners(tradeInfo.userIdTwo, itemIdsTwo);
-                            })();
-                        }
-                        catch (e) {
-                            console.log(e);
-                        }
-                    })();
-                    return;
                 }
                 catch (e) {
                     try {
@@ -621,6 +569,58 @@ let EconomyController = class EconomyController extends controller_1.default {
                     }
                     throw new this.Conflict('OneOrMoreItemsNotAvailable');
                 }
+                const OwnershipSwap = [
+                    swapOwnersOfItems(tradeInfo.userIdTwo, requestedTradeItems),
+                    swapOwnersOfItems(tradeInfo.userIdOne, requesteeTradeItems),
+                ];
+                await Promise.all(OwnershipSwap);
+                let currencyToSubtractFromUserOne = tradeInfo.userIdOnePrimary;
+                if (currencyToSubtractFromUserOne) {
+                    let userOneCurrentBalance = await trx.user.getInfo(tradeInfo.userIdOne, ['primaryBalance'], forUpdate);
+                    if (userOneCurrentBalance.primaryBalance >= currencyToSubtractFromUserOne === false) {
+                        throw new this.Conflict('TradeCannotBeCompleted');
+                    }
+                    await trx.economy.subtractFromUserBalance(tradeInfo.userIdOne, currencyToSubtractFromUserOne, model.economy.currencyType.primary);
+                    await trx.economy.addToUserBalance(tradeInfo.userIdTwo, currencyToSubtractFromUserOne, model.economy.currencyType.primary);
+                }
+                let currencyToSubtractFromUserTwo = tradeInfo.userIdTwoPrimary;
+                if (currencyToSubtractFromUserTwo) {
+                    let userTwoCurrentBalance = await trx.user.getInfo(tradeInfo.userIdTwo, ['primaryBalance'], forUpdate);
+                    if (userTwoCurrentBalance.primaryBalance >= currencyToSubtractFromUserTwo === false) {
+                        throw new this.Conflict('TradeCannotBeCompleted');
+                    }
+                    await trx.economy.subtractFromUserBalance(tradeInfo.userIdTwo, currencyToSubtractFromUserTwo, model.economy.currencyType.primary);
+                    await trx.economy.addToUserBalance(tradeInfo.userIdOne, currencyToSubtractFromUserTwo, model.economy.currencyType.primary);
+                }
+                await trx.economy.markTradeAccepted(numericTradeId);
+                const renderAvatarAndSendNotification = async () => {
+                    try {
+                        const s = requestedTradeItems.length > 1 ? 's' : '';
+                        await trx.notification.createMessage(tradeInfo.userIdOne, 1, 'Trade Accepted', 'Hello,\n' + userInfo.username + ' has accepted your trade. You can view your new item' + s + ' in your inventory.');
+                    }
+                    catch (e) {
+                        console.error(e);
+                    }
+                    try {
+                        const itemIdsOne = [];
+                        for (const item of requestedTradeItems) {
+                            itemIdsOne.push(item.catalogId);
+                        }
+                        const itemIdsTwo = [];
+                        for (const item of requesteeTradeItems) {
+                            itemIdsTwo.push(item.catalogId);
+                        }
+                        await this.regenAvatarAfterItemTransferOwners(tradeInfo.userIdOne, itemIdsOne);
+                        await this.regenAvatarAfterItemTransferOwners(tradeInfo.userIdTwo, itemIdsTwo);
+                    }
+                    catch (e) {
+                        console.log(e);
+                    }
+                };
+                renderAvatarAndSendNotification().catch(e => {
+                    console.error(e);
+                });
+                return;
             }
             else {
                 throw new this.BadRequest('NotAuthorized');
@@ -758,7 +758,7 @@ __decorate([
     swagger_1.Summary('Accept a trade'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidTradeId: TradeId is invalid\nInvalidPartnerId: Trade cannot be completed due to an internal error\nNotAuthorized: User is not authorized to modify this trade (ex: didnt create the trade, already accepted, already declined, etc)' }),
     swagger_1.Returns(500, { type: model.Error, description: 'InternalServerError: Trade cannot be completed due to an internal error\n' }),
-    swagger_1.Returns(409, { type: model.Error, description: 'OneOrMoreItemsNotAvailable: One or more of the items involved in the trade are no longer available\nCooldown: Try again later\n' }),
+    swagger_1.Returns(409, { type: model.Error, description: 'OneOrMoreItemsNotAvailable: One or more of the items involved in the trade are no longer available\nCooldown: Try again later\nTradeCannotBeCompleted: Generic error is preventing trade from being completed.\n' }),
     common_1.UseBeforeEach(auth_1.csrf),
     common_1.UseBefore(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),

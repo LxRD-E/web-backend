@@ -162,6 +162,8 @@ export enum HttpErrors {
     UserCannotBeTradedWith,
     InvalidCommentId,
     ItemCannotBeDeleted,
+    NotEnoughPrimaryCurrencyForOffer,
+    TradeCannotBeCompleted,
 };
 import os = require('os');
 import {lbOrigin} from '../middleware/Any';

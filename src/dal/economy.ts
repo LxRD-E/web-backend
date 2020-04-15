@@ -290,11 +290,13 @@ class EconomyDAL extends _init {
      * @param userIdOne 
      * @param userIdTwo 
      */
-    public async createTrade(userIdOne: number, userIdTwo: number): Promise<number> {
+    public async createTrade(userIdOne: number, userIdTwo: number, offerPrimary: number, requestPrimary: number): Promise<number> {
         const tradeData = await this.knex("trades").insert({
             'userid_one': userIdOne,
             'userid_two': userIdTwo,
             'status': model.economy.tradeStatus.Pending,
+            'userid_one_primary': offerPrimary,
+            'userid_two_primary': requestPrimary,
         });
         if (!tradeData[0]) {
             throw false;
@@ -345,6 +347,8 @@ class EconomyDAL extends _init {
                     'id as tradeId',
                     'userid_two as userId',
                     'date',
+                    'userid_two_primary as requestPrimary',
+                    'userid_one_primary as offerPrimary',
                 ).limit(25).offset(offset).orderBy("id", "DESC");
             } else if (tradeType === 'inactive') {
                 tradeNumber = 2;
@@ -353,6 +357,8 @@ class EconomyDAL extends _init {
                     'userid_one',
                     'userid_two',
                     'date',
+                    'userid_two_primary',
+                    'userid_one_primary',
                 ).limit(25).offset(offset).orderBy("id", "DESC");
                 query = [];
                 for (const trade of selectionOfTrades) {
@@ -361,12 +367,16 @@ class EconomyDAL extends _init {
                             'tradeId': trade.tradeId,
                             'userId': trade.userid_two,
                             'date': trade.date,
+                            'offerPrimary': trade.userid_one_primary,
+                            'requestPrimary': trade.userid_two_primary,
                         });
                     } else {
                         query.push({
                             'tradeId': trade.tradeId,
                             'userId': trade.userid_one,
                             'date': trade.date,
+                            'requestPrimary': trade.userid_two_primary,
+                            'offerPrimary': trade.userid_one_primary,
                         });
                     }
                 }
@@ -377,6 +387,8 @@ class EconomyDAL extends _init {
                     'userid_two',
                     'userid_one',
                     'date',
+                    'userid_two_primary',
+                    'userid_one_primary',
                 ).limit(25).offset(offset).orderBy("id", "DESC");
                 query = [];
                 for (const trade of selectionOfTrades) {
@@ -385,12 +397,16 @@ class EconomyDAL extends _init {
                             'tradeId': trade.tradeId,
                             'userId': trade.userid_two,
                             'date': trade.date,
+                            'offerPrimary': trade.userid_one_primary,
+                            'requestPrimary': trade.userid_two_primary,
                         });
                     } else {
                         query.push({
                             'tradeId': trade.tradeId,
                             'userId': trade.userid_one,
                             'date': trade.date,
+                            'requestPrimary': trade.userid_two_primary,
+                            'offerPrimary': trade.userid_one_primary,
                         });
                     }
                 }
@@ -401,6 +417,8 @@ class EconomyDAL extends _init {
                 'id as tradeId',
                 'userid_one as userId',
                 'date',
+                'userid_one_primary as offerPrimary',
+                'userid_two_primary as requestPrimary',
             ).limit(25).offset(offset).orderBy("id", "DESC");
         }
         return query;
@@ -417,6 +435,8 @@ class EconomyDAL extends _init {
             'userid_two as userIdTwo',
             'date',
             'status',
+            'userid_one_primary as userIdOnePrimary',
+            'userid_two_primary as userIdTwoPrimary',
         ).where({ 'id': tradeId });
         
         if (forUpdate) {
@@ -424,7 +444,7 @@ class EconomyDAL extends _init {
         }
         const res = await query;
         if (!res[0]) {
-            throw false;
+            throw new Error('InvalidTradeId');
         }
         return res[0];
     }

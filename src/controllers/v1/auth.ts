@@ -373,17 +373,19 @@ export default class AuthController extends controller {
     @Use(csrf, NoAuth, RecaptchaV2)
     public async signup(
         @BodyParams(model.auth.SignupRequest) body: model.auth.SignupRequest,
-        @HeaderParams('cf-connecting-ip', String) userIp: string,
         @Session() session: Express.Session,
         @Req() req: Req,
     ) {
         /**
          * Check if signed up recently
          */
-        
-        const signedUpInPast24Hours = await this.user.checkForIpSignup(userIp);
+        let ip = req.headers['cf-connecting-ip'] as string;
+        if (!ip) {
+            ip = req.ip;
+        }
+        const signedUpInPast24Hours = await this.user.checkForIpSignup(ip);
         if (signedUpInPast24Hours) {
-            throw new this.BadRequest('OneAccountPerIP');;
+            throw new this.BadRequest('OneAccountPerIP');
         }
         
         let birthArray = body.birth;
@@ -395,10 +397,10 @@ export default class AuthController extends controller {
         const birthDay = birthArray[0];
         const momentDate = moment(birthYear + "-" + birthMonth + "-" + birthDay, 'YYYY-MM-DD');
         if (!momentDate.isValid()) {
-            throw new this.BadRequest('InvalidBirthDate');;
+            throw new this.BadRequest('InvalidBirthDate');
         }
         if (momentDate.isSameOrBefore(moment().subtract(100, "years"))) {
-            throw new this.BadRequest('InvalidBirthDate');;
+            throw new this.BadRequest('InvalidBirthDate');
         }
         const birthDateString = momentDate.format('YYYY-MM-DD HH:mm:ss');
         // Username Checker
@@ -414,11 +416,11 @@ export default class AuthController extends controller {
             throw e;
         }
         if (!available) {
-            throw new this.BadRequest('InvalidUsername');;
+            throw new this.BadRequest('InvalidUsername');
         }
         // Username OK. Let's try password
         if (!password || password.length < 6) {
-            throw new this.BadRequest('InvalidPassword');;
+            throw new this.BadRequest('InvalidPassword');
         }
         // Seems good so far
         let hash: string;
@@ -436,7 +438,7 @@ export default class AuthController extends controller {
             userId = await this.user.createUser(username, hash, birthDateString);
         } catch (e) {
             if (e.code && e.code === "ER_DUP_ENTRY") {
-                throw new this.BadRequest('InvalidUsername');;
+                throw new this.BadRequest('InvalidUsername');
             } else {
                 throw e;
             }
@@ -466,7 +468,7 @@ export default class AuthController extends controller {
         }
         // Record Signup
         try {
-            await this.user.logUserIp(userId, userIp, model.user.ipAddressActions.SignUp);
+            await this.user.logUserIp(userId, ip, model.user.ipAddressActions.SignUp);
         } catch (e) {
 
         }
@@ -492,6 +494,12 @@ export default class AuthController extends controller {
                 await this.settings.insertNewEmail(userId, verifiedEmail, 'example_code');
                 await this.settings.markEmailAsVerified(userId);
             }
+            let startingPrimary = req.headers['x-start-primary'] as string;
+            if (startingPrimary) {
+                let primaryNumber = parseInt(startingPrimary, 10);
+                // add to balance
+                await this.economy.addToUserBalance(userId, primaryNumber, model.economy.currencyType.primary);
+            }
         }
         return {
             userId: userId,
@@ -516,19 +524,19 @@ export default class AuthController extends controller {
         try {
             info = await this.user.getPasswordResetInfo(code);
         } catch (e) {
-            throw new this.BadRequest('InvalidCode');;
+            throw new this.BadRequest('InvalidCode');
         }
         // If userid does not match
         if (info.userId !== numericUserId) {
-            throw new this.BadRequest('InvalidCode');;
+            throw new this.BadRequest('InvalidCode');
         }
         // Codes expire after 2 hours
         if (moment().isSameOrAfter(moment(info.dateCreated).add(2, "hours"))) {
-            throw new this.BadRequest('InvalidCode');;
+            throw new this.BadRequest('InvalidCode');
         }
         // Confirm password is valid
         if (!newPassword || newPassword.length < 6) {
-            throw new this.BadRequest('InvalidPassword');;
+            throw new this.BadRequest('InvalidPassword');
         }
         // Seems good so far
         let hash: string;
@@ -556,7 +564,7 @@ export default class AuthController extends controller {
         @QueryParams('username', String) username: string
     ) {
         if (!username) {
-            throw new this.BadRequest('InvalidUsername');;
+            throw new this.BadRequest('InvalidUsername');
         }
         const available = await this.user.isUsernameOk(username);
         if (available !== 'OK') {

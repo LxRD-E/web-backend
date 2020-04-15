@@ -98,6 +98,8 @@ export interface ExtendedTradeInfo {
     userIdTwo: number;
     date: string;
     status: tradeStatus;
+    userIdOnePrimary: number;
+    userIdTwoPrimary: number;
 }
 
 export class TradeItems {

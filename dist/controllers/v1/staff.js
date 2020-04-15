@@ -1159,7 +1159,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "deleteUserStatusId", null);
 __decorate([
-    common_1.Get('/trades/:tradeId/items'),
+    common_1.Get('/economy/trades/:tradeId/items'),
     swagger_1.Summary('Get the items involved in a specific tradeId'),
     swagger_1.Description('Requestee is authenticated user, requested is the partner involved with the trade'),
     swagger_1.Returns(200, { type: model.economy.TradeItemsResponse }),
@@ -1175,7 +1175,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "getTradeItems", null);
 __decorate([
-    common_1.Get('/trades/:type'),
+    common_1.Get('/economy/trades/:type'),
     swagger_1.Summary('Get user trades'),
     common_1.UseBefore(Auth_1.YesAuth),
     swagger_1.ReturnsArray(200, { type: model.economy.TradeInfo }),

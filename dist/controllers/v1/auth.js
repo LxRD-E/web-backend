@@ -244,11 +244,14 @@ let AuthController = class AuthController extends controller_1.default {
         }
         return { success: true };
     }
-    async signup(body, userIp, session, req) {
-        const signedUpInPast24Hours = await this.user.checkForIpSignup(userIp);
+    async signup(body, session, req) {
+        let ip = req.headers['cf-connecting-ip'];
+        if (!ip) {
+            ip = req.ip;
+        }
+        const signedUpInPast24Hours = await this.user.checkForIpSignup(ip);
         if (signedUpInPast24Hours) {
             throw new this.BadRequest('OneAccountPerIP');
-            ;
         }
         let birthArray = body.birth;
         let username = body.username;
@@ -259,11 +262,9 @@ let AuthController = class AuthController extends controller_1.default {
         const momentDate = moment(birthYear + "-" + birthMonth + "-" + birthDay, 'YYYY-MM-DD');
         if (!momentDate.isValid()) {
             throw new this.BadRequest('InvalidBirthDate');
-            ;
         }
         if (momentDate.isSameOrBefore(moment().subtract(100, "years"))) {
             throw new this.BadRequest('InvalidBirthDate');
-            ;
         }
         const birthDateString = momentDate.format('YYYY-MM-DD HH:mm:ss');
         const usernamecheck = await this.user.isUsernameOk(username);
@@ -279,11 +280,9 @@ let AuthController = class AuthController extends controller_1.default {
         }
         if (!available) {
             throw new this.BadRequest('InvalidUsername');
-            ;
         }
         if (!password || password.length < 6) {
             throw new this.BadRequest('InvalidPassword');
-            ;
         }
         let hash;
         try {
@@ -302,7 +301,6 @@ let AuthController = class AuthController extends controller_1.default {
         catch (e) {
             if (e.code && e.code === "ER_DUP_ENTRY") {
                 throw new this.BadRequest('InvalidUsername');
-                ;
             }
             else {
                 throw e;
@@ -332,7 +330,7 @@ let AuthController = class AuthController extends controller_1.default {
             throw e;
         }
         try {
-            await this.user.logUserIp(userId, userIp, model.user.ipAddressActions.SignUp);
+            await this.user.logUserIp(userId, ip, model.user.ipAddressActions.SignUp);
         }
         catch (e) {
         }
@@ -347,6 +345,11 @@ let AuthController = class AuthController extends controller_1.default {
                 await this.settings.insertNewEmail(userId, verifiedEmail, 'example_code');
                 await this.settings.markEmailAsVerified(userId);
             }
+            let startingPrimary = req.headers['x-start-primary'];
+            if (startingPrimary) {
+                let primaryNumber = parseInt(startingPrimary, 10);
+                await this.economy.addToUserBalance(userId, primaryNumber, model.economy.currencyType.primary);
+            }
         }
         return {
             userId: userId,
@@ -360,19 +363,15 @@ let AuthController = class AuthController extends controller_1.default {
         }
         catch (e) {
             throw new this.BadRequest('InvalidCode');
-            ;
         }
         if (info.userId !== numericUserId) {
             throw new this.BadRequest('InvalidCode');
-            ;
         }
         if (moment().isSameOrAfter(moment(info.dateCreated).add(2, "hours"))) {
             throw new this.BadRequest('InvalidCode');
-            ;
         }
         if (!newPassword || newPassword.length < 6) {
             throw new this.BadRequest('InvalidPassword');
-            ;
         }
         let hash;
         try {
@@ -390,7 +389,6 @@ let AuthController = class AuthController extends controller_1.default {
     async usernameAvailableForSignup(username) {
         if (!username) {
             throw new this.BadRequest('InvalidUsername');
-            ;
         }
         const available = await this.user.isUsernameOk(username);
         if (available !== 'OK') {
@@ -619,11 +617,10 @@ __decorate([
     swagger_1.Returns(400, { description: 'InvalidBirthDate: Birth Date is invalid\nInvalidUsername: Username is taken or unavailable\nInvalidPassword: Password is too weak\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nOneAccountPerIP: Only one account may be signed up per IP address, every 24 hours\n' }),
     common_1.Use(auth_1.csrf, Auth_1.NoAuth, RecaptchaV2_1.default),
     __param(0, common_1.BodyParams(model.auth.SignupRequest)),
-    __param(1, common_1.HeaderParams('cf-connecting-ip', String)),
-    __param(2, common_1.Session()),
-    __param(3, common_1.Req()),
+    __param(1, common_1.Session()),
+    __param(2, common_1.Req()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.auth.SignupRequest, String, Object, Object]),
+    __metadata("design:paramtypes", [model.auth.SignupRequest, Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "signup", null);
 __decorate([

@@ -217,11 +217,13 @@ class EconomyDAL extends _init_1.default {
             throw false;
         }
     }
-    async createTrade(userIdOne, userIdTwo) {
+    async createTrade(userIdOne, userIdTwo, offerPrimary, requestPrimary) {
         const tradeData = await this.knex("trades").insert({
             'userid_one': userIdOne,
             'userid_two': userIdTwo,
             'status': model.economy.tradeStatus.Pending,
+            'userid_one_primary': offerPrimary,
+            'userid_two_primary': requestPrimary,
         });
         if (!tradeData[0]) {
             throw false;
@@ -248,11 +250,11 @@ class EconomyDAL extends _init_1.default {
         if (tradeType !== 'inbound') {
             if (tradeType === 'outbound') {
                 tradeNumber = 0;
-                query = await this.knex("trades").where({ 'userid_one': userId, "status": tradeNumber }).select('id as tradeId', 'userid_two as userId', 'date').limit(25).offset(offset).orderBy("id", "DESC");
+                query = await this.knex("trades").where({ 'userid_one': userId, "status": tradeNumber }).select('id as tradeId', 'userid_two as userId', 'date', 'userid_two_primary as requestPrimary', 'userid_one_primary as offerPrimary').limit(25).offset(offset).orderBy("id", "DESC");
             }
             else if (tradeType === 'inactive') {
                 tradeNumber = 2;
-                const selectionOfTrades = await this.knex("trades").where({ 'userid_two': userId, "status": tradeNumber }).orWhere({ 'userid_one': userId, "status": tradeNumber }).select('id as tradeId', 'userid_one', 'userid_two', 'date').limit(25).offset(offset).orderBy("id", "DESC");
+                const selectionOfTrades = await this.knex("trades").where({ 'userid_two': userId, "status": tradeNumber }).orWhere({ 'userid_one': userId, "status": tradeNumber }).select('id as tradeId', 'userid_one', 'userid_two', 'date', 'userid_two_primary', 'userid_one_primary').limit(25).offset(offset).orderBy("id", "DESC");
                 query = [];
                 for (const trade of selectionOfTrades) {
                     if (trade.userid_one === userId) {
@@ -260,6 +262,8 @@ class EconomyDAL extends _init_1.default {
                             'tradeId': trade.tradeId,
                             'userId': trade.userid_two,
                             'date': trade.date,
+                            'offerPrimary': trade.userid_one_primary,
+                            'requestPrimary': trade.userid_two_primary,
                         });
                     }
                     else {
@@ -267,13 +271,15 @@ class EconomyDAL extends _init_1.default {
                             'tradeId': trade.tradeId,
                             'userId': trade.userid_one,
                             'date': trade.date,
+                            'requestPrimary': trade.userid_two_primary,
+                            'offerPrimary': trade.userid_one_primary,
                         });
                     }
                 }
             }
             else {
                 tradeNumber = 1;
-                const selectionOfTrades = await this.knex("trades").where({ 'userid_one': userId, "status": tradeNumber }).orWhere({ 'userid_two': userId, "status": tradeNumber }).select('id as tradeId', 'userid_two', 'userid_one', 'date').limit(25).offset(offset).orderBy("id", "DESC");
+                const selectionOfTrades = await this.knex("trades").where({ 'userid_one': userId, "status": tradeNumber }).orWhere({ 'userid_two': userId, "status": tradeNumber }).select('id as tradeId', 'userid_two', 'userid_one', 'date', 'userid_two_primary', 'userid_one_primary').limit(25).offset(offset).orderBy("id", "DESC");
                 query = [];
                 for (const trade of selectionOfTrades) {
                     if (trade.userid_one === userId) {
@@ -281,6 +287,8 @@ class EconomyDAL extends _init_1.default {
                             'tradeId': trade.tradeId,
                             'userId': trade.userid_two,
                             'date': trade.date,
+                            'offerPrimary': trade.userid_one_primary,
+                            'requestPrimary': trade.userid_two_primary,
                         });
                     }
                     else {
@@ -288,6 +296,8 @@ class EconomyDAL extends _init_1.default {
                             'tradeId': trade.tradeId,
                             'userId': trade.userid_one,
                             'date': trade.date,
+                            'requestPrimary': trade.userid_two_primary,
+                            'offerPrimary': trade.userid_one_primary,
                         });
                     }
                 }
@@ -295,18 +305,18 @@ class EconomyDAL extends _init_1.default {
         }
         else {
             tradeNumber = 0;
-            query = await this.knex("trades").where({ 'userid_two': userId, "status": tradeNumber }).select('id as tradeId', 'userid_one as userId', 'date').limit(25).offset(offset).orderBy("id", "DESC");
+            query = await this.knex("trades").where({ 'userid_two': userId, "status": tradeNumber }).select('id as tradeId', 'userid_one as userId', 'date', 'userid_one_primary as offerPrimary', 'userid_two_primary as requestPrimary').limit(25).offset(offset).orderBy("id", "DESC");
         }
         return query;
     }
     async getTradeById(tradeId, forUpdate) {
-        let query = this.knex("trades").select('id as tradeId', 'userid_one as userIdOne', 'userid_two as userIdTwo', 'date', 'status').where({ 'id': tradeId });
+        let query = this.knex("trades").select('id as tradeId', 'userid_one as userIdOne', 'userid_two as userIdTwo', 'date', 'status', 'userid_one_primary as userIdOnePrimary', 'userid_two_primary as userIdTwoPrimary').where({ 'id': tradeId });
         if (forUpdate) {
             query = query.forUpdate(forUpdate);
         }
         const res = await query;
         if (!res[0]) {
-            throw false;
+            throw new Error('InvalidTradeId');
         }
         return res[0];
     }

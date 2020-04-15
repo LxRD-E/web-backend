@@ -341,10 +341,13 @@ export default class EconomyController extends controller {
         const expectedPrice = parseInt(expectedPriceStr);
         const expectedCurrency = parseInt(expectedCurrencyStr);
         // Check email status
+        // NOTE: temporarily disabled due to people complaining...
+        /*
         const emailStatus = await this.settings.getUserEmail(userInfo.userId);
         if (!emailStatus || emailStatus.status !== model.user.emailVerificationType.true) {
             throw new this.Conflict('ConstraintEmailVerificationRequired');
         }
+        */
         // If buying new...
         console.log(`${req.id} start transaction`);
         try {
@@ -408,7 +411,7 @@ export default class EconomyController extends controller {
 
                     // Get balance and check if has enough
                     console.log(`${req.id} check if has enough currency`);
-                    const newUserInfo = await this.user.getInfo(userInfo.userId, ['primaryBalance','secondaryBalance'], forUpdate);
+                    const newUserInfo = await this.user.getInfo(userInfo.userId, ['primaryBalance', 'secondaryBalance'], forUpdate);
                     if (catalogItemInfo.currency === model.economy.currencyType.primary) {
                         const balance = newUserInfo.primaryBalance as number;
                         if (catalogItemInfo.price > balance) {
@@ -562,9 +565,9 @@ export default class EconomyController extends controller {
                     backgroundTasksAfterPurchase().then(d => {
 
                     })
-                    .catch(e => {
+                        .catch(e => {
 
-                    })
+                        })
                     this.regenAvatarAfterItemTransferOwners(usedItemInfo.userId, usedItemInfo.catalogId).then(d => {
                         console.log(d);
                     }).catch(e => {
@@ -599,6 +602,7 @@ export default class EconomyController extends controller {
         try {
             tradeInfo = await this.economy.getTradeById(numericTradeId);
         } catch (e) {
+            console.log(e);
             throw new this.BadRequest('InvalidTradeId');
         }
         if (tradeInfo.userIdOne === userInfo.userId) {
@@ -649,7 +653,7 @@ export default class EconomyController extends controller {
     @Summary('Accept a trade')
     @Returns(400, { type: model.Error, description: 'InvalidTradeId: TradeId is invalid\nInvalidPartnerId: Trade cannot be completed due to an internal error\nNotAuthorized: User is not authorized to modify this trade (ex: didnt create the trade, already accepted, already declined, etc)' })
     @Returns(500, { type: model.Error, description: 'InternalServerError: Trade cannot be completed due to an internal error\n' })
-    @Returns(409, { type: model.Error, description: 'OneOrMoreItemsNotAvailable: One or more of the items involved in the trade are no longer available\nCooldown: Try again later\n' })
+    @Returns(409, { type: model.Error, description: 'OneOrMoreItemsNotAvailable: One or more of the items involved in the trade are no longer available\nCooldown: Try again later\nTradeCannotBeCompleted: Generic error is preventing trade from being completed.\n' })
     @UseBeforeEach(csrf)
     @UseBefore(YesAuth)
     public async acceptTrade(
@@ -749,63 +753,6 @@ export default class EconomyController extends controller {
                         verifyOwnershipOfItems(tradeInfo.userIdTwo, requesteeTradeItems),
                     ];
                     await Promise.all(OwnershipValidation);
-                    // Owners are valid. Swap ownership
-                    // Swap Owners
-                    try {
-                        const OwnershipSwap = [
-                            swapOwnersOfItems(tradeInfo.userIdTwo, requestedTradeItems),
-                            swapOwnersOfItems(tradeInfo.userIdOne, requesteeTradeItems),
-                        ]
-                        await Promise.all(OwnershipSwap);
-                    } catch (e) {
-                        // Reverse swap
-                        try {
-                            const OwnershipSwap = [
-                                swapOwnersOfItems(tradeInfo.userIdOne, requestedTradeItems),
-                                swapOwnersOfItems(tradeInfo.userIdTwo, requesteeTradeItems),
-                            ]
-                            await Promise.all(OwnershipSwap);
-                        } catch (e) {
-                            // Uh-oh
-                            throw e;
-                        }
-                        throw e;
-                    }
-                    // Update trade status
-                    await trx.economy.markTradeAccepted(numericTradeId);
-                    // Startup background task 
-                    (async (): Promise<void> => {
-                        // Send Success Message
-                        try {
-                            const s = requestedTradeItems.length > 1 ? 's' : '';
-                            await trx.notification.createMessage(tradeInfo.userIdOne, 1, 'Trade Accepted', 'Hello,\n' + userInfo.username + ' has accepted your trade. You can view your new item' + s + ' in your inventory.');
-                        } catch (e) {
-
-                        }
-                        // Regen Avatars
-                        try {
-                            const itemIdsOne = [];
-                            for (const item of requestedTradeItems) {
-                                itemIdsOne.push(item.catalogId);
-                            }
-                            const itemIdsTwo = [];
-                            for (const item of requesteeTradeItems) {
-                                itemIdsTwo.push(item.catalogId);
-                            }
-                            // Gen avatars
-                            (async (): Promise<void> => {
-                                await this.regenAvatarAfterItemTransferOwners(tradeInfo.userIdOne, itemIdsOne);
-                            })();
-                            (async (): Promise<void> => {
-                                await this.regenAvatarAfterItemTransferOwners(tradeInfo.userIdTwo, itemIdsTwo);
-                            })();
-                        } catch (e) {
-                            console.log(e);
-                        }
-                    })();
-                    // Success!
-                    // Dont return anything.
-                    return;
                 } catch (e) {
                     // Cancel Trade
                     try {
@@ -816,6 +763,73 @@ export default class EconomyController extends controller {
                     // Return error
                     throw new this.Conflict('OneOrMoreItemsNotAvailable');
                 }
+                // Owners are valid. Swap ownership
+                // Swap Owners
+                const OwnershipSwap = [
+                    swapOwnersOfItems(tradeInfo.userIdTwo, requestedTradeItems),
+                    swapOwnersOfItems(tradeInfo.userIdOne, requesteeTradeItems),
+                ]
+                await Promise.all(OwnershipSwap);
+                // If there is offer currency, swap it
+                let currencyToSubtractFromUserOne = tradeInfo.userIdOnePrimary;
+                if (currencyToSubtractFromUserOne) {
+                    let userOneCurrentBalance = await trx.user.getInfo(tradeInfo.userIdOne, ['primaryBalance'], forUpdate);
+                    if (userOneCurrentBalance.primaryBalance >= currencyToSubtractFromUserOne === false) {
+                        throw new this.Conflict('TradeCannotBeCompleted');
+                    }
+                    // subtract from userone balance
+                    await trx.economy.subtractFromUserBalance(tradeInfo.userIdOne, currencyToSubtractFromUserOne, model.economy.currencyType.primary);
+                    // add to usertwo balance
+                    await trx.economy.addToUserBalance(tradeInfo.userIdTwo, currencyToSubtractFromUserOne, model.economy.currencyType.primary);
+                }
+                // If there is request currency, swap it
+                let currencyToSubtractFromUserTwo = tradeInfo.userIdTwoPrimary;
+                if (currencyToSubtractFromUserTwo) {
+                    let userTwoCurrentBalance = await trx.user.getInfo(tradeInfo.userIdTwo, ['primaryBalance'], forUpdate);
+                    if (userTwoCurrentBalance.primaryBalance >= currencyToSubtractFromUserTwo === false) {
+                        throw new this.Conflict('TradeCannotBeCompleted');
+                    }
+                    // subtract from usertwo balance
+                    await trx.economy.subtractFromUserBalance(tradeInfo.userIdTwo, currencyToSubtractFromUserTwo, model.economy.currencyType.primary);
+                    // add to userone balance
+                    await trx.economy.addToUserBalance(tradeInfo.userIdOne, currencyToSubtractFromUserTwo, model.economy.currencyType.primary);
+                }
+
+                // Update trade status
+                await trx.economy.markTradeAccepted(numericTradeId);
+                // Startup background task 
+                const renderAvatarAndSendNotification = async () => {
+                    // Send Success Message
+                    try {
+                        const s = requestedTradeItems.length > 1 ? 's' : '';
+                        await trx.notification.createMessage(tradeInfo.userIdOne, 1, 'Trade Accepted', 'Hello,\n' + userInfo.username + ' has accepted your trade. You can view your new item' + s + ' in your inventory.');
+                    } catch (e) {
+                        console.error(e);
+                    }
+                    // Regen Avatars
+                    try {
+                        const itemIdsOne = [];
+                        for (const item of requestedTradeItems) {
+                            itemIdsOne.push(item.catalogId);
+                        }
+                        const itemIdsTwo = [];
+                        for (const item of requesteeTradeItems) {
+                            itemIdsTwo.push(item.catalogId);
+                        }
+                        // Gen avatars
+                        await this.regenAvatarAfterItemTransferOwners(tradeInfo.userIdOne, itemIdsOne);
+                        await this.regenAvatarAfterItemTransferOwners(tradeInfo.userIdTwo, itemIdsTwo);
+                    } catch (e) {
+                        console.log(e);
+                    }
+                };
+                renderAvatarAndSendNotification().catch(e => {
+                    console.error(e);
+                })
+                // Success!
+                // Dont return anything.
+                return;
+
             } else {
                 // You can't accept your own trade
                 throw new this.BadRequest('NotAuthorized');

@@ -1175,7 +1175,7 @@ export class StaffController extends controller {
         };
     }
 
-    @Get('/trades/:tradeId/items')
+    @Get('/economy/trades/:tradeId/items')
     @Summary('Get the items involved in a specific tradeId')
     @Description('Requestee is authenticated user, requested is the partner involved with the trade')
     @Returns(200, { type: model.economy.TradeItemsResponse })
@@ -1210,7 +1210,7 @@ export class StaffController extends controller {
         }
     }
 
-    @Get('/trades/:type')
+    @Get('/economy/trades/:type')
     @Summary('Get user trades')
     @UseBefore(YesAuth)
     @ReturnsArray(200, { type: model.economy.TradeInfo })

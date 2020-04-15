@@ -534,6 +534,7 @@ describe('/api/v1/economy/{catalogId}/buy', () => {
         assert.strictEqual(inv.data.items.length, 1, 'collectible inventory should only contain 1 item');
         // good
     }).timeout(5000);
+    /*
     it('Should attempt to purchase a catalog item, but fail due to not having a verified email address', async () => {
         const CATALOG_ID = 1058;
         const EXPECTED_PRICE = 10;
@@ -571,6 +572,7 @@ describe('/api/v1/economy/{catalogId}/buy', () => {
         assert.strictEqual(inv.data.items.length, 0, 'inventory should contain 0 items');
         // good
     }).timeout(5000);
+    */
 });
 
 describe('POST /api/v1/economy/trades/{tradeId}', () => {
@@ -646,6 +648,252 @@ describe('POST /api/v1/economy/trades/{tradeId}', () => {
         let userTwoNewInventory = await userTwo.get('/user/'+userTwoId+'/inventory/collectibles?sort=desc&limit=100');
         assert.strictEqual(userTwoNewInventory.status, 200);
         assert.strictEqual(userTwoNewInventory.data.items[0]['userInventoryId'], offerUserInventoryId);
+        // pass
+    });
+    it('Should allow user1 to buy a collectible item, user2 to buy a collectible item, user1 to send a trade to user2, and user2 should be able to accept the trade and own item and get 1000 offered currency (bringing user2 balance to 1500, user1 balance to 0)', async () => {
+        const USER_ONE_OFFER_PRIMARY = 1000;
+        const USER_TWO_START_PRIMARY = 500;
+        const USER_ONE_START_PRIMARY = 1000;
+        let userOne = await account({
+            verifiedEmail: true,
+            startPrimary: USER_ONE_START_PRIMARY,
+        });
+        
+        let userTwo = await account({
+            verifiedEmail: true,
+            startPrimary: USER_TWO_START_PRIMARY,
+        });
+
+        const CATALOG_ID = 1058;
+        const EXPECTED_PRICE = 10;
+        const EXPECTED_CURRENCY = 2;
+        const EXPECTED_SELLERID = 1;
+
+        // buy user1's item
+        let buyOne = await userOne.post('/economy/'+CATALOG_ID+'/buy', {
+            userInventoryId: 0,
+            expectedSellerId: EXPECTED_SELLERID,
+            expectedPrice: EXPECTED_PRICE,
+            expectedCurrency: EXPECTED_CURRENCY,
+        });
+        assert.strictEqual(buyOne.status, 200);
+        // buy user2's item
+        let buyTwo = await userTwo.post('/economy/'+CATALOG_ID+'/buy', {
+            userInventoryId: 0,
+            expectedSellerId: EXPECTED_SELLERID,
+            expectedPrice: EXPECTED_PRICE,
+            expectedCurrency: EXPECTED_CURRENCY,
+        });
+        assert.strictEqual(buyTwo.status, 200);
+
+        // grab user1 info
+        let userOneInfo = await userOne.get('/auth/current-user');
+        let userOneId = userOneInfo.data.userId;
+        // grab inventory of user1
+        let userOneInv = await userOne.get('/user/'+userOneId+'/inventory/collectibles?sort=desc&limit=100');
+        assert.strictEqual(userOneInv.status, 200);
+        // grab userInventoryId of item
+        let offerUserInventoryId = userOneInv.data.items[0]['userInventoryId'];
+        // do same for user2
+        let userTwoInfo = await userTwo.get('/auth/current-user');
+        let userTwoId = userTwoInfo.data.userId;
+        let userTwoInv = await userTwo.get('/user/'+userTwoId+'/inventory/collectibles?sort=desc&limit=100');
+        assert.strictEqual(userTwoInv.status, 200);
+        let requestUserInventoryId = userTwoInv.data.items[0]['userInventoryId'];
+
+
+
+        // create trade
+        let create = await userOne.put('/user/'+userTwoId+'/trade/request', {
+            offerItems: [
+                offerUserInventoryId,
+            ],
+            requestedItems: [
+                requestUserInventoryId,
+            ],
+            offerPrimary: USER_ONE_OFFER_PRIMARY,
+            // no currency in trade ...
+        });
+        assert.strictEqual(create.status, 200);
+
+        // user two grab trades
+        let trades = await userTwo.get('/economy/trades/inbound');
+        assert.strictEqual(trades.status, 200);
+        let firstTradeId = trades.data[0]['tradeId'];
+        // accept trade
+        let accept = await userTwo.post('/economy/trades/'+firstTradeId, {});
+        assert.strictEqual(accept.status, 200);
+
+        let userOneNewInvenory = await userOne.get('/user/'+userOneId+'/inventory/collectibles?sort=desc&limit=100');
+        assert.strictEqual(userOneNewInvenory.status, 200);
+        assert.strictEqual(userOneNewInvenory.data.items[0]['userInventoryId'], requestUserInventoryId);
+
+        let userTwoNewInventory = await userTwo.get('/user/'+userTwoId+'/inventory/collectibles?sort=desc&limit=100');
+        assert.strictEqual(userTwoNewInventory.status, 200);
+        assert.strictEqual(userTwoNewInventory.data.items[0]['userInventoryId'], offerUserInventoryId);
+        // grab balance
+        let userTwoBalance = await userTwo.get('/auth/current-user');
+        assert.strictEqual(userTwoBalance.data.primaryBalance, USER_ONE_OFFER_PRIMARY + USER_TWO_START_PRIMARY, 'user2 should get offered currency added to balance');
+        let userOneBalance = await userOne.get('/auth/current-user');
+        assert.strictEqual(userOneBalance.data.primaryBalance, USER_ONE_START_PRIMARY - USER_ONE_OFFER_PRIMARY, 'user one balance should be start balance - offered primary');
+        // pass
+    });
+    it('Should allow user1 to buy a collectible item, user2 to buy a collectible item, user1 to send a trade to user2, and user2 should try to accept the trade but fail due to user1 not having currency anymore', async () => {
+        const USER_ONE_OFFER_PRIMARY = 1000;
+        const USER_TWO_START_PRIMARY = 500;
+        const USER_ONE_START_PRIMARY = 1000;
+        let userOne = await account({
+            verifiedEmail: true,
+            startPrimary: USER_ONE_START_PRIMARY,
+        });
+        
+        let userTwo = await account({
+            verifiedEmail: true,
+            startPrimary: USER_TWO_START_PRIMARY,
+        });
+
+        const CATALOG_ID = 1058;
+        const EXPECTED_PRICE = 10;
+        const EXPECTED_CURRENCY = 2;
+        const EXPECTED_SELLERID = 1;
+
+        // buy user1's item
+        let buyOne = await userOne.post('/economy/'+CATALOG_ID+'/buy', {
+            userInventoryId: 0,
+            expectedSellerId: EXPECTED_SELLERID,
+            expectedPrice: EXPECTED_PRICE,
+            expectedCurrency: EXPECTED_CURRENCY,
+        });
+        assert.strictEqual(buyOne.status, 200);
+        // buy user2's item
+        let buyTwo = await userTwo.post('/economy/'+CATALOG_ID+'/buy', {
+            userInventoryId: 0,
+            expectedSellerId: EXPECTED_SELLERID,
+            expectedPrice: EXPECTED_PRICE,
+            expectedCurrency: EXPECTED_CURRENCY,
+        });
+        assert.strictEqual(buyTwo.status, 200);
+
+        // grab user1 info
+        let userOneInfo = await userOne.get('/auth/current-user');
+        let userOneId = userOneInfo.data.userId;
+        // grab inventory of user1
+        let userOneInv = await userOne.get('/user/'+userOneId+'/inventory/collectibles?sort=desc&limit=100');
+        assert.strictEqual(userOneInv.status, 200);
+        // grab userInventoryId of item
+        let offerUserInventoryId = userOneInv.data.items[0]['userInventoryId'];
+        // do same for user2
+        let userTwoInfo = await userTwo.get('/auth/current-user');
+        let userTwoId = userTwoInfo.data.userId;
+        let userTwoInv = await userTwo.get('/user/'+userTwoId+'/inventory/collectibles?sort=desc&limit=100');
+        assert.strictEqual(userTwoInv.status, 200);
+        let requestUserInventoryId = userTwoInv.data.items[0]['userInventoryId'];
+
+
+
+        // create trade
+        let create = await userOne.put('/user/'+userTwoId+'/trade/request', {
+            offerItems: [
+                offerUserInventoryId,
+            ],
+            requestedItems: [
+                requestUserInventoryId,
+            ],
+            offerPrimary: USER_ONE_OFFER_PRIMARY,
+            // no currency in trade ...
+        });
+        assert.strictEqual(create.status, 200);
+
+        // user one spend currency on conversion
+        let currencyConversion = await userOne.put('/economy/currency/convert', {
+            "currency": 1,
+            "amount": 1
+        });
+        assert.strictEqual(currencyConversion.status, 200);
+        // user two grab trades
+        let trades = await userTwo.get('/economy/trades/inbound');
+        assert.strictEqual(trades.status, 200);
+        let firstTradeId = trades.data[0]['tradeId'];
+        // accept trade
+        let accept = await userTwo.post('/economy/trades/'+firstTradeId, {});
+        assert.strictEqual(accept.status, 409);
+        assert.strictEqual(accept.data.error.code, 'TradeCannotBeCompleted');
+        // pass
+    });
+    it('Should allow user1 to buy a collectible item, user2 to buy a collectible item, user1 to send a trade to user2, and user2 should try to accept the trade but fail due to user2 not having enough currency in request', async () => {
+        const USER_ONE_REQUEST_PRIMARY = 1000;
+        const USER_TWO_START_PRIMARY = 500;
+        const USER_ONE_START_PRIMARY = 1000;
+        let userOne = await account({
+            verifiedEmail: true,
+            startPrimary: USER_ONE_START_PRIMARY,
+        });
+        
+        let userTwo = await account({
+            verifiedEmail: true,
+            startPrimary: USER_TWO_START_PRIMARY,
+        });
+
+        const CATALOG_ID = 1058;
+        const EXPECTED_PRICE = 10;
+        const EXPECTED_CURRENCY = 2;
+        const EXPECTED_SELLERID = 1;
+
+        // buy user1's item
+        let buyOne = await userOne.post('/economy/'+CATALOG_ID+'/buy', {
+            userInventoryId: 0,
+            expectedSellerId: EXPECTED_SELLERID,
+            expectedPrice: EXPECTED_PRICE,
+            expectedCurrency: EXPECTED_CURRENCY,
+        });
+        assert.strictEqual(buyOne.status, 200);
+        // buy user2's item
+        let buyTwo = await userTwo.post('/economy/'+CATALOG_ID+'/buy', {
+            userInventoryId: 0,
+            expectedSellerId: EXPECTED_SELLERID,
+            expectedPrice: EXPECTED_PRICE,
+            expectedCurrency: EXPECTED_CURRENCY,
+        });
+        assert.strictEqual(buyTwo.status, 200);
+
+        // grab user1 info
+        let userOneInfo = await userOne.get('/auth/current-user');
+        let userOneId = userOneInfo.data.userId;
+        // grab inventory of user1
+        let userOneInv = await userOne.get('/user/'+userOneId+'/inventory/collectibles?sort=desc&limit=100');
+        assert.strictEqual(userOneInv.status, 200);
+        // grab userInventoryId of item
+        let offerUserInventoryId = userOneInv.data.items[0]['userInventoryId'];
+        // do same for user2
+        let userTwoInfo = await userTwo.get('/auth/current-user');
+        let userTwoId = userTwoInfo.data.userId;
+        let userTwoInv = await userTwo.get('/user/'+userTwoId+'/inventory/collectibles?sort=desc&limit=100');
+        assert.strictEqual(userTwoInv.status, 200);
+        let requestUserInventoryId = userTwoInv.data.items[0]['userInventoryId'];
+
+
+
+        // create trade
+        let create = await userOne.put('/user/'+userTwoId+'/trade/request', {
+            offerItems: [
+                offerUserInventoryId,
+            ],
+            requestedItems: [
+                requestUserInventoryId,
+            ],
+            requestPrimary: USER_ONE_REQUEST_PRIMARY,
+            // no currency in trade ...
+        });
+        assert.strictEqual(create.status, 200);
+
+        // user two grab trades
+        let trades = await userTwo.get('/economy/trades/inbound');
+        assert.strictEqual(trades.status, 200);
+        let firstTradeId = trades.data[0]['tradeId'];
+        // accept trade
+        let accept = await userTwo.post('/economy/trades/'+firstTradeId, {});
+        assert.strictEqual(accept.status, 409);
+        assert.strictEqual(accept.data.error.code, 'TradeCannotBeCompleted');
         // pass
     });
     it('Should allow user1 to buy a collectible item, user2 to buy a collectible item, user1 to send 4 trades to user2, and then user2 accept all 4 at once but only have one go through due to race condition prevention', async () => {
