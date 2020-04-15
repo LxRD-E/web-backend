@@ -1,3 +1,12 @@
+# dev setup
+0. pull repository
+1. `npm i`
+2. install mysql and redis
+3. `npm run start:dev`
+4. wait for compilation
+5. ...
+6. profit
+
 # env
 ```SECRET_ENCRYPTION_KEY```
 32-bit key used for encrypting config.json file
