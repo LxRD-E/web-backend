@@ -132,4 +132,7 @@ exports.SearchResults = SearchResults;
 class LowestPriceCollectibleItems {
 }
 exports.LowestPriceCollectibleItems = LowestPriceCollectibleItems;
+class ISortFilesResults {
+}
+exports.ISortFilesResults = ISortFilesResults;
 

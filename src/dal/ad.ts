@@ -136,7 +136,7 @@ export default class AdDAL extends _init {
         return true;
     }
 
-    public uploadAdImage(adName: string, adBuffer: Buffer, contentType: 'image/png'|'image/jpeg'): Promise<void> {
+    public uploadGeneralThumbnail(fileKey: string, adBuffer: Buffer, contentType: string): Promise<void> {
         return new Promise((resolve, reject) => {
             const s3 = new aws.S3({
                 endpoint: config.aws.endpoint,
@@ -145,7 +145,7 @@ export default class AdDAL extends _init {
             });
             s3.putObject({
                 Bucket: config.aws.buckets.thumbnails,
-                Key: adName,
+                Key: fileKey,
                 Body: adBuffer,
                 ACL: 'public-read',
                 ContentType: contentType,

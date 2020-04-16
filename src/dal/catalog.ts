@@ -451,7 +451,7 @@ class CatalogDAL extends _init {
      * @param fixMtlTextures Fix Textures for MTL file to match catalogid
      * @param fixMtlType PNG or JPG
      */
-    public upload(type: 'png'|'jpg'|'obj'|'mtl', assetId: number, fileBuffer: Buffer, fixMtlTextures = false, fixMtlType: 'png'|'jpg' = 'png'): Promise<void> {
+    public upload(type: 'png'|'jpg'|'obj'|'mtl'|'gif', assetId: number, fileBuffer: Buffer, fixMtlTextures = false, fixMtlType: 'png'|'jpg' = 'png'): Promise<void> {
         return new Promise((resolve, reject): void => {
             let meta = 'text/plain';
             if (type === 'png') {
@@ -705,6 +705,34 @@ class CatalogDAL extends _init {
         });
     }
 
+    public async sortFilesSimple(uploadedFiles: any[], maxFileSize = 5 * 1024 * 1024): Promise<model.catalog.ISortFilesResults[]> {
+        await this.addBuffersIfNotExists(uploadedFiles, maxFileSize);
+        let returnArr = [];
+        for (const file of uploadedFiles) {
+            if (!file || !file.buffer) {
+                continue;
+            }
+            if (file.size > maxFileSize) {
+                continue;
+            }
+            let type = await fileType.fromBuffer(file.buffer);
+            if (typeof type !== "undefined") {
+                file.trueMime = type.mime;
+                if (type.mime === "image/png") {
+                    file.extension = 'png';
+                }
+                if (type.mime === "image/jpeg") {
+                    file.extension = 'jpg';
+                }
+                if (type.mime === "image/gif") {
+                    file.extension = 'gif';
+                }
+                returnArr.push(file);
+            }
+        }
+        return returnArr;
+    }
+
     /**
      * Sort File Uploads. Returns object of files
      * @param files 
@@ -731,7 +759,6 @@ class CatalogDAL extends _init {
                 continue;
             }
             let type = await fileType.fromBuffer(file.buffer);
-            console.log(type);
             if (typeof type !== "undefined") {
                 if (type.mime === "image/png") {
                     files.png = file.buffer;

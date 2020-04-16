@@ -204,7 +204,7 @@ export default class AdController extends controller {
         // insert data
         let adId = await this.ad.createAd(userInfo.userId, 'https://cdn.blockshub.net/thumbnails/'+randomName, title, adType, adRedirectId, adDisplayType);
         // upload image
-        await this.ad.uploadAdImage(randomName, imageData, mime);
+        await this.ad.uploadGeneralThumbnail(randomName, imageData, mime);
         // return success 
         return {
             success: true,

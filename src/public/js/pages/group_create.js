@@ -3,6 +3,7 @@ request('/group/metadata/creation-fee', 'GET').then(fee => {
 });
 
 $(document).on('click', '#createGroupClick', function() {
+    $(this).attr('disabled','disabled');
     //var form = $('#assetsForm')[0];
     //var data = new FormData(form);
     var form = new FormData(); 
@@ -10,10 +11,12 @@ $(document).on('click', '#createGroupClick', function() {
         form.append("png", $('#textureFile')[0].files[0]);
     }else{
         warning("A Group Logo is required. Please select one, and try again");
+        $(this).removeAttr('disabled');
         return;
     }
     if (typeof $('#groupName').val() === "undefined" || $('#groupName').val() === null || $('#groupName').val() === "") {
         warning("Please enter a name, then try again.");
+        $(this).removeAttr('disabled');
         return;
     }
     form.append("name", $('#groupName').val());
@@ -36,6 +39,8 @@ function makeAsset(form, csrf) {
         success: function (data) {
             if (data.id) {
                 window.location.href = "/groups/"+data.id+"/"
+            }else{
+                $(this).removeAttr('disabled');
             }
         },
         error: function (e) {
@@ -49,6 +54,7 @@ function makeAsset(form, csrf) {
                     console.log("bad");
                 }
             }else{
+                $(this).removeAttr('disabled');
                 if (e.responseJSON && e.responseJSON.message) {
                     warning(e.responseJSON.message);
                 }else{

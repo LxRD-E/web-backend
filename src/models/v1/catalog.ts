@@ -1,7 +1,7 @@
 /**
  * Imports
  */
-import {currencyType} from './economy';
+import { currencyType } from './economy';
 import { PropertyType, Required } from '@tsed/common';
 import { Example, Description } from '@tsed/swagger';
 /**
@@ -127,13 +127,13 @@ export interface CatalogAssetItem {
     dateCreated: string;
     assetType: assetType;
     fileName: string;
-    fileType: 'png'|'obj'|'mtl'|'jpg';
+    fileType: 'png' | 'obj' | 'mtl' | 'jpg';
 }
 export interface FilesInterface {
-    png: boolean|Buffer;
-    jpg: boolean|Buffer;
-    obj: boolean|Buffer;
-    mtl: boolean|Buffer;
+    png: boolean | Buffer;
+    jpg: boolean | Buffer;
+    obj: boolean | Buffer;
+    mtl: boolean | Buffer;
 }
 export class CatalogCreationSuccessResponse {
     @Required()
@@ -151,7 +151,7 @@ export class CatalogItemComment {
     @Required()
     comment: string;
     @Required()
-    isDeleted: 0|1;
+    isDeleted: 0 | 1;
 }
 export class SearchResults {
     @Required()
@@ -167,7 +167,7 @@ export class SearchResults {
     @Required()
     collectible: collectible;
     @Required()
-    maxSales: number|null;
+    maxSales: number | null;
     @PropertyType(Number)
     collectibleLowestPrice: number;
 }
@@ -219,5 +219,16 @@ export interface ThumbnailResponse {
 
 export class LowestPriceCollectibleItems {
     catalogId: number;
-    price: number|null;
+    price: number | null;
+}
+
+export class ISortFilesResults {
+    fieldname: string;
+    originalname: string;
+    encoding: string;
+    mimetype: string;
+    buffer: Buffer;
+    size: number;
+    extension: string;
+    trueMime: string;
 }

@@ -18,7 +18,6 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const moment = require("moment");
-const util = require("util");
 const model = require("../../models/models");
 const common_1 = require("@tsed/common");
 const multipartfiles_1 = require("@tsed/multipartfiles");
@@ -26,6 +25,7 @@ const controller_1 = require("../controller");
 const swagger_1 = require("@tsed/swagger");
 const Auth_1 = require("../../middleware/Auth");
 const auth_1 = require("../../dal/auth");
+const crypto = require("crypto");
 let GroupsController = class GroupsController extends controller_1.default {
     constructor() {
         super();
@@ -655,33 +655,35 @@ let GroupsController = class GroupsController extends controller_1.default {
         const groupInfo = await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.manage) {
-            const files = await this.catalog.sortFileUploads(multerFiles);
-            if (!files["png"] && !files["jpg"]) {
-                throw new this.BadRequest('InvalidFileType');
+            let sorted = await this.catalog.sortFilesSimple(multerFiles);
+            let fileToUse = undefined;
+            let file = sorted[0];
+            if (!file) {
+                throw new this.BadRequest('NoFilesSpecified');
             }
+            if (file.trueMime !== 'image/gif' && file.trueMime !== 'image/png' && file.trueMime !== 'image/jpeg') {
+                throw new this.BadRequest('NoFilesSpecified');
+            }
+            fileToUse = file.buffer;
             const groupIconId = await this.catalog.createUserItem(userInfo.userId, groupInfo.groupName, 'Group Icon', model.catalog.isForSale.false, model.catalog.category.GroupIcon, 0, model.economy.currencyType.primary, model.catalog.collectible.false);
             await this.group.updateGroupIconId(groupInfo.groupId, groupIconId);
-            (async () => {
+            let buffer = await this.group.cropGroupImage(fileToUse);
+            const renderIcon = async () => {
                 try {
-                    if (files.png) {
-                        await this.catalog.upload('png', groupIconId, files.png);
-                        await this.catalog.createCatalogAsset(groupIconId, userInfo.userId, model.catalog.assetType.Texture, groupIconId.toString(), 'png');
-                    }
-                    else if (files.jpg) {
-                        await this.catalog.upload('jpg', groupIconId, files.jpg);
-                        await this.catalog.createCatalogAsset(groupIconId, userInfo.userId, model.catalog.assetType.Texture, groupIconId.toString(), 'jpg');
-                    }
+                    await this.catalog.upload(file.extension, groupIconId, fileToUse);
+                    await this.catalog.createCatalogAsset(groupIconId, userInfo.userId, model.catalog.assetType.Texture, groupIconId.toString(), 'png');
                     console.log('uploaded. starting render in 100ms');
-                    await util.promisify(setTimeout)(100);
-                    const json = await this.catalog.generateAvatarJsonFromCatalogIds(groupIconId, [groupIconId]);
-                    const url = await this.avatar.renderAvatar('group', json);
+                    let randomName = crypto.randomBytes(48).toString('hex');
+                    let url = 'https://cdn.blockshub.net/thumbnails/' + randomName;
+                    await this.ad.uploadGeneralThumbnail(randomName, buffer.image, buffer.mime);
                     await this.catalog.deleteThumbnail(groupIconId);
                     await this.catalog.uploadThumbnail(groupIconId, url);
                 }
                 catch (e) {
-                    console.log(e);
+                    console.error(e);
                 }
-            })();
+            };
+            renderIcon();
             return { success: true };
         }
         else {
@@ -706,10 +708,6 @@ let GroupsController = class GroupsController extends controller_1.default {
         const balance = userData.primaryBalance;
         if (balance < model.group.GROUP_CREATION_COST) {
             throw new this.BadRequest('NotEnoughCurrency');
-        }
-        const files = await this.catalog.sortFileUploads(multerFiles);
-        if (!files["png"] && !files["jpg"]) {
-            throw new this.BadRequest('InvalidFileType');
         }
         let groupId;
         try {
@@ -745,14 +743,33 @@ let GroupsController = class GroupsController extends controller_1.default {
         const ownerRolesetId = await this.group.getRoleSetByRank(groupId, 255);
         await this.group.addUserToGroup(groupId, userData.userId, ownerRolesetId.roleSetId);
         let groupIconCatalogId = await this.catalog.createGroupItem(groupId, userData.userId, name, 'Group Icon', model.catalog.isForSale.false, model.catalog.category.GroupIcon, 0, model.economy.currencyType.primary, model.catalog.collectible.false, 0, model.catalog.moderatorStatus.Pending);
-        if (files.png) {
-            await this.catalog.upload('png', groupIconCatalogId, files.png);
-            await this.catalog.createCatalogAsset(groupIconCatalogId, userInfo.userId, model.catalog.assetType.Texture, groupIconCatalogId.toString(), 'png');
+        let sorted = await this.catalog.sortFilesSimple(multerFiles);
+        let fileToUse = undefined;
+        let file = sorted[0];
+        if (!file) {
+            throw new this.BadRequest('NoFilesSpecified');
         }
-        else if (files.jpg) {
-            await this.catalog.upload('jpg', groupIconCatalogId, files.jpg);
-            await this.catalog.createCatalogAsset(groupIconCatalogId, userInfo.userId, model.catalog.assetType.Texture, groupIconCatalogId.toString(), 'jpg');
+        if (file.trueMime !== 'image/gif' && file.trueMime !== 'image/png' && file.trueMime !== 'image/jpeg') {
+            throw new this.BadRequest('NoFilesSpecified');
         }
+        fileToUse = file.buffer;
+        let buffer = await this.group.cropGroupImage(fileToUse);
+        const renderIcon = async () => {
+            try {
+                await this.catalog.upload(file.extension, groupIconCatalogId, fileToUse);
+                await this.catalog.createCatalogAsset(groupIconCatalogId, userInfo.userId, model.catalog.assetType.Texture, groupIconCatalogId.toString(), 'png');
+                console.log('uploaded. starting render in 100ms');
+                let randomName = crypto.randomBytes(48).toString('hex');
+                let url = 'https://cdn.blockshub.net/thumbnails/' + randomName;
+                await this.ad.uploadGeneralThumbnail(randomName, buffer.image, buffer.mime);
+                await this.catalog.deleteThumbnail(groupIconCatalogId);
+                await this.catalog.uploadThumbnail(groupIconCatalogId, url);
+            }
+            catch (e) {
+                console.error(e);
+            }
+        };
+        renderIcon();
         await this.group.updateGroupIconId(groupId, groupIconCatalogId);
         await this.economy.subtractFromUserBalance(userData.userId, model.group.GROUP_CREATION_COST, model.economy.currencyType.primary);
         await this.economy.createTransaction(userData.userId, 1, -model.group.GROUP_CREATION_COST, model.economy.currencyType.primary, model.economy.transactionType.PurchaseOfGroup, "Creation of Group", model.catalog.creatorType.User, model.catalog.creatorType.User);

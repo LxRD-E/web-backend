@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const groups = require("../models/v1/group");
 const catalog = require("../models/v1/catalog");
 const _init_1 = require("./_init");
+const jimp = require("jimp");
+const gifwrap_1 = require("gifwrap");
 class GroupsDAL extends _init_1.default {
     formatRoleset(roleSetData) {
         return {
@@ -325,6 +327,41 @@ class GroupsDAL extends _init_1.default {
         }
         const result = await funds;
         return result[0];
+    }
+    async cropGroupImage(groupIcon) {
+        let icon = await jimp.read(groupIcon);
+        let mime = icon.getMIME();
+        if (mime === 'image/gif') {
+            let gifRead = await gifwrap_1.GifUtil.read(groupIcon);
+            let fullSize = 0;
+            if (gifRead.width > gifRead.height) {
+                fullSize = gifRead.height;
+            }
+            else {
+                fullSize = gifRead.width;
+            }
+            gifRead.frames.forEach(frame => {
+                frame.reframe(0, 0, fullSize, fullSize, frame.getRGBA(0, 0));
+            });
+            let bufferResults = gifRead.buffer;
+            return {
+                image: bufferResults,
+                mime: 'image/gif',
+            };
+        }
+        let width = icon.getWidth();
+        let height = icon.getHeight();
+        if (width > height) {
+            icon.cover(height, height);
+        }
+        else {
+            icon.cover(width, width);
+        }
+        let results = await icon.getBufferAsync(mime);
+        return {
+            image: results,
+            mime: mime,
+        };
     }
 }
 exports.default = GroupsDAL;

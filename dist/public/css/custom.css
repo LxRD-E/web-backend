@@ -694,3 +694,6 @@ div#roleset-selection p {
     cursor: pointer;
     user-select: none;
 }
+button.navbar-toggler {
+    border: none;
+}

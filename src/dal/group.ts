@@ -6,6 +6,8 @@ import * as catalog from '../models/v1/catalog';
 import _init from './_init';
 import { group } from '../models/models';
 import Knex = require('knex');
+import jimp = require('jimp');
+import { GifFrame, GifUtil, GifCodec } from 'gifwrap';
 
 class GroupsDAL extends _init {
     /**
@@ -559,6 +561,51 @@ class GroupsDAL extends _init {
         }
         const result = await funds;
         return result[0] as groups.GroupFunds;
+    }
+
+    /**
+     * Given an imageBuffer, this method will crop it to a square.
+     * @param groupIcon 
+     */
+    public async cropGroupImage(groupIcon: Buffer): Promise<{
+        image: Buffer;
+        mime: string;
+    }> {
+        let icon = await jimp.read(groupIcon);
+        let mime = icon.getMIME();
+        if (mime === 'image/gif') {
+            let gifRead = await GifUtil.read(groupIcon);
+            let fullSize = 0;
+            if (gifRead.width > gifRead.height) {
+                fullSize = gifRead.height;
+            }else{
+                fullSize = gifRead.width;
+            }
+            gifRead.frames.forEach(frame => {
+                frame.reframe(0,0,fullSize,fullSize,frame.getRGBA(0,0));
+            });
+            let bufferResults = gifRead.buffer;
+            return {
+                image: bufferResults,
+                mime: 'image/gif',
+            };
+        }
+        let width = icon.getWidth();
+        let height = icon.getHeight();
+
+        if (width > height) {
+            // Resize by height
+            icon.cover(height, height);
+        }else{
+            // Resize by width
+            icon.cover(width, width);
+        }
+
+        let results = await icon.getBufferAsync(mime);
+        return {
+            image: results,
+            mime: mime,
+        };
     }
 }
 

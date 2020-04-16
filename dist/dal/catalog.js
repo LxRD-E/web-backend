@@ -396,6 +396,33 @@ class CatalogDAL extends _init_1.default {
             }).catch(e => rej);
         });
     }
+    async sortFilesSimple(uploadedFiles, maxFileSize = 5 * 1024 * 1024) {
+        await this.addBuffersIfNotExists(uploadedFiles, maxFileSize);
+        let returnArr = [];
+        for (const file of uploadedFiles) {
+            if (!file || !file.buffer) {
+                continue;
+            }
+            if (file.size > maxFileSize) {
+                continue;
+            }
+            let type = await fileType.fromBuffer(file.buffer);
+            if (typeof type !== "undefined") {
+                file.trueMime = type.mime;
+                if (type.mime === "image/png") {
+                    file.extension = 'png';
+                }
+                if (type.mime === "image/jpeg") {
+                    file.extension = 'jpg';
+                }
+                if (type.mime === "image/gif") {
+                    file.extension = 'gif';
+                }
+                returnArr.push(file);
+            }
+        }
+        return returnArr;
+    }
     async sortFileUploads(uploadedFiles, maxFileSize = 5 * 1024 * 1024) {
         await this.addBuffersIfNotExists(uploadedFiles, maxFileSize);
         const files = {
@@ -412,7 +439,6 @@ class CatalogDAL extends _init_1.default {
                 continue;
             }
             let type = await fileType.fromBuffer(file.buffer);
-            console.log(type);
             if (typeof type !== "undefined") {
                 if (type.mime === "image/png") {
                     files.png = file.buffer;

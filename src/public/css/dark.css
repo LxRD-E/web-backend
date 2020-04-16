@@ -175,3 +175,14 @@ div.trade-card-hover:hover > div.card {
 a#dropdownNotifications {
     color: white;
 }
+.container > .navbar-toggler > .navbar-toggler-icon {
+    background-image: url(/img/nav-white.svg?v2=);
+}
+div.game-profile-card {
+    background-color: #212529;
+    transition: all 0.15s;
+}
+div.game-profile-card:hover {
+    background-color: #3d4348;
+    transition: all 0.15s;
+}

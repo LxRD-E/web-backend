@@ -204,7 +204,7 @@ request('/game/search?genre=1&limit=4&offset=0&creatorType=0&creatorId='+userid,
                     display: block;
                     margin: 0 auto;
                     height: 150px;" />
-                    <div class="card-body">
+                    <div class="card-body game-profile-card">
 
                         <h1 style="
                         overflow: hidden;
