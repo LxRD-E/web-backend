@@ -23,6 +23,7 @@ const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 const controller_1 = require("../controller");
 const Auth_1 = require("../../middleware/Auth");
+const middleware = require("../../middleware/middleware");
 const auth_1 = require("../../dal/auth");
 const RateLimit_1 = require("../../middleware/RateLimit");
 const TwoStepCheck_1 = require("../../middleware/TwoStepCheck");
@@ -72,18 +73,6 @@ let UsersController = class UsersController extends controller_1.default {
         }
     }
     async getFriends(id, offset = 0, limit = 100, sort = 'asc') {
-        if (sort !== 'desc' && sort !== 'asc') {
-            throw new this.BadRequest('InvalidSort');
-        }
-        try {
-            const info = await this.user.getInfo(id, ["accountStatus"]);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw false;
-            }
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
         const friends = await this.user.getFriends(id, offset, limit, sort);
         const totalFriendCount = await this.user.countFriends(id);
         return {
@@ -92,58 +81,10 @@ let UsersController = class UsersController extends controller_1.default {
         };
     }
     async MultiGetNames(ids) {
-        if (!ids) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const idsArray = ids.split(',');
-        if (idsArray.length < 1) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const filteredIds = [];
-        let allIdsValid = true;
-        idsArray.forEach((id) => {
-            const userId = Filter_1.filterId(id);
-            if (!userId) {
-                allIdsValid = false;
-            }
-            filteredIds.push(userId);
-        });
-        if (!allIdsValid) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const safeIds = Array.from(new Set(filteredIds));
-        if (safeIds.length > 25) {
-            throw new this.BadRequest('TooManyIds');
-        }
-        let result = await this.user.MultiGetNamesFromIds(safeIds);
-        return result;
+        return await this.user.MultiGetNamesFromIds(ids);
     }
     async multiGetForumData(ids) {
-        if (!ids) {
-            throw new this.BadRequest('ids');
-        }
-        const idsArray = ids.split(',');
-        if (idsArray.length < 1) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const filteredIds = [];
-        let allIdsValid = true;
-        idsArray.forEach((id) => {
-            const userId = Filter_1.filterId(id);
-            if (!userId) {
-                allIdsValid = false;
-            }
-            filteredIds.push(userId);
-        });
-        if (!allIdsValid) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const safeIds = Array.from(new Set(filteredIds));
-        if (safeIds.length > 25) {
-            throw new this.BadRequest('TooManyIds');
-        }
-        let result = await this.user.multiGetForumInfo(safeIds);
-        return result;
+        return await this.user.multiGetForumInfo(ids);
     }
     async getSoloThumbnail(numericId) {
         if (!numericId) {
@@ -170,31 +111,7 @@ let UsersController = class UsersController extends controller_1.default {
         }
     }
     async multiGetThumbnails(ids) {
-        if (!ids) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const idsArray = ids.split(',');
-        if (idsArray.length < 1) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const filteredIds = [];
-        let allIdsValid = true;
-        idsArray.forEach((id) => {
-            const userId = Filter_1.filterId(id);
-            if (!userId) {
-                allIdsValid = false;
-            }
-            filteredIds.push(userId);
-        });
-        if (!allIdsValid) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const safeIds = Array.from(new Set(filteredIds));
-        if (safeIds.length > 25) {
-            throw new this.BadRequest('TooManyIds');
-        }
-        const thumbnails = await this.user.multiGetThumbnailsFromIds(safeIds);
-        return thumbnails;
+        return await this.user.multiGetThumbnailsFromIds(ids);
     }
     getFriendshipMetadata() {
         let metaInfo = new model.user.FriendshipMetadata();
@@ -202,28 +119,9 @@ let UsersController = class UsersController extends controller_1.default {
         return metaInfo;
     }
     async getFriendshipStatus(userInfo, userId) {
-        try {
-            const info = await this.user.getInfo(userId, ["accountStatus"]);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw false;
-            }
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
-        const FriendshipStatus = await this.user.getFriendshipStatus(userInfo.userId, userId);
-        return FriendshipStatus;
+        return await this.user.getFriendshipStatus(userInfo.userId, userId);
     }
     async sendFriendRequest(userInfo, userId) {
-        try {
-            const info = await this.user.getInfo(userId, ["accountStatus"]);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw new Error('User is terminated');
-            }
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
         let friendCount = await this.user.countFriends(userInfo.userId);
         if (friendCount >= model.user.MAX_FRIENDS) {
             throw new this.Conflict('AuthenticatedUserIsAtMaxFriends');
@@ -240,15 +138,6 @@ let UsersController = class UsersController extends controller_1.default {
         throw new this.BadRequest('CannotSendRequest');
     }
     async acceptFriendRequest(userInfo, userId) {
-        try {
-            const info = await this.user.getInfo(userId, ["accountStatus"]);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw new Error('User is terminated');
-            }
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
         let friendCount = await this.user.countFriends(userInfo.userId);
         if (friendCount >= model.user.MAX_FRIENDS) {
             throw new this.Conflict('AuthenticatedUserIsAtMaxFriends');
@@ -289,28 +178,9 @@ let UsersController = class UsersController extends controller_1.default {
         throw new this.BadRequest('NoPendingRequest');
     }
     async getPastUsernames(userId) {
-        try {
-            const info = await this.user.getInfo(userId, ["accountStatus"]);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw false;
-            }
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
-        let pastUsernames = await this.user.getPastUsernames(userId);
-        return pastUsernames;
+        return await this.user.getPastUsernames(userId);
     }
     async getInventory(id, category, offset = 0, limit = 100, sort = 'asc') {
-        try {
-            const info = await this.user.getInfo(id, ["accountStatus"]);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw false;
-            }
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
         const items = await this.user.getInventory(id, category, offset, limit, sort);
         const totalInventoryCount = await this.user.countInventory(id, category);
         return {
@@ -319,30 +189,12 @@ let UsersController = class UsersController extends controller_1.default {
         };
     }
     async countCollectibleInventory(userId) {
-        try {
-            const info = await this.user.getInfo(userId, ["accountStatus"]);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw new Error('InvalidUserId');
-            }
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
         const totalInventoryCount = await this.user.countCollectibleInventory(userId);
         return {
             total: totalInventoryCount,
         };
     }
     async getCollectibleInventory(id, query, offset = 0, limit = 100, sort = 'asc') {
-        try {
-            const info = await this.user.getInfo(id, ["accountStatus"]);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw false;
-            }
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
         if (query && query.length >= 32) {
             throw new this.BadRequest('SearchQueryTooLarge');
         }
@@ -356,19 +208,7 @@ let UsersController = class UsersController extends controller_1.default {
         return items;
     }
     async getOwnedItemsByCatalogId(userId, catalogId) {
-        console.log('check if owns');
-        let info;
-        try {
-            info = await this.user.getInfo(userId, ['accountStatus']);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw new this.BadRequest('InvalidUserId');
-            }
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
-        const ownedItems = await this.user.getUserInventoryByCatalogId(userId, catalogId);
-        return ownedItems;
+        return await this.user.getUserInventoryByCatalogId(userId, catalogId);
     }
     async sellItem(userInfo, userInventoryId, newPrice, userIpAddress) {
         if (newPrice > 1000000 || newPrice < 0) {
@@ -393,10 +233,6 @@ let UsersController = class UsersController extends controller_1.default {
         return { success: true };
     }
     async getGroups(userId) {
-        const userInfo = await this.user.getInfo(userId, ['accountStatus']);
-        if (userInfo.accountStatus === model.user.accountStatus.deleted) {
-            throw new this.BadRequest('InvalidUserId');
-        }
         const groups = await this.user.getGroups(userId);
         const groupCount = await this.user.countGroups(userId);
         return {
@@ -405,8 +241,7 @@ let UsersController = class UsersController extends controller_1.default {
         };
     }
     async getRoleInGroup(userId, groupId) {
-        const role = await this.group.getUserRole(groupId, userId);
-        return role;
+        return await this.group.getUserRole(groupId, userId);
     }
     async search(offset = 0, limit = 100, sort = 'asc', sortBy = 'id', query) {
         let goodSortBy;
@@ -419,8 +254,7 @@ let UsersController = class UsersController extends controller_1.default {
         if (query && query.length > 32) {
             throw new this.BadRequest('InvalidQuery');
         }
-        const results = await this.user.search(offset, limit, sort, goodSortBy, query);
-        return results;
+        return await this.user.search(offset, limit, sort, goodSortBy, query);
     }
     async createTradeRequest(req, userInfo, partnerUserId, body) {
         await this.transaction(async (trx) => {
@@ -503,7 +337,8 @@ let UsersController = class UsersController extends controller_1.default {
             const tradeId = await trx.economy.createTrade(userInfo.userId, partnerUserId, offerPrimary, requestPrimary);
             await trx.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requested, safeRequestedItems);
             await trx.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requester, safeRequesteeItems);
-            await trx.notification.createMessage(partnerUserId, 1, 'Trade Request from ' + userInfo.username, "Hi,\n" + userInfo.username + " has sent you a new trade request. You can view it in the trades tab.");
+            await trx.notification.createMessage(partnerUserId, 1, `Trade Request from ${userInfo.username}`, `Hi,
+${userInfo.username} has sent you a new trade request. You can view it in the trades tab.`);
             let ip = req.ip;
             if (req.headers['cf-connecting-ip']) {
                 ip = req.headers['cf-connecting-ip'];
@@ -551,6 +386,7 @@ __decorate([
     swagger_1.Summary('Get user friends'),
     swagger_1.Returns(200, { type: model.user.UserFriendsResponse }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidSort: Sort must be one of asc,desc\nInvalidUserId: userId is deleted or invalid\n' }),
+    common_1.Use(middleware.user.ValidateUserId, middleware.ValidatePaging),
     __param(0, common_1.Required()),
     __param(0, common_1.PathParams('userId', Number)),
     __param(1, common_1.QueryParams('offset', Number)),
@@ -566,10 +402,11 @@ __decorate([
     swagger_1.Description('Accepts CSV of userIds. Example: 1,2,3'),
     swagger_1.ReturnsArray(200, { type: model.user.MultiGetUsernames }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidIds: One or more of the IDs are non valid 64-bit signed integers\nTooManyIds: Maximum amount of IDs is 25\n' }),
+    common_1.Use(middleware.ConvertIdsToCsv),
     __param(0, common_1.Required()),
-    __param(0, common_1.QueryParams('ids', String)),
+    __param(0, common_1.QueryParams('ids')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Array]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "MultiGetNames", null);
 __decorate([
@@ -578,9 +415,10 @@ __decorate([
     swagger_1.Description('postCount, permissionLevel, signature...'),
     swagger_1.ReturnsArray(200, { type: model.user.ForumInfo }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidIds: One or more of the IDs are non valid 64-bit signed integers\nTooManyIds: Maximum amount of IDs is 25\n' }),
-    __param(0, common_1.QueryParams('ids', String)),
+    common_1.Use(middleware.ConvertIdsToCsv),
+    __param(0, common_1.QueryParams('ids')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Array]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "multiGetForumData", null);
 __decorate([
@@ -611,9 +449,10 @@ __decorate([
     swagger_1.Description('Accepts csv of userIds. Example: 1,2,3'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidIds: One or more of the IDs are non valid 64-bit signed integers\nTooManyIds: Maximum amount of IDs is 25\n' }),
     swagger_1.ReturnsArray(200, { type: model.user.ThumbnailResponse }),
-    __param(0, common_1.QueryParams('ids', String)),
+    common_1.Use(middleware.ConvertIdsToCsv),
+    __param(0, common_1.QueryParams('ids')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Array]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "multiGetThumbnails", null);
 __decorate([
@@ -629,7 +468,7 @@ __decorate([
     swagger_1.Summary('Get the friendship status between the authenticated user and another user'),
     swagger_1.Returns(200, { type: model.user.FriendshipStatus }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\n' }),
-    common_1.UseBeforeEach(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, middleware.user.ValidateUserId),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
@@ -642,7 +481,7 @@ __decorate([
     swagger_1.Returns(200, { description: 'Request Sent' }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nCannotSendRequest: You cannot send a friend request right now\n' }),
     swagger_1.Returns(409, { type: model.Error, description: 'AuthenticatedUserIsAtMaxFriends: Authenticated user is at the maximum amount of friends\nOtherUserIsAtMaxFriends: The user you are trying to friend is at the maximum amount of friends\n' }),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth, RateLimit_1.RateLimiterMiddleware('sendFriendRequest')),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.user.ValidateUserId, RateLimit_1.RateLimiterMiddleware('sendFriendRequest')),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
@@ -654,7 +493,7 @@ __decorate([
     swagger_1.Summary('Accept a friend request'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nNoPendingRequest: There is no friend request to accept\n' }),
     swagger_1.Returns(409, { type: model.Error, description: 'AuthenticatedUserIsAtMaxFriends: Authenticated user is at the maximum amount of friends\nOtherUserIsAtMaxFriends: The user you are trying to friend is at the maximum amount of friends\n' }),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.user.ValidateUserId),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
@@ -665,8 +504,7 @@ __decorate([
     common_1.Delete('/:userId/friend'),
     swagger_1.Summary('Delete an existing friendship, delete a requested friendship, or decline a requested friendship'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nNoPendingRequest: There is no friend request to decline\n' }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
@@ -678,6 +516,7 @@ __decorate([
     swagger_1.Summary('Get the past usernames of the {userId}'),
     swagger_1.ReturnsArray(200, { type: model.user.PastUsernames }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is invalid\n' }),
+    common_1.Use(middleware.user.ValidateUserId),
     __param(0, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
@@ -688,6 +527,7 @@ __decorate([
     swagger_1.Summary('Get a user\'s inventory'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\n' }),
     swagger_1.Returns(200, { type: model.user.UserInventoryResponse }),
+    common_1.Use(middleware.user.ValidateUserId),
     __param(0, common_1.PathParams('userId', Number)),
     __param(1, common_1.Required()),
     __param(1, common_1.QueryParams('category', Number)),
@@ -703,6 +543,7 @@ __decorate([
     swagger_1.Summary('Count user collectibles'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: userId is terminated or invalid\n' }),
     swagger_1.Returns(200, { type: model.user.GenericCount }),
+    common_1.Use(middleware.user.ValidateUserId),
     __param(0, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
@@ -714,6 +555,7 @@ __decorate([
     swagger_1.Description('If query is specified, the sort parameter is ignored.'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nSearchQueryTooLarge: Search query is too large or otherwise invalid\n' }),
     swagger_1.Returns(200, { type: model.user.UserCollectibleInventoryResponse }),
+    common_1.Use(middleware.user.ValidateUserId),
     __param(0, common_1.PathParams('userId', Number)),
     __param(1, swagger_1.Description('The optional search query. This will be used to search for collectible item names')),
     __param(1, common_1.QueryParams('query', String)),
@@ -729,6 +571,7 @@ __decorate([
     swagger_1.Summary('Check if a user owns a Catalog Item. If they do, return the data about the owned items'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\n' }),
     swagger_1.ReturnsArray(200, { type: model.user.UserInventory }),
+    common_1.Use(middleware.user.ValidateUserId),
     __param(0, common_1.PathParams('userId', Number)),
     __param(1, common_1.PathParams('catalogId', Number)),
     __metadata("design:type", Function),
@@ -754,6 +597,7 @@ __decorate([
     swagger_1.Summary('Get a user groups'),
     swagger_1.Returns(200, { type: model.user.UserGroupsResponse }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\n' }),
+    common_1.Use(middleware.user.ValidateUserId),
     __param(0, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
@@ -764,6 +608,7 @@ __decorate([
     swagger_1.Summary('Get a user\'s role in a group.'),
     swagger_1.Description('Returns guest role if not in group'),
     swagger_1.Returns(200, { type: model.group.roleInfo }),
+    common_1.Use(middleware.user.ValidateUserId),
     __param(0, common_1.PathParams('userId', Number)),
     __param(1, common_1.PathParams('groupId', Number)),
     __metadata("design:type", Function),
@@ -775,6 +620,7 @@ __decorate([
     swagger_1.Summary('Search all users'),
     swagger_1.ReturnsArray(200, { type: model.user.SearchResult }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidQuery: Query is too long (over 32 characters)\n' }),
+    common_1.Use(middleware.ValidatePaging),
     __param(0, common_1.QueryParams('offset', Number)),
     __param(1, common_1.QueryParams('limit', Number)),
     __param(2, common_1.QueryParams('sort', String)),

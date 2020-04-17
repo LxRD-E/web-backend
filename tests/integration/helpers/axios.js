@@ -3,6 +3,11 @@ const axiosCookieJarSupport = require('axios-cookiejar-support').default;
 const tough = require('tough-cookie');
 const crypto = require('crypto');
 
+/**
+ * @returns {axiosLib}
+ * @param opts
+ * @returns {AxiosInstance}
+ */
 const getAxios = (opts) => {
     const cookieJar = new tough.CookieJar();
     let conf = {

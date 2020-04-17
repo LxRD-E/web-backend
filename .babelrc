@@ -5,11 +5,13 @@
     }],["minify", {
         "builtIns": false,
         "mangle": true,
-        "removeConsole": true,
+        "removeConsole": false,
         "removeDebugger": true
     }]],
     "comments": false,
     "ignore": [
-        "node_modules"
-    ]
+        "node_modules",
+        "src/public/js/game/babylon.js"
+    ],
+    "compact": true
 }

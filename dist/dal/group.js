@@ -29,7 +29,7 @@ class GroupsDAL extends _init_1.default {
         }
         const results = await info;
         if (!results[0]) {
-            throw false;
+            throw new Error('InvalidGroupId');
         }
         return results[0];
     }
@@ -48,7 +48,7 @@ class GroupsDAL extends _init_1.default {
         }
         const rolesetInfo = await rolesetInfoQuery;
         if (!rolesetInfo[0]) {
-            throw false;
+            throw new Error('InvalidRolesetId');
         }
         return this.formatRoleset(rolesetInfo[0]);
     }

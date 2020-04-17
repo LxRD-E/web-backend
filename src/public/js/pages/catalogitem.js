@@ -303,6 +303,7 @@ if (catalogdata.attr("data-collectible") === "1" && catalogdata.attr("data-isfor
         request("/catalog/"+catalogid+"/charts", "GET")
         .then(function(d) {
             if (d.length > 0) {
+                /*
                 var chartArray = [];
                 d.forEach(function(k,v) {
                     chartArray.push({
@@ -310,14 +311,51 @@ if (catalogdata.attr("data-collectible") === "1" && catalogdata.attr("data-isfor
                         ["y"]: k["amount"],
                     });
                 });
+
                 chartArray.push({
                     x: new Date(),
                     y: undefined,
                 });
-                makeChart(chartArray);
+                */
+                let priceArr = [];
+                let dateArr = [];
+                d.forEach(el => {
+                    priceArr.push(el.amount);
+                    dateArr.push(new Date(el.date).toISOString());
+                });
+                // makeChart(chartArray);
+                let options = {
+                    series: [{
+                        name: 'Sales Price',
+                        data: priceArr
+                    }],
+                    chart: {
+                        height: 350,
+                        type: 'area'
+                    },
+                    dataLabels: {
+                        enabled: false
+                    },
+                    stroke: {
+                        curve: 'smooth'
+                    },
+                    xaxis: {
+                        type: 'datetime',
+                        categories: dateArr
+                    },
+                    colors: ['#7BD39A'],
+                    tooltip: {
+                        x: {
+                            format: 'dd/MM/yy HH:mm'
+                        },
+                    },
+                };
+
+                let chart = new ApexCharts(document.querySelector("#chartContainer"), options);
+                chart.render();
+
             }else{
-                $('#chartContainer').css("height","auto");
-                $('#chartContainer').append("<p style='margin-bottom:0;'>This item has not sold in the past 180 days.</p>");
+                $('#chartContainer').css("height","auto").append("<p style='margin-bottom:0;'>This item has not sold in the past 365 days.</p>");
             }
         })
         .catch(function(e) {
@@ -330,13 +368,13 @@ $(document).on('click', '#onClickSellitem', function() {
     var html = {};
     var askForSerial = false;
     itemsUserOwns.forEach(function(l) {
+        if (l.serial !== null) {
+            askForSerial = true;
+        }
         if (!l.serial) {
             l.serial = "N/A";
         }
         html[l.userInventoryId] = l.serial;
-        if (l.serial !== null) {
-            askForSerial = true;
-        }
     });
     if( itemsUserOwns.length <= 1) {
         askForSerial = false;

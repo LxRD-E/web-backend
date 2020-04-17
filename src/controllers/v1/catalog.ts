@@ -6,15 +6,32 @@
 /// import CatalogError from './error';
 // models
 import * as model from '../../models/models';
-import { filterOffset, filterId } from '../../helpers/Filter';
+import {filterId, filterOffset} from '../../helpers/Filter';
 /// import {invalidParam} from '../../middleware/paramsvalidate';
 // Autoload
-import { Controller, Get, PathParams, QueryParams, BodyParams, Required, Res, Patch, UseBeforeEach, UseBefore, Locals, Post, Put, Use, Enum, Delete } from '@tsed/common';
+import {
+    BodyParams,
+    Controller,
+    Delete,
+    Get,
+    Locals,
+    Patch,
+    PathParams,
+    Post,
+    Put,
+    QueryParams,
+    Required,
+    Res,
+    Use,
+    UseBefore,
+    UseBeforeEach
+} from '@tsed/common';
 import controller from '../controller';
-import { Summary, Description, Returns } from '@tsed/swagger';
-import { csrf } from '../../dal/auth';
-import { YesAuth } from '../../middleware/Auth';
-import { MultipartFile } from '@tsed/multipartfiles';
+import {Description, Returns, Summary} from '@tsed/swagger';
+import {csrf} from '../../dal/auth';
+import {YesAuth} from '../../middleware/Auth';
+import {MultipartFile} from '@tsed/multipartfiles';
+
 /**
  * Catalog Controller
  */
@@ -416,17 +433,17 @@ export class CatalogController extends controller {
         @PathParams('catalogId', Number) catalogId: number,
     ): Promise<model.catalog.ChartData[]> {
         // Verify item exists
+        let itemInfo;
         try {
-            const itemInfo = await this.catalog.getInfo(catalogId, ['catalogId', 'collectible']);
-            if (itemInfo.collectible !== model.catalog.collectible.true) {
-                throw false;
-            }
+            itemInfo = await this.catalog.getInfo(catalogId, ['catalogId', 'collectible']);
         } catch (e) {
             throw new this.BadRequest('InvalidCatalogId');
         }
+        if (itemInfo.collectible !== model.catalog.collectible.true) {
+            throw new this.BadRequest('InvalidCatalogId');
+        }
         // Grab Charts
-        const charts = await this.catalog.getCharts(catalogId);
-        return charts;
+        return await this.catalog.getCharts(catalogId);
     }
 
     /**

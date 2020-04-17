@@ -18,28 +18,26 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const bcrypt = require("bcrypt");
-const Crypto = require("crypto");
-const util = require("util");
 const moment = require("moment");
-const axios_1 = require("axios");
-const ts_httpexceptions_1 = require("ts-httpexceptions");
-const common_1 = require("@tsed/common");
 const speakeasy = require("speakeasy");
 const qrcode = require("qrcode");
 const jwt = require("jsonwebtoken");
-const config_1 = require("../helpers/config");
 const allSettled = require("promise.allsettled");
 const cheerio = require("cheerio");
 const jimp = require("jimp");
+const Crypto = require("crypto");
+const util = require("util");
+const axios_1 = require("axios");
+const ts_httpexceptions_1 = require("ts-httpexceptions");
+const common_1 = require("@tsed/common");
+const config_1 = require("../helpers/config");
 const randomBytes = util.promisify(Crypto.randomBytes);
 exports.hashPassword = async (passwd, bcryptLib = bcrypt) => {
     const salt = await bcryptLib.genSalt(10);
-    const hash = await bcryptLib.hash(passwd, salt);
-    return hash;
+    return await bcryptLib.hash(passwd, salt);
 };
 exports.verifyPassword = async (passwd, hash, bcryptLib = bcrypt) => {
-    const res = await bcryptLib.compare(passwd, hash);
-    return res;
+    return await bcryptLib.compare(passwd, hash);
 };
 exports.saveSession = (req) => {
     return new Promise((resolve, reject) => {
@@ -205,19 +203,17 @@ exports.encryptPasswordHash = (passwordHash) => {
     const PASSWORD_ENCRYPTION_KEY = config_1.default.encryptionKeys.password;
     let ivForPassword = Crypto.randomBytes(16);
     let result = exports.encrypt(passwordHash, PASSWORD_ENCRYPTION_KEY, ivForPassword);
-    let response = JSON.stringify([
+    return JSON.stringify([
         result,
         ivForPassword.toString('hex'),
     ]);
-    return response;
 };
 exports.decryptPasswordHash = (passwordHash) => {
     const PASSWORD_ENCRYPTION_KEY = config_1.default.encryptionKeys.password;
     let decoded = JSON.parse(passwordHash);
     let passString = decoded[0];
     let passIv = Buffer.from(decoded[1], 'hex');
-    let result = exports.decrypt(passString, PASSWORD_ENCRYPTION_KEY, passIv);
-    return result;
+    return exports.decrypt(passString, PASSWORD_ENCRYPTION_KEY, passIv);
 };
 exports.generateTOTPSecret = () => {
     return new Promise((res, rej) => {

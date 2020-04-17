@@ -4,8 +4,11 @@ import { decrypt } from '../dal/auth';
 const secretEncryptionKey = process.env['SECRET_ENCRYPTION_KEY'];
 const secretEncryptionIV = process.env['SECRET_ENCRYPTION_IV'];
 
+console.log('key',secretEncryptionKey);
+console.log('iv',secretEncryptionIV);
+
 interface IWebsiteConfiguration {
-    [x: string]: any 
+    [x: string]: any;
 }
 
 let configJson: IWebsiteConfiguration = {

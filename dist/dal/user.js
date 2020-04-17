@@ -93,7 +93,7 @@ class UsersDAL extends _init_1.default {
         const userInfoSelect = await query;
         const userInfoData = userInfoSelect[0];
         if (userInfoData === undefined) {
-            throw false;
+            throw new Error('InvalidUserId');
         }
         return userInfoData;
     }

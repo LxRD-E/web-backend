@@ -143,7 +143,7 @@ class CatalogDAL extends _init_1.default {
         return Comments;
     }
     async getCharts(catalogId) {
-        const time = this.moment().subtract(180, 'days').format('YYYY-MM-DD HH:mm:ss');
+        const time = this.moment().subtract(365, 'days').format('YYYY-MM-DD HH:mm:ss');
         const transactions = await this.knex("transactions").where("catalogid", "=", catalogId).andWhere("amount", "<", 0).andWhere("currency", "=", 1).andWhere("date", ">", time).andWhere("transactions.userid_from", "!=", 1).select("transactions.amount", "transactions.date");
         transactions.forEach((k) => {
             k["amount"] = Math.abs(k["amount"]);

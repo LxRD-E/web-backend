@@ -25,6 +25,7 @@ class UsersDAL extends _init {
      * Grab a user's info. Throws 'false' if invalid userId is provided
      * @param id User's ID
      * @param specificColumns Specific Columns from the Table to grab
+     * @param forUpdate
      */
     public async getInfo(id: number, specificColumns?: Array<'userId' | 'username' | 'passwordChanged' | 'primaryBalance' | 'secondaryBalance' | 'membership' | 'dailyAward' | 'status' | 'blurb' | 'joinDate' | 'lastOnline' | 'birthDate' | 'theme' | 'tradingEnabled' | 'staff' | 'banned' | 'forumPostCount' | 'forumSignature' | 'accountStatus' | '2faEnabled'>, forUpdate?: string[]): Promise<users.UserInfo> {
         if (!specificColumns) {
@@ -86,7 +87,7 @@ class UsersDAL extends _init {
         const userInfoSelect = await query;
         const userInfoData = userInfoSelect[0] as users.UserInfo;
         if (userInfoData === undefined) {
-            throw false;
+            throw new Error('InvalidUserId');
         }
         return userInfoData;
     }

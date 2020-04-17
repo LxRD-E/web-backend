@@ -2,24 +2,23 @@
  * Imports
  */
 import bcrypt = require('bcrypt');
-import * as Crypto from 'crypto';
-import * as util from 'util';
 import moment = require('moment');
-import axios from 'axios';
-import { Unauthorized, Conflict, Forbidden } from 'ts-httpexceptions';
-import { Request, Response, Middleware, Req, Res } from '@tsed/common';
 import speakeasy = require('speakeasy');
 import qrcode = require('qrcode');
 import jwt = require('jsonwebtoken');
-import config from '../helpers/config';
 import allSettled = require('promise.allsettled');
 import cheerio = require('cheerio');
 import jimp = require('jimp');
+import * as Crypto from 'crypto';
+import * as util from 'util';
+import axios from 'axios';
+import {Forbidden} from 'ts-httpexceptions';
+import {Middleware, Req, Request, Res} from '@tsed/common';
+import config from '../helpers/config';
+import {SessionOfLoggedInUser} from '../models/v1/any';
 
 // kinda useless but yolo
 const randomBytes = util.promisify(Crypto.randomBytes);
-
-import { SessionOfLoggedInUser } from '../models/v1/any';
 
 /**
  * Interfaces
@@ -31,8 +30,7 @@ import { SessionOfLoggedInUser } from '../models/v1/any';
  */
 export const hashPassword = async (passwd: string, bcryptLib = bcrypt): Promise<string> => {
     const salt = await bcryptLib.genSalt(10);
-    const hash = await bcryptLib.hash(passwd, salt);
-    return hash;
+    return await bcryptLib.hash(passwd, salt);
 };
 
 /**
@@ -41,8 +39,7 @@ export const hashPassword = async (passwd: string, bcryptLib = bcrypt): Promise<
  * @param hash Password Hash
  */
 export const verifyPassword = async (passwd: string, hash: string, bcryptLib = bcrypt): Promise<boolean> => {
-    const res = await bcryptLib.compare(passwd, hash);
-    return res;
+    return await bcryptLib.compare(passwd, hash);
 };
 
 /**
@@ -247,11 +244,10 @@ export const encryptPasswordHash = (passwordHash: string): string => {
     const PASSWORD_ENCRYPTION_KEY = config.encryptionKeys.password;
     let ivForPassword = Crypto.randomBytes(16);
     let result = encrypt(passwordHash, PASSWORD_ENCRYPTION_KEY, ivForPassword);
-    let response = JSON.stringify([
+    return JSON.stringify([
         result,
         ivForPassword.toString('hex'),
     ]);
-    return response;
 }
 /**
  * special function for de-crypting password hashes
@@ -262,8 +258,7 @@ export const decryptPasswordHash = (passwordHash: string): string => {
     let decoded = JSON.parse(passwordHash);
     let passString = decoded[0];
     let passIv = Buffer.from(decoded[1], 'hex');
-    let result = decrypt(passString, PASSWORD_ENCRYPTION_KEY, passIv);
-    return result;
+    return decrypt(passString, PASSWORD_ENCRYPTION_KEY, passIv);
 }
 
 export const generateTOTPSecret = () => {

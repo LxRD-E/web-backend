@@ -7,7 +7,7 @@ export class StaffValidateLevelOne extends controller {
     public async use(
         @Locals('userInfo') userInfo: model.UserSession,
     ) {
-        if (userInfo.staff >= 1 === false) {
+        if (!(userInfo.staff >= 1)) {
             // user is not authorized
             throw new this.BadRequest('InvalidPermissions');
         }

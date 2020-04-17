@@ -18,14 +18,15 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const moment = require("moment");
+const crypto = require("crypto");
 const model = require("../../models/models");
+const middleware = require("../../middleware/middleware");
 const common_1 = require("@tsed/common");
 const multipartfiles_1 = require("@tsed/multipartfiles");
-const controller_1 = require("../controller");
 const swagger_1 = require("@tsed/swagger");
 const Auth_1 = require("../../middleware/Auth");
 const auth_1 = require("../../dal/auth");
-const crypto = require("crypto");
+const controller_1 = require("../controller");
 let GroupsController = class GroupsController extends controller_1.default {
     constructor() {
         super();
@@ -34,11 +35,11 @@ let GroupsController = class GroupsController extends controller_1.default {
         let groupInfo;
         try {
             groupInfo = await this.group.getInfo(groupId);
-            if (groupInfo.groupStatus === model.group.groupStatus.locked) {
-                throw false;
-            }
         }
         catch (e) {
+            throw new this.BadRequest('InvalidGroupId');
+        }
+        if (groupInfo.groupStatus === model.group.groupStatus.locked) {
             throw new this.BadRequest('InvalidGroupId');
         }
         return groupInfo;
@@ -88,28 +89,7 @@ let GroupsController = class GroupsController extends controller_1.default {
         };
     }
     async multiGetNames(ids) {
-        const idsArray = ids.split(',');
-        if (idsArray.length < 1) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const filteredIds = [];
-        let allIdsValid = true;
-        idsArray.forEach((id) => {
-            const catalogId = parseInt(id, 10);
-            if (!catalogId) {
-                allIdsValid = false;
-            }
-            filteredIds.push(catalogId);
-        });
-        if (!allIdsValid) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const safeIds = Array.from(new Set(filteredIds));
-        if (safeIds.length > 25) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const result = await this.group.MultiGetNamesFromIds(safeIds);
-        return result;
+        return await this.group.MultiGetNamesFromIds(ids);
     }
     async getAuthRole(userData = undefined, groupId) {
         let role;
@@ -130,9 +110,9 @@ let GroupsController = class GroupsController extends controller_1.default {
         try {
             const groupInfo = await this.group.getInfo(groupId);
             if (groupInfo.groupStatus === model.group.groupStatus.locked) {
-                return ({
+                return {
                     groupStatus: groupInfo.groupStatus,
-                });
+                };
             }
             return groupInfo;
         }
@@ -141,65 +121,40 @@ let GroupsController = class GroupsController extends controller_1.default {
         }
     }
     async getRoles(groupId) {
-        let groupInfo;
-        try {
-            groupInfo = await this.group.getInfo(groupId);
-            if (groupInfo.groupStatus === model.group.groupStatus.locked) {
-                throw false;
-            }
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidGroupId');
-        }
-        const roles = await this.group.getRoles(groupId);
-        return roles;
+        return await this.group.getRoles(groupId);
     }
     async getRole(userInfo, groupId) {
-        let groupInfo;
         try {
-            groupInfo = await this.group.getInfo(groupId);
+            await this.group.getInfo(groupId);
         }
         catch (e) {
-            throw new this.BadRequest('InvalidGroupId');
+            if (e && e.message === 'InvalidGroupId') {
+                throw new this.BadRequest('InvalidGroupId');
+            }
+            throw e;
         }
         if (!userInfo) {
-            const role = await this.group.getRoleSetByRank(groupId, 0);
-            return role;
+            return await this.group.getRoleSetByRank(groupId, 0);
         }
-        const role = await this.group.getUserRole(groupId, userInfo.userId);
-        return role;
+        return await this.group.getUserRole(groupId, userInfo.userId);
     }
     async getMembers(groupId, roleSetId, offset, limit, sort) {
-        let groupInfo;
-        try {
-            groupInfo = await this.group.getInfo(groupId);
-            if (groupInfo.groupStatus === model.group.groupStatus.locked) {
-                throw false;
-            }
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidGroupId');
-        }
         try {
             await this.group.getRoleById(roleSetId);
         }
         catch (e) {
-            throw new this.BadRequest('InvalidRolesetId');
+            if (e && e.message === 'InvalidRolesetId')
+                throw new this.BadRequest('InvalidRolesetId');
+            throw e;
         }
-        try {
-            const members = await this.group.getMembers(groupId, roleSetId, offset, limit, sort);
-            const membersCount = await this.group.countMembers(groupId, roleSetId);
-            return {
-                "total": membersCount,
-                "members": members,
-            };
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidGroupId');
-        }
+        const members = await this.group.getMembers(groupId, roleSetId, offset, limit, sort);
+        const membersCount = await this.group.countMembers(groupId, roleSetId);
+        return {
+            "total": membersCount,
+            "members": members,
+        };
     }
     async getShout(userInfo, groupId) {
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.getShout) {
             const shout = await this.group.getShout(groupId);
@@ -213,23 +168,20 @@ let GroupsController = class GroupsController extends controller_1.default {
         }
     }
     async getWall(userInfo, groupId, offset, limit, sort) {
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.getWall) {
-            const wall = await this.group.getWall(groupId, offset, limit, sort);
-            return wall;
+            return await this.group.getWall(groupId, offset, limit, sort);
         }
         else {
             throw new this.BadRequest('InvalidGroupPermissions');
         }
     }
     async createWallPost(userInfo, groupId, wallPostContent) {
-        await this.getGroupInfo(groupId);
+        if (wallPostContent.length > 255 || wallPostContent.length < 3) {
+            throw new this.BadRequest('InvalidWallPost');
+        }
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.postWall) {
-            if (wallPostContent.length > 255 || wallPostContent.length < 3) {
-                throw new this.BadRequest('InvalidWallPost');
-            }
             await this.group.createWallPost(groupId, userInfo.userId, wallPostContent);
             return { success: true };
         }
@@ -238,7 +190,6 @@ let GroupsController = class GroupsController extends controller_1.default {
         }
     }
     async deleteWallPost(userInfo, groupId, wallPostId) {
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.manage) {
             await this.group.deleteWallPost(groupId, wallPostId);
@@ -252,8 +203,7 @@ let GroupsController = class GroupsController extends controller_1.default {
         if (query && query.length > 32) {
             throw new this.BadRequest('InvalidQuery');
         }
-        const results = await this.group.search(offset, limit, query);
-        return results;
+        return await this.group.search(offset, limit, query);
     }
     async updateGroupApprovalStatus(userInfo, groupId, approvalStatus) {
         const groupInfo = await this.getGroupInfo(groupId);
@@ -290,15 +240,6 @@ let GroupsController = class GroupsController extends controller_1.default {
         return { success: true };
     }
     async join(userInfo, groupId) {
-        try {
-            let groupData = await this.group.getInfo(groupId);
-            if (groupData.groupStatus === model.group.groupStatus.locked) {
-                throw new Error('Group is locked');
-            }
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidGroupId');
-        }
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.rank !== 0) {
             throw new this.Conflict('AlreadyGroupMember');
@@ -352,25 +293,20 @@ let GroupsController = class GroupsController extends controller_1.default {
         return { success: true };
     }
     async getGroupOwnershipChanges(userInfo, groupId, limit = 100, offset = 0) {
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (!role.permissions.manage) {
             throw new this.BadRequest('InvalidPermissions');
         }
-        let changes = await this.group.getGroupOwnershipChanges(groupId, limit, offset);
-        return changes;
+        return await this.group.getGroupOwnershipChanges(groupId, limit, offset);
     }
     async getJoinRequests(userInfo, groupId, limit = 100, offset = 0) {
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (!role.permissions.manage) {
             throw new this.BadRequest('InvalidPermissions');
         }
-        let results = await this.group.getPendingMembers(groupId, offset, limit);
-        return results;
+        return await this.group.getPendingMembers(groupId, offset, limit);
     }
     async approveJoinRequest(userInfo, groupId, userId) {
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (!role.permissions.manage) {
             throw new this.BadRequest('InvalidPermissions');
@@ -402,7 +338,6 @@ let GroupsController = class GroupsController extends controller_1.default {
         };
     }
     async declineJoinRequest(userInfo, groupId, userId) {
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (!role.permissions.manage) {
             throw new this.BadRequest('InvalidPermissions');
@@ -448,20 +383,15 @@ let GroupsController = class GroupsController extends controller_1.default {
         if (!description || description.length > 128) {
             throw new this.BadRequest('InvalidRolesetDescription');
         }
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.manage) {
             const permissionsAreValid = this.group.verifyPermissions(permissions);
             if (!permissionsAreValid) {
                 throw new this.BadRequest('InvalidRolesetPermissions');
             }
-            try {
-                const roleset = await this.group.getRoleSetByRank(groupId, rank);
-                if (roleset.roleSetId !== roleSetId) {
-                    throw new this.Conflict('RankIdIsTaken');
-                }
-            }
-            catch (e) {
+            const takenRoleset = await this.group.getRoleSetByRank(groupId, rank);
+            if (takenRoleset.roleSetId !== roleSetId) {
+                throw new this.Conflict('RankIdIsTaken');
             }
             const roleset = await this.group.getRoleById(roleSetId);
             if (roleset.groupId !== groupId) {
@@ -490,9 +420,7 @@ let GroupsController = class GroupsController extends controller_1.default {
                 }
             }
             await this.group.updateRoleset(roleSetId, name, description, rank, permissions);
-            return ({
-                success: true,
-            });
+            return {};
         }
         else {
             throw new this.BadRequest('InvalidGroupPermissions');
@@ -508,7 +436,6 @@ let GroupsController = class GroupsController extends controller_1.default {
         if (!description || description.length > model.group.ROLE_DESCRIPTION_MAX_LENGTH) {
             throw new this.BadRequest('InvalidRolesetDescription');
         }
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.manage) {
             const permissionsAreValid = this.group.verifyPermissions(permissions);
@@ -542,8 +469,6 @@ let GroupsController = class GroupsController extends controller_1.default {
         }
     }
     async deleteRoleset(userInfo, groupId, roleSetId) {
-        const userData = userInfo;
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.manage) {
             const roleset = await this.group.getRoleById(roleSetId);
@@ -565,16 +490,13 @@ let GroupsController = class GroupsController extends controller_1.default {
                 throw new this.Conflict('RolesetHasMembers');
             }
             await this.group.deleteRoleset(roleset.roleSetId);
-            return ({
-                success: true,
-            });
+            return {};
         }
         else {
             throw new this.BadRequest('InvalidGroupPermissions');
         }
     }
     async updateUserRole(userInfo, groupId, userId, roleSetId) {
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.manage) {
             let roleset;
@@ -604,20 +526,16 @@ let GroupsController = class GroupsController extends controller_1.default {
                 throw new this.Conflict('CannotRankUser');
             }
             await this.group.updateUserRolesetInGroup(groupId, roleSetId, userId);
-            return ({
-                'success': true,
-            });
+            return {};
         }
         else {
             throw new this.BadRequest('InvalidGroupPermissions');
         }
     }
     async updateDescription(userInfo, groupId, newDescription) {
-        const userData = userInfo;
         if (!newDescription || newDescription.length >= 512) {
             throw new this.BadRequest('InvalidGroupDescription');
         }
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.manage) {
             await this.group.updateDescription(groupId, newDescription);
@@ -633,7 +551,6 @@ let GroupsController = class GroupsController extends controller_1.default {
         if (!newShout || newShout.length > 255 || newShout.length < 3) {
             throw new this.BadRequest('InvalidGroupShout');
         }
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.manage) {
             let latestShout = await this.group.getShout(groupId);
@@ -769,19 +686,10 @@ let GroupsController = class GroupsController extends controller_1.default {
                 console.error(e);
             }
         };
-        renderIcon();
+        renderIcon().then(() => { }).catch(e => console.error);
         await this.group.updateGroupIconId(groupId, groupIconCatalogId);
         await this.economy.subtractFromUserBalance(userData.userId, model.group.GROUP_CREATION_COST, model.economy.currencyType.primary);
         await this.economy.createTransaction(userData.userId, 1, -model.group.GROUP_CREATION_COST, model.economy.currencyType.primary, model.economy.transactionType.PurchaseOfGroup, "Creation of Group", model.catalog.creatorType.User, model.catalog.creatorType.User);
-        (async () => {
-            try {
-                const json = await this.catalog.generateAvatarJsonFromCatalogIds(groupIconCatalogId, [groupIconCatalogId]);
-                const url = await this.avatar.renderAvatar('group', json);
-                await this.catalog.uploadThumbnail(groupIconCatalogId, url);
-            }
-            catch (e) {
-            }
-        })();
         return {
             success: true,
             id: groupId,
@@ -814,25 +722,16 @@ let GroupsController = class GroupsController extends controller_1.default {
         await this.group.updateUserRolesetInGroup(groupId, newRole.roleSetId, userData.userId);
         await this.group.updateGroupOwner(groupId, userId);
         await this.group.recordGroupOwnershipChange(groupId, model.group.GroupOwnershipChangeType.TransferOwnership, userId, userInfo.userId);
-        return ({
-            'success': true,
-        });
+        return {};
     }
     async getItems(groupId, offset, limit, sort) {
-        try {
-            await this.group.getInfo(groupId);
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidGroupId');
-        }
-        const items = await this.group.getGroupItems(groupId, offset, limit, sort);
-        return items;
+        return await this.group.getGroupItems(groupId, offset, limit, sort);
     }
     async spendGroupFunds(userInfo, groupId, userId, amount, currency) {
         if (!amount || amount <= 0) {
             throw new this.BadRequest('NotEnoughCurrency');
         }
-        if (currency !== 1 && currency !== 2) {
+        if (!model.economy.currencyType[currency]) {
             throw new this.BadRequest('InvalidCurrency');
         }
         await this.transaction(async (trx) => {
@@ -850,13 +749,16 @@ let GroupsController = class GroupsController extends controller_1.default {
             if (groupInfo.groupOwnerUserId !== userInfo.userId) {
                 throw new this.BadRequest('InvalidGroupPermissions');
             }
+            let payoutUserInfo;
             try {
-                const payoutUserInfo = await trx.user.getInfo(userId, ['banned'], forUpdate);
-                if (payoutUserInfo.banned) {
-                    throw false;
-                }
+                payoutUserInfo = await trx.user.getInfo(userId, ['banned'], forUpdate);
             }
             catch (e) {
+                if (e && e.message === 'InvalidUserId')
+                    throw new this.BadRequest('InvalidUserId');
+                throw e;
+            }
+            if (payoutUserInfo.banned) {
                 throw new this.BadRequest('InvalidUserId');
             }
             const userRole = await trx.group.getUserRole(groupId, userId, forUpdate);
@@ -879,9 +781,7 @@ let GroupsController = class GroupsController extends controller_1.default {
             await trx.economy.createTransaction(groupId, userId, -amount, currency, model.economy.transactionType.SpendGroupFunds, "Group Funds Payout", model.catalog.creatorType.User, model.catalog.creatorType.Group);
             await trx.economy.createTransaction(userId, groupId, amount, currency, model.economy.transactionType.SpendGroupFunds, "Group Funds Payout", model.catalog.creatorType.Group, model.catalog.creatorType.User);
         });
-        return {
-            'success': true,
-        };
+        return {};
     }
 };
 __decorate([
@@ -904,15 +804,17 @@ __decorate([
     swagger_1.Summary('Multi-get group names'),
     swagger_1.ReturnsArray(200, { type: model.group.MultiGetNames }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidIds: One or more IDs are invalid\n' }),
-    __param(0, common_1.QueryParams('ids', String)),
+    common_1.Use(middleware.ConvertIdsToCsv),
+    __param(0, common_1.QueryParams('ids')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Array]),
     __metadata("design:returntype", Promise)
 ], GroupsController.prototype, "multiGetNames", null);
 __decorate([
     common_1.Get('/:groupId/info'),
     swagger_1.Summary('Get group info'),
-    swagger_1.Description('This endpoint is a bit exceptional. If the groupStatus is locked, it will only return { groupStatus: 1 } but if it is not locked, it will return all group info'),
+    swagger_1.Description('This endpoint is a bit exceptional. If the groupStatus is locked (1), it will only return { groupStatus: 1 } but if it is not locked, it will return all group info'),
+    swagger_1.Returns(200, { type: model.group.groupDetails }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidGroupId: invalid id\n' }),
     __param(0, common_1.PathParams('groupId', Number)),
     __metadata("design:type", Function),
@@ -924,6 +826,7 @@ __decorate([
     swagger_1.Summary('Get group roles'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidGroupId: \n' }),
     swagger_1.ReturnsArray(200, { type: model.group.roleInfo }),
+    common_1.Use(middleware.group.ValidateGroupId),
     __param(0, common_1.PathParams('groupId', Number)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
@@ -931,7 +834,7 @@ __decorate([
 ], GroupsController.prototype, "getRoles", null);
 __decorate([
     common_1.Get('/:groupId/role'),
-    swagger_1.Summary('Get the authenticated users role in a group. If not authticated, returns guest info'),
+    swagger_1.Summary('Get the authenticated users role in a group. If not authenticated, returns guest info'),
     swagger_1.Returns(200, { type: model.group.roleInfo }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidGroupId: \n' }),
     __param(0, common_1.Locals('userInfo')),
@@ -942,6 +845,8 @@ __decorate([
 ], GroupsController.prototype, "getRole", null);
 __decorate([
     common_1.Get('/:groupId/members/:roleSetId'),
+    swagger_1.Summary('Get the users of the {roleSetId}'),
+    common_1.Use(middleware.group.ValidateGroupId, middleware.ValidatePaging),
     __param(0, common_1.PathParams('groupId', Number)),
     __param(1, common_1.PathParams('roleSetId', Number)),
     __param(2, common_1.QueryParams('offset', Number)),
@@ -954,6 +859,8 @@ __decorate([
 __decorate([
     common_1.Get('/:groupId/shout'),
     swagger_1.Summary('Get group\'s current shout'),
+    common_1.Use(middleware.group.ValidateGroupId),
+    swagger_1.Returns(200, { type: model.group.groupShout }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __metadata("design:type", Function),
@@ -963,6 +870,7 @@ __decorate([
 __decorate([
     common_1.Get('/:groupId/wall'),
     swagger_1.Summary('Get group wall'),
+    common_1.Use(middleware.group.ValidateGroupId, middleware.ValidatePaging),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __param(2, common_1.QueryParams('offset', Number)),
@@ -975,8 +883,7 @@ __decorate([
 __decorate([
     common_1.Put('/:groupId/wall'),
     swagger_1.Summary('Create a wall post'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.group.ValidateGroupId),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __param(2, common_1.BodyParams('content', String)),
@@ -987,8 +894,7 @@ __decorate([
 __decorate([
     common_1.Delete('/:groupId/wall/:wallPostId'),
     swagger_1.Summary('Delete a wall post'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __param(2, common_1.PathParams('wallPostId', Number)),
@@ -999,6 +905,7 @@ __decorate([
 __decorate([
     common_1.Get('/search'),
     swagger_1.ReturnsArray(200, { type: model.group.groupDetails }),
+    common_1.Use(middleware.ValidatePaging),
     __param(0, common_1.QueryParams('name', String)),
     __param(1, common_1.QueryParams('offset', Number)),
     __param(2, common_1.QueryParams('limit', Number)),
@@ -1011,6 +918,7 @@ __decorate([
     swagger_1.Summary('Set a group\'s approval required status'),
     swagger_1.Description('Currently requires ownership permission but may be downgraded to Manage in the future'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidGroupPermissions: You must be owner to apply this change\nInvalidApprovalStatus: approvalStatus must be 0 or 1\n' }),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __param(2, common_1.Required()),
@@ -1022,8 +930,7 @@ __decorate([
 __decorate([
     common_1.Put('/:groupId/claim'),
     swagger_1.Summary('Claim a group with no owner'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __metadata("design:type", Function),
@@ -1033,8 +940,7 @@ __decorate([
 __decorate([
     common_1.Put('/:groupId/membership'),
     swagger_1.Summary('Join a group'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.group.ValidateGroupId),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __metadata("design:type", Function),
@@ -1044,8 +950,7 @@ __decorate([
 __decorate([
     common_1.Delete('/:groupId/membership'),
     swagger_1.Summary('Leave a group, or remove yourself from a group join request'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __metadata("design:type", Function),
@@ -1056,7 +961,7 @@ __decorate([
     common_1.Get('/:groupId/ownership-changes'),
     swagger_1.Summary('Get an array of group ownership changes for the {groupId}'),
     swagger_1.Description('Requester must have manage permission'),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, middleware.group.ValidateGroupId),
     swagger_1.ReturnsArray(200, { type: model.group.GroupOwnershipChangeEntry }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
@@ -1070,7 +975,7 @@ __decorate([
     common_1.Get('/:groupId/join-requests'),
     swagger_1.Summary('Get a page of group join requests'),
     swagger_1.Description('Requester must have manage permission'),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, middleware.group.ValidateGroupId),
     swagger_1.ReturnsArray(200, { type: model.group.GroupJoinRequest }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
@@ -1085,7 +990,7 @@ __decorate([
     swagger_1.Summary('Approve a join request'),
     swagger_1.Description('This will give the {userId} the lowest rank possible in the {groupId}. Requester must have manage permission'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidPermissions: Requester must have manage permission\nInvalidJoinRequest: Join request does not exist\nTooManyGroups: userId is in too many groups. Request has been deleted\nInvalidRolesetId: Unknown\n' }),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.group.ValidateGroupId),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __param(2, common_1.BodyParams('userId', Number)),
@@ -1097,7 +1002,7 @@ __decorate([
     common_1.Delete('/:groupId/join-request'),
     swagger_1.Summary('Decline a join request'),
     swagger_1.Description('Requester must have manage permisison'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.group.ValidateGroupId),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidGroupId: Group Id is invalid\nInvalidPermissions: Requester must have manage permission\nInvalidJoinRequest: Join request does not exist\n' }),
     swagger_1.Returns(409, { type: model.Error, description: 'UserAlreadyInGroup: User is already a member of the group. Request has been deleted, but they will not be removed from the group\n' }),
     __param(0, common_1.Locals('userInfo')),
@@ -1123,8 +1028,7 @@ __decorate([
 __decorate([
     common_1.Patch('/:groupId/role/:roleSetId'),
     swagger_1.Summary('Update a roleset'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.group.ValidateGroupId),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __param(2, common_1.PathParams('roleSetId', Number)),
@@ -1139,8 +1043,7 @@ __decorate([
 __decorate([
     common_1.Put('/:groupId/role'),
     swagger_1.Summary('Create a roleset'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.group.ValidateGroupId),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __param(2, common_1.BodyParams('rank', Number)),
@@ -1154,8 +1057,7 @@ __decorate([
 __decorate([
     common_1.Delete('/:groupId/roleset/:roleSetId'),
     swagger_1.Summary('Delete a roleset. Cannot contain members, else will error'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.group.ValidateGroupId),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __param(2, common_1.PathParams('roleSetId', Number)),
@@ -1166,8 +1068,7 @@ __decorate([
 __decorate([
     common_1.Patch('/:groupId/member/:userId'),
     swagger_1.Summary('Update a users role in a group'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.group.ValidateGroupId),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __param(2, common_1.Required()),
@@ -1181,8 +1082,7 @@ __decorate([
 __decorate([
     common_1.Patch('/:groupId/description'),
     swagger_1.Summary('Update group description'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.group.ValidateGroupId),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __param(2, common_1.Required()),
@@ -1194,8 +1094,7 @@ __decorate([
 __decorate([
     common_1.Patch('/:groupId/shout'),
     swagger_1.Summary('Update group shout'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.group.ValidateGroupId),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __param(2, common_1.Required()),
@@ -1207,8 +1106,7 @@ __decorate([
 __decorate([
     common_1.Patch('/:groupId/icon'),
     swagger_1.Summary('Update group icon'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __param(2, multipartfiles_1.MultipartFile()),
@@ -1217,10 +1115,9 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GroupsController.prototype, "updateIcon", null);
 __decorate([
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
     common_1.Post('/create'),
     swagger_1.Summary('Create a group'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.BodyParams('name', String)),
@@ -1235,17 +1132,19 @@ __decorate([
 __decorate([
     common_1.Patch('/:groupId/transfer'),
     swagger_1.Summary('Update group ownership. Must be owner'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __param(2, common_1.Required()),
     __param(2, common_1.BodyParams('userId', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
+    __metadata("design:paramtypes", [model.UserSession, Number, Number]),
     __metadata("design:returntype", Promise)
 ], GroupsController.prototype, "updateGroupOwner", null);
 __decorate([
     common_1.Get('/:groupId/catalog'),
     swagger_1.Summary('Get group catalog'),
+    common_1.Use(middleware.ValidatePaging, middleware.group.ValidateGroupId),
     __param(0, common_1.PathParams('groupId', Number)),
     __param(1, common_1.QueryParams('offset', Number)),
     __param(2, common_1.QueryParams('limit', Number)),
@@ -1255,10 +1154,9 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GroupsController.prototype, "getItems", null);
 __decorate([
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
     common_1.Put('/:groupId/payout'),
     swagger_1.Summary('Spend group funds'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.PathParams('groupId', Number)),

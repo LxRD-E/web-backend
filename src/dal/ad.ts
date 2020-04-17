@@ -179,7 +179,7 @@ export default class AdDAL extends _init {
     }
 
     /**
-     * @deprecated - Please use transacitons instead
+     * @deprecated - Please use transactions instead
      * @param adId 
      */
     public async incrementAdClickCount(adId: number): Promise<void> {

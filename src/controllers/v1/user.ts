@@ -4,15 +4,33 @@
 // Interfaces
 import * as model from '../../models/models';
 // Misc Models
-import { filterOffset, filterLimit, filterId, filterSort } from '../../helpers/Filter';
+import {filterId} from '../../helpers/Filter';
 // Autoload
-import { Controller, Get, PathParams, QueryParams, Required, Req, Enum, Schema, Res, Status, UseBeforeEach, Locals, Post, UseBefore, Put, Delete, Patch, BodyParams, HeaderParams, ModelStrict, Property, PropertyType, Render, Use } from '@tsed/common';
-import { Description, Summary, Returns, Operation, ReturnsArray } from '@tsed/swagger';
+import {
+    BodyParams,
+    Controller,
+    Delete,
+    Get,
+    HeaderParams,
+    Locals,
+    Patch,
+    PathParams,
+    Post,
+    Put,
+    QueryParams,
+    Req,
+    Required,
+    Res,
+    Status,
+    Use
+} from '@tsed/common';
+import {Description, Returns, ReturnsArray, Summary} from '@tsed/swagger';
 import controller from '../controller';
 // Middleware
-import { YesAuth } from '../../middleware/Auth';
-import { csrf } from '../../dal/auth';
-import { RateLimiterMiddleware } from '../../middleware/RateLimit';
+import {YesAuth} from '../../middleware/Auth';
+import * as middleware from '../../middleware/middleware';
+import {csrf} from '../../dal/auth';
+import {RateLimiterMiddleware} from '../../middleware/RateLimit';
 import TwoStepMiddleware from '../../middleware/TwoStepCheck';
 
 /**
@@ -89,6 +107,7 @@ export class UsersController extends controller {
     @Summary('Get user friends')
     @Returns(200, { type: model.user.UserFriendsResponse })
     @Returns(400, { type: model.Error, description: 'InvalidSort: Sort must be one of asc,desc\nInvalidUserId: userId is deleted or invalid\n' })
+    @Use(middleware.user.ValidateUserId, middleware.ValidatePaging)
     public async getFriends(
         @Required()
         @PathParams('userId', Number) id: number,
@@ -96,18 +115,6 @@ export class UsersController extends controller {
         @QueryParams('limit', Number) limit: number = 100,
         @QueryParams('sort', String) sort: 'asc' | 'desc' = 'asc',
     ) {
-        if (sort !== 'desc' && sort !== 'asc') {
-            throw new this.BadRequest('InvalidSort');
-        }
-        // Verify User Exists
-        try {
-            const info = await this.user.getInfo(id, ["accountStatus"]);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw false;
-            }
-        } catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
         // Grab Friends
         const friends = await this.user.getFriends(id, offset, limit, sort);
         const totalFriendCount = await this.user.countFriends(id);
@@ -122,35 +129,12 @@ export class UsersController extends controller {
     @Description('Accepts CSV of userIds. Example: 1,2,3')
     @ReturnsArray(200, { type: model.user.MultiGetUsernames })
     @Returns(400, { type: model.Error, description: 'InvalidIds: One or more of the IDs are non valid 64-bit signed integers\nTooManyIds: Maximum amount of IDs is 25\n' })
+    @Use(middleware.ConvertIdsToCsv)
     public async MultiGetNames(
         @Required()
-        @QueryParams('ids', String) ids: string
+        @QueryParams('ids') ids: number[]
     ) {
-        if (!ids) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const idsArray = ids.split(',');
-        if (idsArray.length < 1) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const filteredIds: Array<number> = [];
-        let allIdsValid = true;
-        idsArray.forEach((id) => {
-            const userId = filterId(id) as number;
-            if (!userId) {
-                allIdsValid = false
-            }
-            filteredIds.push(userId);
-        });
-        if (!allIdsValid) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const safeIds = Array.from(new Set(filteredIds));
-        if (safeIds.length > 25) {
-            throw new this.BadRequest('TooManyIds');
-        }
-        let result = await this.user.MultiGetNamesFromIds(safeIds);
-        return result;
+        return await this.user.MultiGetNamesFromIds(ids);
     }
 
     @Get('/forum')
@@ -158,34 +142,11 @@ export class UsersController extends controller {
     @Description('postCount, permissionLevel, signature...')
     @ReturnsArray(200, { type: model.user.ForumInfo })
     @Returns(400, { type: model.Error, description: 'InvalidIds: One or more of the IDs are non valid 64-bit signed integers\nTooManyIds: Maximum amount of IDs is 25\n' })
+    @Use(middleware.ConvertIdsToCsv)
     public async multiGetForumData(
-        @QueryParams('ids', String) ids: string
+        @QueryParams('ids') ids: number[]
     ) {
-        if (!ids) {
-            throw new this.BadRequest('ids');
-        }
-        const idsArray = ids.split(',');
-        if (idsArray.length < 1) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const filteredIds: Array<number> = [];
-        let allIdsValid = true;
-        idsArray.forEach((id) => {
-            const userId = filterId(id) as number;
-            if (!userId) {
-                allIdsValid = false
-            }
-            filteredIds.push(userId);
-        });
-        if (!allIdsValid) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const safeIds = Array.from(new Set(filteredIds));
-        if (safeIds.length > 25) {
-            throw new this.BadRequest('TooManyIds');
-        }
-        let result = await this.user.multiGetForumInfo(safeIds);
-        return result;
+        return await this.user.multiGetForumInfo(ids);
     }
 
     @Get('/:userId/thumbnail')
@@ -233,34 +194,11 @@ export class UsersController extends controller {
     @Description('Accepts csv of userIds. Example: 1,2,3')
     @Returns(400, { type: model.Error, description: 'InvalidIds: One or more of the IDs are non valid 64-bit signed integers\nTooManyIds: Maximum amount of IDs is 25\n' })
     @ReturnsArray(200, { type: model.user.ThumbnailResponse })
+    @Use(middleware.ConvertIdsToCsv)
     public async multiGetThumbnails(
-        @QueryParams('ids', String) ids: string
+        @QueryParams('ids') ids: number[]
     ) {
-        if (!ids) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const idsArray = ids.split(',');
-        if (idsArray.length < 1) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const filteredIds: Array<number> = [];
-        let allIdsValid = true;
-        idsArray.forEach((id) => {
-            const userId = filterId(id) as number;
-            if (!userId) {
-                allIdsValid = false
-            }
-            filteredIds.push(userId);
-        });
-        if (!allIdsValid) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const safeIds = Array.from(new Set(filteredIds));
-        if (safeIds.length > 25) {
-            throw new this.BadRequest('TooManyIds');
-        }
-        const thumbnails = await this.user.multiGetThumbnailsFromIds(safeIds);
-        return thumbnails;
+        return await this.user.multiGetThumbnailsFromIds(ids);
     }
 
     @Get('/friend/metadata')
@@ -276,23 +214,12 @@ export class UsersController extends controller {
     @Summary('Get the friendship status between the authenticated user and another user')
     @Returns(200, { type: model.user.FriendshipStatus })
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\n' })
-    @UseBeforeEach(YesAuth)
+    @Use(YesAuth, middleware.user.ValidateUserId)
     public async getFriendshipStatus(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number
     ) {
-        // Verify user exists
-        try {
-            const info = await this.user.getInfo(userId, ["accountStatus"]);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw false;
-            }
-        } catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
-        // Try
-        const FriendshipStatus = await this.user.getFriendshipStatus(userInfo.userId, userId);
-        return FriendshipStatus;
+        return await this.user.getFriendshipStatus(userInfo.userId, userId);
     }
 
     @Post('/:userId/friend/request')
@@ -300,20 +227,11 @@ export class UsersController extends controller {
     @Returns(200, { description: 'Request Sent' })
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nCannotSendRequest: You cannot send a friend request right now\n' })
     @Returns(409, { type: model.Error, description: 'AuthenticatedUserIsAtMaxFriends: Authenticated user is at the maximum amount of friends\nOtherUserIsAtMaxFriends: The user you are trying to friend is at the maximum amount of friends\n' })
-    @Use(csrf, YesAuth, RateLimiterMiddleware('sendFriendRequest'))
+    @Use(csrf, YesAuth, middleware.user.ValidateUserId, RateLimiterMiddleware('sendFriendRequest'))
     public async sendFriendRequest(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number
     ) {
-        // Verify user exists
-        try {
-            const info = await this.user.getInfo(userId, ["accountStatus"]);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw new Error('User is terminated');
-            }
-        } catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
         // Check if authenticated user is at max friends 
         let friendCount = await this.user.countFriends(userInfo.userId);
         if (friendCount >= model.user.MAX_FRIENDS) {
@@ -336,20 +254,11 @@ export class UsersController extends controller {
     @Summary('Accept a friend request')
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nNoPendingRequest: There is no friend request to accept\n' })
     @Returns(409, { type: model.Error, description: 'AuthenticatedUserIsAtMaxFriends: Authenticated user is at the maximum amount of friends\nOtherUserIsAtMaxFriends: The user you are trying to friend is at the maximum amount of friends\n' })
-    @Use(csrf, YesAuth)
+    @Use(csrf, YesAuth, middleware.user.ValidateUserId)
     public async acceptFriendRequest(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number
     ) {
-        // Verify user exists
-        try {
-            const info = await this.user.getInfo(userId, ["accountStatus"]);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw new Error('User is terminated');
-            }
-        } catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
         // Check if authenticated user is at max friends 
         let friendCount = await this.user.countFriends(userInfo.userId);
         if (friendCount >= model.user.MAX_FRIENDS) {
@@ -371,8 +280,7 @@ export class UsersController extends controller {
     @Delete('/:userId/friend')
     @Summary('Delete an existing friendship, delete a requested friendship, or decline a requested friendship')
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nNoPendingRequest: There is no friend request to decline\n' })
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     public async deleteFriendship(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userIdToDecline: number
@@ -404,28 +312,18 @@ export class UsersController extends controller {
     @Summary('Get the past usernames of the {userId}')
     @ReturnsArray(200, { type: model.user.PastUsernames })
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is invalid\n' })
+    @Use(middleware.user.ValidateUserId)
     public async getPastUsernames(
         @PathParams('userId', Number) userId: number,
     ) {
-        // Verify User Exists
-        try {
-            const info = await this.user.getInfo(userId, ["accountStatus"]);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw false;
-            }
-        } catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
-        // Grab past usernames
-        let pastUsernames = await this.user.getPastUsernames(userId);
-        // Return them
-        return pastUsernames;
+        return await this.user.getPastUsernames(userId);
     }
 
     @Get('/:userId/inventory')
     @Summary('Get a user\'s inventory')
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\n' })
     @Returns(200, { type: model.user.UserInventoryResponse })
+    @Use(middleware.user.ValidateUserId)
     public async getInventory(
         @PathParams('userId', Number) id: number,
         @Required()
@@ -434,16 +332,6 @@ export class UsersController extends controller {
         @QueryParams('limit', Number) limit: number = 100,
         @QueryParams('sort', String) sort: any = 'asc',
     ) {
-        // Verify User Exists
-        try {
-            const info = await this.user.getInfo(id, ["accountStatus"]);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw false;
-            }
-        } catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
-        // Grab Friends
         const items = await this.user.getInventory(id, category, offset, limit, sort);
         const totalInventoryCount = await this.user.countInventory(id, category);
         return {
@@ -456,17 +344,10 @@ export class UsersController extends controller {
     @Summary('Count user collectibles')
     @Returns(400, { type: model.Error, description: 'InvalidUserId: userId is terminated or invalid\n' })
     @Returns(200, { type: model.user.GenericCount })
+    @Use(middleware.user.ValidateUserId)
     public async countCollectibleInventory(
         @PathParams('userId', Number) userId: number,
     ): Promise<model.user.GenericCount> {
-        try {
-            const info = await this.user.getInfo(userId, ["accountStatus"]);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw new Error('InvalidUserId');
-            }
-        } catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
         const totalInventoryCount = await this.user.countCollectibleInventory(userId);
         return {
             total: totalInventoryCount,
@@ -478,6 +359,7 @@ export class UsersController extends controller {
     @Description('If query is specified, the sort parameter is ignored.')
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nSearchQueryTooLarge: Search query is too large or otherwise invalid\n' })
     @Returns(200, { type: model.user.UserCollectibleInventoryResponse })
+    @Use(middleware.user.ValidateUserId)
     public async getCollectibleInventory(
         @PathParams('userId', Number) id: number,
         @Description('The optional search query. This will be used to search for collectible item names')
@@ -486,15 +368,6 @@ export class UsersController extends controller {
         @QueryParams('limit', Number) limit: number = 100,
         @QueryParams('sort', String) sort: any = 'asc',
     ): Promise<model.user.UserCollectibleInventoryResponse> {
-        // Verify User Exists
-        try {
-            const info = await this.user.getInfo(id, ["accountStatus"]);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw false;
-            }
-        } catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
         // confirm size
         if (query && query.length >= 32) {
             throw new this.BadRequest('SearchQueryTooLarge');
@@ -513,22 +386,12 @@ export class UsersController extends controller {
     @Summary('Check if a user owns a Catalog Item. If they do, return the data about the owned items')
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\n' })
     @ReturnsArray(200, { type: model.user.UserInventory })
+    @Use(middleware.user.ValidateUserId)
     public async getOwnedItemsByCatalogId(
         @PathParams('userId', Number) userId: number,
         @PathParams('catalogId', Number) catalogId: number
     ) {
-        console.log('check if owns');
-        let info;
-        try {
-            info = await this.user.getInfo(userId, ['accountStatus']);
-            if (info.accountStatus === model.user.accountStatus.deleted) {
-                throw new this.BadRequest('InvalidUserId')
-            }
-        } catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
-        const ownedItems = await this.user.getUserInventoryByCatalogId(userId, catalogId);
-        return ownedItems;
+        return await this.user.getUserInventoryByCatalogId(userId, catalogId);
     }
 
     @Patch('/market/:userInventoryId')
@@ -570,16 +433,15 @@ export class UsersController extends controller {
     @Summary('Get a user groups')
     @Returns(200, { type: model.user.UserGroupsResponse })
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\n' })
+    @Use(middleware.user.ValidateUserId)
     public async getGroups(
         @PathParams('userId', Number) userId: number
     ) {
-        const userInfo = await this.user.getInfo(userId, ['accountStatus']);
-        if (userInfo.accountStatus === model.user.accountStatus.deleted) {
-            throw new this.BadRequest('InvalidUserId');
-        }
         // Get Groups
         const groups = await this.user.getGroups(userId);
+        // Count groups
         const groupCount = await this.user.countGroups(userId);
+        // Return results
         return {
             total: groupCount,
             groups: groups,
@@ -590,18 +452,19 @@ export class UsersController extends controller {
     @Summary('Get a user\'s role in a group.')
     @Description('Returns guest role if not in group')
     @Returns(200, { type: model.group.roleInfo })
+    @Use(middleware.user.ValidateUserId)
     public async getRoleInGroup(
         @PathParams('userId', Number) userId: number,
         @PathParams('groupId', Number) groupId: number
     ) {
-        const role = await this.group.getUserRole(groupId, userId);
-        return role;
+        return await this.group.getUserRole(groupId, userId);
     }
 
     @Get('/search')
     @Summary('Search all users')
     @ReturnsArray(200, { type: model.user.SearchResult })
     @Returns(400, { type: model.Error, description: 'InvalidQuery: Query is too long (over 32 characters)\n' })
+    @Use(middleware.ValidatePaging)
     public async search(
         @QueryParams('offset', Number) offset: number = 0,
         @QueryParams('limit', Number) limit: number = 100,
@@ -619,8 +482,7 @@ export class UsersController extends controller {
             // Query too large
             throw new this.BadRequest('InvalidQuery');
         }
-        const results = await this.user.search(offset, limit, sort, goodSortBy, query);
-        return results;
+        return await this.user.search(offset, limit, sort, goodSortBy, query);
     }
 
     @Put('/:userId/trade/request')
@@ -665,7 +527,7 @@ export class UsersController extends controller {
                 throw new this.BadRequest('PrimaryRequestTooLarge');
             }
             const localInfo = await trx.user.getInfo(userInfo.userId, ['tradingEnabled']);
-            // Check if user has Tradeing Disabled
+            // Check if user has Trading Disabled
             if (localInfo.tradingEnabled === model.user.tradingEnabled.false) {
                 throw new this.Conflict('CannotTradeWithUser');
             }
@@ -727,7 +589,7 @@ export class UsersController extends controller {
             // Create Trade
             // Count outbound/inbound trades between users
             const count = await trx.economy.countPendingTradesBetweenUsers(userInfo.userId, partnerUserId);
-            // Confirm they arent spamming trades
+            // Confirm they aren't spamming trades
             if (count >= 4) {
                 throw new this.Conflict('TooManyPendingTrades');
             }
@@ -738,7 +600,8 @@ export class UsersController extends controller {
             // Add Self Items
             await trx.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requester, safeRequesteeItems);
             // Send Message to Partner
-            await trx.notification.createMessage(partnerUserId, 1, 'Trade Request from ' + userInfo.username, "Hi,\n" + userInfo.username + " has sent you a new trade request. You can view it in the trades tab.");
+            await trx.notification.createMessage(partnerUserId, 1, `Trade Request from ${userInfo.username}`, `Hi,
+${userInfo.username} has sent you a new trade request. You can view it in the trades tab.`);
             // Log ip
             let ip = req.ip;
             if (req.headers['cf-connecting-ip']) {

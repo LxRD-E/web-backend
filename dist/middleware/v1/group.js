@@ -1,0 +1,78 @@
+"use strict";
+/* istanbul ignore next */
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+/* istanbul ignore next */
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+/* istanbul ignore next */
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+/* istanbul ignore next */
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+/* istanbul ignore next */
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const common_1 = require("@tsed/common");
+const controller_1 = require("../../controllers/controller");
+const model = require("../../models/models");
+let ValidateGroupId = class ValidateGroupId extends controller_1.default {
+    constructor() {
+        super(...arguments);
+        this.CachedGroupInfo = [];
+    }
+    checkForCache(groupId) {
+        const maxCacheTimeInMilliSeconds = 30 * 1000;
+        let _newArr = [];
+        let success = false;
+        for (const entry of this.CachedGroupInfo) {
+            if (entry.createdAt + maxCacheTimeInMilliSeconds >= new Date().getTime()) {
+                _newArr.push(entry);
+                if (entry.data.groupId === groupId) {
+                    console.log('Cached');
+                    success = true;
+                }
+            }
+        }
+        this.CachedGroupInfo = _newArr;
+        return success;
+    }
+    async use(groupId, res) {
+        if (this.checkForCache(groupId)) {
+            return;
+        }
+        let groupInfo;
+        try {
+            groupInfo = await this.group.getInfo(groupId);
+        }
+        catch (e) {
+            if (e && e.message === 'InvalidGroupId') {
+                throw new this.BadRequest('InvalidGroupId');
+            }
+            throw e;
+        }
+        if (groupInfo.groupStatus === model.group.groupStatus.locked) {
+            throw new this.BadRequest('InvalidGroupId');
+        }
+        this.CachedGroupInfo.push({
+            data: groupInfo,
+            createdAt: new Date().getTime(),
+        });
+    }
+};
+__decorate([
+    __param(0, common_1.PathParams('groupId', Number)),
+    __param(1, common_1.Res()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], ValidateGroupId.prototype, "use", null);
+ValidateGroupId = __decorate([
+    common_1.Middleware()
+], ValidateGroupId);
+exports.ValidateGroupId = ValidateGroupId;
+

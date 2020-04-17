@@ -60,38 +60,44 @@ var GroupMemberApprovalStatus;
     GroupMemberApprovalStatus[GroupMemberApprovalStatus["true"] = 1] = "true";
     GroupMemberApprovalStatus[GroupMemberApprovalStatus["false"] = 0] = "false";
 })(GroupMemberApprovalStatus = exports.GroupMemberApprovalStatus || (exports.GroupMemberApprovalStatus = {}));
+var groupStatus;
+(function (groupStatus) {
+    groupStatus[groupStatus["locked"] = 1] = "locked";
+    groupStatus[groupStatus["ok"] = 0] = "ok";
+})(groupStatus = exports.groupStatus || (exports.groupStatus = {}));
 class groupDetails {
 }
 __decorate([
-    common_1.Required(),
+    common_1.PropertyType(Number),
     __metadata("design:type", Number)
 ], groupDetails.prototype, "groupId", void 0);
 __decorate([
-    common_1.Required(),
+    common_1.PropertyType(Number),
     __metadata("design:type", String)
 ], groupDetails.prototype, "groupName", void 0);
 __decorate([
-    common_1.Required(),
+    common_1.PropertyType(String),
     __metadata("design:type", String)
 ], groupDetails.prototype, "groupDescription", void 0);
 __decorate([
-    common_1.Required(),
+    common_1.PropertyType(Number),
     __metadata("design:type", Number)
 ], groupDetails.prototype, "groupOwnerUserId", void 0);
 __decorate([
-    common_1.Required(),
+    common_1.PropertyType(Number),
     __metadata("design:type", Number)
 ], groupDetails.prototype, "groupIconCatalogId", void 0);
 __decorate([
-    common_1.Required(),
+    common_1.PropertyType(Number),
     __metadata("design:type", Number)
 ], groupDetails.prototype, "groupMemberCount", void 0);
 __decorate([
     common_1.Required(),
+    common_1.Enum(groupStatus),
     __metadata("design:type", Number)
 ], groupDetails.prototype, "groupStatus", void 0);
 __decorate([
-    common_1.Required(),
+    common_1.Enum(GroupMemberApprovalStatus),
     __metadata("design:type", Number)
 ], groupDetails.prototype, "groupMembershipApprovalRequired", void 0);
 exports.groupDetails = groupDetails;
@@ -138,33 +144,28 @@ exports.roleInfo = roleInfo;
 class groupShout {
 }
 __decorate([
-    common_1.Required(),
     swagger_1.Description('UserId that made the shout'),
+    common_1.PropertyType(Number),
     __metadata("design:type", Number)
 ], groupShout.prototype, "userId", void 0);
 __decorate([
-    common_1.Required(),
     swagger_1.Description('groupId that made the shout'),
+    common_1.PropertyType(Number),
     __metadata("design:type", Number)
 ], groupShout.prototype, "groupId", void 0);
 __decorate([
-    common_1.Required(),
+    common_1.PropertyType(String),
     __metadata("design:type", String)
 ], groupShout.prototype, "shout", void 0);
 __decorate([
-    common_1.Required(),
+    common_1.PropertyType(String),
     __metadata("design:type", String)
 ], groupShout.prototype, "date", void 0);
 __decorate([
-    common_1.Required(),
+    common_1.PropertyType(Number),
     __metadata("design:type", Number)
 ], groupShout.prototype, "thumbnailCatalogId", void 0);
 exports.groupShout = groupShout;
-var groupStatus;
-(function (groupStatus) {
-    groupStatus[groupStatus["locked"] = 1] = "locked";
-    groupStatus[groupStatus["ok"] = 0] = "ok";
-})(groupStatus = exports.groupStatus || (exports.groupStatus = {}));
 var GroupOwnershipChangeType;
 (function (GroupOwnershipChangeType) {
     GroupOwnershipChangeType[GroupOwnershipChangeType["LeaveGroup"] = 1] = "LeaveGroup";

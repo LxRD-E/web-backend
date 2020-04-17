@@ -20,18 +20,31 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@tsed/common");
 const controller_1 = require("../../controllers/controller");
 const model = require("../../models/models");
-class StaffValidateLevelOne extends controller_1.default {
-    async use(userInfo) {
-        if (!(userInfo.staff >= 1)) {
-            throw new this.BadRequest('InvalidPermissions');
+let ValidateUserId = class ValidateUserId extends controller_1.default {
+    async use(userId) {
+        let info;
+        try {
+            info = await this.user.getInfo(userId, ["accountStatus"]);
+        }
+        catch (e) {
+            if (e && e.message === 'InvalidUserId') {
+                throw new this.BadRequest('InvalidUserId');
+            }
+            throw e;
+        }
+        if (info.accountStatus === model.user.accountStatus.deleted) {
+            throw new this.BadRequest('InvalidUserId');
         }
     }
-}
+};
 __decorate([
-    __param(0, common_1.Locals('userInfo')),
+    __param(0, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.UserSession]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
-], StaffValidateLevelOne.prototype, "use", null);
-exports.StaffValidateLevelOne = StaffValidateLevelOne;
+], ValidateUserId.prototype, "use", null);
+ValidateUserId = __decorate([
+    common_1.Middleware()
+], ValidateUserId);
+exports.ValidateUserId = ValidateUserId;
 

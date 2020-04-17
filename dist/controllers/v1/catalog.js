@@ -318,17 +318,17 @@ let CatalogController = class CatalogController extends controller_1.default {
         };
     }
     async getCharts(catalogId) {
+        let itemInfo;
         try {
-            const itemInfo = await this.catalog.getInfo(catalogId, ['catalogId', 'collectible']);
-            if (itemInfo.collectible !== model.catalog.collectible.true) {
-                throw false;
-            }
+            itemInfo = await this.catalog.getInfo(catalogId, ['catalogId', 'collectible']);
         }
         catch (e) {
             throw new this.BadRequest('InvalidCatalogId');
         }
-        const charts = await this.catalog.getCharts(catalogId);
-        return charts;
+        if (itemInfo.collectible !== model.catalog.collectible.true) {
+            throw new this.BadRequest('InvalidCatalogId');
+        }
+        return await this.catalog.getCharts(catalogId);
     }
     async getSellers(catalogId, offset = 0) {
         try {

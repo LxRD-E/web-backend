@@ -1,4 +1,4 @@
-import { Required } from "@tsed/common";
+import {AllowTypes, Enum, Property, PropertyType, Required} from "@tsed/common";
 import { Description } from "@tsed/swagger";
 
 // meta stuff
@@ -42,24 +42,34 @@ export enum GroupMemberApprovalStatus {
 }
 
 /**
+ * Is a group locked (aka banned)?
+ */
+export enum groupStatus {
+    locked = 1,
+    ok = 0,
+}
+
+
+/**
  * Info about a group
  */
 export class groupDetails {
-    @Required()
+    @PropertyType(Number)
     groupId: number;
-    @Required()
+    @PropertyType(Number)
     groupName: string;
-    @Required()
+    @PropertyType(String)
     groupDescription: string;
-    @Required()
+    @PropertyType(Number)
     groupOwnerUserId: number;
-    @Required()
+    @PropertyType(Number)
     groupIconCatalogId: number;
-    @Required()
+    @PropertyType(Number)
     groupMemberCount: number;
     @Required()
+    @Enum(groupStatus)
     groupStatus: groupStatus;
-    @Required()
+    @Enum(GroupMemberApprovalStatus)
     groupMembershipApprovalRequired: GroupMemberApprovalStatus;
 }
 
@@ -129,17 +139,17 @@ export interface groupMember {
 }
 
 export class groupShout {
-    @Required()
     @Description('UserId that made the shout')
+    @PropertyType(Number)
     userId: number;
-    @Required()
     @Description('groupId that made the shout')
+    @PropertyType(Number)
     groupId: number;
-    @Required()
+    @PropertyType(String)
     shout: string;
-    @Required()
+    @PropertyType(String)
     date: string;
-    @Required()
+    @PropertyType(Number)
     thumbnailCatalogId: number;
 }
 
@@ -149,14 +159,6 @@ export interface wall {
     userId: number;
     wallPost: string;
     date: object;
-}
-
-/**
- * Is a group locked (aka banned)?
- */
-export enum groupStatus {
-    locked = 1,
-    ok = 0,
 }
 
 /**

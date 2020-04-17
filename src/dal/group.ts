@@ -40,7 +40,7 @@ class GroupsDAL extends _init {
         }
         const results = await info;
         if (!results[0]) {
-            throw false;
+            throw new Error('InvalidGroupId');
         }
         return results[0] as groups.groupDetails;
     }
@@ -59,7 +59,8 @@ class GroupsDAL extends _init {
     }
     /**
      * Get a RoleSetID's Info by it's ID
-     * @param roleSetId 
+     * @param roleSetId
+     * @throws InvalidRolesetId
      */
     public async getRoleById(roleSetId: number, forUpdate?: string[]): Promise<groups.roleInfo> {
         let rolesetInfoQuery = this.knex("group_roles").select("id as roleSetId","name","description","groupid as groupId", "rank", "permission_get_wall as getWall", "permission_post_wall as postWall", "permission_get_shout as getShout","permission_post_shout as postShout", "permission_manage_group as manage").where({"id": roleSetId});
@@ -69,7 +70,7 @@ class GroupsDAL extends _init {
         const rolesetInfo = await rolesetInfoQuery;
         // If role doesn't exist
         if (!rolesetInfo[0]) {
-            throw false;
+            throw new Error('InvalidRolesetId');
         }
         // Otherwise return info
         return this.formatRoleset(rolesetInfo[0]);

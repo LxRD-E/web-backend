@@ -28,10 +28,15 @@ fs.copySync('./.gitignore', './dist_module/.gitignore');
 fs.copySync('./migrations', './dist_module/migrations');
 // copy env
 fs.copySync('./env', './dist_module/env');
+// copy tests
+if (!fs.existsSync('./dist_module/tests')) {
+    fs.mkdirsSync('./dist_module/tests');
+}
+fs.copySync('./tests','./dist_module/tests');
 
 // copy over dist dir
 fs.copySync('./dist/','./dist_module/dist');
-// Obfusucate Dist
+// Obfuscate Dist
 const JavaScriptObfuscator = require('javascript-obfuscator');
 const walk = function(dir) {
     var results = [];

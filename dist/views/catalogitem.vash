@@ -268,7 +268,7 @@
         </div>
     }) 
     @html.block('js', function(model) {
-        <script nonce="@model.nonce" src="https://cdnjs.cloudflare.com/ajax/libs/canvasjs/1.7.0/canvasjs.js" integrity="sha256-xWq811jWtpNFuV8sXFtLWGYcNdTdHKe4phSg0svZIt0=" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.18.1/apexcharts.min.js" integrity="sha256-RalQXBZdisB04aaBsm+6YZ0b/iRYjX1MZn90m19AnCY=" crossorigin="anonymous" nonce="@model.nonce"></script>
         <script nonce="@model.nonce" src="/js/pages/catalogitem.js?v=@model.v"></script>
     }) 
 })

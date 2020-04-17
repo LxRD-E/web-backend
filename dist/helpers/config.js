@@ -5,6 +5,8 @@ const path_1 = require("path");
 const auth_1 = require("../dal/auth");
 const secretEncryptionKey = process.env['SECRET_ENCRYPTION_KEY'];
 const secretEncryptionIV = process.env['SECRET_ENCRYPTION_IV'];
+console.log('key', secretEncryptionKey);
+console.log('iv', secretEncryptionIV);
 let configJson = {
     encryptionKeys: {},
     coinpayments: {},

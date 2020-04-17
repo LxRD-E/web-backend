@@ -6,8 +6,8 @@
   "scripts": {
     "build:server": "node ./util/build.js",
     "build:public": "babel src/public/ -d dist/public/ --copy-files",
-    "build": "npm run build:server && npm run build:public",
-    "build:production": "npm run build && node ./util/build_production.js",
+    "build": "node ./util/build.js",
+    "build:production": "node ./util/build.js && node ./util/build_production.js",
     "push": "node ./util/build_production.js",
     "start:dev": "cross-env ENV_FILE=development nodemon -r ./env --ignore / --exec ts-node-dev src/server.ts",
     "start": "cross-env ENV_FILE=production node -r ./env -r module-alias/register ./dist/server.js",

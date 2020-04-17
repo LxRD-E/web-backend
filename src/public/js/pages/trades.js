@@ -155,11 +155,6 @@ $(document).on('click', '.reviewTradeData', function() {
                 itemsGiveMessage = "Items you Gave";
                 confirmText = "Close";
             }
-            setTimeout(function() {
-                setCatalogThumbs(catalogThumbsArr);
-                setCatalogNames(catalogThumbsArr);
-                setUserThumbs([partnerUserId]);
-            }, 100);
             let extraOfferMessage = '';
             if (offerPrimary) {
                 extraOfferMessage = `(+${formatCurrency(1, '0.75rem')} ${number_format(offerPrimary)})`;
@@ -225,6 +220,8 @@ $(document).on('click', '.reviewTradeData', function() {
             `);
             setUserNames([partnerUserId]);
             setUserThumbs([partnerUserId]);
+            setCatalogThumbs(catalogThumbsArr);
+            setCatalogNames(catalogThumbsArr);
             let hideTradeBtn = () => {
                 $('#tradesGrid').children().each(function() {
                     $(this).css('opacity','1');
@@ -237,7 +234,6 @@ $(document).on('click', '.reviewTradeData', function() {
                 }
                 e.preventDefault();
                 if (type === "outbound") {
-                    console.log(d);
                     if (d.dismiss && d.dismiss === "backdrop") {
 
                     }else if (d.dismiss && d.dismiss === "cancel") {

@@ -3,20 +3,34 @@
  */
 // Express
 import moment = require('moment');
-import util = require('util');
+import crypto = require('crypto');
 // Errors
 // Interfaces
 import * as model from '../../models/models';
-// Misc models
-// Autoload
-import { Controller, Get, QueryParams, PathParams, Locals, BodyParams, UseBeforeEach, UseBefore, Put, Required, Patch, Post, Delete, Err, Enum, Use } from '@tsed/common';
-import { MulterOptions, MultipartFile } from "@tsed/multipartfiles";
-import controller from '../controller';
-import { Summary, Returns, ReturnsArray, Description } from '@tsed/swagger';
-import { YesAuth } from '../../middleware/Auth';
-import { csrf } from '../../dal/auth';
-import crypto = require('crypto');
+import * as middleware from '../../middleware/middleware';
+// tsed
+import {
+    BodyParams,
+    Controller,
+    Delete,
+    Get,
+    Locals,
+    Patch,
+    PathParams,
+    Post,
+    Put,
+    QueryParams,
+    Required,
+    Use,
+    UseBefore,
+    UseBeforeEach
+} from '@tsed/common';
+import {MultipartFile} from "@tsed/multipartfiles";
+import {Description, Returns, ReturnsArray, Summary} from '@tsed/swagger';
+import {YesAuth} from '../../middleware/Auth';
+import {csrf} from '../../dal/auth';
 
+import controller from '../controller';
 
 /**
  * Groups Controller
@@ -33,13 +47,13 @@ export class GroupsController extends controller {
      */
     private async getGroupInfo(groupId: number): Promise<model.group.groupDetails> {
         // Verify Group Exists and Isn't Deleted
-        let groupInfo;
+        let groupInfo: model.group.groupDetails;
         try {
             groupInfo = await this.group.getInfo(groupId);
-            if (groupInfo.groupStatus === model.group.groupStatus.locked) {
-                throw false;
-            }
         } catch (e) {
+            throw new this.BadRequest('InvalidGroupId');
+        }
+        if (groupInfo.groupStatus === model.group.groupStatus.locked) {
             throw new this.BadRequest('InvalidGroupId');
         }
         return groupInfo;
@@ -104,31 +118,11 @@ export class GroupsController extends controller {
     @Summary('Multi-get group names')
     @ReturnsArray(200, { type: model.group.MultiGetNames })
     @Returns(400, { type: model.Error, description: 'InvalidIds: One or more IDs are invalid\n' })
+    @Use(middleware.ConvertIdsToCsv)
     public async multiGetNames(
-        @QueryParams('ids', String) ids: string
+        @QueryParams('ids') ids: number[]
     ) {
-        const idsArray = ids.split(',');
-        if (idsArray.length < 1) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const filteredIds: Array<number> = [];
-        let allIdsValid = true;
-        idsArray.forEach((id) => {
-            const catalogId = parseInt(id, 10);
-            if (!catalogId) {
-                allIdsValid = false
-            }
-            filteredIds.push(catalogId);
-        });
-        if (!allIdsValid) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const safeIds = Array.from(new Set(filteredIds));
-        if (safeIds.length > 25) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const result = await this.group.MultiGetNamesFromIds(safeIds);
-        return result;
+        return await this.group.MultiGetNamesFromIds(ids);
     }
     /**
      * Get the Authenticated User's Role in a Group
@@ -147,13 +141,11 @@ export class GroupsController extends controller {
         }
         return role;
     }
-    /**
-     * Get a group's Info
-     * @param id Group ID
-     */
+
     @Get('/:groupId/info')
     @Summary('Get group info')
-    @Description('This endpoint is a bit exceptional. If the groupStatus is locked, it will only return { groupStatus: 1 } but if it is not locked, it will return all group info')
+    @Description('This endpoint is a bit exceptional. If the groupStatus is locked (1), it will only return { groupStatus: 1 } but if it is not locked, it will return all group info')
+    @Returns(200, {type: model.group.groupDetails})
     @Returns(400, { type: model.Error, description: 'InvalidGroupId: invalid id\n' })
     public async getInfo(
         @PathParams('groupId', Number) groupId: number
@@ -161,9 +153,9 @@ export class GroupsController extends controller {
         try {
             const groupInfo = await this.group.getInfo(groupId);
             if (groupInfo.groupStatus === model.group.groupStatus.locked) {
-                return ({
+                return {
                     groupStatus: groupInfo.groupStatus,
-                });
+                };
             }
             return groupInfo;
         } catch (e) {
@@ -171,71 +163,45 @@ export class GroupsController extends controller {
         }
     }
 
-    /**
-     * Get a group's roles
-     * @param groupId 
-     */
+
     @Get('/:groupId/roles')
     @Summary('Get group roles')
     @Returns(400, { type: model.Error, description: 'InvalidGroupId: \n' })
     @ReturnsArray(200, { type: model.group.roleInfo })
+    @Use(middleware.group.ValidateGroupId)
     public async getRoles(
         @PathParams('groupId', Number) groupId: number
     ): Promise<model.group.roleInfo[]> {
-        // Verify Group Exists and Isn't Deleted
-        let groupInfo;
-        try {
-            groupInfo = await this.group.getInfo(groupId);
-            if (groupInfo.groupStatus === model.group.groupStatus.locked) {
-                throw false;
-            }
-        } catch (e) {
-            throw new this.BadRequest('InvalidGroupId');
-        }
-        const roles = await this.group.getRoles(groupId);
-        return roles;
+        return await this.group.getRoles(groupId);
     }
 
-
-    /**
-     * Get the Authenticated Users' Role in a Group. Returns group's guest role if not authenticated
-     * @param groupId 
-     */
     @Get('/:groupId/role')
-    @Summary('Get the authenticated users role in a group. If not authticated, returns guest info')
+    @Summary('Get the authenticated users role in a group. If not authenticated, returns guest info')
     @Returns(200, { type: model.group.roleInfo })
     @Returns(400, { type: model.Error, description: 'InvalidGroupId: \n' })
     public async getRole(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number
     ): Promise<model.group.roleInfo> {
-        // Verify Group Exists and Isn't Deleted
-        let groupInfo;
+        // Verify Group Exists but ignore if locked
         try {
-            groupInfo = await this.group.getInfo(groupId);
-            /*
-            if (groupInfo.groupStatus === model.group.groupStatus.locked) {
-                throw false;
-            }
-            */
+            await this.group.getInfo(groupId);
         } catch (e) {
-            throw new this.BadRequest('InvalidGroupId');
+            if (e && e.message === 'InvalidGroupId') {
+                throw new this.BadRequest('InvalidGroupId');
+            }
+            throw e;
         }
         // Grab Role
         if (!userInfo) {
-            const role = await this.group.getRoleSetByRank(groupId, 0);
-            return role;
+            return await this.group.getRoleSetByRank(groupId, 0);
         }
-        const role = await this.group.getUserRole(groupId, userInfo.userId);
-        return role;
+        return await this.group.getUserRole(groupId, userInfo.userId);
     }
 
-    /**
-     * Get a Group's Members
-     * @param groupId 
-     * @param roleSetId 
-     */
     @Get('/:groupId/members/:roleSetId')
+    @Summary('Get the users of the {roleSetId}')
+    @Use(middleware.group.ValidateGroupId, middleware.ValidatePaging)
     public async getMembers(
         @PathParams('groupId', Number) groupId: number,
         @PathParams('roleSetId', Number) roleSetId: number,
@@ -243,33 +209,21 @@ export class GroupsController extends controller {
         @QueryParams('limit', Number) limit: number,
         @QueryParams('sort', String) sort: any
     ) {
-        // Verify Group Exists and Isn't Deleted
-        let groupInfo;
-        try {
-            groupInfo = await this.group.getInfo(groupId);
-            if (groupInfo.groupStatus === model.group.groupStatus.locked) {
-                throw false;
-            }
-        } catch (e) {
-            throw new this.BadRequest('InvalidGroupId');
-        }
-        // Verify Roleset exists
+        // Verify role exists
         try {
             await this.group.getRoleById(roleSetId);
         } catch (e) {
-            throw new this.BadRequest('InvalidRolesetId');
+            if (e && e.message === 'InvalidRolesetId')
+                throw new this.BadRequest('InvalidRolesetId');
+            throw e;
         }
         // Grab Role
-        try {
-            const members = await this.group.getMembers(groupId, roleSetId, offset, limit, sort);
-            const membersCount = await this.group.countMembers(groupId, roleSetId);
-            return {
-                "total": membersCount,
-                "members": members,
-            };
-        } catch (e) {
-            throw new this.BadRequest('InvalidGroupId');
-        }
+        const members = await this.group.getMembers(groupId, roleSetId, offset, limit, sort);
+        const membersCount = await this.group.countMembers(groupId, roleSetId);
+        return {
+            "total": membersCount,
+            "members": members,
+        };
     }
 
     /**
@@ -277,11 +231,12 @@ export class GroupsController extends controller {
      */
     @Get('/:groupId/shout')
     @Summary('Get group\'s current shout')
+    @Use(middleware.group.ValidateGroupId)
+    @Returns(200, {type: model.group.groupShout})
     public async getShout(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number
     ) {
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
 
         if (role.permissions.getShout) {
@@ -299,6 +254,7 @@ export class GroupsController extends controller {
      */
     @Get('/:groupId/wall')
     @Summary('Get group wall')
+    @Use(middleware.group.ValidateGroupId, middleware.ValidatePaging)
     public async getWall(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number,
@@ -306,37 +262,30 @@ export class GroupsController extends controller {
         @QueryParams('limit', Number) limit: number,
         @QueryParams('sort', String) sort: any
     ) {
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.getWall) {
-            const wall = await this.group.getWall(groupId, offset, limit, sort);
-            return wall;
+            return await this.group.getWall(groupId, offset, limit, sort);
         } else {
             throw new this.BadRequest('InvalidGroupPermissions');
         }
     }
 
-    /**
-     * Create a Wall Post
-     * @param groupId 
-     * @param wallPostContent 
-     */
     @Put('/:groupId/wall')
     @Summary('Create a wall post')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.group.ValidateGroupId)
     public async createWallPost(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number,
         @BodyParams('content', String) wallPostContent: string
     ) {
-        // Validate ID
-        await this.getGroupInfo(groupId);
+        // Wall post content validation
+        if (wallPostContent.length > 255 || wallPostContent.length < 3) {
+            throw new this.BadRequest('InvalidWallPost');
+        }
+        // Grab roleset
         const role = await this.getAuthRole(userInfo, groupId);
+        // Roleset validation
         if (role.permissions.postWall) {
-            if (wallPostContent.length > 255 || wallPostContent.length < 3) {
-                throw new this.BadRequest('InvalidWallPost');
-            }
             await this.group.createWallPost(groupId, userInfo.userId, wallPostContent);
             return { success: true };
         } else {
@@ -344,21 +293,14 @@ export class GroupsController extends controller {
         }
     }
 
-    /**
-     * Delete a Wall Post
-     * @param groupId 
-     * @param wallPostId 
-     */
     @Delete('/:groupId/wall/:wallPostId')
     @Summary('Delete a wall post')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     public async deleteWallPost(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number,
         @PathParams('wallPostId', Number) wallPostId: number
     ) {
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.manage) {
             await this.group.deleteWallPost(groupId, wallPostId);
@@ -368,13 +310,9 @@ export class GroupsController extends controller {
         }
     }
 
-    /**
-     * Search model.group. If query is not provided, groups with largest members are shown
-     * @param query 
-     * @param offset 
-     */
     @Get('/search')
     @ReturnsArray(200, { type: model.group.groupDetails })
+    @Use(middleware.ValidatePaging)
     public async search(
         @QueryParams('name', String) query: string,
         @QueryParams('offset', Number) offset: number = 0,
@@ -383,14 +321,14 @@ export class GroupsController extends controller {
         if (query && query.length > 32) {
             throw new this.BadRequest('InvalidQuery');
         }
-        const results = await this.group.search(offset, limit, query);
-        return results;
+        return await this.group.search(offset, limit, query);
     }
 
     @Patch('/:groupId/approval-required')
     @Summary('Set a group\'s approval required status')
     @Description('Currently requires ownership permission but may be downgraded to Manage in the future')
     @Returns(400, { type: model.Error, description: 'InvalidGroupPermissions: You must be owner to apply this change\nInvalidApprovalStatus: approvalStatus must be 0 or 1\n' })
+    @Use(csrf, YesAuth)
     public async updateGroupApprovalStatus(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number,
@@ -414,14 +352,9 @@ export class GroupsController extends controller {
         };
     }
 
-    /**
-     * Claim ownership of a Group with no owner.
-     * @param groupId 
-     */
     @Put('/:groupId/claim')
     @Summary('Claim a group with no owner')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     public async claimOwnership(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number
@@ -455,27 +388,13 @@ export class GroupsController extends controller {
         return { success: true };
     }
 
-    /**
-     * Join a Group
-     * @param groupId 
-     */
     @Put('/:groupId/membership')
     @Summary('Join a group')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.group.ValidateGroupId)
     public async join(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number
     ) {
-        // Verify group exists and isnt locked
-        try {
-            let groupData = await this.group.getInfo(groupId);
-            if (groupData.groupStatus === model.group.groupStatus.locked) {
-                throw new Error('Group is locked');
-            }
-        } catch (e) {
-            throw new this.BadRequest('InvalidGroupId');
-        }
         // Get Role
         const role = await this.getAuthRole(userInfo, groupId);
         // Must be a guest in this group to join it
@@ -513,14 +432,9 @@ export class GroupsController extends controller {
         return { success: true, doesUserRequireApproval: false };
     }
 
-    /**
-     * Leave a Group
-     * @param groupId 
-     */
     @Delete('/:groupId/membership')
     @Summary('Leave a group, or remove yourself from a group join request')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     public async leave(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number
@@ -561,7 +475,7 @@ export class GroupsController extends controller {
     @Get('/:groupId/ownership-changes')
     @Summary('Get an array of group ownership changes for the {groupId}')
     @Description('Requester must have manage permission')
-    @Use(YesAuth)
+    @Use(YesAuth, middleware.group.ValidateGroupId)
     @ReturnsArray(200, { type: model.group.GroupOwnershipChangeEntry })
     public async getGroupOwnershipChanges(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -570,24 +484,20 @@ export class GroupsController extends controller {
         @QueryParams('offset', Number) offset: number = 0,
     ) {
         // First, make sure requester has manage permissions
-        // Validate Group
-        await this.getGroupInfo(groupId);
         // Grab role of requester
         const role = await this.getAuthRole(userInfo, groupId);
         if (!role.permissions.manage) {
             // user is not authorized
             throw new this.BadRequest('InvalidPermissions');
         }
-        // grab changes
-        let changes = await this.group.getGroupOwnershipChanges(groupId, limit, offset);
-        // retrun results
-        return changes;
+        // Return results
+        return await this.group.getGroupOwnershipChanges(groupId, limit, offset);
     }
 
     @Get('/:groupId/join-requests')
     @Summary('Get a page of group join requests')
     @Description('Requester must have manage permission')
-    @Use(YesAuth)
+    @Use(YesAuth, middleware.group.ValidateGroupId)
     @ReturnsArray(200, { type: model.group.GroupJoinRequest })
     public async getJoinRequests(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -596,8 +506,6 @@ export class GroupsController extends controller {
         @QueryParams('offset', Number) offset: number = 0,
     ) {
         // First, make sure requester has manage permissions
-        // Validate Group
-        await this.getGroupInfo(groupId);
         // Grab role of requester
         const role = await this.getAuthRole(userInfo, groupId);
         if (!role.permissions.manage) {
@@ -605,8 +513,7 @@ export class GroupsController extends controller {
             throw new this.BadRequest('InvalidPermissions');
         }
         // Grab result
-        let results = await this.group.getPendingMembers(groupId, offset, limit);
-        return results;
+        return await this.group.getPendingMembers(groupId, offset, limit);
     }
 
     /**
@@ -619,15 +526,13 @@ export class GroupsController extends controller {
     @Summary('Approve a join request')
     @Description('This will give the {userId} the lowest rank possible in the {groupId}. Requester must have manage permission')
     @Returns(400, { type: model.Error, description: 'InvalidPermissions: Requester must have manage permission\nInvalidJoinRequest: Join request does not exist\nTooManyGroups: userId is in too many groups. Request has been deleted\nInvalidRolesetId: Unknown\n' })
-    @Use(csrf, YesAuth)
+    @Use(csrf, YesAuth, middleware.group.ValidateGroupId)
     public async approveJoinRequest(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number,
         @BodyParams('userId', Number) userId: number,
     ) {
         // First, make sure requester has manage permissions
-        // Validate Group
-        await this.getGroupInfo(groupId);
         // Grab role of requester
         const role = await this.getAuthRole(userInfo, groupId);
         if (!role.permissions.manage) {
@@ -677,7 +582,7 @@ export class GroupsController extends controller {
     @Delete('/:groupId/join-request')
     @Summary('Decline a join request')
     @Description('Requester must have manage permisison')
-    @Use(csrf, YesAuth)
+    @Use(csrf, YesAuth, middleware.group.ValidateGroupId)
     @Returns(400, { type: model.Error, description: 'InvalidGroupId: Group Id is invalid\nInvalidPermissions: Requester must have manage permission\nInvalidJoinRequest: Join request does not exist\n' })
     @Returns(409, { type: model.Error, description: 'UserAlreadyInGroup: User is already a member of the group. Request has been deleted, but they will not be removed from the group\n' })
     public async declineJoinRequest(
@@ -686,8 +591,6 @@ export class GroupsController extends controller {
         @BodyParams('userId', Number) userId: number,
     ) {
         // First, make sure requester has manage permissions
-        // Validate Group
-        await this.getGroupInfo(groupId);
         // Grab role of requester
         const role = await this.getAuthRole(userInfo, groupId);
         if (!role.permissions.manage) {
@@ -749,18 +652,9 @@ export class GroupsController extends controller {
         }
     }
 
-    /**
-     * Update a Group's Roleset
-     * @param groupId
-     * @param roleSetId 
-     * @param name 
-     * @param description 
-     * @param permissions 
-     */
     @Patch('/:groupId/role/:roleSetId')
     @Summary('Update a roleset')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.group.ValidateGroupId)
     public async updateRoleset(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number,
@@ -781,7 +675,6 @@ export class GroupsController extends controller {
         if (!description || description.length > 128) {
             throw new this.BadRequest('InvalidRolesetDescription');
         }
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
 
         if (role.permissions.manage) {
@@ -792,14 +685,11 @@ export class GroupsController extends controller {
             }
             // Verify Roleset
             // Check if rank is already taken
-            try {
-                const roleset = await this.group.getRoleSetByRank(groupId, rank);
-                if (roleset.roleSetId !== roleSetId) {
+                const takenRoleset = await this.group.getRoleSetByRank(groupId, rank);
+                if (takenRoleset.roleSetId !== roleSetId) {
                     throw new this.Conflict('RankIdIsTaken');
                 }
-            } catch (e) {
 
-            }
             // Grab Roleset to Edit
             const roleset = await this.group.getRoleById(roleSetId);
             if (roleset.groupId !== groupId) {
@@ -833,26 +723,15 @@ export class GroupsController extends controller {
             }
             // Update
             await this.group.updateRoleset(roleSetId, name, description, rank, permissions);
-            return ({
-                success: true,
-            });
+            return {};
         } else {
             throw new this.BadRequest('InvalidGroupPermissions');
         }
     }
 
-    /**
-     * Create a Roleset in a Group
-     * @param groupId 
-     * @param rank 
-     * @param name 
-     * @param description 
-     * @param permissions 
-     */
     @Put('/:groupId/role')
     @Summary('Create a roleset')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.group.ValidateGroupId)
     public async createRoleset(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number,
@@ -872,7 +751,6 @@ export class GroupsController extends controller {
         if (!description || description.length > model.group.ROLE_DESCRIPTION_MAX_LENGTH) {
             throw new this.BadRequest('InvalidRolesetDescription');
         }
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.manage) {
             // Verify Permissions
@@ -918,16 +796,12 @@ export class GroupsController extends controller {
      */
     @Delete('/:groupId/roleset/:roleSetId')
     @Summary('Delete a roleset. Cannot contain members, else will error')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.group.ValidateGroupId)
     public async deleteRoleset(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number,
         @PathParams('roleSetId', Number) roleSetId: number
     ) {
-        const userData = userInfo;
-
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.manage) {
             // Grab Roleset to Edit
@@ -956,9 +830,7 @@ export class GroupsController extends controller {
             }
             // Delete Roleset
             await this.group.deleteRoleset(roleset.roleSetId);
-            return ({
-                success: true,
-            });
+            return {};
         } else {
             throw new this.BadRequest('InvalidGroupPermissions');
         }
@@ -972,8 +844,7 @@ export class GroupsController extends controller {
      */
     @Patch('/:groupId/member/:userId')
     @Summary('Update a users role in a group')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.group.ValidateGroupId)
     public async updateUserRole(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number,
@@ -982,7 +853,6 @@ export class GroupsController extends controller {
         @Required()
         @BodyParams('role', Number) roleSetId: number
     ) {
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.manage) {
             // Grab Roleset to Edit
@@ -1015,9 +885,7 @@ export class GroupsController extends controller {
             }
             // Update Role
             await this.group.updateUserRolesetInGroup(groupId, roleSetId, userId);
-            return ({
-                'success': true,
-            });
+            return {};
         } else {
             throw new this.BadRequest('InvalidGroupPermissions');
         }
@@ -1030,20 +898,17 @@ export class GroupsController extends controller {
      */
     @Patch('/:groupId/description')
     @Summary('Update group description')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.group.ValidateGroupId)
     public async updateDescription(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number,
         @Required()
         @BodyParams('description', String) newDescription: string
     ) {
-        const userData = userInfo;
         // Validate Description
         if (!newDescription || newDescription.length >= 512) {
             throw new this.BadRequest('InvalidGroupDescription');
         }
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
 
         if (role.permissions.manage) {
@@ -1063,8 +928,7 @@ export class GroupsController extends controller {
      */
     @Patch('/:groupId/shout')
     @Summary('Update group shout')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.group.ValidateGroupId)
     public async updateShout(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number,
@@ -1075,7 +939,6 @@ export class GroupsController extends controller {
         if (!newShout || newShout.length > 255 || newShout.length < 3) {
             throw new this.BadRequest('InvalidGroupShout');
         }
-        await this.getGroupInfo(groupId);
         const role = await this.getAuthRole(userInfo, groupId);
         if (role.permissions.manage) {
             let latestShout = await this.group.getShout(groupId);
@@ -1092,14 +955,9 @@ export class GroupsController extends controller {
         }
     }
 
-    /**
-     * Update a Group's Icon
-     * @param groupId 
-     */
     @Patch('/:groupId/icon')
     @Summary('Update group icon')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     public async updateIcon(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number,
@@ -1160,10 +1018,9 @@ export class GroupsController extends controller {
     /**
      * Create a Group
      */
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
     @Post('/create')
     @Summary('Create a group')
+    @Use(csrf, YesAuth)
     public async create(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
@@ -1270,9 +1127,7 @@ export class GroupsController extends controller {
                 console.error(e);
             }
         };
-        renderIcon();
-
-
+        renderIcon().then(() => {}).catch(e => console.error);
         // Update Group Icon ID
         await this.group.updateGroupIconId(groupId, groupIconCatalogId);
         // Complete Transaction
@@ -1280,17 +1135,6 @@ export class GroupsController extends controller {
         await this.economy.subtractFromUserBalance(userData.userId, model.group.GROUP_CREATION_COST, model.economy.currencyType.primary);
         // Create Transaction
         await this.economy.createTransaction(userData.userId, 1, -model.group.GROUP_CREATION_COST, model.economy.currencyType.primary, model.economy.transactionType.PurchaseOfGroup, "Creation of Group", model.catalog.creatorType.User, model.catalog.creatorType.User);
-        (async (): Promise<void> => {
-            // Upload Icon
-            try {
-                // image
-                const json = await this.catalog.generateAvatarJsonFromCatalogIds(groupIconCatalogId, [groupIconCatalogId]);
-                const url = await this.avatar.renderAvatar('group', json);
-                await this.catalog.uploadThumbnail(groupIconCatalogId, url);
-            } catch (e) {
-
-            }
-        })();
         // Return success
         return {
             success: true,
@@ -1298,21 +1142,18 @@ export class GroupsController extends controller {
         };
     }
 
-    /**
-     * Update group ownership. Must be group owner to do this
-     * @param userId 
-     */
     @Patch('/:groupId/transfer')
     @Summary('Update group ownership. Must be owner')
+    @Use(csrf, YesAuth)
     public async updateGroupOwner(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Locals('userInfo') userInfo: model.UserSession,
         @PathParams('groupId', Number) groupId: number,
         @Required()
         @BodyParams('userId', Number) userId: number
     ) {
         const userData = userInfo;
         // Confirm group is valid
-        let groupInfo;
+        let groupInfo: model.group.groupDetails;
         try {
             groupInfo = await this.group.getInfo(groupId);
         } catch (e) {
@@ -1344,43 +1185,24 @@ export class GroupsController extends controller {
         // Record ownership change
         await this.group.recordGroupOwnershipChange(groupId, model.group.GroupOwnershipChangeType.TransferOwnership, userId, userInfo.userId);
         // Return success
-        return ({
-            'success': true,
-        });
+        return {};
     }
 
-    /**
-     * Get a Group's Items
-     * @param groupId 
-     * @param offset 
-     * @param limit 
-     */
     @Get('/:groupId/catalog')
     @Summary('Get group catalog')
+    @Use(middleware.ValidatePaging, middleware.group.ValidateGroupId)
     public async getItems(
         @PathParams('groupId', Number) groupId: number,
         @QueryParams('offset', Number) offset: number,
         @QueryParams('limit', Number) limit: number,
         @QueryParams('sort', String) sort: any
     ) {
-        // Confirm group is valid
-        try {
-            await this.group.getInfo(groupId);
-        } catch (e) {
-            throw new this.BadRequest('InvalidGroupId');
-        }
-        const items = await this.group.getGroupItems(groupId, offset, limit, sort);
-        return items;
+        return await this.group.getGroupItems(groupId, offset, limit, sort);
     }
 
-    /**
-     * Update group ownership. Must be group owner to do this
-     * @param userId 
-     */
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
     @Put('/:groupId/payout')
     @Summary('Spend group funds')
+    @Use(csrf, YesAuth)
     public async spendGroupFunds(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
@@ -1397,7 +1219,7 @@ export class GroupsController extends controller {
             throw new this.BadRequest('NotEnoughCurrency');
         }
         // Validate Currency
-        if (currency !== 1 && currency !== 2) {
+        if (!model.economy.currencyType[currency]) {
             throw new this.BadRequest('InvalidCurrency');
         }
         await this.transaction(async (trx) => {
@@ -1417,12 +1239,15 @@ export class GroupsController extends controller {
                 throw new this.BadRequest('InvalidGroupPermissions');
             }
             // Begin
+            let payoutUserInfo;
             try {
-                const payoutUserInfo = await trx.user.getInfo(userId, ['banned'], forUpdate);
-                if (payoutUserInfo.banned) {
-                    throw false;
-                }
+                payoutUserInfo = await trx.user.getInfo(userId, ['banned'], forUpdate);
             } catch (e) {
+                if (e && e.message === 'InvalidUserId')
+                    throw new this.BadRequest('InvalidUserId');
+                throw e;
+            }
+            if (payoutUserInfo.banned) {
                 throw new this.BadRequest('InvalidUserId');
             }
             const userRole = await trx.group.getUserRole(groupId, userId, forUpdate);
@@ -1444,14 +1269,12 @@ export class GroupsController extends controller {
             await trx.economy.subtractFromGroupBalance(groupId, amount, currency);
             // Give to User
             await trx.economy.addToUserBalance(userId, amount, currency);
-            // Create Group Transaciton
+            // Create Group transaction
             await trx.economy.createTransaction(groupId, userId, -amount, currency, model.economy.transactionType.SpendGroupFunds, "Group Funds Payout", model.catalog.creatorType.User, model.catalog.creatorType.Group);
             // Create User Transaction
             await trx.economy.createTransaction(userId, groupId, amount, currency, model.economy.transactionType.SpendGroupFunds, "Group Funds Payout", model.catalog.creatorType.Group, model.catalog.creatorType.User);
         });
         // Return success
-        return {
-            'success': true,
-        };
+        return {};
     }
 }

@@ -154,7 +154,7 @@ export default class AdController extends controller {
         if (title.length > 256) {
             throw new this.BadRequest('InvalidAdTitle');
         }
-        // verify user has permissions to create the advertisment
+        // verify user has permissions to create the advertisement
 
         // if type is catalog item
         if (adType === model.ad.AdType.CatalogItem) {
