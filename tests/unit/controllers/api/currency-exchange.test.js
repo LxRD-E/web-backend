@@ -63,6 +63,31 @@ describe('CurrencyExchange().getPositionsByCurrencyType()', () => {
     })
 });
 
+describe('CurrencyExchange().historicalCharts()', () => {
+    it('Should call this.currencyExchange.getHistoricalExchangeRecords() and await it', async () => {
+        const CURRENCY_TYPE = 1;
+        controller.currencyExchange = {
+            async getHistoricalExchangeRecords(currencyType) {
+                assert.strictEqual(currencyType, CURRENCY_TYPE);
+                return [];
+            }
+        }
+        await controller.historicalCharts(CURRENCY_TYPE);
+        // pass
+    });
+    it('Should throw due to invalid currencyType specified', async () => {
+        const CURRENCY_TYPE = 69;
+        controller.currencyExchange = {
+            async historicalCharts(currencyType) {
+                throw new Error('historical charts called for invalid currency');
+            }
+        }
+        await throwsBR('InvalidCurrency', controller.getPositionsByCurrencyType(CURRENCY_TYPE));
+        // pass
+    })
+});
+
+
 describe('CurrencyExchange.createPosition()', () => {
    it('Should create a position for the authenticated user', async () => {
        const BALANCE = 100;
@@ -246,6 +271,115 @@ describe('CurrencyExchange.createPosition()', () => {
         }
         await throwsBR('InvalidBalance', controller.createPosition(session, BALANCE, CURRENCY, RATE));
         assert.strictEqual(badRequestCalled, 0);
+        // pass
+    });
+    it('Should try to create a position for the authenticated user but fail due to balance too small', async () => {
+        const BALANCE = 1;
+        const RATE = 10;
+        const CURRENCY = 1;
+        const session = {
+            userId: 1,
+            username: 'Unit Test',
+        };
+
+        let badRequestCalled = 0;
+        controller.transaction = (cb) => {
+            return cb({
+                currencyExchange: {
+                    async getOpenPositionsByUserId(userId, limit, offset, forUpdate = []) {
+                        throw new Error('getOpenPositionsByUserId was called for invalid rate');
+                    },
+                    async createPosition(userId, balance, currencyType, rate, forUpdate) {
+                        throw new Error('createPosition was called for invalid rate');
+                    },
+                    async recordPositionFunding(positionId, amount, forUpdate) {
+                        throw new Error('recordPositionFunding was called for invalid rate');
+                    }
+                },
+                economy: {
+                    async subtractFromUserBalance(userId, amount, currency) {
+                        throw new Error('subtractFromUserBalance was called for invalid rate');
+                    },
+                    async createTransaction(userIdTo, userIdFrom, amount, currency, type, description, fromType, toType, catalogId, userInventoryId) {
+                        throw new Error('createTransaction was called for invalid rate');
+                    }
+                },
+                BadRequest: (msg) => {
+                    badRequestCalled++;
+                },
+            })
+        }
+        await throwsBR('BalanceTooSmall', controller.createPosition(session, BALANCE, CURRENCY, RATE));
+        assert.strictEqual(badRequestCalled, 0);
+        // pass
+    });
+});
+
+describe('CurrencyExchange.closePosition()', () => {
+    it('Should create a position for the authenticated user', async () => {
+        const POSITION_ID = 1986;
+        const BALANCE = 100;
+        const CURRENCY = 1;
+        const session = {
+            userId: 1,
+            username: 'Unit Test',
+        };
+        const FOR_UPDATE = [
+            'users',
+            'currency_exchange_fund',
+            'currency_exchange_position',
+        ];
+
+        controller.transaction = (cb) => {
+            return cb({
+                currencyExchange: {
+                    async getPositionById(id, forUpdate = []) {
+                        assert.strictEqual(id, POSITION_ID);
+                        assert.deepEqual(forUpdate, FOR_UPDATE);
+                        // for now, just return an empty array
+                        return {
+                            userId: session.userId,
+                            balance: BALANCE,
+                            currencyType: CURRENCY,
+                        };
+                    },
+                    async recordPositionFunding(positionId, amount, forUpdate) {
+                        assert.strictEqual(positionId, POSITION_ID);
+                        assert.strictEqual(amount, -BALANCE);
+                        assert.deepEqual(forUpdate, FOR_UPDATE);
+                    },
+                    async subtractFromPositionBalance(positionId, amountToSubtract, forUpdate = []) {
+                        assert.strictEqual(amountToSubtract, BALANCE);
+                        assert.strictEqual(positionId, POSITION_ID);
+                        assert.deepEqual(forUpdate, FOR_UPDATE);
+                        // ok
+                    }
+                },
+                economy: {
+                    async addToUserBalanceV2(userId, amount, currency, forUpdate) {
+                        assert.strictEqual(userId, session.userId);
+                        assert.strictEqual(amount, BALANCE);
+                        assert.strictEqual(currency, CURRENCY);
+                        assert.deepEqual(forUpdate, FOR_UPDATE);
+                        // ok
+                    },
+                    async createTransaction(userIdTo, userIdFrom, amount, currency, type, description, fromType, toType, catalogId, userInventoryId) {
+                        assert.strictEqual(userIdTo, session.userId);
+                        assert.strictEqual(userIdFrom, session.userId);
+                        assert.strictEqual(amount, BALANCE);
+                        assert.strictEqual(currency, CURRENCY);
+                        assert.strictEqual(type, 20);
+                        assert.strictEqual(fromType, 0);
+                        assert.strictEqual(toType, 0);
+                        // ok
+                    }
+                },
+                BadRequest: () => {
+                    throw new Error('Bad Request was called for no reason.');
+                },
+            })
+        }
+        await controller.closePosition(session, POSITION_ID);
         // pass
     });
 });
