@@ -225,9 +225,6 @@ const errorTransform = (errCode) => {
         case 'InvalidComment': {
             return 'The comment specified is invalid.';
         }
-        case 'NoFileSpecified': {
-            return 'Please specify at least one valid file.';
-        }
         case 'InvalidOBJSpecified': {
             return 'The OBJ file specified is invalid.';
         }
@@ -282,6 +279,27 @@ const errorTransform = (errCode) => {
         case 'ItemCannotBeDeleted': {
             return 'This item cannot be deleted.'
         }
+        case 'RateTooSmall': {
+            return 'The rate specified is too small.';
+        }
+        case 'RateTooLarge': {
+            return 'The rate specified is too large.';
+        }
+        case 'BalanceTooSmall': {
+            return 'The balance amount specified is too small.';
+        }
+        case 'ReachedMaximumOpenPositions': {
+            return 'You have reached the maximum amount of open positions.';
+        }
+        case 'NotEnoughInPositionBalance': {
+            return 'There is not enough in this positions balance to complete your transaction. You have not been charged.';
+        }
+        case 'PurchaseAmountTooLow': {
+            return 'The purchase amount specified is too low. You have not been charged.';
+        }
+        case 'CannotPurchaseOwnedPosition': {
+            return 'You cannot purchase from your own position.';
+        }
     }
-    return 'An unknown error has ocurred. Please try again later, or contact support.';
+    return 'An unknown error has occurred. Please try again later, or contact support.';
 }

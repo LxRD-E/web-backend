@@ -12,6 +12,7 @@ const throwsInvalidUserId = async (inp) => {
         await inp;
         throw new Error('method resolved even though a throw was expected.');
     }catch(e) {
+        console.log(e);
         assert.strictEqual(e instanceof controller.BadRequest, true, 'error should be badrequest');
         assert.strictEqual(e.message, 'InvalidUserId', 'should be InvalidUserId error code');
     }
@@ -35,46 +36,6 @@ describe('UsersController().getInfo()', () => {
         let results = await controller.getInfo(USER_ID);
         assert.strictEqual(results.accountStatus, 1, 'accountStatus should match pre-specified accountStatus');
         assert.strictEqual(results.userId, USER_ID, 'userId should match requested userId');
-    });
-    it('Should error due to user being terminated and hidden', async () => {
-        const USER_ID = 1;
-        const ACCOUNT_STATUS = 3;
-        controller.user = {
-            getInfo: (id, columns) => {
-                assert.strictEqual(id, USER_ID);
-                assert.strictEqual(typeof columns, 'undefined');
-                return {
-                    // 1 is OK
-                    accountStatus: ACCOUNT_STATUS,
-                    userId: id,
-                };
-            },
-        }
-        try {
-            await controller.getInfo(USER_ID);
-            throw new Error('Promise resolved even though user is supposed to be terminated')
-        }catch(e) {
-            assert.strictEqual(e instanceof controller.BadRequest, true, 'Should get badrequest error');
-            assert.strictEqual(e.message, 'InvalidUserId', 'error code should be invaliduserid');
-        }
-    });
-    it('Should error due to user not existing', async () => {
-        const USER_ID = 1;
-        const ACCOUNT_STATUS = 3;
-        controller.user = {
-            getInfo: (id, columns) => {
-                assert.strictEqual(id, USER_ID);
-                assert.strictEqual(typeof columns, 'undefined');
-                throw false;
-            },
-        }
-        try {
-            await controller.getInfo(USER_ID);
-            throw new Error('Promise resolved even though user is supposed to be terminated')
-        }catch(e) {
-            assert.strictEqual(e instanceof controller.BadRequest, true, 'Should get badrequest error');
-            assert.strictEqual(e.message, 'InvalidUserId', 'error code should be invaliduserid');
-        }
     });
 });
 
@@ -125,31 +86,6 @@ describe('UsersController().getInfoByUsername()', () => {
             assert.strictEqual(e.message, 'InvalidUsername','InvalidUsername code should be returned');
         }
     });
-    it('Should reject due to terminated/hidden user', async () => {
-        const USERNAME = 'System';
-        const USER_ID = 1;
-        const ACCOUNT_STATUS = 3;
-        controller.user = {
-            userNameToId: (name) => {
-                assert.strictEqual(name, USERNAME);
-                return USER_ID;
-            },
-            getInfo: (id) => {
-                assert.strictEqual(id, USER_ID);
-                return {
-                    userId: USER_ID,
-                    accountStatus: ACCOUNT_STATUS,
-                }
-            },
-        };
-        try {
-            await controller.getInfoByUsername(USERNAME);
-            throw new Error('getInfoByUsername() passed for invalid userId');
-        }catch(e) {
-            assert.strictEqual(e instanceof controller.BadRequest, true, 'bad request should be returned');
-            assert.strictEqual(e.message, 'InvalidUsername','InvalidUsername code should be returned');
-        }
-    });
 });
 
 describe('UsersController().getAvatar()', () => {
@@ -181,26 +117,6 @@ describe('UsersController().getAvatar()', () => {
         assert.strictEqual(Array.isArray(results.avatar), true, 'avatar items should be array');
         assert.deepStrictEqual(results.avatar, EXPECTED_HATS, 'hats should equal expected result');
         assert.deepStrictEqual(results.color, EXPECTED_COLORS, 'result should include expected colors');
-    });
-    it('Should error with InvalidUserId due to user not existing', async () => {
-        const USER_ID = 1;
-        controller.user = {
-            getAvatar: (id) => {
-                assert.strictEqual(id, USER_ID, 'userId passed to getAvatar() should match pre-specified userId');
-                throw false;
-            },
-            getAvatarColors: (id) => {
-                assert.strictEqual(id, USER_ID, 'userId pass to getAvatarColors() should match pre-specified userId');
-                throw new Error('getAvatarColors() should not be called since getAvatar() threw an errror');
-            }
-        };
-        try {
-            await controller.getAvatar(USER_ID);
-            throw new Error('getAvatar() passed for invalid userId');
-        }catch(e) {
-            assert.strictEqual(e instanceof controller.BadRequest, true, 'should be bad request');
-            assert.strictEqual(e.message, 'InvalidUserId', 'should be invaliduserid error');
-        }
     });
 });
 
@@ -260,39 +176,5 @@ describe('UsersController().getFriends()', () => {
         let results = await controller.getFriends(USER_ID, offset, limit, sort);
         assert.strictEqual(results.friends.length, FRIEND_COUNT, 'friends arr count should match FRIEND_COUNT');
         assert.strictEqual(results.total,FRIEND_COUNT,'total friends should match FRIEND_COUNT');
-    });
-    it('Should reject due to terminated user', async () => {
-        const USER_ID = 1;
-        controller.user = {
-            getInfo: (id) => {
-                assert.strictEqual(id, USER_ID);
-                return {
-                    accountStatus: 3,
-                };
-            },
-            getFriends: (id) => {
-                throw new Error('getFriends() should not be called on InvalidUserId');
-            },
-            countFriends: (id) => {
-                throw new Error('countFriends() should not be called on InvalidUserId');
-            },
-        }
-        await throwsInvalidUserId(controller.getFriends(USER_ID));
-    });
-    it('Should reject due to invalid user', async () => {
-        const USER_ID = 1;
-        controller.user = {
-            getInfo: (id) => {
-                assert.strictEqual(id, USER_ID);
-                throw false;
-            },
-            getFriends: (id) => {
-                throw new Error('getFriends() should not be called on InvalidUserId');
-            },
-            countFriends: (id) => {
-                throw new Error('countFriends() should not be called on InvalidUserId');
-            },
-        }
-        await throwsInvalidUserId(controller.getFriends(USER_ID));
     });
 });

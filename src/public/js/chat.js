@@ -1,9 +1,12 @@
 // env
-if (window.location.host.slice(0, 9) !== 'localhost') {
-    var wsurl = "wss://" + window.location.host + "/chat/websocket.aspx";
-} else {
-    var wsurl = "ws://localhost:8080/chat/websocket.aspx";
+let wsurl = "wss://" + window.location.host + "/chat/websocket.aspx";
+if (window.location.protocol === 'http:') {
+    wsurl = "ws://"+window.location.host+"/chat/websocket.aspx";
 }
+if (window.location.host.slice(0, 9) === 'localhost') {
+    wsurl = "ws://localhost:8080/chat/websocket.aspx";
+}
+
 const currentlyDisplayedUserIds = [];
 var curChatOffset = 0;
 var canLoadMore = false;

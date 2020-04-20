@@ -85,7 +85,7 @@ export const RateLimiterMiddleware = (typeOfRateLimit: 'default'|'loginAttempt'|
     return (req: Request, res: Response, next: NextFunction) => {
         let ip = req.headers['cf-connecting-ip'] as string || req.connection.remoteAddress;
         let head = req.headers['x-ratelimit-bypass'] as string;
-        if (head !== undefined && process.env.NODE_ENV === 'development') {
+        if (head !== undefined && process.env.NODE_ENV === 'development' || typeof head !== 'undefined' && process.env.IS_STAGING === '1') {
             ip = head;
         }
 

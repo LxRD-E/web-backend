@@ -54,6 +54,8 @@ const feed = require("./v1/feed");
 exports.feed = feed;
 const reportAbuse = require("./v1/report-abuse");
 exports.reportAbuse = reportAbuse;
+const currencyExchange = require("./v1/currency-exchange");
+exports.currencyExchange = currencyExchange;
 const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 class _errorData {

@@ -323,15 +323,22 @@ if (catalogdata.attr("data-collectible") === "1" && catalogdata.attr("data-isfor
                     priceArr.push(el.amount);
                     dateArr.push(new Date(el.date).toISOString());
                 });
+                let chartTextColor = '#212529';
+                let themeForCharts = 'light';
+                if (getTheme() === 1) {
+                    chartTextColor = '#FFFFFF';
+                    themeForCharts = 'dark';
+                }
                 // makeChart(chartArray);
                 let options = {
                     series: [{
                         name: 'Sales Price',
-                        data: priceArr
+                        data: priceArr,
                     }],
                     chart: {
                         height: 350,
-                        type: 'area'
+                        type: 'area',
+                        foreColor: chartTextColor,
                     },
                     dataLabels: {
                         enabled: false
@@ -341,12 +348,14 @@ if (catalogdata.attr("data-collectible") === "1" && catalogdata.attr("data-isfor
                     },
                     xaxis: {
                         type: 'datetime',
-                        categories: dateArr
+                        categories: dateArr,
+                        foreColor: chartTextColor,
                     },
                     colors: ['#7BD39A'],
                     tooltip: {
+                        theme: themeForCharts,
                         x: {
-                            format: 'dd/MM/yy HH:mm'
+                            format: 'dd/MM/yy HH:mm',
                         },
                     },
                 };

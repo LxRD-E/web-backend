@@ -40,6 +40,7 @@ let EconomyController = class EconomyController extends controller_1.default {
     }
     getCurrencyConversionMetadata() {
         return {
+            isEnabled: true,
             primaryToSecondary: {
                 minimumAmount: model.economy.MINIMUM_CURRENCY_CONVERSION_PRIMARY_TO_SECONDARY,
                 rate: model.economy.CONVERSION_ONE_PRIMARY_TO_SECONDARY_RATE,
@@ -60,8 +61,7 @@ let EconomyController = class EconomyController extends controller_1.default {
         else {
             tradeValue = tradeType;
         }
-        const trades = await this.economy.getTrades(userInfo.userId, tradeValue, offset);
-        return trades;
+        return await this.economy.getTrades(userInfo.userId, tradeValue, offset);
     }
     async regenAvatarAfterItemTransferOwners(userId, catalogId) {
         let wearing;
@@ -631,7 +631,7 @@ let EconomyController = class EconomyController extends controller_1.default {
 };
 __decorate([
     common_1.Get('/metadata/collectible-resale-fee'),
-    swagger_1.Summary('Get item resale fee percenatage for collectibles'),
+    swagger_1.Summary('Get item resale fee percentage for collectibles'),
     swagger_1.Returns(200, { type: model.economy.FeeMetaData }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -639,7 +639,7 @@ __decorate([
 ], EconomyController.prototype, "getResellFeeCollectible", null);
 __decorate([
     common_1.Get('/metadata/sell-fee'),
-    swagger_1.Summary('Get item resale fee percenatage for normal items (shirts, pants, etc)'),
+    swagger_1.Summary('Get item resale fee percentage for normal items (shirts, pants, etc)'),
     swagger_1.Returns(200, { type: model.economy.FeeMetaData }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -649,6 +649,7 @@ __decorate([
     common_1.Get('/metadata/currency-conversion-rate'),
     swagger_1.Summary('Get currency conversion metadata'),
     swagger_1.Returns(200, { type: model.economy.CurrencyConversionMetadata }),
+    common_1.Use(Auth_1.YesAuth),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -656,9 +657,9 @@ __decorate([
 __decorate([
     common_1.Get('/trades/:type'),
     swagger_1.Summary('Get user trades'),
-    common_1.UseBefore(Auth_1.YesAuth),
     swagger_1.ReturnsArray(200, { type: model.economy.TradeInfo }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidTradeType: TradeType must be one of: inbound,outbound,completed,inactive\n' }),
+    common_1.Use(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('type', String)),
     __param(2, common_1.QueryParams('offset', Number)),

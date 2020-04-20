@@ -65,8 +65,10 @@ export enum GameGenreDescriptions {
     'Prospect the grand wild west and meet people in Western games',
 }
 
+
 export enum GameGenreThumbnails {
-    'https://cdn.blockshub.net/static/genre/Western-small.jpg' = 14
+    'https://cdn.blockshub.net/static/genre/comedy_genre_thumbnail.png' = 5,
+    'https://cdn.blockshub.net/static/genre/Western-small.jpg' = 14,
 }
 
 export class GameThumbnail {

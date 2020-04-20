@@ -5,6 +5,7 @@ if (process.env.NODE_ENV === 'production') {
     const Sentry = require('@sentry/node');
     Sentry.init({ dsn: 'https://dccc8567d5714c75a7b884ffd1d73843@sentry.io/2506252' });
 }
+console.log('staging enabled:', process.env.IS_STAGING === '1');
 import * as Express from "express";
 import { ServerLoader, ServerSettings } from "@tsed/common";
 import "@tsed/ajv"; // import ajv ts.ed module

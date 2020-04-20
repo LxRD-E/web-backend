@@ -18,6 +18,7 @@ const staff_1 = require("../dal/staff");
 const ad_1 = require("../dal/ad");
 const support_1 = require("../dal/support");
 const report_abuse_1 = require("../dal/report-abuse");
+const currency_exchange_1 = require("../dal/currency-exchange");
 const Www_1 = require("../models/v2/Www");
 const xss = require("xss");
 const moment = require("moment");
@@ -50,6 +51,7 @@ class StandardController {
         this.ad = new ad_1.default();
         this.support = new support_1.default();
         this.reportAbuse = new report_abuse_1.default();
+        this.currencyExchange = new currency_exchange_1.default();
         if (knexOverload) {
             console.log('overloading knex');
             this.user.knex = knexOverload;
@@ -68,6 +70,7 @@ class StandardController {
             this.ad.knex = knexOverload;
             this.support.knex = knexOverload;
             this.reportAbuse.knex = knexOverload;
+            this.currencyExchange.knex = knexOverload;
         }
     }
     transaction(callback) {

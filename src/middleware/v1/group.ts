@@ -1,5 +1,5 @@
 import {Middleware, Locals, Required, PathParams, Res} from "@tsed/common";
-import controller from '../../controllers/controller';
+import middleware from './_middleware';
 import * as model from '../../models/models';
 import { Returns } from "@tsed/swagger";
 
@@ -12,31 +12,14 @@ interface IValidateGroupInfoCacheEntry {
  * Verify that the req.params.groupId is valid.
  */
 @Middleware()
-export class ValidateGroupId extends controller {
-    private CachedGroupInfo: IValidateGroupInfoCacheEntry[] = [];
-
-    public checkForCache(groupId: number): boolean {
-        const maxCacheTimeInMilliSeconds = 30 * 1000;
-        let _newArr = [];
-        let success = false;
-        for (const entry of this.CachedGroupInfo) {
-            if (entry.createdAt + maxCacheTimeInMilliSeconds >= new Date().getTime()) {
-                _newArr.push(entry);
-                if (entry.data.groupId === groupId) {
-                    console.log('Cached');
-                    success = true;
-                }
-            }
-        }
-        this.CachedGroupInfo = _newArr;
-        return success;
-    }
+export class ValidateGroupId extends middleware {
+    private GroupCache = this.cache('groupId');
 
     public async use(
         @PathParams('groupId', Number) groupId: number,
         @Res() res: Res,
     ) {
-        if (this.checkForCache(groupId)) {
+        if (this.GroupCache.checkForCache(groupId)) {
             return;
         }
         // Verify Group Exists and Isn't Deleted
@@ -52,7 +35,7 @@ export class ValidateGroupId extends controller {
         if (groupInfo.groupStatus === model.group.groupStatus.locked) {
             throw new this.BadRequest('InvalidGroupId');
         }
-        this.CachedGroupInfo.push({
+        this.GroupCache.addToCache({
             data: groupInfo,
             createdAt: new Date().getTime(),
         });

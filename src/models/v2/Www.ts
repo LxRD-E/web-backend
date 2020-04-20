@@ -3,6 +3,7 @@ import config from '../../helpers/config';
 import crypto = require('crypto');
 import fs = require('fs');
 import path = require('path');
+import os = require('os');
 let versionStr = crypto.randomBytes(16).toString('hex');
 // game geners
 import * as model from '../../models/models';
@@ -27,6 +28,8 @@ setInterval(() => {
         bannerTextLocked = false;
     });
 }, 5000);
+
+let HostName = os.hostname();
 
 import * as UserModel from '../../models/v1/user';
 export class WWWTemplate {
@@ -72,4 +75,19 @@ export class WWWTemplate {
      * Game Genres (for footer)
      */
     gameGenres?: any = model.game.GameGenres;
+
+    /**
+     * Current ENV
+     */
+    env?: string = process.env.NODE_ENV;
+
+    /**
+     * is the server a staging server?
+     */
+    isStaging?: boolean = process.env.IS_STAGING === '1';
+
+    /**
+     * Os host name
+     */
+    hostName?: string = HostName;
 }

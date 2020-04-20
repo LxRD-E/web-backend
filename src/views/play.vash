@@ -80,7 +80,7 @@
                     </div>
                     <div class="col-4 col-md-2">
                         <div class='form-group'>
-                            <a style="width:100%;color:white;" href="/game/create" class="btn btn-success">Create</a>
+                            <a style="width:100%;color:white;display:none;" href="/game/create" class="btn btn-success" id="create-game">Create</a>
                             <a style="width:100%;color:white;margin-top:0.5rem;" href="/support/game-help" class="btn btn-danger">Help</a>
                         </div>
                     </div>

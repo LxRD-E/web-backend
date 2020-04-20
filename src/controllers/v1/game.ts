@@ -8,22 +8,37 @@ import jsObfuse = require('javascript-obfuscator');
  * @deprecated
  */
 import SimpleCrypto from "simple-crypto-js";
-
 // models
 import * as model from '../../models/models';
+// middleware
+import * as middleware from '../../middleware/middleware';
 
 import controller from '../controller';
-import { QueryParams, Get, Controller, PathParams, Use, Locals, Res, Post, BodyParams, Patch, Delete, Required } from '@tsed/common';
-import { Summary, ReturnsArray, Returns, Description } from '@tsed/swagger';
-import { YesAuth, NoAuth, GameAuth } from '../../middleware/Auth';
-import { csrf } from '../../dal/auth';
+import {
+    BodyParams,
+    Controller,
+    Delete,
+    Get,
+    Locals,
+    Patch,
+    PathParams,
+    Post,
+    QueryParams,
+    Required,
+    Res,
+    Use
+} from '@tsed/common';
+import {Description, Returns, ReturnsArray, Summary} from '@tsed/swagger';
+import {GameAuth, YesAuth} from '../../middleware/Auth';
+import {csrf} from '../../dal/auth';
 /**
  * this is purely used for typings. please access directly from dal instead of here
  */
-import { Redis } from 'ioredis';
-import { wss } from '../../start/websockets';
+import {Redis} from 'ioredis';
+import {wss} from '../../start/websockets';
 
 import config from '../../helpers/config';
+
 const GAME_KEY = config.encryptionKeys.game;
 
 const allowedDomains = [] as string[];
@@ -261,12 +276,6 @@ let code = COPYRIGHT_DISCLAIMER + '\n' + script.getObfuscatedCode();
 @Controller('/game')
 export default class GameController extends controller {
 
-    /**
-     * Search Games
-     * @param offset 
-     * @param limit 
-     * @param sort 
-     */
     @Get('/search')
     @Summary('Get all games')
     @Returns(200, { type: model.game.GameSearchResult })
@@ -304,6 +313,7 @@ export default class GameController extends controller {
         if (sortBy === model.game.GameSortOptions.Featured) {
             // Featured sort (subject to change at any time)
             // TODO: revise this to something more specific
+            // like a player_count and visit_count join or something? or a custom column is_featured?
             sortCol = 'player_count';
         } else if (sortBy === model.game.GameSortOptions['Top Players']) {
             // Top players sort (pretty easy; sorted by most to least players)
@@ -316,9 +326,32 @@ export default class GameController extends controller {
             throw new this.BadRequest('InvalidSortBy');
         }
         // Grab results
-        let games = await this.game.getGames(offset, limit, sortMode, sortCol, genre, creatorConstraint);
         // Return results
-        return games;
+        return await this.game.getGames(offset, limit, sortMode, sortCol, genre, creatorConstraint);
+    }
+
+    @Get('/metadata')
+    @Summary('Get games metaData for current user')
+    @Use(YesAuth)
+    public async getMetaData(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+    ) {
+        let canPlayGames = true; // default
+        let canCreateGames = false; // default
+        if (userInfo.staff >= 1) {
+            canCreateGames = true;
+        }
+
+        if (!canCreateGames) {
+            let devStatus = await this.user.getInfo(userInfo.userId, ['isDeveloper']);
+            if (devStatus.isDeveloper === 1) {
+                canCreateGames = true;
+            }
+        }
+        return {
+            canPlayGames: canPlayGames,
+            canCreateGames: canCreateGames,
+        }
     }
 
     @Get('/:gameId/thumbnail')
@@ -335,44 +368,20 @@ export default class GameController extends controller {
     @Summary('Multi-get thumbnails by CSV of gameIds')
     @Description('Invalid IDs will be filtered out')
     @ReturnsArray(200, { type: model.game.GameThumbnail })
+    @Use(middleware.ConvertIdsToCsv)
     public async multiGetGameThumbnails(
         @Required()
-        @QueryParams('ids', String) gameIds: string,
+        @QueryParams('ids') gameIds: number[],
     ) {
-        if (!gameIds) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const idsArray = gameIds.split(',');
-        if (idsArray.length < 1) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const filteredIds: Array<number> = [];
-        let allIdsValid = true;
-        idsArray.forEach((id) => {
-            const gameId = parseInt(id, 10) as number;
-            if (!Number.isInteger(gameId)) {
-                allIdsValid = false
-            }
-            filteredIds.push(gameId);
-        });
-        const safeIds = Array.from(new Set(filteredIds));
-        if (safeIds.length > 25) {
-            throw new this.BadRequest('TooManyIds');
-        }
-        let results = await this.game.multiGetGameThumbnails(safeIds);
-        return results;
+        return await this.game.multiGetGameThumbnails(gameIds);
     }
 
-    /**
-     * Get the Map of a Game ID
-     * @param gameId 
-     */
     @Get('/:gameId/map')
     @Summary('Get the map of a {gameId}. Authentication required')
     @Returns(200, { type: String })
     @Use(GameAuth)
     public async getMap(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Locals('userInfo') userInfo: model.UserSession,
         @PathParams('gameId', Number) gameId: number,
         @Res() res: Res,
     ) {
@@ -404,10 +413,6 @@ export default class GameController extends controller {
         return new SimpleCrypto(GAME_KEY).encrypt(script.getObfuscatedCode());
     }
 
-    /**
-     * Get the Map of a Game ID
-     * @param gameId 
-     */
     @Get('/:gameId/scripts')
     @Summary('Get a game\'s client scripts.')
     @Use(GameAuth)
@@ -454,7 +459,7 @@ export default class GameController extends controller {
     @Summary('Get the primary game client.js')
     @Use(YesAuth)
     public async getClientScript(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Locals('userInfo') userInfo: model.UserSession,
         @Res() res: Res,
     ) {
         res.set({ 'content-type': 'application/javascript' });
@@ -467,19 +472,14 @@ export default class GameController extends controller {
      */
     @Post('/create')
     @Summary('Create a game')
-    @Returns(409, { type: model.Error, description: 'InvalidPermissions: User must be staff rank 1 or higher\n' })
-    @Returns(400, { type: model.Error, description: 'TooManyGames User has created 5 games already\nInvalidNameOrDescription: Name must be between 1 and 32 characters; description must be less than 512 characters\n' })
-    @Use(csrf, YesAuth)
+    @Returns(409, { type: model.Error, description: 'GameDeveloperPermissionsRequired: User requires game dev permission\n' })
+    @Returns(400, { type: model.Error, description: 'TooManyGames: User has reached max games count\nInvalidNameOrDescription: Name must be between 1 and 32 characters; description must be less than 512 characters\n' })
+    @Use(csrf, YesAuth, middleware.game.ValidateGameCreationPermissions)
     public async createGame(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Locals('userInfo') userInfo: model.UserSession,
         @BodyParams('name', String) gameName: string,
         @BodyParams('description', String) gameDescription: string
     ) {
-        // Verify has perms
-        const info = await this.user.getInfo(userInfo.userId, ['staff']);
-        if (info.staff >= 1 !== true) {
-            throw new this.Conflict('InvalidPermissions');
-        }
         const games = await this.game.countGames(userInfo.userId, model.catalog.creatorType.User);
         if (games >= 5) {
             // Too many places
@@ -499,7 +499,7 @@ export default class GameController extends controller {
         };
     }
 
-    private async verifyOwnership(userInfo: model.user.UserInfo, gameId: number): Promise<model.game.GameInfo> {
+    private async verifyOwnership(userInfo: model.UserSession, gameId: number): Promise<model.game.GameInfo> {
         const gameInfo = await this.game.getInfo(gameId);
         if (gameInfo.creatorType === 1) {
             // temporary
@@ -517,9 +517,9 @@ export default class GameController extends controller {
     @Patch('/:gameId')
     @Summary('Update a game')
     @Returns(400, { type: model.Error, description: 'InvalidNameOrDescription: Name must be between 1 and 32 characters; description can be at most 512 characters\nInvalidMaxPlayers: Must be between 1 and 10\nInvalidGenre: Please specify a valid model.game.GameGenres\n' })
-    @Use(csrf, YesAuth)
+    @Use(csrf, YesAuth, middleware.game.ValidateGameCreationPermissions)
     public async updateGame(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Locals('userInfo') userInfo: model.UserSession,
         @PathParams('gameId', Number) gameId: number,
         @BodyParams('name', String) gameName: string,
         @BodyParams('description', String) gameDescription: string,
@@ -545,16 +545,11 @@ export default class GameController extends controller {
         };
     }
 
-    /**
-     * Update a Map Script
-     * @param gameId 
-     * @param newScriptContent 
-     */
     @Patch('/:gameId/map')
     @Summary('Update the map script of a {gameId}')
-    @Use(csrf, YesAuth)
+    @Use(csrf, YesAuth, middleware.game.ValidateGameCreationPermissions)
     public async updateMapScript(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Locals('userInfo') userInfo: model.UserSession,
         @PathParams('gameId', Number) gameId: number,
         @BodyParams('script', String) newScriptContent: string
     ) {
@@ -570,16 +565,11 @@ export default class GameController extends controller {
         };
     }
 
-    /**
-     * Delete a Game's Script
-     * @param gameId 
-     * @param scriptId 
-     */
     @Delete('/:gameId/script/:scriptId')
     @Summary('Delete a game script')
-    @Use(csrf, YesAuth)
+    @Use(csrf, YesAuth, middleware.game.ValidateGameCreationPermissions)
     public async deleteScript(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Locals('userInfo') userInfo: model.UserSession,
         @PathParams('gameId', Number) gameId: number,
         @PathParams('scriptId', Number) scriptId: number
     ): Promise<{ success: true }> {
@@ -599,16 +589,11 @@ export default class GameController extends controller {
         };
     }
 
-    /**
-     * Create a Client Script
-     * @param gameId 
-     * @param scriptContent 
-     */
     @Post('/:gameId/script/client')
     @Summary('Create a client script')
-    @Use(csrf, YesAuth)
+    @Use(csrf, YesAuth, middleware.game.ValidateGameCreationPermissions)
     public async createClientScript(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Locals('userInfo') userInfo: model.UserSession,
         @PathParams('gameId', Number) gameId: number,
         @BodyParams('script', String) scriptContent: string
     ): Promise<{ success: true }> {
@@ -628,16 +613,11 @@ export default class GameController extends controller {
         };
     }
 
-    /**
-     * Create a Server Script
-     * @param gameId 
-     * @param scriptContent 
-     */
     @Post('/:gameId/script/server')
     @Summary('Create a server script')
-    @Use(csrf, YesAuth)
+    @Use(csrf, YesAuth, middleware.game.ValidateGameCreationPermissions)
     public async createServerScript(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Locals('userInfo') userInfo: model.UserSession,
         @PathParams('gameId', Number) gameId: number,
         @BodyParams('script', String) scriptContent: string
     ): Promise<{ success: true }> {
@@ -657,17 +637,11 @@ export default class GameController extends controller {
         };
     }
 
-    /**
-     * Update a Script Content
-     * @param gameId 
-     * @param scriptContent 
-     * @param scriptId 
-     */
     @Patch('/:gameId/script/:scriptId')
     @Summary('Update a script')
-    @Use(csrf, YesAuth)
+    @Use(csrf, YesAuth, middleware.game.ValidateGameCreationPermissions)
     public async updateScriptContent(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Locals('userInfo') userInfo: model.UserSession,
         @PathParams('gameId', Number) gameId: number,
         @BodyParams('script', String) scriptContent: string,
         @PathParams('scriptId', Number) scriptId: number
@@ -686,15 +660,11 @@ export default class GameController extends controller {
         };
     }
 
-    /**
-     * Join a Game
-     * @param gameId 
-     */
     @Post('/:gameId/join')
     @Summary('Join a game')
     @Returns(400, { type: model.Error, description: 'InvalidGameState: Game state does not allow joining\n' })
     public async requestGameJoin(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Locals('userInfo') userInfo: model.UserSession,
         @PathParams('gameId', Number) gameId: number
     ): Promise<{ success: true; serverId: number }> {
         //  Check if game is valid
@@ -733,8 +703,7 @@ export default class GameController extends controller {
     public async listenForServerEvents(
         gameServerId: number
     ): Promise<Redis> {
-        const listener = await this.game.listenForServerEvents(gameServerId);
-        return listener;
+        return await this.game.listenForServerEvents(gameServerId);
     }
 
     /**

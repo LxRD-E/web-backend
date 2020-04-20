@@ -1,16 +1,12 @@
-import { Controller, Get, All, Next, Req, Res, UseBefore, Render, QueryParams, PathParams, Redirect, Response, Request, Locals, UseAfter, Required, Use, UseBeforeEach } from "@tsed/common";
-import { Description, Summary } from "@tsed/swagger"; // import swagger Ts.ED module
-import { Exception, NotFound, BadRequest } from "ts-httpexceptions";
+import {Controller, Get, Locals, PathParams, QueryParams, Render, Required, Res, Use} from "@tsed/common";
+import {Summary} from "@tsed/swagger"; // import swagger Ts.ED module
 import * as model from '../../models/models';
-import { WWWTemplate } from '../../models/v2/Www';
 import controller from '../controller'
-import moment = require("moment");
-import xss = require('xss');
-import Config from '../../helpers/config';
-import _ = require('lodash');
 // Models
-import { NoAuth, YesAuth } from "../../middleware/Auth";
-import {numberWithCommas} from '../../helpers/Filter';
+import {YesAuth} from "../../middleware/Auth";
+import * as middleware from '../../middleware/middleware';
+import moment = require("moment");
+import _ = require('lodash');
 
 @Controller("/")
 export class WWWGameController extends controller {
@@ -21,19 +17,12 @@ export class WWWGameController extends controller {
 
     @Render('game_create')
     @Get('/game/create')
-    @Use(YesAuth)
+    @Use(YesAuth, middleware.game.ValidateGameCreationPermissions)
     public async gameCreate(
         @Locals('userInfo') userData: model.user.SessionUserInfo,
         @PathParams('subCategoryId', Number) numericId: number,
         @QueryParams('page', Number) page?: number,
     ) {
-        let rank = 0;
-        if (userData) {
-            rank = userData.staff;
-        }
-        if (rank >= 1 !== true) {
-            throw new this.Conflict('InvalidPermissions');
-        }
         let ViewData = new this.WWWTemplate({title: 'Create a Game'});
         ViewData.page = {};
         return ViewData;
@@ -113,26 +102,25 @@ export class WWWGameController extends controller {
         if (genre !== 1) {
             title = 'Free 3D '+model.game.GameGenres[genre]+ ' Games';
         }
-        let ViewData = new this.WWWTemplate({
+        return new this.WWWTemplate({
             title: title,
             page: {
                 genres: model.game.GameGenres,
                 sorts: model.game.GameSortOptions,
                 genre: genre,
             }
-        })
-        return ViewData;
+        });
     }
     @Get('/game/genre/:gameGenre')
     @Summary('Get the gamePage of a gameGenre')
     public gameGenre(
-        @PathParams('gameGenre', String) gameGernre: string,
+        @PathParams('gameGenre', String) gameGenre: string,
         @Res() res: Res,
     ) {
-        if (!isNaN(parseInt(gameGernre, 10))) {
+        if (!isNaN(parseInt(gameGenre, 10))) {
             return res.redirect('/play');
         }
-        let genreToRedirectTo = model.game.GameGenres[gameGernre];
+        let genreToRedirectTo = model.game.GameGenres[gameGenre];
         if (genreToRedirectTo) {
             return res.redirect('/play?genre='+genreToRedirectTo+'&sortBy=1');
         }else{
@@ -222,7 +210,7 @@ export class WWWGameController extends controller {
      */
     @Get('/game/:gameId/edit')
     @Summary('Game edit page')
-    @Use(YesAuth)
+    @Use(YesAuth, middleware.game.ValidateGameCreationPermissions)
     @Render('game_edit')
     public async gameEdit(
         @Locals('userInfo') userInfo: model.user.SessionUserInfo,

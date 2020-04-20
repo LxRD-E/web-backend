@@ -18,31 +18,15 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@tsed/common");
-const controller_1 = require("../../controllers/controller");
+const _middleware_1 = require("./_middleware");
 const model = require("../../models/models");
-let ValidateGroupId = class ValidateGroupId extends controller_1.default {
+let ValidateGroupId = class ValidateGroupId extends _middleware_1.default {
     constructor() {
         super(...arguments);
-        this.CachedGroupInfo = [];
-    }
-    checkForCache(groupId) {
-        const maxCacheTimeInMilliSeconds = 30 * 1000;
-        let _newArr = [];
-        let success = false;
-        for (const entry of this.CachedGroupInfo) {
-            if (entry.createdAt + maxCacheTimeInMilliSeconds >= new Date().getTime()) {
-                _newArr.push(entry);
-                if (entry.data.groupId === groupId) {
-                    console.log('Cached');
-                    success = true;
-                }
-            }
-        }
-        this.CachedGroupInfo = _newArr;
-        return success;
+        this.GroupCache = this.cache('groupId');
     }
     async use(groupId, res) {
-        if (this.checkForCache(groupId)) {
+        if (this.GroupCache.checkForCache(groupId)) {
             return;
         }
         let groupInfo;
@@ -58,7 +42,7 @@ let ValidateGroupId = class ValidateGroupId extends controller_1.default {
         if (groupInfo.groupStatus === model.group.groupStatus.locked) {
             throw new this.BadRequest('InvalidGroupId');
         }
-        this.CachedGroupInfo.push({
+        this.GroupCache.addToCache({
             data: groupInfo,
             createdAt: new Date().getTime(),
         });

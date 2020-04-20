@@ -10,6 +10,7 @@ const crypto = require('crypto');
  */
 const getAxios = (opts) => {
     const cookieJar = new tough.CookieJar();
+    let port = process.env.PORT || 3000;
     let conf = {
         headers: {
             'x-ratelimit-bypass': crypto.randomBytes(16).toString('hex'),
@@ -17,7 +18,7 @@ const getAxios = (opts) => {
             'accept': 'application/json',
         },
         jar: cookieJar,
-        baseURL: 'http://localhost:3000/api/v1/',
+        baseURL: 'http://localhost:'+port+'/api/v1/',
         withCredentials: true,
         validateStatus: function (status) {
             // return status >= 200 && status < 300; // default
@@ -46,7 +47,6 @@ const getAxios = (opts) => {
         error => {
             let errorResponse = error.response;
             if (errorResponse && errorResponse.status === 403 && errorResponse.data && errorResponse.data.error && errorResponse.data.error.code === 'CSRFValidationFailed') {
-                // console.log('[note] csrf error',csrf);
                 // axios.interceptors.response.eject(this.axiosResponseInterceptor);
                 errorResponse.config.headers['x-csrf-token'] = errorResponse.headers['x-csrf-token'];
                 csrf = errorResponse.headers['x-csrf-token'];

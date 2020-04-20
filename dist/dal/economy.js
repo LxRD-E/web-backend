@@ -69,6 +69,36 @@ class EconomyDAL extends _init_1.default {
         let results = await this.knex("transactions").insert({ "userid_to": userIdTo, "userid_from": userIdFrom, "amount": amount, "currency": currency, "type": type, "description": description, "catalogid": numericCatalogId, "user_inventoryid": numericInventoryId, "from_type": fromType, "to_type": toType });
         return results[0];
     }
+    async addToUserBalanceV2(userId, amount, currency, forUpdate) {
+        let type = '';
+        if (currency === model.economy.currencyType.primary) {
+            type = 'user_balance1';
+        }
+        else if (currency === model.economy.currencyType.secondary) {
+            type = 'user_balance2';
+        }
+        else {
+            throw new Error('InvalidCurrencyType');
+        }
+        await this.knex('users').increment(type, amount).where({
+            'id': userId,
+        }).forUpdate(forUpdate).limit(1);
+    }
+    async subtractFromUserBalanceV2(userId, amount, currency, forUpdate) {
+        let type = '';
+        if (currency === model.economy.currencyType.primary) {
+            type = 'user_balance1';
+        }
+        else if (currency === model.economy.currencyType.secondary) {
+            type = 'user_balance2';
+        }
+        else {
+            throw new Error('InvalidCurrencyType');
+        }
+        await this.knex('users').decrement(type, amount).where({
+            'id': userId,
+        }).forUpdate(forUpdate).limit(1);
+    }
     async addToUserBalance(userId, amount, currency) {
         await this.knex.transaction(async (trx) => {
             if (currency === model.economy.currencyType.primary) {

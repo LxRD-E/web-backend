@@ -15,6 +15,9 @@ export class SignupRequest {
     birth: number[];
     @PropertyType(String)
     captcha: string;
+    @PropertyType(String)
+    @Description('User referral code')
+    referralCode: string;
 }
 
 export class UsernameChangedResponseOK {

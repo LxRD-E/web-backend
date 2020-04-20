@@ -2,21 +2,38 @@
  * Imports
  */
 // TSed
-import { Controller, Get, All, Next, Req, Res, UseBefore, Render, QueryParams, PathParams, Redirect, Response, Request, Locals, UseAfter, Required, Use, Err, Post, BodyParams, HeaderParams, Session, UseBeforeEach, PropertyType, MinItems, MaxItems, Maximum, Minimum, Patch, Delete, Put } from "@tsed/common";
-import { Description, Summary, Returns, ReturnsArray, Hidden } from "@tsed/swagger"; // import swagger Ts.ED module
-import moment = require('moment');
-import { RateLimiterMiddleware } from '../../middleware/RateLimit';
+import {
+    BodyParams,
+    Controller,
+    Delete,
+    Get,
+    HeaderParams,
+    Locals,
+    Patch,
+    Post,
+    Put,
+    QueryParams,
+    Req,
+    Required,
+    Res,
+    Session,
+    Use,
+    UseBefore,
+    UseBeforeEach
+} from "@tsed/common";
+import {Description, Returns, ReturnsArray, Summary} from "@tsed/swagger"; // import swagger Ts.ED module
+import {RateLimiterMiddleware} from '../../middleware/RateLimit';
 // Models
 import * as model from '../../models/models';
 // Auth stuff
-import { setSession, isAuthenticated, verifyPassword, saveSession, hashPassword, csrf } from '../../dal/auth';
+import {csrf, hashPassword, verifyPassword} from '../../dal/auth';
 // Autoload
 import controller from '../controller';
-import { NoAuth, YesAuth } from "../../middleware/Auth";
+import {NoAuth, YesAuth} from "../../middleware/Auth";
 import RecaptchaV2 from '../../middleware/RecaptchaV2';
-import { UserInfo } from "../../models/v1/user";
-import config from '../../helpers/config';
+import moment = require('moment');
 import crypto = require('crypto');
+
 /**
  * Auth Controller
  */
@@ -219,8 +236,7 @@ export default class AuthController extends controller {
     @Post('/logout')
     @Summary('Logout from the current session')
     @Returns(409, { description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error })
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     public async logout(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Session() session: Express.Session,
@@ -242,8 +258,7 @@ export default class AuthController extends controller {
 
     @Post('/generate-totp-secret')
     @Summary('Generate a secret for TOTP')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     public async generateTOTPSecret(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ) {
@@ -251,14 +266,12 @@ export default class AuthController extends controller {
         if (enabled.enabled) {
             throw new this.Conflict('TwoFactorAlreadyEnabled');
         }
-        let secret = await this.auth.generateTOTPSecret();
-        return secret;
+        return await this.auth.generateTOTPSecret();
     }
 
     @Delete('/totp')
     @Summary('Delete a two-factor authentication code')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     @Use(RateLimiterMiddleware('twoFactorEnableOrDisable'))
     public async deleteTOTP(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -286,8 +299,7 @@ export default class AuthController extends controller {
 
     @Patch('/totp')
     @Summary('Update (or set) the authenticated users TOTP secret')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     @Use(RateLimiterMiddleware('twoFactorEnableOrDisable'))
     public async updateTOTPSecret(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -330,8 +342,7 @@ export default class AuthController extends controller {
     @Post('/unlock')
     @Summary('Unlock a banned account')
     @Returns(400, { description: 'Unauthorized: User is not authorized to perform this action\n', type: model.Error })
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     @Returns(401, { type: model.Error, description: 'LoginRequired: Login Required\n' })
     @Returns(403, { type: model.Error, description: 'Invalid CSRF Token' })
     public async unlock(
@@ -369,7 +380,7 @@ export default class AuthController extends controller {
     @Returns(200, { description: 'OK', type: model.auth.SignupResponseOK })
     @Returns(409, { description: 'LogoutRequired: Login Required\nCaptchaValidationFailed: Invalid captcha token, expired, or not provided\n' })
     @Returns(403, { description: 'CSRFValidationFailed: Invalid CSRF Token\n' })
-    @Returns(400, { description: 'InvalidBirthDate: Birth Date is invalid\nInvalidUsername: Username is taken or unavailable\nInvalidPassword: Password is too weak\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nOneAccountPerIP: Only one account may be signed up per IP address, every 24 hours\n' })
+    @Returns(400, { description: 'InvalidBirthDate: Birth Date is invalid\nInvalidUsername: Username is taken or unavailable\nInvalidPassword: Password is too weak\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstraintTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nOneAccountPerIP: Only one account may be signed up per IP address, every 24 hours\n' })
     @Use(csrf, NoAuth, RecaptchaV2)
     public async signup(
         @BodyParams(model.auth.SignupRequest) body: model.auth.SignupRequest,
@@ -406,15 +417,10 @@ export default class AuthController extends controller {
         // Username Checker
         const usernamecheck = await this.user.isUsernameOk(username);
         if (usernamecheck !== 'OK') {
-            throw new Error(usernamecheck);
+            throw new this.BadRequest(usernamecheck);
         }
         // Make sure user doesn't already exist
-        let available;
-        try {
-            available = await this.user.usernameAvailableForSignup(username);
-        } catch (e) {
-            throw e;
-        }
+        let available = await this.user.usernameAvailableForSignup(username);
         if (!available) {
             throw new this.BadRequest('InvalidUsername');
         }
@@ -487,7 +493,7 @@ export default class AuthController extends controller {
         session.userdata.username = username;
         session.userdata.passwordUpdated = 0;
         // Options for dev env
-        if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+        if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' || process.env.IS_STAGING === '1') {
             let verifiedEmail = req.headers['x-verified-email'] as string;
             if (verifiedEmail) {
                 // add verified email
@@ -500,6 +506,12 @@ export default class AuthController extends controller {
                 // add to balance
                 await this.economy.addToUserBalance(userId, primaryNumber, model.economy.currencyType.primary);
             }
+            let startingSecondary = req.headers['x-start-secondary'] as string;
+            if (startingSecondary) {
+                let secondaryNumber = parseInt(startingSecondary, 10);
+                // add to balance
+                await this.economy.addToUserBalance(userId, secondaryNumber, model.economy.currencyType.secondary);
+            }
         }
         return {
             userId: userId,
@@ -510,8 +522,7 @@ export default class AuthController extends controller {
     @Patch('/reset/password')
     @Summary('Reset user password via code from email')
     @Returns(400, { type: model.Error, description: 'InvalidCode: Code is expired or invalid\nInvalidPassword: Password is too short\n' })
-    @UseBeforeEach(csrf)
-    @UseBefore(NoAuth)
+    @Use(csrf, YesAuth)
     public async resetPassword(
         @Required()
         @BodyParams('code', String) code: string,
@@ -583,7 +594,7 @@ export default class AuthController extends controller {
     @Get('/username/change/available')
     @Summary('Check if username is available for name change')
     @Returns(400, { description: 'InvalidUsername: Username is taken or unavailable\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\n' })
-    @UseBefore(YesAuth)
+    @Use(YesAuth)
     public async usernameAvailableForNameChange(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()

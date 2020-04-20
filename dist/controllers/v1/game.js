@@ -20,6 +20,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const jsObfuse = require("javascript-obfuscator");
 const simple_crypto_js_1 = require("simple-crypto-js");
 const model = require("../../models/models");
+const middleware = require("../../middleware/middleware");
 const controller_1 = require("../controller");
 const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
@@ -269,35 +270,30 @@ let GameController = class GameController extends controller_1.default {
         else {
             throw new this.BadRequest('InvalidSortBy');
         }
-        let games = await this.game.getGames(offset, limit, sortMode, sortCol, genre, creatorConstraint);
-        return games;
+        return await this.game.getGames(offset, limit, sortMode, sortCol, genre, creatorConstraint);
+    }
+    async getMetaData(userInfo) {
+        let canPlayGames = true;
+        let canCreateGames = false;
+        if (userInfo.staff >= 1) {
+            canCreateGames = true;
+        }
+        if (!canCreateGames) {
+            let devStatus = await this.user.getInfo(userInfo.userId, ['isDeveloper']);
+            if (devStatus.isDeveloper === 1) {
+                canCreateGames = true;
+            }
+        }
+        return {
+            canPlayGames: canPlayGames,
+            canCreateGames: canCreateGames,
+        };
     }
     async getGameThumbnail(gameId) {
         return await this.game.getGameThumbnail(gameId);
     }
     async multiGetGameThumbnails(gameIds) {
-        if (!gameIds) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const idsArray = gameIds.split(',');
-        if (idsArray.length < 1) {
-            throw new this.BadRequest('InvalidIds');
-        }
-        const filteredIds = [];
-        let allIdsValid = true;
-        idsArray.forEach((id) => {
-            const gameId = parseInt(id, 10);
-            if (!Number.isInteger(gameId)) {
-                allIdsValid = false;
-            }
-            filteredIds.push(gameId);
-        });
-        const safeIds = Array.from(new Set(filteredIds));
-        if (safeIds.length > 25) {
-            throw new this.BadRequest('TooManyIds');
-        }
-        let results = await this.game.multiGetGameThumbnails(safeIds);
-        return results;
+        return await this.game.multiGetGameThumbnails(gameIds);
     }
     async getMap(userInfo, gameId, res) {
         res.set('access-control-allow-origin', 'null');
@@ -363,10 +359,6 @@ let GameController = class GameController extends controller_1.default {
         res.send(code);
     }
     async createGame(userInfo, gameName, gameDescription) {
-        const info = await this.user.getInfo(userInfo.userId, ['staff']);
-        if (info.staff >= 1 !== true) {
-            throw new this.Conflict('InvalidPermissions');
-        }
         const games = await this.game.countGames(userInfo.userId, model.catalog.creatorType.User);
         if (games >= 5) {
             throw new this.BadRequest('TooManyGames');
@@ -485,8 +477,7 @@ let GameController = class GameController extends controller_1.default {
         };
     }
     async listenForServerEvents(gameServerId) {
-        const listener = await this.game.listenForServerEvents(gameServerId);
-        return listener;
+        return await this.game.listenForServerEvents(gameServerId);
     }
     async leaveAllGames(userInfo) {
         await this.game.leaveServer(userInfo.userId).catch((e) => { });
@@ -515,6 +506,15 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "getGames", null);
 __decorate([
+    common_1.Get('/metadata'),
+    swagger_1.Summary('Get games metaData for current user'),
+    common_1.Use(Auth_1.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "getMetaData", null);
+__decorate([
     common_1.Get('/:gameId/thumbnail'),
     swagger_1.Summary('Get a game thumbnail'),
     swagger_1.Description('If no thumbnail available, a placeholder will be provided'),
@@ -529,10 +529,11 @@ __decorate([
     swagger_1.Summary('Multi-get thumbnails by CSV of gameIds'),
     swagger_1.Description('Invalid IDs will be filtered out'),
     swagger_1.ReturnsArray(200, { type: model.game.GameThumbnail }),
+    common_1.Use(middleware.ConvertIdsToCsv),
     __param(0, common_1.Required()),
-    __param(0, common_1.QueryParams('ids', String)),
+    __param(0, common_1.QueryParams('ids')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Array]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "multiGetGameThumbnails", null);
 __decorate([
@@ -544,7 +545,7 @@ __decorate([
     __param(1, common_1.PathParams('gameId', Number)),
     __param(2, common_1.Res()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, Object]),
+    __metadata("design:paramtypes", [model.UserSession, Number, Object]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "getMap", null);
 __decorate([
@@ -564,27 +565,27 @@ __decorate([
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Res()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Object]),
+    __metadata("design:paramtypes", [model.UserSession, Object]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "getClientScript", null);
 __decorate([
     common_1.Post('/create'),
     swagger_1.Summary('Create a game'),
-    swagger_1.Returns(409, { type: model.Error, description: 'InvalidPermissions: User must be staff rank 1 or higher\n' }),
-    swagger_1.Returns(400, { type: model.Error, description: 'TooManyGames User has created 5 games already\nInvalidNameOrDescription: Name must be between 1 and 32 characters; description must be less than 512 characters\n' }),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    swagger_1.Returns(409, { type: model.Error, description: 'GameDeveloperPermissionsRequired: User requires game dev permission\n' }),
+    swagger_1.Returns(400, { type: model.Error, description: 'TooManyGames: User has reached max games count\nInvalidNameOrDescription: Name must be between 1 and 32 characters; description must be less than 512 characters\n' }),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.game.ValidateGameCreationPermissions),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.BodyParams('name', String)),
     __param(2, common_1.BodyParams('description', String)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, String, String]),
+    __metadata("design:paramtypes", [model.UserSession, String, String]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "createGame", null);
 __decorate([
     common_1.Patch('/:gameId'),
     swagger_1.Summary('Update a game'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidNameOrDescription: Name must be between 1 and 32 characters; description can be at most 512 characters\nInvalidMaxPlayers: Must be between 1 and 10\nInvalidGenre: Please specify a valid model.game.GameGenres\n' }),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.game.ValidateGameCreationPermissions),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('gameId', Number)),
     __param(2, common_1.BodyParams('name', String)),
@@ -592,63 +593,63 @@ __decorate([
     __param(4, common_1.BodyParams('maxPlayers', Number)),
     __param(5, common_1.BodyParams('genre', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, String, String, Number, Number]),
+    __metadata("design:paramtypes", [model.UserSession, Number, String, String, Number, Number]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "updateGame", null);
 __decorate([
     common_1.Patch('/:gameId/map'),
     swagger_1.Summary('Update the map script of a {gameId}'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.game.ValidateGameCreationPermissions),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('gameId', Number)),
     __param(2, common_1.BodyParams('script', String)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
+    __metadata("design:paramtypes", [model.UserSession, Number, String]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "updateMapScript", null);
 __decorate([
     common_1.Delete('/:gameId/script/:scriptId'),
     swagger_1.Summary('Delete a game script'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.game.ValidateGameCreationPermissions),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('gameId', Number)),
     __param(2, common_1.PathParams('scriptId', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
+    __metadata("design:paramtypes", [model.UserSession, Number, Number]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "deleteScript", null);
 __decorate([
     common_1.Post('/:gameId/script/client'),
     swagger_1.Summary('Create a client script'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.game.ValidateGameCreationPermissions),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('gameId', Number)),
     __param(2, common_1.BodyParams('script', String)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
+    __metadata("design:paramtypes", [model.UserSession, Number, String]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "createClientScript", null);
 __decorate([
     common_1.Post('/:gameId/script/server'),
     swagger_1.Summary('Create a server script'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.game.ValidateGameCreationPermissions),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('gameId', Number)),
     __param(2, common_1.BodyParams('script', String)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
+    __metadata("design:paramtypes", [model.UserSession, Number, String]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "createServerScript", null);
 __decorate([
     common_1.Patch('/:gameId/script/:scriptId'),
     swagger_1.Summary('Update a script'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.game.ValidateGameCreationPermissions),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('gameId', Number)),
     __param(2, common_1.BodyParams('script', String)),
     __param(3, common_1.PathParams('scriptId', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, String, Number]),
+    __metadata("design:paramtypes", [model.UserSession, Number, String, Number]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "updateScriptContent", null);
 __decorate([
@@ -658,7 +659,7 @@ __decorate([
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('gameId', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number]),
+    __metadata("design:paramtypes", [model.UserSession, Number]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "requestGameJoin", null);
 GameController = __decorate([

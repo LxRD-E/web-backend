@@ -109,6 +109,33 @@ class EconomyDAL extends _init {
         return results[0];
     }
 
+    public async addToUserBalanceV2(userId: number, amount: number, currency: model.economy.currencyType, forUpdate: string[]): Promise<void> {
+        let type = '';
+        if (currency === model.economy.currencyType.primary) {
+            type = 'user_balance1';
+        }else if (currency === model.economy.currencyType.secondary) {
+            type = 'user_balance2';
+        }else{
+            throw new Error('InvalidCurrencyType');
+        }
+        await this.knex('users').increment(type, amount).where({
+            'id': userId,
+        }).forUpdate(forUpdate).limit(1);
+    }
+    public async subtractFromUserBalanceV2(userId: number, amount: number, currency: model.economy.currencyType, forUpdate: string[]): Promise<void> {
+        let type = '';
+        if (currency === model.economy.currencyType.primary) {
+            type = 'user_balance1';
+        }else if (currency === model.economy.currencyType.secondary) {
+            type = 'user_balance2';
+        }else{
+            throw new Error('InvalidCurrencyType');
+        }
+        await this.knex('users').decrement(type, amount).where({
+            'id': userId,
+        }).forUpdate(forUpdate).limit(1);
+    }
+
     /**
      * Add the amount of currency specified to a user's balance
      * @param userId User's ID

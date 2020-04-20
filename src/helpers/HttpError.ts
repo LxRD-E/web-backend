@@ -16,7 +16,7 @@ export enum HttpErrors {
     UsernameConstraint1Space1Period1Underscore,
     UsernameConstriantCannotEndOrStartWithSpace,
     UsernameConstraintInvalidCharacters,
-    UsernameConstriantTooLong,
+    UsernameConstraintTooLong,
     UsernameConstrintTooShort,
     OneAccountPerIP,
     InvalidSort,
@@ -164,7 +164,18 @@ export enum HttpErrors {
     ItemCannotBeDeleted,
     NotEnoughPrimaryCurrencyForOffer,
     TradeCannotBeCompleted,
-};
+    GameDeveloperPermissionsRequired,
+    CannotPurchaseOwnedPosition,
+    NotEnoughInPositionBalance,
+    PurchaseAmountTooLow,
+    ReachedMaximumOpenPositions,
+    RateTooSmall,
+    RateTooLarge,
+    UserIsNotOwnerOfPosition,
+    PositionAlreadyClosed,
+    BalanceTooSmall,
+    InvalidPurchaseAmount,
+}
 import os = require('os');
 import {lbOrigin} from '../middleware/Any';
 // @Locals('userInfo') userInfo: model.user.UserInfo,

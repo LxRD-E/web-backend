@@ -19,7 +19,7 @@ var HttpErrors;
     HttpErrors[HttpErrors["UsernameConstraint1Space1Period1Underscore"] = 14] = "UsernameConstraint1Space1Period1Underscore";
     HttpErrors[HttpErrors["UsernameConstriantCannotEndOrStartWithSpace"] = 15] = "UsernameConstriantCannotEndOrStartWithSpace";
     HttpErrors[HttpErrors["UsernameConstraintInvalidCharacters"] = 16] = "UsernameConstraintInvalidCharacters";
-    HttpErrors[HttpErrors["UsernameConstriantTooLong"] = 17] = "UsernameConstriantTooLong";
+    HttpErrors[HttpErrors["UsernameConstraintTooLong"] = 17] = "UsernameConstraintTooLong";
     HttpErrors[HttpErrors["UsernameConstrintTooShort"] = 18] = "UsernameConstrintTooShort";
     HttpErrors[HttpErrors["OneAccountPerIP"] = 19] = "OneAccountPerIP";
     HttpErrors[HttpErrors["InvalidSort"] = 20] = "InvalidSort";
@@ -167,8 +167,18 @@ var HttpErrors;
     HttpErrors[HttpErrors["ItemCannotBeDeleted"] = 162] = "ItemCannotBeDeleted";
     HttpErrors[HttpErrors["NotEnoughPrimaryCurrencyForOffer"] = 163] = "NotEnoughPrimaryCurrencyForOffer";
     HttpErrors[HttpErrors["TradeCannotBeCompleted"] = 164] = "TradeCannotBeCompleted";
+    HttpErrors[HttpErrors["GameDeveloperPermissionsRequired"] = 165] = "GameDeveloperPermissionsRequired";
+    HttpErrors[HttpErrors["CannotPurchaseOwnedPosition"] = 166] = "CannotPurchaseOwnedPosition";
+    HttpErrors[HttpErrors["NotEnoughInPositionBalance"] = 167] = "NotEnoughInPositionBalance";
+    HttpErrors[HttpErrors["PurchaseAmountTooLow"] = 168] = "PurchaseAmountTooLow";
+    HttpErrors[HttpErrors["ReachedMaximumOpenPositions"] = 169] = "ReachedMaximumOpenPositions";
+    HttpErrors[HttpErrors["RateTooSmall"] = 170] = "RateTooSmall";
+    HttpErrors[HttpErrors["RateTooLarge"] = 171] = "RateTooLarge";
+    HttpErrors[HttpErrors["UserIsNotOwnerOfPosition"] = 172] = "UserIsNotOwnerOfPosition";
+    HttpErrors[HttpErrors["PositionAlreadyClosed"] = 173] = "PositionAlreadyClosed";
+    HttpErrors[HttpErrors["BalanceTooSmall"] = 174] = "BalanceTooSmall";
+    HttpErrors[HttpErrors["InvalidPurchaseAmount"] = 175] = "InvalidPurchaseAmount";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
-;
 const Any_1 = require("../middleware/Any");
 exports.ErrorTemplate = (title, body) => {
     return `

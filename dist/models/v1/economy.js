@@ -52,6 +52,10 @@ class CurrencyConversionMetadata {
 }
 __decorate([
     common_1.Required(),
+    __metadata("design:type", Boolean)
+], CurrencyConversionMetadata.prototype, "isEnabled", void 0);
+__decorate([
+    common_1.Required(),
     __metadata("design:type", CurrencyConversionMetadataPerCurrency)
 ], CurrencyConversionMetadata.prototype, "primaryToSecondary", void 0);
 __decorate([
@@ -164,6 +168,10 @@ var transactionType;
     transactionType[transactionType["CurrencyPurchaseBonusItemRecieved"] = 14] = "CurrencyPurchaseBonusItemRecieved";
     transactionType[transactionType["CurrencyPurchaseBonusItemRefund"] = 15] = "CurrencyPurchaseBonusItemRefund";
     transactionType[transactionType["PurchaseOfAdvertisment"] = 16] = "PurchaseOfAdvertisment";
+    transactionType[transactionType["PurchaseOfCurrencyExchangePosition"] = 17] = "PurchaseOfCurrencyExchangePosition";
+    transactionType[transactionType["CurrencyExchangeTransactionPurchase"] = 18] = "CurrencyExchangeTransactionPurchase";
+    transactionType[transactionType["CurrencyExchangeTransactionSale"] = 19] = "CurrencyExchangeTransactionSale";
+    transactionType[transactionType["CurrencyExchangePositionClose"] = 20] = "CurrencyExchangePositionClose";
 })(transactionType = exports.transactionType || (exports.transactionType = {}));
 var membershipType;
 (function (membershipType) {

@@ -2,15 +2,30 @@
  * Imports
  */
 // Interfaces
-import { filterOffset, filterId } from '../../helpers/Filter';
 import * as model from '../../models/models';
-import { YesAuth } from '../../middleware/Auth';
-import { csrf } from '../../dal/auth';
+import {YesAuth} from '../../middleware/Auth';
+import {csrf} from '../../dal/auth';
 // Autoload
 import controller from '../controller';
-import { Controller, Get, QueryParams, PathParams, BodyParams, Post, Patch, Put, Delete, Locals, UseBeforeEach, UseBefore, Required, HeaderParams, Err, Use, Req } from '@tsed/common';
-import { Summary, Returns, ReturnsArray, Description } from '@tsed/swagger';
+import {
+    BodyParams,
+    Controller,
+    Delete,
+    Get,
+    Locals,
+    PathParams,
+    Post,
+    Put,
+    QueryParams,
+    Req,
+    Required,
+    Use,
+    UseBefore,
+    UseBeforeEach
+} from '@tsed/common';
+import {Description, Returns, ReturnsArray, Summary} from '@tsed/swagger';
 import TwoStepCheck from '../../middleware/TwoStepCheck';
+
 /**
  * Economy Controller
  */
@@ -21,7 +36,7 @@ export default class EconomyController extends controller {
     }
 
     @Get('/metadata/collectible-resale-fee')
-    @Summary('Get item resale fee percenatage for collectibles')
+    @Summary('Get item resale fee percentage for collectibles')
     @Returns(200, { type: model.economy.FeeMetaData })
     public getResellFeeCollectible() {
         return {
@@ -30,7 +45,7 @@ export default class EconomyController extends controller {
     }
 
     @Get('/metadata/sell-fee')
-    @Summary('Get item resale fee percenatage for normal items (shirts, pants, etc)')
+    @Summary('Get item resale fee percentage for normal items (shirts, pants, etc)')
     @Returns(200, { type: model.economy.FeeMetaData })
     public getSellFee() {
         return {
@@ -41,8 +56,10 @@ export default class EconomyController extends controller {
     @Get('/metadata/currency-conversion-rate')
     @Summary('Get currency conversion metadata')
     @Returns(200, { type: model.economy.CurrencyConversionMetadata })
+    @Use(YesAuth)
     public getCurrencyConversionMetadata() {
         return {
+            isEnabled: true,
             primaryToSecondary: {
                 minimumAmount: model.economy.MINIMUM_CURRENCY_CONVERSION_PRIMARY_TO_SECONDARY,
                 rate: model.economy.CONVERSION_ONE_PRIMARY_TO_SECONDARY_RATE,
@@ -58,9 +75,9 @@ export default class EconomyController extends controller {
 
     @Get('/trades/:type')
     @Summary('Get user trades')
-    @UseBefore(YesAuth)
     @ReturnsArray(200, { type: model.economy.TradeInfo })
     @Returns(400, { type: model.Error, description: 'InvalidTradeType: TradeType must be one of: inbound,outbound,completed,inactive\n' })
+    @Use(YesAuth)
     public async getTrades(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('type', String) tradeType: string,
@@ -72,8 +89,7 @@ export default class EconomyController extends controller {
         } else {
             tradeValue = tradeType;
         }
-        const trades = await this.economy.getTrades(userInfo.userId, tradeValue, offset);
-        return trades;
+        return await this.economy.getTrades(userInfo.userId, tradeValue, offset);
     }
 
     /**

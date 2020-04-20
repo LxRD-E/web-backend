@@ -1,6 +1,6 @@
 import * as Catalog from './catalog';
 import * as Groups from './group';
-import { Required, PropertyType, MinItems, MaxItems } from '@tsed/common';
+import {Required, PropertyType, MinItems, MaxItems, Enum} from '@tsed/common';
 import { Example, Description } from '@tsed/swagger';
 
 export const MAX_FRIENDS = 100;
@@ -129,6 +129,12 @@ export class UserInfo {
      */
     @PropertyType(Number)
     '2faEnabled': 0|1;
+    /**
+     * Is the current user a developer?
+     */
+    @PropertyType(Number)
+    @Enum(0,1)
+    isDeveloper: 0|1;
 }
 
 export class PastUsernames {

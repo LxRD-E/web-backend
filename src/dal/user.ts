@@ -27,7 +27,7 @@ class UsersDAL extends _init {
      * @param specificColumns Specific Columns from the Table to grab
      * @param forUpdate
      */
-    public async getInfo(id: number, specificColumns?: Array<'userId' | 'username' | 'passwordChanged' | 'primaryBalance' | 'secondaryBalance' | 'membership' | 'dailyAward' | 'status' | 'blurb' | 'joinDate' | 'lastOnline' | 'birthDate' | 'theme' | 'tradingEnabled' | 'staff' | 'banned' | 'forumPostCount' | 'forumSignature' | 'accountStatus' | '2faEnabled'>, forUpdate?: string[]): Promise<users.UserInfo> {
+    public async getInfo(id: number, specificColumns?: Array<'userId' | 'username' | 'passwordChanged' | 'primaryBalance' | 'secondaryBalance' | 'membership' | 'dailyAward' | 'status' | 'blurb' | 'joinDate' | 'lastOnline' | 'birthDate' | 'theme' | 'tradingEnabled' | 'staff' | 'banned' | 'forumPostCount' | 'forumSignature' | 'accountStatus' | '2faEnabled' | 'isDeveloper'>, forUpdate?: string[]): Promise<users.UserInfo> {
         if (!specificColumns) {
             specificColumns = ['userId', 'username', 'status', 'joinDate', 'blurb', 'lastOnline', 'banned', 'membership', 'tradingEnabled', 'staff', 'accountStatus'];
         }
@@ -68,8 +68,6 @@ class UsersDAL extends _init {
                 array[index] = 'user_membership as membership';
             }else if (element === 'tradingEnabled') {
                 array[index] = 'user_tradingenabled as tradingEnabled';
-            }else if (element === 'tradingEnabled') {
-                array[index] = 'user_tradingenabled as tradingEnabled';
             }else if (element === 'theme') {
                 array[index] = 'user_theme as theme';
             }else if (element === 'staff') {
@@ -78,6 +76,8 @@ class UsersDAL extends _init {
                 array[index] = 'account_status as accountStatus';
             }else if (element === '2faEnabled') {
                 array[index] = '2fa_enabled as 2faEnabled';
+            }else if (element === 'isDeveloper') {
+                array[index] = 'is_developer as isDeveloper';
             }
         });
         let query = this.knex('users').select(specificColumns).where({'users.id': id });

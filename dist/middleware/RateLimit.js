@@ -69,7 +69,7 @@ exports.RateLimiterMiddleware = (typeOfRateLimit = 'default') => {
     return (req, res, next) => {
         let ip = req.headers['cf-connecting-ip'] || req.connection.remoteAddress;
         let head = req.headers['x-ratelimit-bypass'];
-        if (head !== undefined && process.env.NODE_ENV === 'development') {
+        if (head !== undefined && process.env.NODE_ENV === 'development' || typeof head !== 'undefined' && process.env.IS_STAGING === '1') {
             ip = head;
         }
         let rateLimiter = rateLimitTypes[typeOfRateLimit];

@@ -17,6 +17,7 @@ import staff from '../dal/staff';
 import ad from '../dal/ad';
 import support from '../dal/support';
 import reportAbuse from '../dal/report-abuse';
+import currencyExchange from '../dal/currency-exchange';
 import { WWWTemplate } from '../models/v2/Www';
 import xss = require('xss');
 import moment = require('moment');
@@ -57,6 +58,7 @@ export default class StandardController {
     public ad = new ad();
     public support = new support();
     public reportAbuse = new reportAbuse();
+    public currencyExchange = new currencyExchange();
     /**
      * Begin a transaction while using normal controller services
      * This method will call trx.commit() internally
@@ -93,6 +95,7 @@ export default class StandardController {
             this.ad.knex = knexOverload;
             this.support.knex = knexOverload;
             this.reportAbuse.knex = knexOverload;
+            this.currencyExchange.knex = knexOverload;
         }
     }
 }

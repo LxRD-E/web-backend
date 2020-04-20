@@ -15,7 +15,13 @@ let isLoading = false;
 let gamesLoaded = 0;
 let areMoreAvailable = false;
 
-
+request("/game/metadata", 'GET').then(d => {
+    if (d.canCreateGames) {
+        $('#create-game').show();
+    }
+}).catch(e => {
+    console.log('probably logged out',e);
+})
 /**
  * get url vars from page url
  */

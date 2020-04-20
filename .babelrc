@@ -5,7 +5,7 @@
     }],["minify", {
         "builtIns": false,
         "mangle": true,
-        "removeConsole": false,
+        "removeConsole": true,
         "removeDebugger": true
     }]],
     "comments": false,

@@ -6,7 +6,7 @@ const normalAxios = require('axios').default;
 /**
  * Create a random account, and return an axios instance
  * with the session attached.
- * @param {{verifiedEmail?: boolean; startPrimary?: number;}} options
+ * @param {{verifiedEmail?: boolean startPrimary?: number startSecondary?: number}} options
  */
 module.exports = async (options = undefined) => {
     const usernameToUse = crypto.randomBytes(8).toString('hex');
@@ -22,6 +22,9 @@ module.exports = async (options = undefined) => {
         }
         if (options.startPrimary) {
             extraHeaders['x-start-primary'] = options.startPrimary;
+        }
+        if (options.startSecondary) {
+            extraHeaders['x-start-secondary'] = options.startSecondary;
         }
     }
     let axios = getAxios();

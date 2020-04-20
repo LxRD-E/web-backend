@@ -109,6 +109,11 @@ __decorate([
     common_1.PropertyType(Number),
     __metadata("design:type", Number)
 ], UserInfo.prototype, "2faEnabled", void 0);
+__decorate([
+    common_1.PropertyType(Number),
+    common_1.Enum(0, 1),
+    __metadata("design:type", Number)
+], UserInfo.prototype, "isDeveloper", void 0);
 exports.UserInfo = UserInfo;
 class PastUsernames {
 }

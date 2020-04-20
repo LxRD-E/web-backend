@@ -33,6 +33,8 @@ class CurrencyConversionMetadataPerCurrency {
 
 export class CurrencyConversionMetadata {
     @Required()
+    isEnabled: boolean;
+    @Required()
     primaryToSecondary: CurrencyConversionMetadataPerCurrency;
     @Required()
     secondaryToPrimary: CurrencyConversionMetadataPerCurrency;
@@ -193,6 +195,22 @@ export enum transactionType {
      * Purchase of advertisment
      */
     'PurchaseOfAdvertisment',
+    /**
+     * Purchase of currency exchange position
+     */
+    'PurchaseOfCurrencyExchangePosition',
+    /**
+     * Purchase of p2p currency exchange transaction
+     */
+    'CurrencyExchangeTransactionPurchase',
+    /**
+     * Sale of p2p currency exchange transaction
+     */
+    'CurrencyExchangeTransactionSale',
+    /**
+     * Transfer for currency exchange
+     */
+    'CurrencyExchangePositionClose',
 }
 export interface TradeItemObject {
     catalogId: number;

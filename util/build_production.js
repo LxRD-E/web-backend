@@ -30,7 +30,7 @@ fs.copySync('./migrations', './dist_module/migrations');
 fs.copySync('./env', './dist_module/env');
 // copy tests
 if (!fs.existsSync('./dist_module/tests')) {
-    fs.mkdirsSync('./dist_module/tests');
+    fs.mkdirSync('./dist_module/tests');
 }
 fs.copySync('./tests','./dist_module/tests');
 

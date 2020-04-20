@@ -21,21 +21,15 @@ const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 const model = require("../../models/models");
 const controller_1 = require("../controller");
+const Auth_1 = require("../../middleware/Auth");
+const middleware = require("../../middleware/middleware");
 const moment = require("moment");
 const _ = require("lodash");
-const Auth_1 = require("../../middleware/Auth");
 let WWWGameController = class WWWGameController extends controller_1.default {
     constructor() {
         super();
     }
     async gameCreate(userData, numericId, page) {
-        let rank = 0;
-        if (userData) {
-            rank = userData.staff;
-        }
-        if (rank >= 1 !== true) {
-            throw new this.Conflict('InvalidPermissions');
-        }
         let ViewData = new this.WWWTemplate({ title: 'Create a Game' });
         ViewData.page = {};
         return ViewData;
@@ -103,7 +97,7 @@ let WWWGameController = class WWWGameController extends controller_1.default {
         if (genre !== 1) {
             title = 'Free 3D ' + model.game.GameGenres[genre] + ' Games';
         }
-        let ViewData = new this.WWWTemplate({
+        return new this.WWWTemplate({
             title: title,
             page: {
                 genres: model.game.GameGenres,
@@ -111,13 +105,12 @@ let WWWGameController = class WWWGameController extends controller_1.default {
                 genre: genre,
             }
         });
-        return ViewData;
     }
-    gameGenre(gameGernre, res) {
-        if (!isNaN(parseInt(gameGernre, 10))) {
+    gameGenre(gameGenre, res) {
+        if (!isNaN(parseInt(gameGenre, 10))) {
             return res.redirect('/play');
         }
-        let genreToRedirectTo = model.game.GameGenres[gameGernre];
+        let genreToRedirectTo = model.game.GameGenres[gameGenre];
         if (genreToRedirectTo) {
             return res.redirect('/play?genre=' + genreToRedirectTo + '&sortBy=1');
         }
@@ -224,7 +217,7 @@ let WWWGameController = class WWWGameController extends controller_1.default {
 __decorate([
     common_1.Render('game_create'),
     common_1.Get('/game/create'),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, middleware.game.ValidateGameCreationPermissions),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('subCategoryId', Number)),
     __param(2, common_1.QueryParams('page', Number)),
@@ -293,7 +286,7 @@ __decorate([
 __decorate([
     common_1.Get('/game/:gameId/edit'),
     swagger_1.Summary('Game edit page'),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, middleware.game.ValidateGameCreationPermissions),
     common_1.Render('game_edit'),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('gameId', Number)),

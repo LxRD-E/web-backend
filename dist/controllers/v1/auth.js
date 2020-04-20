@@ -19,13 +19,13 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
-const moment = require("moment");
 const RateLimit_1 = require("../../middleware/RateLimit");
 const model = require("../../models/models");
 const auth_1 = require("../../dal/auth");
 const controller_1 = require("../controller");
 const Auth_1 = require("../../middleware/Auth");
 const RecaptchaV2_1 = require("../../middleware/RecaptchaV2");
+const moment = require("moment");
 const crypto = require("crypto");
 let AuthController = class AuthController extends controller_1.default {
     constructor() {
@@ -178,8 +178,7 @@ let AuthController = class AuthController extends controller_1.default {
         if (enabled.enabled) {
             throw new this.Conflict('TwoFactorAlreadyEnabled');
         }
-        let secret = await this.auth.generateTOTPSecret();
-        return secret;
+        return await this.auth.generateTOTPSecret();
     }
     async deleteTOTP(userInfo, password) {
         let userPassword = await this.user.getPassword(userInfo.userId);
@@ -269,15 +268,9 @@ let AuthController = class AuthController extends controller_1.default {
         const birthDateString = momentDate.format('YYYY-MM-DD HH:mm:ss');
         const usernamecheck = await this.user.isUsernameOk(username);
         if (usernamecheck !== 'OK') {
-            throw new Error(usernamecheck);
+            throw new this.BadRequest(usernamecheck);
         }
-        let available;
-        try {
-            available = await this.user.usernameAvailableForSignup(username);
-        }
-        catch (e) {
-            throw e;
-        }
+        let available = await this.user.usernameAvailableForSignup(username);
         if (!available) {
             throw new this.BadRequest('InvalidUsername');
         }
@@ -339,7 +332,7 @@ let AuthController = class AuthController extends controller_1.default {
         session.userdata.id = userId;
         session.userdata.username = username;
         session.userdata.passwordUpdated = 0;
-        if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+        if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' || process.env.IS_STAGING === '1') {
             let verifiedEmail = req.headers['x-verified-email'];
             if (verifiedEmail) {
                 await this.settings.insertNewEmail(userId, verifiedEmail, 'example_code');
@@ -349,6 +342,11 @@ let AuthController = class AuthController extends controller_1.default {
             if (startingPrimary) {
                 let primaryNumber = parseInt(startingPrimary, 10);
                 await this.economy.addToUserBalance(userId, primaryNumber, model.economy.currencyType.primary);
+            }
+            let startingSecondary = req.headers['x-start-secondary'];
+            if (startingSecondary) {
+                let secondaryNumber = parseInt(startingSecondary, 10);
+                await this.economy.addToUserBalance(userId, secondaryNumber, model.economy.currencyType.secondary);
             }
         }
         return {
@@ -546,8 +544,7 @@ __decorate([
     common_1.Post('/logout'),
     swagger_1.Summary('Logout from the current session'),
     swagger_1.Returns(409, { description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Session()),
     __param(2, common_1.HeaderParams('cf-connecting-ip')),
@@ -558,8 +555,7 @@ __decorate([
 __decorate([
     common_1.Post('/generate-totp-secret'),
     swagger_1.Summary('Generate a secret for TOTP'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [model.user.UserInfo]),
@@ -568,8 +564,7 @@ __decorate([
 __decorate([
     common_1.Delete('/totp'),
     swagger_1.Summary('Delete a two-factor authentication code'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     common_1.Use(RateLimit_1.RateLimiterMiddleware('twoFactorEnableOrDisable')),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
@@ -581,8 +576,7 @@ __decorate([
 __decorate([
     common_1.Patch('/totp'),
     swagger_1.Summary('Update (or set) the authenticated users TOTP secret'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     common_1.Use(RateLimit_1.RateLimiterMiddleware('twoFactorEnableOrDisable')),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
@@ -599,8 +593,7 @@ __decorate([
     common_1.Post('/unlock'),
     swagger_1.Summary('Unlock a banned account'),
     swagger_1.Returns(400, { description: 'Unauthorized: User is not authorized to perform this action\n', type: model.Error }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     swagger_1.Returns(401, { type: model.Error, description: 'LoginRequired: Login Required\n' }),
     swagger_1.Returns(403, { type: model.Error, description: 'Invalid CSRF Token' }),
     __param(0, common_1.Locals('userInfo')),
@@ -614,7 +607,7 @@ __decorate([
     swagger_1.Returns(200, { description: 'OK', type: model.auth.SignupResponseOK }),
     swagger_1.Returns(409, { description: 'LogoutRequired: Login Required\nCaptchaValidationFailed: Invalid captcha token, expired, or not provided\n' }),
     swagger_1.Returns(403, { description: 'CSRFValidationFailed: Invalid CSRF Token\n' }),
-    swagger_1.Returns(400, { description: 'InvalidBirthDate: Birth Date is invalid\nInvalidUsername: Username is taken or unavailable\nInvalidPassword: Password is too weak\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nOneAccountPerIP: Only one account may be signed up per IP address, every 24 hours\n' }),
+    swagger_1.Returns(400, { description: 'InvalidBirthDate: Birth Date is invalid\nInvalidUsername: Username is taken or unavailable\nInvalidPassword: Password is too weak\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstraintTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nOneAccountPerIP: Only one account may be signed up per IP address, every 24 hours\n' }),
     common_1.Use(auth_1.csrf, Auth_1.NoAuth, RecaptchaV2_1.default),
     __param(0, common_1.BodyParams(model.auth.SignupRequest)),
     __param(1, common_1.Session()),
@@ -627,8 +620,7 @@ __decorate([
     common_1.Patch('/reset/password'),
     swagger_1.Summary('Reset user password via code from email'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidCode: Code is expired or invalid\nInvalidPassword: Password is too short\n' }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.NoAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Required()),
     __param(0, common_1.BodyParams('code', String)),
     __param(1, common_1.Required()),
@@ -653,7 +645,7 @@ __decorate([
     common_1.Get('/username/change/available'),
     swagger_1.Summary('Check if username is available for name change'),
     swagger_1.Returns(400, { description: 'InvalidUsername: Username is taken or unavailable\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\n' }),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.QueryParams('username', String)),

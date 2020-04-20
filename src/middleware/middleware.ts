@@ -3,6 +3,7 @@ import * as reportAbuse from './v1/report-abuse';
 import * as staff from './v1/staff';
 import * as user from './v1/user';
 import * as group from './v1/group';
+import * as game from './v1/game';
 import {Middleware, QueryParams, Req} from "@tsed/common";
 import StandardController from "../controllers/controller";
 import {filterId} from "../helpers/Filter";
@@ -83,4 +84,5 @@ export {
     staff,
     user,
     group,
+    game,
 };

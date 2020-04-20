@@ -70,9 +70,6 @@ class UsersDAL extends _init_1.default {
             else if (element === 'tradingEnabled') {
                 array[index] = 'user_tradingenabled as tradingEnabled';
             }
-            else if (element === 'tradingEnabled') {
-                array[index] = 'user_tradingenabled as tradingEnabled';
-            }
             else if (element === 'theme') {
                 array[index] = 'user_theme as theme';
             }
@@ -84,6 +81,9 @@ class UsersDAL extends _init_1.default {
             }
             else if (element === '2faEnabled') {
                 array[index] = '2fa_enabled as 2faEnabled';
+            }
+            else if (element === 'isDeveloper') {
+                array[index] = 'is_developer as isDeveloper';
             }
         });
         let query = this.knex('users').select(specificColumns).where({ 'users.id': id });

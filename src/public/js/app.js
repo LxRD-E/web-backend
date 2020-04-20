@@ -18,6 +18,7 @@ function urlencode(string) {
     }
     return string;
 }
+
 /*
 setInterval(() => {
     $('img').on('error', function(e) {
@@ -1369,4 +1370,12 @@ if (window.innerWidth > 991) {
             
         });
     });
+}
+
+function getTheme() {
+    if (!auth) {
+        return 0;
+    }
+    let currentTheme = $('#userdata').attr('data-theme');
+    return parseInt(currentTheme);
 }

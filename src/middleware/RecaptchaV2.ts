@@ -21,6 +21,9 @@ export default (req: Request, res: Response, next: NextFunction): void => {
     if (process.env.NODE_ENV === 'development') {
         return next();
     }
+    if (process.env.IS_STAGING === '1') {
+        return next();
+    }
     const response = req.body.captcha;
     if (!response) {
         res.status(409).json(error.data);

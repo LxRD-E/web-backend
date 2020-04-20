@@ -56,7 +56,8 @@
             data-authenticated="true" 
             data-csrf="@model.csrf" 
             data-userid="@model.userInfo.userId" 
-            data-username="@model.userInfo.username" 
+            data-username="@model.userInfo.username"
+            data-theme="@model.userInfo.theme"
     ></div>
     }else{
         <div id="userdata" data-authenticated="false" data-csrf="@model.csrf"></div>
@@ -258,6 +259,16 @@
                 </div>
             </div>
         </div>
+        @if (model.env !== 'production' || model.isStaging) {
+            <!-- debug info -->
+            <div class="row">
+                <div class="col-12 bg-warning white-text">
+                    <div class="container">
+                        <p style="margin:0.25rem 0;"><b>env:</b> @model.env -- <b>staging:</b> @model.isStaging -- <b>host:</b> @(model.host || '(not specified)')</p>
+                    </div>
+                </div>
+            </div>
+        }
         <div class="row" style="display:none;margin:0;" id="systemWideStatsArea"></div>
         @if (model.bannerText) {
             <div class="row" style="margin:0;" id="bannerText">

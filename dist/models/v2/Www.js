@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const config_1 = require("../../helpers/config");
 const crypto = require("crypto");
+const os = require("os");
 let versionStr = crypto.randomBytes(16).toString('hex');
 const model = require("../../models/models");
 const staff_1 = require("../../dal/staff");
@@ -24,6 +25,7 @@ setInterval(() => {
         bannerTextLocked = false;
     });
 }, 5000);
+let HostName = os.hostname();
 class WWWTemplate {
     constructor(props) {
         this.year = new Date().getFullYear();
@@ -32,6 +34,9 @@ class WWWTemplate {
         this.v = versionStr;
         this.bannerText = currentBannerText;
         this.gameGenres = model.game.GameGenres;
+        this.env = process.env.NODE_ENV;
+        this.isStaging = process.env.IS_STAGING === '1';
+        this.hostName = HostName;
         for (const [key, value] of Object.entries(props)) {
             this[key] = value;
         }

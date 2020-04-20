@@ -14,6 +14,7 @@ if (process.env.NODE_ENV === 'production') {
     const Sentry = require('@sentry/node');
     Sentry.init({ dsn: 'https://dccc8567d5714c75a7b884ffd1d73843@sentry.io/2506252' });
 }
+console.log('staging enabled:', process.env.IS_STAGING === '1');
 const Express = require("express");
 const common_1 = require("@tsed/common");
 require("@tsed/ajv");

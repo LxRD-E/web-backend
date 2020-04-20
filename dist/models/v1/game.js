@@ -82,6 +82,7 @@ var GameGenreDescriptions;
 })(GameGenreDescriptions = exports.GameGenreDescriptions || (exports.GameGenreDescriptions = {}));
 var GameGenreThumbnails;
 (function (GameGenreThumbnails) {
+    GameGenreThumbnails[GameGenreThumbnails["https://cdn.blockshub.net/static/genre/comedy_genre_thumbnail.png"] = 5] = "https://cdn.blockshub.net/static/genre/comedy_genre_thumbnail.png";
     GameGenreThumbnails[GameGenreThumbnails["https://cdn.blockshub.net/static/genre/Western-small.jpg"] = 14] = "https://cdn.blockshub.net/static/genre/Western-small.jpg";
 })(GameGenreThumbnails = exports.GameGenreThumbnails || (exports.GameGenreThumbnails = {}));
 class GameThumbnail {
