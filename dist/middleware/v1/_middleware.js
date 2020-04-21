@@ -36,4 +36,4 @@ class Middleware extends controller_1.default {
     }
 }
 exports.default = Middleware;
-
+//# sourceMappingURL=_middleware.js.map

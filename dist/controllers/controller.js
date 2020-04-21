@@ -91,4 +91,4 @@ class StandardController {
 exports.default = StandardController;
 class IStandardControllerTRX extends StandardController {
 }
-
+//# sourceMappingURL=controller.js.map

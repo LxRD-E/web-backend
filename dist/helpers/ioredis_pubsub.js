@@ -30,4 +30,4 @@ else {
     exportedFunc = _testingExportFunc;
 }
 exports.default = exportedFunc;
-
+//# sourceMappingURL=ioredis_pubsub.js.map

@@ -46,4 +46,4 @@ exports.default = (type) => {
         }
     };
 };
-
+//# sourceMappingURL=TwoStepCheck.js.map

@@ -175,6 +175,7 @@ export enum HttpErrors {
     PositionAlreadyClosed,
     BalanceTooSmall,
     InvalidPurchaseAmount,
+    PositionNoLongerAvailable,
 }
 import os = require('os');
 import {lbOrigin} from '../middleware/Any';

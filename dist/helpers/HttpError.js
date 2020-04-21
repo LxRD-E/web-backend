@@ -178,6 +178,7 @@ var HttpErrors;
     HttpErrors[HttpErrors["PositionAlreadyClosed"] = 173] = "PositionAlreadyClosed";
     HttpErrors[HttpErrors["BalanceTooSmall"] = 174] = "BalanceTooSmall";
     HttpErrors[HttpErrors["InvalidPurchaseAmount"] = 175] = "InvalidPurchaseAmount";
+    HttpErrors[HttpErrors["PositionNoLongerAvailable"] = 176] = "PositionNoLongerAvailable";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 const Any_1 = require("../middleware/Any");
 exports.ErrorTemplate = (title, body) => {
@@ -231,4 +232,4 @@ exports.ErrorTemplate = (title, body) => {
     </body>
     </html>`.replace(/\n/g, '').replace(/  /g, '');
 };
-
+//# sourceMappingURL=HttpError.js.map

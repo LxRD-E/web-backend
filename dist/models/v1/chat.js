@@ -5,4 +5,4 @@ var MessageRead;
     MessageRead[MessageRead["false"] = 0] = "false";
     MessageRead[MessageRead["true"] = 1] = "true";
 })(MessageRead = exports.MessageRead || (exports.MessageRead = {}));
-
+//# sourceMappingURL=chat.js.map

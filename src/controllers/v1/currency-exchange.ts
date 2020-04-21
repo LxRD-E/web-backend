@@ -164,7 +164,7 @@ export default class CurrencyExchangeController extends controller {
 
     @Post('/positions/:positionId/purchase')
     @Summary('Purchase all (or part) of a position')
-    @Returns(409, {type: model.Error, description: 'NotEnoughInPositionBalance: The amount exceeds the positions balance\nPurchaseAmountTooLow: Purchase amount is too low (varies based off rate. rate multiplied by amount should be more than 0 and a valid integer)\nInvalidPurchaseAmount: Purchase amount is invalid\nNotEnoughCurrency: User cannot afford this purchase\nCannotPurchaseOwnedPosition: You cannot purchase your own position\n'})
+    @Returns(409, {type: model.Error, description: 'NotEnoughInPositionBalance: The amount exceeds the positions balance\nPurchaseAmountTooLow: Purchase amount is too low (varies based off rate. rate multiplied by amount should be more than 0 and a valid integer)\nInvalidPurchaseAmount: Purchase amount is invalid\nNotEnoughCurrency: User cannot afford this purchase\nCannotPurchaseOwnedPosition: You cannot purchase your own position\nPositionNoLongerAvailable: Position is no longer available\n'})
     @Use(csrf, YesAuth)
     public async purchasePosition(
         @Locals('userInfo') userInfo: model.UserSession,
@@ -180,6 +180,7 @@ export default class CurrencyExchangeController extends controller {
             'currency_exchange_position',
             'currency_exchange_record',
         ];
+        let exitDueToUserBeingTerminated = false;
         await this.transaction(async (trx) => {
             let data = await trx.currencyExchange.getPositionById(positionId, forUpdate);
             if (data.userId === userInfo.userId) {
@@ -200,6 +201,24 @@ export default class CurrencyExchangeController extends controller {
             }
             if (!Number.isInteger(amount)) {
                 throw new this.Conflict('InvalidPurchaseAmount');
+            }
+            // Grab seller data
+            let sellerData = await trx.user.getInfo(data.userId, ['accountStatus'], forUpdate);
+            // If seller is not OK
+            if (sellerData.accountStatus !== model.user.accountStatus.ok) {
+                // Close the position
+                await trx.currencyExchange.subtractFromPositionBalance(data.positionId, data.balance, forUpdate);
+                // Refund to seller
+                await trx.economy.addToUserBalanceV2(data.userId, data.balance, data.currencyType, forUpdate);
+                // Record negative funding
+                await trx.currencyExchange.recordPositionFunding(data.positionId, -data.balance, forUpdate);
+                // Record transaction
+                await trx.economy.createTransaction(data.userId, data.userId, data.balance, data.currencyType, model.economy.transactionType.CurrencyExchangePositionClose, 'Currency Exchange Position Closure', model.catalog.creatorType.User, model.catalog.creatorType.User);
+                // Throw an error
+                exitDueToUserBeingTerminated = true;
+            }
+            if (exitDueToUserBeingTerminated) {
+                return;
             }
             let totalUserIsGetting = amount;
             let userIsGiving: model.economy.currencyType;
@@ -240,6 +259,9 @@ export default class CurrencyExchangeController extends controller {
             await trx.economy.createTransaction(data.userId, userInfo.userId, totalUserIsPaying, userIsGiving, model.economy.transactionType.CurrencyExchangeTransactionSale, 'Sale of Currency on Exchange',model.catalog.creatorType.User, model.catalog.creatorType.User);
             // Finished
         });
+        if (exitDueToUserBeingTerminated) {
+            throw new this.Conflict('PositionNoLongerAvailable');
+        }
         return {};
     }
 
