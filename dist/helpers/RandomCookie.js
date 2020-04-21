@@ -37,4 +37,4 @@ exports.default = {
         cookies = newCookiesArr;
     }
 };
-
+//# sourceMappingURL=RandomCookie.js.map

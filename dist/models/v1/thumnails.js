@@ -5,4 +5,4 @@ var Type;
     Type["UserThumb"] = "user";
     Type["ItemThumb"] = "catalog";
 })(Type = exports.Type || (exports.Type = {}));
-
+//# sourceMappingURL=thumnails.js.map

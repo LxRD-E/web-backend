@@ -13,4 +13,4 @@ exports.SupportTicket = SupportTicket;
 class SupportTicketReply {
 }
 exports.SupportTicketReply = SupportTicketReply;
-
+//# sourceMappingURL=support.js.map

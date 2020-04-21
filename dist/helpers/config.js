@@ -21,4 +21,4 @@ else {
     console.warn('[warning] empty config ');
 }
 exports.default = configJson;
-
+//# sourceMappingURL=config.js.map

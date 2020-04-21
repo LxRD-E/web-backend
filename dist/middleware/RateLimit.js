@@ -112,4 +112,4 @@ exports.RateLimiterMiddleware = (typeOfRateLimit = 'default') => {
         });
     };
 };
-
+//# sourceMappingURL=RateLimit.js.map

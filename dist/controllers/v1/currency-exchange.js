@@ -1,15 +1,10 @@
 "use strict";
-/* istanbul ignore next */
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-/* istanbul ignore next */
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-/* istanbul ignore next */
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-/* istanbul ignore next */
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-/* istanbul ignore next */
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
@@ -120,6 +115,14 @@ let CurrencyExchangeController = class CurrencyExchangeController extends contro
             }
             if (!Number.isInteger(amount)) {
                 throw new this.Conflict('InvalidPurchaseAmount');
+            }
+            let sellerData = await trx.user.getInfo(data.userId, ['accountStatus'], forUpdate);
+            if (sellerData.accountStatus !== model.user.accountStatus.ok) {
+                await trx.currencyExchange.subtractFromPositionBalance(data.positionId, data.balance, forUpdate);
+                await trx.economy.addToUserBalanceV2(data.userId, data.balance, data.currencyType, forUpdate);
+                await trx.currencyExchange.recordPositionFunding(data.positionId, -data.balance, forUpdate);
+                await trx.economy.createTransaction(data.userId, data.userId, data.balance, data.currencyType, model.economy.transactionType.CurrencyExchangePositionClose, 'Currency Exchange Position Closure', model.catalog.creatorType.User, model.catalog.creatorType.User);
+                throw new this.Conflict('PositionNoLongerAvailable');
             }
             let totalUserIsGetting = amount;
             let userIsGiving;
@@ -259,7 +262,7 @@ __decorate([
 __decorate([
     common_1.Post('/positions/:positionId/purchase'),
     swagger_1.Summary('Purchase all (or part) of a position'),
-    swagger_1.Returns(409, { type: model.Error, description: 'NotEnoughInPositionBalance: The amount exceeds the positions balance\nPurchaseAmountTooLow: Purchase amount is too low (varies based off rate. rate multiplied by amount should be more than 0 and a valid integer)\nInvalidPurchaseAmount: Purchase amount is invalid\nNotEnoughCurrency: User cannot afford this purchase\nCannotPurchaseOwnedPosition: You cannot purchase your own position\n' }),
+    swagger_1.Returns(409, { type: model.Error, description: 'NotEnoughInPositionBalance: The amount exceeds the positions balance\nPurchaseAmountTooLow: Purchase amount is too low (varies based off rate. rate multiplied by amount should be more than 0 and a valid integer)\nInvalidPurchaseAmount: Purchase amount is invalid\nNotEnoughCurrency: User cannot afford this purchase\nCannotPurchaseOwnedPosition: You cannot purchase your own position\nPositionNoLongerAvailable: Position is no longer available\n' }),
     common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
@@ -299,4 +302,4 @@ CurrencyExchangeController = __decorate([
     __metadata("design:paramtypes", [])
 ], CurrencyExchangeController);
 exports.default = CurrencyExchangeController;
-
+//# sourceMappingURL=currency-exchange.js.map

@@ -836,13 +836,24 @@ describe('CurrencyExchange.purchasePosition()', () => {
                 },
                 user: {
                     async getInfo(id, specificColumns, forUpdate) {
-                        assert.strictEqual(id, session.userId);
-                        assert.deepEqual(specificColumns, ['primaryBalance','secondaryBalance']);
-                        assert.deepEqual(forUpdate, FOR_UPDATE);
-                        return {
-                            primaryBalance: AMOUNT_TO_BUY * RATE,
-                            secondaryBalance: AMOUNT_TO_BUY * RATE,
-                        };
+                        if (id === session.userId) {
+                            assert.strictEqual(id, session.userId);
+                            assert.deepEqual(specificColumns, ['primaryBalance','secondaryBalance']);
+                            assert.deepEqual(forUpdate, FOR_UPDATE);
+                            return {
+                                primaryBalance: AMOUNT_TO_BUY * RATE,
+                                secondaryBalance: AMOUNT_TO_BUY * RATE,
+                            };
+                        }else if (id === POSITION_OWNER) {
+                            assert.strictEqual(id, POSITION_OWNER);
+                            assert.deepEqual(specificColumns, ['accountStatus']);
+                            assert.deepEqual(forUpdate, FOR_UPDATE);
+                            return {
+                                accountStatus: 0,
+                            };
+                        }else{
+                            throw new Error('Invalid userId passed to getInfo(): it is not seller or buyer');
+                        }
                     }
                 },
                 BadRequest: controller.BadRequest,
@@ -966,13 +977,24 @@ describe('CurrencyExchange.purchasePosition()', () => {
                 },
                 user: {
                     async getInfo(id, specificColumns, forUpdate) {
-                        assert.strictEqual(id, session.userId);
-                        assert.deepEqual(specificColumns, ['primaryBalance','secondaryBalance']);
-                        assert.deepEqual(forUpdate, FOR_UPDATE);
-                        return {
-                            primaryBalance: AMOUNT_TO_BUY * RATE,
-                            secondaryBalance: AMOUNT_TO_BUY * RATE,
-                        };
+                        if (id === session.userId) {
+                            assert.strictEqual(id, session.userId);
+                            assert.deepEqual(specificColumns, ['primaryBalance', 'secondaryBalance']);
+                            assert.deepEqual(forUpdate, FOR_UPDATE);
+                            return {
+                                primaryBalance: AMOUNT_TO_BUY * RATE,
+                                secondaryBalance: AMOUNT_TO_BUY * RATE,
+                            };
+                        }else if (id === POSITION_OWNER) {
+                            assert.strictEqual(id, POSITION_OWNER);
+                            assert.deepEqual(specificColumns, ['accountStatus']);
+                            assert.deepEqual(forUpdate, FOR_UPDATE);
+                            return {
+                                accountStatus: 0,
+                            };
+                        }else{
+                            throw new Error('id passed to getInfo() is of neither seller or buyer');
+                        }
                     }
                 },
                 BadRequest: controller.BadRequest,
@@ -980,6 +1002,101 @@ describe('CurrencyExchange.purchasePosition()', () => {
             })
         }
         await controller.purchasePosition(session, POSITION_ID, AMOUNT_TO_BUY);
+        // pass
+    });
+    it('Should try to purchase a position but fail due to seller being deleted', async () => {
+        const POSITION_ID = 1986;
+        const BALANCE = 100;
+        const AMOUNT_TO_BUY = 100;
+        const RATE = 10;
+        const CURRENCY = 1;
+        const session = {
+            userId: 1,
+            username: 'Unit Test',
+        };
+        const POSITION_OWNER = 2;
+        assert.notEqual(POSITION_OWNER, session.userId);
+        const FOR_UPDATE = [
+            'users',
+            'currency_exchange_position',
+            'currency_exchange_record',
+        ];
+
+        controller.transaction = (cb) => {
+            return cb({
+                currencyExchange: {
+                    async getPositionById(id, forUpdate = []) {
+                        assert.strictEqual(id, POSITION_ID);
+                        assert.deepEqual(forUpdate, FOR_UPDATE);
+                        // for now, just return an empty array
+                        return {
+                            userId: POSITION_OWNER,
+                            balance: BALANCE,
+                            currencyType: CURRENCY,
+                            rate: RATE,
+                            positionId: POSITION_ID,
+                        };
+                    },
+                    async recordPositionFunding(positionId, amount, forUpdate) {
+                        assert.strictEqual(positionId, POSITION_ID);
+                        assert.strictEqual(amount, -BALANCE);
+                        assert.deepEqual(forUpdate, FOR_UPDATE);
+                        // Ok
+                    },
+                    async subtractFromPositionBalance(positionId, amountToSubtract, forUpdate = []) {
+                        assert.strictEqual(positionId, POSITION_ID);
+                        assert.strictEqual(amountToSubtract, BALANCE);
+                        assert.deepEqual(forUpdate, FOR_UPDATE);
+                        // Ok
+                    },
+                    async recordCurrencyExchange(positionId, buyerUserId, amountPurchased, amountSold, forUpdate) {
+                        throw new Error('recordCurrencyExchange() called');
+                    }
+                },
+                economy: {
+                    async addToUserBalanceV2(userId, amount, currency, forUpdate) {
+                        assert.strictEqual(userId, POSITION_OWNER);
+                        assert.strictEqual(amount, BALANCE);
+                        assert.strictEqual(currency, CURRENCY);
+                        assert.deepEqual(forUpdate, FOR_UPDATE);
+                        // Ok
+                    },
+                    async createTransaction(userIdTo, userIdFrom, amount, currency, type, description, fromType, toType, catalogId, userInventoryId) {
+                        assert.strictEqual(userIdTo, POSITION_OWNER);
+                        assert.strictEqual(userIdFrom, POSITION_OWNER);
+                        assert.strictEqual(amount, BALANCE);
+                        assert.strictEqual(currency, CURRENCY);
+                        assert.strictEqual(type, 20);
+                        assert.strictEqual(fromType, 0);
+                        assert.strictEqual(toType, 0);
+                    },
+                    async subtractFromUserBalanceV2(userId, amount, currency, forUpdate) {
+                        throw new Error('subtractFromUserBalanceV2() called');
+                    }
+                },
+                user: {
+                    async getInfo(id, specificColumns, forUpdate) {
+                        if (id === session.userId) {
+                            return {
+                                primaryBalance: 10000,
+                                secondaryBalance: 10000,
+                            };
+                        }else if (id === POSITION_OWNER) {
+                            assert.strictEqual(id, POSITION_OWNER);
+                            assert.deepEqual(specificColumns, ['accountStatus']);
+                            return {
+                                accountStatus: 3,
+                            };
+                        }else{
+                            throw new Error('id passed to getInfo() is from neither buyer or seller');
+                        }
+                    }
+                },
+                BadRequest: controller.BadRequest,
+                Conflict: controller.Conflict,
+            })
+        }
+        await throwsC('PositionNoLongerAvailable', controller.purchasePosition(session, POSITION_ID, AMOUNT_TO_BUY));
         // pass
     });
     it('Should try to purchase a position owned by the authenticated user but fail', async () => {
@@ -1177,13 +1294,24 @@ describe('CurrencyExchange.purchasePosition()', () => {
                 },
                 user: {
                     async getInfo(id, specificColumns, forUpdate) {
-                        assert.strictEqual(id, session.userId);
-                        assert.deepEqual(specificColumns, ['primaryBalance','secondaryBalance']);
-                        assert.deepEqual(forUpdate, FOR_UPDATE);
-                        return {
-                            primaryBalance: 1,
-                            secondaryBalance: 1,
-                        };
+                        if (id === session.userId) {
+                            assert.strictEqual(id, session.userId);
+                            assert.deepEqual(specificColumns, ['primaryBalance','secondaryBalance']);
+                            assert.deepEqual(forUpdate, FOR_UPDATE);
+                            return {
+                                primaryBalance: 1,
+                                secondaryBalance: 1,
+                            };
+                        }else if (id === POSITION_OWNER) {
+                            assert.strictEqual(id, POSITION_OWNER);
+                            assert.deepEqual(specificColumns, ['accountStatus']);
+                            assert.deepEqual(forUpdate, FOR_UPDATE);
+                            return {
+                                accountStatus: 0,
+                            };
+                        }else{
+                            throw new Error('id passed to getInfo() is of neither seller or buyer');
+                        }
                     }
                 },
                 BadRequest: controller.BadRequest,
@@ -1250,13 +1378,24 @@ describe('CurrencyExchange.purchasePosition()', () => {
                 },
                 user: {
                     async getInfo(id, specificColumns, forUpdate) {
-                        assert.strictEqual(id, session.userId);
-                        assert.deepEqual(specificColumns, ['primaryBalance','secondaryBalance']);
-                        assert.deepEqual(forUpdate, FOR_UPDATE);
-                        return {
-                            primaryBalance: 1,
-                            secondaryBalance: 1,
-                        };
+                        if (id === session.userId) {
+                            assert.strictEqual(id, session.userId);
+                            assert.deepEqual(specificColumns, ['primaryBalance','secondaryBalance']);
+                            assert.deepEqual(forUpdate, FOR_UPDATE);
+                            return {
+                                primaryBalance: 1,
+                                secondaryBalance: 1,
+                            };
+                        }else if (id === POSITION_OWNER) {
+                            assert.strictEqual(id, POSITION_OWNER);
+                            assert.deepEqual(specificColumns, ['accountStatus']);
+                            assert.deepEqual(forUpdate, FOR_UPDATE);
+                            return {
+                                accountStatus: 0,
+                            };
+                        }else{
+                            throw new Error('id passed to getInfo() is of neither seller or buyer');
+                        }
                     }
                 },
                 BadRequest: controller.BadRequest,
@@ -1323,13 +1462,24 @@ describe('CurrencyExchange.purchasePosition()', () => {
                 },
                 user: {
                     async getInfo(id, specificColumns, forUpdate) {
-                        assert.strictEqual(id, session.userId);
-                        assert.deepEqual(specificColumns, ['primaryBalance','secondaryBalance']);
-                        assert.deepEqual(forUpdate, FOR_UPDATE);
-                        return {
-                            primaryBalance: AMOUNT_TO_BUY * RATE,
-                            secondaryBalance: AMOUNT_TO_BUY * RATE,
-                        };
+                        if (id === session.userId) {
+                            assert.strictEqual(id, session.userId);
+                            assert.deepEqual(specificColumns, ['primaryBalance','secondaryBalance']);
+                            assert.deepEqual(forUpdate, FOR_UPDATE);
+                            return {
+                                primaryBalance: AMOUNT_TO_BUY * RATE,
+                                secondaryBalance: AMOUNT_TO_BUY * RATE,
+                            };
+                        }else if (id === POSITION_OWNER) {
+                            assert.strictEqual(id, POSITION_OWNER);
+                            assert.deepEqual(specificColumns, ['accountStatus']);
+                            assert.deepEqual(forUpdate, FOR_UPDATE);
+                            return {
+                                accountStatus: 0,
+                            };
+                        }else{
+                            throw new Error('id passed to getInfo() is of neither seller or buyer');
+                        }
                     }
                 },
                 BadRequest: controller.BadRequest,

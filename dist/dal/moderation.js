@@ -24,4 +24,4 @@ class ModerationDAL extends _init_1.default {
     }
 }
 exports.default = ModerationDAL;
-
+//# sourceMappingURL=moderation.js.map

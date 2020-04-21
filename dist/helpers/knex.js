@@ -26,4 +26,4 @@ else {
     thingToExport = func;
 }
 exports.default = thingToExport;
-
+//# sourceMappingURL=knex.js.map

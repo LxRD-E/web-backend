@@ -48,4 +48,4 @@ class ReportAbuseDAL extends _init_1.default {
     }
 }
 exports.default = ReportAbuseDAL;
-
+//# sourceMappingURL=report-abuse.js.map
