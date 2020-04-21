@@ -32,7 +32,6 @@ const loadChart = (currencyType) => {
         }
         _oldChartJson = _newChartJson;
         $("#chartContainer").empty();
-        let latest = $('#latest-transactions').empty();
         let txt = '';
         let chartColor = '';
         if (currencyType === 1) {
@@ -44,6 +43,9 @@ const loadChart = (currencyType) => {
             $('#chart-heading').html(formatCurrency(1)+' to '+formatCurrency(2)+' Price History');
             chartColor = 'rgb(255, 193, 7)';
         }
+        let latest = $('#latest-transactions');
+        latest.empty();
+
         let priceArr = [];
         let dateArr = [];
         let _i = 0;
@@ -53,7 +55,7 @@ const loadChart = (currencyType) => {
             dateArr.push(new Date(el.createdAt).toISOString());
             twentyFourHourAvg += el.rate;
 
-            if (_i > 100) {
+            if (_i > 50) {
                 return;
             }
             _ids.push(el.buyerUserId, el.sellerUserId);
@@ -119,21 +121,123 @@ setInterval(() => {
     }
 }, 2500);
 
+let isBestPositionsLoading = false;
+let attempts = 0;
 const loadBestPositions = (currencyType) => {
+    if (isBestPositionsLoading) {
+        return;
+    }
+    isBestPositionsLoading = true;
     return request('/currency-exchange/positions/currency-type/'+currencyType).then(d => {
+        isBestPositionsLoading = false;
         let el = $('#all-positions');
-        el.empty();
-       if (d.length === 0) {
-           el.append(`<p>There are no open positions for this query.</p>`);
-       }else{
-           el.append(`
+        attempts++;
+        if (attempts === 1) {
+            el.empty();
+
+            el.append(`
 <div class="row">
     <div class="col-3">You Give</div>
     <div class="col-3">You Get</div>
     <div class="col-3">Available</div>
 </div>`);
+        }
+        /*
+        if (attempts >= 3) {
+            d[0]['balance'] = d[0]['balance'] + 100;
+        }
+        if (attempts >= 4) {
+            d[0]['rate'] = d[1]['rate'] + 25.9;
+        }
+        let _newArr = [];
+        if (attempts >= 6) {
+            d.forEach((el, i) => {
+                console.log(i);
+                if (i !== 0) {
+                    _newArr.push(el);
+                }
+            })
+            d = _newArr;
+        }
+        isBestPositionsLoading=false;
+        */
+
+        // el.empty();
+       if (d.length === 0) {
+           attempts = 0;
+           el.empty().append(`<p>There are no open positions for this query.</p>`);
+       }else{
+
+           // First, lets go through all the children
+           let existingIds = [];
+           $('.currency-exchange-entry').each(function(){
+                let id = parseInt($(this).attr('data-id'));
+                let rate = parseFloat($(this).attr('data-rate'));
+                let balance = parseInt($(this).attr('data-balance'));
+
+                let stillExists = false;
+                d.forEach(pos => {
+                     if (pos.positionId === id) {
+                         stillExists = pos;
+                     }
+                });
+                // No longer exists
+                if (!stillExists) {
+                    $(this).fadeOut(250).delay(250).remove();
+                    return;
+                }
+                existingIds.push(id);
+
+                let modified = false;
+                if (stillExists.balance !== balance) {
+                    // update balance
+                    $(this).find('.full-rate-formatted').html(`${formatCurrency(stillExists.currencyType === 1 ? 2 : 1, '0.85rem')}${stillExists.rate}`);
+                    $(this).find('.full-balance').find('p').html(`${formatCurrency(stillExists.currencyType, '0.85rem')}${number_format(stillExists.balance)}`);
+                    $(this).find('.amount-to-buy').attr('data-balance',stillExists.balance);
+                    modified = true;
+                }
+                if (stillExists.rate !== rate) {
+                    // update rate
+                    $(this).find('.amount-to-buy').attr('data-rate',stillExists.rate);
+                    modified = true;
+                }
+
+                if (modified) {
+                    let amToBuy = $(this).find('.amount-to-buy');
+                    let rate = parseFloat($(amToBuy).attr('data-rate'));
+                    let max = parseInt($(amToBuy).attr('data-balance'), 10);
+                    let enteredValue = parseInt($(amToBuy).val(), 10);
+
+                    let currencyType = parseInt($(amToBuy).attr('data-currencytype'), 10);
+                    let userIsPaying = Math.trunc(enteredValue*rate * 100) / 100;
+                    if (isNaN(userIsPaying)) {
+                        userIsPaying = 0;
+                    }
+                    if (isNaN(enteredValue)) {
+                        enteredValue = 0;
+                        $(amToBuy).parent().find('.submit-buy-position').attr('disabled','disabled');
+                    }else{
+                        if (enteredValue > max) {
+                            enteredValue = max;
+                            $(amToBuy).parent().find('.submit-buy-position').attr('disabled','disabled');
+                        }else{
+                            if (userIsPaying < 1 || userIsPaying.toString().includes('.')) {
+                                $(amToBuy).parent().find('.submit-buy-position').attr('disabled','disabled');
+                            }else{
+                                $(amToBuy).parent().find('.submit-buy-position').removeAttr('disabled');
+                            }
+                        }
+                    }
+                    $(amToBuy).parent().find('.youll-pay').html(`${formatCurrency(currencyType === 1 ? 2 : 1)}`+userIsPaying);
+                    $(amToBuy).attr('data-youll-pay',userIsPaying);
+                }
+           });
+
            let ids = [];
            d.forEach(pos => {
+               if (existingIds.includes(pos.positionId)) {
+                   return; // skip
+               }
                ids.push(pos.userId);
                let buyBtn = `<button type="button" class="btn btn-success buy-position" style="padding-top:0.25rem;padding-bottom:0.25rem;font-size:0.85rem;float:right;" data-id="${pos.positionId}">Buy</button>`;
                if (pos.userId === userId) {
@@ -141,16 +245,16 @@ const loadBestPositions = (currencyType) => {
                }
               el.append(`
               
-              <div class="row">
+              <div class="row currency-exchange-entry" data-id="${pos.positionId}" data-rate="${pos.rate}" data-balance="${pos.balance}">
                     <div class="col-3">
-                        <p style="font-size:0.85rem;">${formatCurrency(pos.currencyType === 1 ? 2 : 1, '0.85rem')}${pos.rate}</p>
+                        <p style="font-size:0.85rem;" class="full-rate-formatted">${formatCurrency(pos.currencyType === 1 ? 2 : 1, '0.85rem')}${pos.rate}</p>
                     </div>
                     <div class="col-3">
                         <p style="font-size:0.85rem;">
                             ${formatCurrency(pos.currencyType, '0.85rem')}1
                         </p>
                     </div>
-                    <div class="col-6">
+                    <div class="col-6" class="full-balance">
                         <p style="font-size:0.85rem;float:left;">${formatCurrency(pos.currencyType, '0.85rem')}${number_format(pos.balance)}</p>
                         ${buyBtn}
                     </div>
@@ -183,6 +287,10 @@ const loadBestPositions = (currencyType) => {
        }
     });
 }
+setInterval(() => {
+    console.log('load best positions');
+    loadBestPositions(currentMode);
+}, 2500);
 
 $(document).on('input', '.amount-to-buy', function(e) {
     let rate = parseFloat($(this).attr('data-rate'));

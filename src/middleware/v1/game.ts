@@ -35,7 +35,7 @@ export class ValidateGameCreationPermissions extends middleware {
         }
         // Add to cache
         this.UserCache.addToCache({
-            data: {isGameDev: userInfo.staff >= 1, userId: userInfo.userId},
+            data: {isGameDev: true, userId: userInfo.userId},
             createdAt: new Date().getTime(),
         });
     }

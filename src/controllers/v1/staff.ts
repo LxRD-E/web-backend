@@ -7,16 +7,31 @@ import crypto = require('crypto');
 // Interfaces
 import * as model from '../../models/models';
 // Misc Models
-import { filterOffset, filterId } from '../../helpers/Filter';
+import {filterId, filterOffset} from '../../helpers/Filter';
 // middleware
 import * as middleware from '../../middleware/middleware';
-import * as filter from '../../filters/filters';
 // Autoload
 import controller from '../controller';
-import { Controller, Post, Get, Patch, Delete, Put, QueryParams, BodyParams, PathParams, UseBeforeEach, UseBefore, Locals, Use, MaxLength, MinLength, Required, Filter } from '@tsed/common';
-import { Summary, Description, ReturnsArray, Returns } from '@tsed/swagger';
-import { YesAuth } from '../../middleware/Auth';
-import { csrf } from '../../dal/auth';
+import {
+    BodyParams,
+    Controller,
+    Delete,
+    Get,
+    Locals,
+    Patch,
+    PathParams,
+    Post,
+    Put,
+    QueryParams,
+    Required,
+    Use,
+    UseBefore,
+    UseBeforeEach
+} from '@tsed/common';
+import {Description, Returns, ReturnsArray, Summary} from '@tsed/swagger';
+import {YesAuth} from '../../middleware/Auth';
+import {csrf} from '../../dal/auth';
+
 /**
  * Staff Controller
  */
@@ -1212,7 +1227,7 @@ export class StaffController extends controller {
 
     @Get('/economy/trades/:type')
     @Summary('Get user trades')
-    @UseBefore(YesAuth)
+    @Use(YesAuth)
     @ReturnsArray(200, { type: model.economy.TradeInfo })
     @Returns(400, { type: model.Error, description: 'InvalidTradeType: TradeType must be one of: inbound,outbound,completed,inactive\n' })
     public async getTrades(
@@ -1223,7 +1238,7 @@ export class StaffController extends controller {
         @QueryParams('userId', Number) userId: number,
         @QueryParams('offset', Number) offset: number = 0
     ) {
-        if (userInfo.staff >= 2 === false) {
+        if (!(userInfo.staff >= 2)) {
             throw new this.BadRequest('InvalidPermissions');
         }
         let tradeValue;
@@ -1232,7 +1247,23 @@ export class StaffController extends controller {
         } else {
             tradeValue = tradeType;
         }
-        const trades = await this.economy.getTrades(userId, tradeValue, offset);
-        return trades;
+        return await this.economy.getTrades(userId, tradeValue, offset);
+    }
+
+    @Post('/user/:userId/game-dev')
+    @Summary('Modify is_developer state of the {userId}')
+    @Use(csrf, YesAuth, middleware.user.ValidateUserId)
+    public async updateIsGameDevPermission(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Required()
+        @PathParams('userId', Number) userId: number,
+        @Required()
+        @BodyParams('isDeveloper', Boolean) isDeveloper: boolean,
+    ) {
+        if (!(userInfo.staff >= 2)) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        await this.user.updateIsDeveloper(userId, isDeveloper);
+        return {};
     }
 }

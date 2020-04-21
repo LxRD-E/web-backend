@@ -92,6 +92,20 @@
                                         }
                                     </p>
                                 }
+                                @if (model.userInfo.staff >= 2) {
+                                                                    <p>
+                                                                        <span style="font-weight:600;">Is Developer: </span>
+                                                                        <select class="form-control" id="is-developer">
+                                                                        @if (model.page.userInfo.isDeveloper === 1) {
+                                                                            <option value="true" selected>Yes</option>
+                                                                            <option value="false">No</option>
+                                                                        }else{
+                                                                            <option value="true">Yes</option>
+                                                                            <option value="false" selected>No</option>
+                                                                        }
+                                                                        </select>
+                                                                    </p>
+                                                                }
                                 <p>
                                     <span style="font-weight:600;">Mod Level: </span>
                                     <span style="font-weight:100;">@model.page.userInfo.staff</span>

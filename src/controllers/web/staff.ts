@@ -31,7 +31,7 @@ export class WWWStaffController extends controller {
     public async directoryStaff(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 1 ? true : false;
+        const staff = userInfo.staff >= 1;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -44,7 +44,7 @@ export class WWWStaffController extends controller {
     public async createItem(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 1 ? true : false;
+        const staff = userInfo.staff >= 1;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -57,7 +57,7 @@ export class WWWStaffController extends controller {
     public async currencyProductEditor(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 3 ? true : false;
+        const staff = userInfo.staff >= 3;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -70,7 +70,7 @@ export class WWWStaffController extends controller {
     public async ban(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 2 ? true : false;
+        const staff = userInfo.staff >= 2;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -83,7 +83,7 @@ export class WWWStaffController extends controller {
     public async unban(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 2 ? true : false;
+        const staff = userInfo.staff >= 2;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -96,7 +96,7 @@ export class WWWStaffController extends controller {
     public async resetPassword(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 2 ? true : false;
+        const staff = userInfo.staff >= 2;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -109,7 +109,7 @@ export class WWWStaffController extends controller {
     public async catalogPending(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 1 ? true : false;
+        const staff = userInfo.staff >= 1;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -122,7 +122,7 @@ export class WWWStaffController extends controller {
     public async reportAbuseUserStatus(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 1 ? true : false;
+        const staff = userInfo.staff >= 1;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -135,7 +135,7 @@ export class WWWStaffController extends controller {
     public async giveItem(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 3 ? true : false;
+        const staff = userInfo.staff >= 3;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -148,7 +148,7 @@ export class WWWStaffController extends controller {
     public async giveCurrency(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 3 ? true : false;
+        const staff = userInfo.staff >= 3;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -161,7 +161,7 @@ export class WWWStaffController extends controller {
     public async editBanner(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 2 ? true : false;
+        const staff = userInfo.staff >= 2;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -176,7 +176,7 @@ export class WWWStaffController extends controller {
         @Required()
         @QueryParams('userId', Number) userId: number
     ) {
-        const staff = localUserData.staff > 1 ? true : false;
+        const staff = localUserData.staff > 1;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -188,7 +188,7 @@ export class WWWStaffController extends controller {
         let userEmails = [];
         let twoFactorEnabled = false;
         try {
-            userInfo = await this.user.getInfo(userId, ['accountStatus','userId','username','primaryBalance','secondaryBalance','blurb','staff','birthDate','dailyAward','lastOnline','status','joinDate','forumSignature', '2faEnabled']);
+            userInfo = await this.user.getInfo(userId, ['accountStatus','userId','username','primaryBalance','secondaryBalance','blurb','staff','birthDate','dailyAward','lastOnline','status','joinDate','forumSignature', '2faEnabled', 'isDeveloper']);
             if (userInfo['2faEnabled'] === 1) {
                 twoFactorEnabled = true;
             }

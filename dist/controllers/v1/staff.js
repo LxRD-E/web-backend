@@ -21,6 +21,7 @@ const moment = require("moment");
 const crypto = require("crypto");
 const model = require("../../models/models");
 const Filter_1 = require("../../helpers/Filter");
+const middleware = require("../../middleware/middleware");
 const controller_1 = require("../controller");
 const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
@@ -688,7 +689,7 @@ let StaffController = class StaffController extends controller_1.default {
         }
     }
     async getTrades(userInfo, tradeType, userId, offset = 0) {
-        if (userInfo.staff >= 2 === false) {
+        if (!(userInfo.staff >= 2)) {
             throw new this.BadRequest('InvalidPermissions');
         }
         let tradeValue;
@@ -698,8 +699,14 @@ let StaffController = class StaffController extends controller_1.default {
         else {
             tradeValue = tradeType;
         }
-        const trades = await this.economy.getTrades(userId, tradeValue, offset);
-        return trades;
+        return await this.economy.getTrades(userId, tradeValue, offset);
+    }
+    async updateIsGameDevPermission(userInfo, userId, isDeveloper) {
+        if (!(userInfo.staff >= 2)) {
+            throw new this.BadRequest('InvalidPermissions');
+        }
+        await this.user.updateIsDeveloper(userId, isDeveloper);
+        return {};
     }
 };
 __decorate([
@@ -1177,7 +1184,7 @@ __decorate([
 __decorate([
     common_1.Get('/economy/trades/:type'),
     swagger_1.Summary('Get user trades'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth),
     swagger_1.ReturnsArray(200, { type: model.economy.TradeInfo }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidTradeType: TradeType must be one of: inbound,outbound,completed,inactive\n' }),
     __param(0, common_1.Locals('userInfo')),
@@ -1190,6 +1197,19 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, String, Number, Number]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "getTrades", null);
+__decorate([
+    common_1.Post('/user/:userId/game-dev'),
+    swagger_1.Summary('Modify is_developer state of the {userId}'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.user.ValidateUserId),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Required()),
+    __param(1, common_1.PathParams('userId', Number)),
+    __param(2, common_1.Required()),
+    __param(2, common_1.BodyParams('isDeveloper', Boolean)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Boolean]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "updateIsGameDevPermission", null);
 StaffController = __decorate([
     common_1.Controller('/staff'),
     __metadata("design:paramtypes", [])

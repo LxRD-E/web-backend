@@ -9,7 +9,7 @@ import * as Thumbnails from '../models/v1/thumnails';
 // Libs
 import Config from '../helpers/config';
 // AUTH-Stuff
-import {encrypt, decrypt, encryptPasswordHash, decryptPasswordHash} from './auth'
+import {decryptPasswordHash, encrypt, encryptPasswordHash} from './auth'
 // Init
 import _init from './_init';
 import * as model from '../models/models';
@@ -1302,10 +1302,20 @@ class UsersDAL extends _init {
      * @param userId 
      */
     public async getModerationHistory(userId: number): Promise<model.user.UserModerationAction[]> {
-        let response = await this.knex('user_moderation').select(['id as moderationActionId','userid as userId','reason','date as createdAt','until_unbanned as until','is_terminated as terminated']).orderBy('id','desc').where({
+        return this.knex('user_moderation').select(['id as moderationActionId', 'userid as userId', 'reason', 'date as createdAt', 'until_unbanned as until', 'is_terminated as terminated']).orderBy('id', 'desc').where({
             'userid': userId,
         });
-        return response;
+    }
+
+    /**
+     * Give or take away game developer permissions for the userId
+     * @param userId
+     * @param isDeveloper
+     */
+    public async updateIsDeveloper(userId: number, isDeveloper: boolean): Promise<void> {
+        await this.knex('users').update({'is_developer': isDeveloper}).where({
+            'id': userId,
+        }).limit(1);
     }
 }
 

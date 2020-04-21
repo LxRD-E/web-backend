@@ -32,84 +32,84 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
         return new this.WWWTemplate({ title: 'Staff' });
     }
     async directoryStaff(userInfo) {
-        const staff = userInfo.staff >= 1 ? true : false;
+        const staff = userInfo.staff >= 1;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
         return new this.WWWTemplate({ title: 'Staff Directory', userInfo: userInfo });
     }
     async createItem(userInfo) {
-        const staff = userInfo.staff >= 1 ? true : false;
+        const staff = userInfo.staff >= 1;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
         return new this.WWWTemplate({ title: 'Staff Create', userInfo: userInfo });
     }
     async currencyProductEditor(userInfo) {
-        const staff = userInfo.staff >= 3 ? true : false;
+        const staff = userInfo.staff >= 3;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
         return new this.WWWTemplate({ title: 'Currency Products', userInfo: userInfo });
     }
     async ban(userInfo) {
-        const staff = userInfo.staff >= 2 ? true : false;
+        const staff = userInfo.staff >= 2;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
         return new this.WWWTemplate({ title: 'Ban a User', userInfo: userInfo });
     }
     async unban(userInfo) {
-        const staff = userInfo.staff >= 2 ? true : false;
+        const staff = userInfo.staff >= 2;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
         return new this.WWWTemplate({ title: 'Unban a User', userInfo: userInfo });
     }
     async resetPassword(userInfo) {
-        const staff = userInfo.staff >= 2 ? true : false;
+        const staff = userInfo.staff >= 2;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
         return new this.WWWTemplate({ title: 'Reset a password', userInfo: userInfo });
     }
     async catalogPending(userInfo) {
-        const staff = userInfo.staff >= 1 ? true : false;
+        const staff = userInfo.staff >= 1;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
         return new this.WWWTemplate({ title: 'Items Awaiting Moderator Approval', userInfo: userInfo });
     }
     async reportAbuseUserStatus(userInfo) {
-        const staff = userInfo.staff >= 1 ? true : false;
+        const staff = userInfo.staff >= 1;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
         return new this.WWWTemplate({ title: 'User Status Reports', userInfo: userInfo });
     }
     async giveItem(userInfo) {
-        const staff = userInfo.staff >= 3 ? true : false;
+        const staff = userInfo.staff >= 3;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
         return new this.WWWTemplate({ title: 'Give an Item', userInfo: userInfo });
     }
     async giveCurrency(userInfo) {
-        const staff = userInfo.staff >= 3 ? true : false;
+        const staff = userInfo.staff >= 3;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
         return new this.WWWTemplate({ title: 'Give Currency', userInfo: userInfo });
     }
     async editBanner(userInfo) {
-        const staff = userInfo.staff >= 2 ? true : false;
+        const staff = userInfo.staff >= 2;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
         return new this.WWWTemplate({ title: 'Edit Banner', userInfo: userInfo });
     }
     async moderationProfile(localUserData, userId) {
-        const staff = localUserData.staff > 1 ? true : false;
+        const staff = localUserData.staff > 1;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -121,7 +121,7 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
         let userEmails = [];
         let twoFactorEnabled = false;
         try {
-            userInfo = await this.user.getInfo(userId, ['accountStatus', 'userId', 'username', 'primaryBalance', 'secondaryBalance', 'blurb', 'staff', 'birthDate', 'dailyAward', 'lastOnline', 'status', 'joinDate', 'forumSignature', '2faEnabled']);
+            userInfo = await this.user.getInfo(userId, ['accountStatus', 'userId', 'username', 'primaryBalance', 'secondaryBalance', 'blurb', 'staff', 'birthDate', 'dailyAward', 'lastOnline', 'status', 'joinDate', 'forumSignature', '2faEnabled', 'isDeveloper']);
             if (userInfo['2faEnabled'] === 1) {
                 twoFactorEnabled = true;
             }

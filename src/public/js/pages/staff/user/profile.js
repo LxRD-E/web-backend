@@ -164,3 +164,19 @@ const getComments = (offset) => {
     });
 }
 getComments(0);
+
+var _isDevLocked = false;
+$('#is-developer').change(function(e) {
+    console.log('Change');
+    $(this).attr('disabled','disabled');
+    _isDevLocked = true;
+    request('/staff/user/'+$('#userId').val()+'/game-dev', 'POST', {
+        isDeveloper: $(this).val() === 'true',
+    }).then(d => {
+        toast(true, 'This users game dev state has been modified.');
+        $(this).removeAttr('disabled');
+    }).catch(e => {
+        $(this).removeAttr('disabled');
+        warning(e.responseJSON.message);
+    })
+});
