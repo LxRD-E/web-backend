@@ -1,19 +1,30 @@
-import { wss } from '../../start/websockets';
-
+import {wss} from '../../start/websockets';
 /**
  * Imports
  */
-// Express
-import { Response, Request } from 'express';
 // Models
 import * as model from '../../models/models';
-import { filterOffset, filterLimit, filterId, filterSort } from '../../helpers/Filter';
-import { Redis } from 'ioredis';
+import * as NodeWS from 'ws';
+import {filterId} from '../../helpers/Filter';
+import {Redis} from 'ioredis';
 import controller from '../controller';
-import { Locals, UseBefore, Get, PathParams, BodyParams, Put, UseBeforeEach, Controller, QueryParams, Patch, Post, Use } from '@tsed/common';
-import { YesAuth } from '../../middleware/Auth';
-import { csrf } from '../../dal/auth';
-import { Summary, Returns, Description } from '@tsed/swagger';
+import {
+    BodyParams,
+    Controller,
+    Get,
+    Locals,
+    Patch,
+    PathParams,
+    Post,
+    Put,
+    QueryParams,
+    Use,
+    UseBefore,
+    UseBeforeEach
+} from '@tsed/common';
+import {YesAuth} from '../../middleware/Auth';
+import {csrf} from '../../dal/auth';
+import {Description, Returns, Summary} from '@tsed/swagger';
 
 /**
  * Chat Controller
@@ -27,15 +38,12 @@ export class ChatController extends controller {
     @Post('/metadata')
     @Summary('Grab CSRF Token for chat websocket connection')
     @Description('Might be replaced with a more efficient option in the future')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     public getCsrfTokenForWebsocket() {return {success: true}}
-    /**
-     * Get a user's latest conversation partners user ids
-     */
+
     @Get('/latest')
     @Summary('Get latest conversation userIds')
-    @UseBefore(YesAuth)
+    @Use(YesAuth)
     public async getLatestConversationUserIds(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ): Promise<model.chat.ChatMessage[]> {
@@ -47,11 +55,7 @@ export class ChatController extends controller {
         }
         return results;
     }
-    /**
-     * Get Chat History between Auth User and specified user ID
-     * @param userId 
-     * @param offset 
-     */
+
     @Get('/:userId/history')
     @Summary('Get chat history between authenticated user and userId')
     @Returns(400, {type: model.Error, description: 'InvalidUserId: UserId is invalid\n'})
@@ -62,26 +66,16 @@ export class ChatController extends controller {
         @QueryParams('offset', Number) goodOffset: number = 0
     ) {
         // Check if friends
-        try {
-            const friends = await this.user.getFriendshipStatus(userInfo.userId, numericId);
-            if (!friends.areFriends) {
-                throw false;
-            }
-        }catch(e) {
+        const friends = await this.user.getFriendshipStatus(userInfo.userId, numericId);
+        if (!friends.areFriends) {
             throw new this.BadRequest('InvalidUserId');
         }
-        const history = await this.chat.getConversationByUserId(userInfo.userId, numericId, goodOffset);
-        return history;
+        return await this.chat.getConversationByUserId(userInfo.userId, numericId, goodOffset);
     }
-    /**
-     * Send a chat message
-     * @param userId 
-     * @param content 
-     */
+
     @Put('/:userId/send')
     @Returns(400, {type: model.Error, description: 'InvalidMessage: Message is not valid\nInvalidUserId: userId is invalid'})
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     public async sendChatMessage(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) numericId: number, 
@@ -91,26 +85,18 @@ export class ChatController extends controller {
             throw new this.BadRequest('InvalidMessage');
         }
         // Check if friends
-        try {
-            const friends = await this.user.getFriendshipStatus(userInfo.userId, numericId);
-            if (!friends.areFriends) {
-                throw false;
-            }
-        }catch(e) {
+        const friends = await this.user.getFriendshipStatus(userInfo.userId, numericId);
+        if (!friends.areFriends) {
             throw new this.BadRequest('InvalidUserId');
         }
         const message = await this.chat.createMessage(numericId, userInfo.userId, content);
         await this.chat.publishMessage(numericId, message);
         return {success: true};
     }
-    /**
-     * Send typeing status
-     * @param userId 
-     */
+
     @Put('/:userId/typing')
     @Returns(400, {type: model.Error, description: 'InvalidStatus: Status must be one of: 0,1\nInvalidUserId: userId is not valid\n'})
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     public async sendTypingStatus(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) numericId: number, 
@@ -121,12 +107,8 @@ export class ChatController extends controller {
             throw new this.BadRequest('InvalidStatus');
         }
         // Check if friends
-        try {
-            const friends = await this.user.getFriendshipStatus(userInfo.userId, numericId);
-            if (!friends.areFriends) {
-                throw false;
-            }
-        }catch(e) {
+        const friends = await this.user.getFriendshipStatus(userInfo.userId, numericId);
+        if (!friends.areFriends) {
             throw new this.BadRequest('InvalidUserId');
         }
         await this.chat.publishTypingStatus(numericId, userInfo.userId, numericStatus);
@@ -134,21 +116,19 @@ export class ChatController extends controller {
     }
 
     /**
-     * Listen for Chat Events
+     * # Not a controller method
+     * Listen for chat events. Callback is called on new chat event. Delivery is not guaranteed.
      */
-    @UseBefore(YesAuth)
     public async listenForChatEvents(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
+        userId: number,
+        cbOnChatEvents: (msg: string) => any,
     ) {
-        const messages = await this.chat.subscribeToMessages(userInfo.userId);
-        return messages;
+        return this.chat.subscribeToMessages(userId, cbOnChatEvents);
+        // return await this.chat.subscribeToMessages(userId);
     }
 
-    /**
-     * Count Unread Messages
-     */
     @Get('/unread/count')
-    @UseBefore(YesAuth)
+    @Use(YesAuth)
     public async countUnreadMessages(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ) {
@@ -156,13 +136,8 @@ export class ChatController extends controller {
         return {'total': unread};
     }
 
-    /**
-     * Mark an Entire Conversation as read
-     * @param userId 
-     */
     @Patch('/:userId/read')
-    @UseBeforeEach(YesAuth)
-    @UseBefore(csrf)
+    @Use(csrf, YesAuth)
     public async markConversationAsRead(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) numericId: number
@@ -170,66 +145,75 @@ export class ChatController extends controller {
         await this.chat.markConversationAsRead(userInfo.userId, numericId);
         return {success: true};
     }
+
+    public static async chatWebsocketConnection(ws: NodeWS, userId: number) {
+        // We ignore all non-"ping" requests for now
+        ws.on('message', function incoming(msg) {
+            let str = msg.toString();
+            if (str.length > 250) {
+                ws.close();
+                return;
+            }
+            // try to decode
+            let decodedMessage: Partial<{ping?: number}> = {};
+            try {
+                decodedMessage = JSON.parse(str);
+            }catch(e) {
+                ws.close();
+            }
+            if (decodedMessage && decodedMessage.ping) {
+                ws.send(JSON.stringify({
+                    'pong': Math.floor(new Date().getTime() / 1000),
+                }), (err) => {
+                    if (err) {
+                        console.error(err);
+                    }
+                });
+            }else{
+                ws.close();
+            }
+        });
+        let connector: model.chat.IChatMessageDisconnector;
+        try {
+            console.log('Setting up REDIS');
+            // Listen for events
+            connector = await new ChatController().listenForChatEvents(userId, str => {
+                ws.send(str);
+            });
+            /*
+            listener.on('message', (channel, message): void => {
+                console.log('Message received to websocket. Sending message to clients...');
+                ws.send(message);
+            });
+            */
+        }catch(e) {
+            console.log('Closing ws conn due to redis error',e);
+            connector.disconnect();
+            ws.close();
+        }
+        ws.on('close', function() {
+            console.log('Websocket conn closed - disconnecting callback');
+            connector.disconnect();
+        });
+    }
 }
 
-
+/**
+ * TODO: convert to some decorator library
+ */
 wss.on('connection', async function connection(ws, request: any) {
     if (request.url !== '/chat/websocket.aspx') {
         // let someone else handle it
-        console.log('Invalid request URL for websocket');
         return;
     }
     // If no session, close
     const sess = request.session;
-    if (!sess) {
+    if (!sess || sess && !sess.userdata || sess && sess.userdata && !sess.userdata.id) {
         console.log("No session for websocket");
         ws.close();
         return;
     }
-    console.log('Websocket OK, startin conn info');
-    // We ignore incomming requests for now
-    ws.on('message', function incoming(msg) {
-        // try to decode
-        let decodedMessage: any = {};
-        try {
-            decodedMessage = JSON.parse(msg.toString());
-        }catch(e) {
-            ws.close();
-        }
-        if (decodedMessage && decodedMessage.ping) {
-            ws.send(JSON.stringify({
-                'pong': Math.floor(new Date().getTime() / 1000),
-            }), (err) => {
-                if (err) {
-                    console.error(err);
-                }
-            });
-        }else{
-            ws.close();
-        }
-    });
     // Setup Listener
-    const userInfo = new model.user.UserInfo;
-    userInfo.userId = sess.userdata.id;
-    let listener: Redis;
-    try {
-        console.log('Setting up REDIS');
-        // Listen for events
-        listener = await new ChatController().listenForChatEvents(userInfo);
-        listener.on('message', (channel, message): void => {
-            console.log('MEssage recieved to websocket. Sending message to clients...');
-            ws.send(message);
-        });
-    }catch(e) {
-        console.log('Closing ws conn  due to redis error',e);
-        ws.close();
-    }
-    ws.on('close', function() {
-        console.log('Websocket conn closed - disconnecting redis');
-        // Close Redis Sub
-        if (listener && listener.disconnect) {
-            listener.disconnect();
-        }
-    });
+    await ChatController.chatWebsocketConnection(ws, sess.userdata.id);
 });
  

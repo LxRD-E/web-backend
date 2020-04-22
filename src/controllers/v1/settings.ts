@@ -9,11 +9,25 @@ import * as model from '../../models/models';
 // Autoload
 import controller from '../controller';
 // TSED
-import { Locals, Required, BodyParams, Get, UseBefore, Patch, OverrideMiddleware, Post, UseBeforeEach, Session, Controller, Use } from '@tsed/common';
-import { YesAuth } from '../../middleware/Auth';
-import { Summary, Returns } from '@tsed/swagger';
-import { csrf } from '../../dal/auth';
-import { RateLimiterMiddleware } from '../../middleware/RateLimit';
+import {
+    Locals,
+    Required,
+    BodyParams,
+    Get,
+    UseBefore,
+    Patch,
+    OverrideMiddleware,
+    Post,
+    UseBeforeEach,
+    Session,
+    Controller,
+    Use
+} from '@tsed/common';
+import {YesAuth} from '../../middleware/Auth';
+import {Summary, Returns} from '@tsed/swagger';
+import {csrf} from '../../dal/auth';
+import {RateLimiterMiddleware} from '../../middleware/RateLimit';
+
 /**
  * Settings Controller
  */
@@ -23,13 +37,14 @@ export default class SettingsController extends controller {
     constructor() {
         super();
     }
+
     /**
      * Get the authenicated user's account settings
      */
     @Get('/')
     @Summary('Get user settings')
     @UseBefore(YesAuth)
-    @Returns(200, { type: model.settings.UserSettings })
+    @Returns(200, {type: model.settings.UserSettings})
     public async accountSettings(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ): Promise<model.settings.UserSettings> {
@@ -42,7 +57,7 @@ export default class SettingsController extends controller {
             '2faEnabled': 0,
         } as model.settings.UserSettings;
         let userInfoModel = await this.user.getInfo(userInfo.userId, ['blurb', 'tradingEnabled', 'theme', 'forumSignature', '2faEnabled', 'birthDate']);
-        console.log('date type:',typeof userInfoModel.birthDate);
+        console.log('date type:', typeof userInfoModel.birthDate);
         settingsObject.blurb = userInfoModel.blurb;
         settingsObject.tradingEnabled = userInfoModel.tradingEnabled;
         settingsObject.theme = userInfoModel.theme;
@@ -79,7 +94,10 @@ export default class SettingsController extends controller {
 
     @Post('/email/verification/resend')
     @Summary('Request a verification email resend')
-    @Returns(409, {type: model.Error, description: 'FloodCheck: Try again later\nNoEmailAttached: There is no email attached to this account\nEmailAlreadyVerified: The email attached to this account is already verified\n'})
+    @Returns(409, {
+        type: model.Error,
+        description: 'FloodCheck: Try again later\nNoEmailAttached: There is no email attached to this account\nEmailAlreadyVerified: The email attached to this account is already verified\n'
+    })
     @Use(csrf, YesAuth)
     public async requestVerificationEmailResend(
         @Locals('userInfo') UserInfo: model.user.UserInfo,
@@ -112,21 +130,20 @@ export default class SettingsController extends controller {
                 console.error('Error sending password verification email', e);
             });
         } catch (e) {
-            console.error('email verification caught exception',e);
+            console.error('email verification caught exception', e);
         }
         // Return Success
-        return { success: true };
+        return {success: true};
     }
-    /**
-     * Update the Authenticated User's Email
-     * @param newEmail 
-     */
+
     @Patch('/email')
     @Summary('Update users email')
-    @Returns(400, { type: model.Error, description: 'InvalidEmail: Email is not of a valid format\n' })
-    @Returns(409, { type: model.Error, description: 'FloodCheck: Try again later\nEmailAlreadyInUse: Email is already in use by this or another account\n' })
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Returns(400, {type: model.Error, description: 'InvalidEmail: Email is not of a valid format\n'})
+    @Returns(409, {
+        type: model.Error,
+        description: 'FloodCheck: Try again later\nEmailAlreadyInUse: Email is already in use by this or another account\n'
+    })
+    @Use(csrf, YesAuth)
     public async updateEmail(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
@@ -168,46 +185,36 @@ export default class SettingsController extends controller {
 
         }
         // Return Success
-        return { success: true };
+        return {success: true};
     }
 
-    /**
-     * Verify user's email
-     */
     @Post('/email/verify')
-    @Returns(400, { type: model.Error, description: 'InvalidCode: Code is expired or otherwise not valid\n' })
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Returns(400, {type: model.Error, description: 'InvalidCode: Code is expired or otherwise not valid\n'})
+    @Use(csrf, YesAuth)
     public async verifyEmail(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @BodyParams('id', String) code: string
     ) {
-        let latestEmail;
-        try {
-            latestEmail = await this.settings.getUserEmail(userInfo.userId);
-            if (moment().isSameOrBefore(moment(latestEmail.date).add(1, "hours"))) {
-                if (crypto.timingSafeEqual(Buffer.from(code), Buffer.from(latestEmail.verificationCode))) {
-                    await this.settings.markEmailAsVerified(userInfo.userId);
-                    return { success: true };
-                } else {
-                    throw new this.BadRequest('InvalidCode');
-                }
+        let latestEmail = await this.settings.getUserEmail(userInfo.userId);
+        if (moment().isSameOrBefore(moment(latestEmail.date).add(1, "hours"))) {
+            if (crypto.timingSafeEqual(Buffer.from(code), Buffer.from(latestEmail.verificationCode))) {
+                await this.settings.markEmailAsVerified(userInfo.userId);
+                return {success: true};
             } else {
                 throw new this.BadRequest('InvalidCode');
             }
-        } catch (e) {
+        } else {
             throw new this.BadRequest('InvalidCode');
         }
     }
 
-    /**
-     * Update Authenticated User's Password
-     */
     @Patch('/password')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     @Summary('Update user password')
-    @Returns(400, { type: model.Error, description: 'InvalidPassword: New password is not valid\nInvalidOldPassword: Old password is not valid\n' })
+    @Returns(400, {
+        type: model.Error,
+        description: 'InvalidPassword: New password is not valid\nInvalidOldPassword: Old password is not valid\n'
+    })
     public async updatePassword(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Session() session: Express.Session,
@@ -235,16 +242,12 @@ export default class SettingsController extends controller {
         // Update Cookie
         session.userdata.passwordChanged = userData.passwordChanged + 1;
         // Success
-        return { success: true };
+        return {};
     }
 
-    /**
-     * Update Authenticated User's Blurb
-     */
     @Patch('/blurb')
     @Summary('Update user blurb')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     @Returns(400, {type: model.Error, description: 'BlurbTooLarge: Blurb is too large\n'})
     public async updateBlurb(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -256,17 +259,16 @@ export default class SettingsController extends controller {
             throw new this.BadRequest('BlurbTooLarge');
         }
         await this.settings.updateBlurb(userInfo.userId, newBlurb);
-        return { success: true };
+        return {};
     }
 
-    /**
-     * Update Authenticated User's Forum Signature
-     */
     @Patch('/forum/signature')
     @Summary('Update user forum signature')
-    @Returns(400, {type: model.Error, description: 'SignatureTooLong: Forum Signature is too large (over 512 characters)\n'})
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Returns(400, {
+        type: model.Error,
+        description: 'SignatureTooLong: Forum Signature is too large (over 512 characters)\n'
+    })
+    @Use(csrf, YesAuth)
     public async updateForumSignature(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
@@ -277,22 +279,18 @@ export default class SettingsController extends controller {
             throw new this.BadRequest('SignatureTooLong');
         }
         await this.settings.updateSignature(userInfo.userId, newSignature);
-        return { success: true };
+        return {};
     }
 
-    /**
-     * Update Authenticated User's Forum Signature
-     */
     @Patch('/theme')
     @Summary('Update user theme')
     @Returns(400, {type: model.Error, description: 'InvalidTheme: Theme must be one of: 0,1\n'})
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     public async updateTheme(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
         @BodyParams('theme', Number) numericTheme: number
-    ): Promise<{ success: true }> {
+    ) {
         if (!numericTheme) {
             numericTheme = 0;
         }
@@ -300,23 +298,18 @@ export default class SettingsController extends controller {
             throw new this.BadRequest('InvalidTheme');
         }
         await this.settings.updateTheme(userInfo.userId, numericTheme);
-        return { success: true };
+        return {};
     }
 
-    /**
-     * Enable/Disable Trading for Authenticated User
-     * @param enabled 
-     */
     @Patch('/trade')
     @Summary('Enable or disable trading')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     @Returns(400, {type: model.Error, description: 'InvalidOption: Option selected is invalid\n'})
     public async updateTradingStatus(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
         @BodyParams('enabled', Number) numericBoolean: number
-    ): Promise<{ success: true }> {
+    ) {
         if (!numericBoolean) {
             numericBoolean = 0;
         }
@@ -324,6 +317,6 @@ export default class SettingsController extends controller {
             throw new this.BadRequest('InvalidOption');
         }
         await this.settings.updateTradingStatus(userInfo.userId, numericBoolean);
-        return { success: true };
+        return {};
     }
 }

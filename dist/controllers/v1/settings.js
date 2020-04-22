@@ -139,23 +139,17 @@ let SettingsController = class SettingsController extends controller_1.default {
         return { success: true };
     }
     async verifyEmail(userInfo, code) {
-        let latestEmail;
-        try {
-            latestEmail = await this.settings.getUserEmail(userInfo.userId);
-            if (moment().isSameOrBefore(moment(latestEmail.date).add(1, "hours"))) {
-                if (crypto.timingSafeEqual(Buffer.from(code), Buffer.from(latestEmail.verificationCode))) {
-                    await this.settings.markEmailAsVerified(userInfo.userId);
-                    return { success: true };
-                }
-                else {
-                    throw new this.BadRequest('InvalidCode');
-                }
+        let latestEmail = await this.settings.getUserEmail(userInfo.userId);
+        if (moment().isSameOrBefore(moment(latestEmail.date).add(1, "hours"))) {
+            if (crypto.timingSafeEqual(Buffer.from(code), Buffer.from(latestEmail.verificationCode))) {
+                await this.settings.markEmailAsVerified(userInfo.userId);
+                return { success: true };
             }
             else {
                 throw new this.BadRequest('InvalidCode');
             }
         }
-        catch (e) {
+        else {
             throw new this.BadRequest('InvalidCode');
         }
     }
@@ -172,21 +166,21 @@ let SettingsController = class SettingsController extends controller_1.default {
         let hash = await this.auth.hashPassword(newPassword);
         await this.settings.updateUserPassword(userInfo.userId, hash, userInfo.passwordChanged + 1);
         session.userdata.passwordChanged = userData.passwordChanged + 1;
-        return { success: true };
+        return {};
     }
     async updateBlurb(userInfo, newBlurb) {
         if (newBlurb.length > 512) {
             throw new this.BadRequest('BlurbTooLarge');
         }
         await this.settings.updateBlurb(userInfo.userId, newBlurb);
-        return { success: true };
+        return {};
     }
     async updateForumSignature(userInfo, newSignature) {
         if (newSignature.length > 512) {
             throw new this.BadRequest('SignatureTooLong');
         }
         await this.settings.updateSignature(userInfo.userId, newSignature);
-        return { success: true };
+        return {};
     }
     async updateTheme(userInfo, numericTheme) {
         if (!numericTheme) {
@@ -196,7 +190,7 @@ let SettingsController = class SettingsController extends controller_1.default {
             throw new this.BadRequest('InvalidTheme');
         }
         await this.settings.updateTheme(userInfo.userId, numericTheme);
-        return { success: true };
+        return {};
     }
     async updateTradingStatus(userInfo, numericBoolean) {
         if (!numericBoolean) {
@@ -206,7 +200,7 @@ let SettingsController = class SettingsController extends controller_1.default {
             throw new this.BadRequest('InvalidOption');
         }
         await this.settings.updateTradingStatus(userInfo.userId, numericBoolean);
-        return { success: true };
+        return {};
     }
 };
 __decorate([
@@ -222,7 +216,10 @@ __decorate([
 __decorate([
     common_1.Post('/email/verification/resend'),
     swagger_1.Summary('Request a verification email resend'),
-    swagger_1.Returns(409, { type: model.Error, description: 'FloodCheck: Try again later\nNoEmailAttached: There is no email attached to this account\nEmailAlreadyVerified: The email attached to this account is already verified\n' }),
+    swagger_1.Returns(409, {
+        type: model.Error,
+        description: 'FloodCheck: Try again later\nNoEmailAttached: There is no email attached to this account\nEmailAlreadyVerified: The email attached to this account is already verified\n'
+    }),
     common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -233,9 +230,11 @@ __decorate([
     common_1.Patch('/email'),
     swagger_1.Summary('Update users email'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidEmail: Email is not of a valid format\n' }),
-    swagger_1.Returns(409, { type: model.Error, description: 'FloodCheck: Try again later\nEmailAlreadyInUse: Email is already in use by this or another account\n' }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    swagger_1.Returns(409, {
+        type: model.Error,
+        description: 'FloodCheck: Try again later\nEmailAlreadyInUse: Email is already in use by this or another account\n'
+    }),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.BodyParams('email', String)),
@@ -246,8 +245,7 @@ __decorate([
 __decorate([
     common_1.Post('/email/verify'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidCode: Code is expired or otherwise not valid\n' }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.BodyParams('id', String)),
     __metadata("design:type", Function),
@@ -256,10 +254,12 @@ __decorate([
 ], SettingsController.prototype, "verifyEmail", null);
 __decorate([
     common_1.Patch('/password'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     swagger_1.Summary('Update user password'),
-    swagger_1.Returns(400, { type: model.Error, description: 'InvalidPassword: New password is not valid\nInvalidOldPassword: Old password is not valid\n' }),
+    swagger_1.Returns(400, {
+        type: model.Error,
+        description: 'InvalidPassword: New password is not valid\nInvalidOldPassword: Old password is not valid\n'
+    }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Session()),
     __param(2, common_1.Required()),
@@ -273,8 +273,7 @@ __decorate([
 __decorate([
     common_1.Patch('/blurb'),
     swagger_1.Summary('Update user blurb'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     swagger_1.Returns(400, { type: model.Error, description: 'BlurbTooLarge: Blurb is too large\n' }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
@@ -286,9 +285,11 @@ __decorate([
 __decorate([
     common_1.Patch('/forum/signature'),
     swagger_1.Summary('Update user forum signature'),
-    swagger_1.Returns(400, { type: model.Error, description: 'SignatureTooLong: Forum Signature is too large (over 512 characters)\n' }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    swagger_1.Returns(400, {
+        type: model.Error,
+        description: 'SignatureTooLong: Forum Signature is too large (over 512 characters)\n'
+    }),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.BodyParams('signature', String)),
@@ -300,8 +301,7 @@ __decorate([
     common_1.Patch('/theme'),
     swagger_1.Summary('Update user theme'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidTheme: Theme must be one of: 0,1\n' }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.BodyParams('theme', Number)),
@@ -312,8 +312,7 @@ __decorate([
 __decorate([
     common_1.Patch('/trade'),
     swagger_1.Summary('Enable or disable trading'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidOption: Option selected is invalid\n' }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),

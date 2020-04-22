@@ -4,14 +4,58 @@
 import redis from '../helpers/ioredis_pubsub';
 // Interface Info
 import * as model from '../models/models';
-import { Redis } from 'ioredis';
+import {Redis} from 'ioredis';
 
 import _init from './_init';
 
+const publisher = redis();
+
+const subscriber = redis();
+let _pendingMsgCallbacks: any[] = [];
+subscriber.on('connect', async () => {
+    await subscriber.subscribe('ChatMessage');
+    subscriber.on('message', (channel, str) => {
+        console.log(str);
+        _pendingMsgCallbacks.forEach(cb => {
+            cb(str);
+        });
+    });
+});
 /**
  * Chat Data Access Layer
  */
 class ChatDAL extends _init {
+    public publisher: Redis;
+    public subscriber: Redis;
+    private callbacksForNewMessages: model.chat.IChatMessageCallbacks[] = [];
+    constructor() {
+        super();
+        this.publisher = publisher;
+        this.subscriber = subscriber;
+        const _internalCallbackForMsgEventFromRedis = (str) => {
+            let decoded: {userIdTo: number; userIdFrom: number; [key: string]: any;}
+            try {
+                decoded = JSON.parse(str);
+            }catch(e) {
+                console.error(e);
+                return;
+            }
+            let newArr: model.chat.IChatMessageCallbacks[] = [];
+            this.callbacksForNewMessages.forEach(item => {
+                if (!item.connected) {
+                    return;
+                }
+                newArr.push(item);
+                if (item.userIdTo === decoded.userIdTo) {
+                    item.callback(str);
+                }
+            });
+            this.callbacksForNewMessages = newArr;
+        }
+        _pendingMsgCallbacks.push((str) => {
+            _internalCallbackForMsgEventFromRedis(str);
+        });
+    }
     /**
      * Get chat message history between two users. Returns empty array if no history exists
      * @param userIdTo 
@@ -19,8 +63,13 @@ class ChatDAL extends _init {
      * @param offset 
      */
     public async getConversationByUserId(userIdTo: number, userIdFrom: number, offset: number, limit = 25): Promise<model.chat.ChatMessage[]> {
-        const conversation = await this.knex('chat_messages').select('id as chatMessageId','userid_from as userIdFrom','userid_to as userIdTo','content', 'date_created as dateCreated','read').where({'userid_to':userIdTo,'userid_from':userIdFrom}).orWhere({'userid_to':userIdFrom,'userid_from':userIdTo}).limit(limit).offset(offset).orderBy('id', 'desc');
-        return conversation;
+        return this.knex('chat_messages').select('id as chatMessageId', 'userid_from as userIdFrom', 'userid_to as userIdTo', 'content', 'date_created as dateCreated', 'read').where({
+            'userid_to': userIdTo,
+            'userid_from': userIdFrom
+        }).orWhere({
+            'userid_to': userIdFrom,
+            'userid_from': userIdTo
+        }).limit(limit).offset(offset).orderBy('id', 'desc');
     }
 
     /**
@@ -61,31 +110,25 @@ class ChatDAL extends _init {
                 userIds.push(result.userid_from);
             }
         }
-        const unique = [...new Set(userIds)] as number[];
-        return unique;
+        return [...new Set(userIds)] as number[];
     }
 
     /**
      * Publish a message to any listeners via redis
      */
     public async publishMessage(userIdTo: number, messageObject: model.chat.ChatMessage): Promise<void> {
-        const listener = redis();
-        listener.on('connect', async () => {
-            await listener.publish('ChatMessage'+userIdTo, JSON.stringify(messageObject));
-        });
+        await this.publisher.publish('ChatMessage', JSON.stringify(messageObject));
     }
 
     /**
      * Publish a typing status message to any listeners via redis
      */
     public async publishTypingStatus(userIdTo: number, userIdFrom: number, isTyping: number): Promise<void> {
-        const listener = redis();
-        listener.on('connect', async () => {
-            console.log('Sending message');
-            let key = 'ChatMessage'+userIdTo;
-            console.log('Publishing to key:', key)
-            await listener.publish(key, JSON.stringify({'typing':isTyping,'userIdFrom':userIdFrom}));
-        });
+        await this.publisher.publish('ChatMessage', JSON.stringify({
+            typing: isTyping,
+            userIdFrom: userIdFrom,
+            userIdTo: userIdTo,
+        }));
     }
 
     /**
@@ -107,20 +150,22 @@ class ChatDAL extends _init {
     }
 
     /**
-     * Subscribe to message events. Returns a new redis instance that is subscribed. Call .on("message") to get messages
-     * @param userIdTo 
-     * @param userIdFrom 
+     * Subscribe to message events. Callback will be called when a new message is received. Call disconnect() to disable the callback
+     * @param userIdTo
+     * @param callback
      */
-    public subscribeToMessages(userIdTo: number): Promise<Redis> {
-        return new Promise((resolve, reject): void => {
-            const listener = redis();
-            listener.on('connect', async () => {
-                let key = 'ChatMessage'+userIdTo;
-                console.log('Subscribed to key:',key);
-                await listener.subscribe(key);
-                resolve(listener);
-            });
-        });
+    public subscribeToMessages(userIdTo: number, callback: (msg: any) => any): model.chat.IChatMessageDisconnector {
+        let obj = {
+            userIdTo: userIdTo,
+            callback: callback,
+            connected: true,
+        }
+        this.callbacksForNewMessages.push(obj);
+        return {
+            disconnect: () => {
+                obj.connected = false;
+            }
+        };
     }
 }
 

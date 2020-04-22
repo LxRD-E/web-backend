@@ -10,3 +10,13 @@ export enum MessageRead {
     false = 0,
     true = 1,
 }
+
+export interface IChatMessageCallbacks {
+    userIdTo: number;
+    callback: (arg1: any) => any;
+    connected: boolean;
+}
+
+export interface IChatMessageDisconnector {
+    disconnect: () => void;
+}
