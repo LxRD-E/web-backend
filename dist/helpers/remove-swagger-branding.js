@@ -16,4 +16,4 @@ exports.default = () => {
         fs.writeFileSync(pathToSwagger, fileData);
     }
 };
-//# sourceMappingURL=remove-swagger-branding.js.map
+

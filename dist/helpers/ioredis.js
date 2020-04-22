@@ -20,4 +20,4 @@ if (process.env.NODE_ENV !== 'test') {
     });
 }
 exports.default = redis;
-//# sourceMappingURL=ioredis.js.map
+

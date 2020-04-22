@@ -1,10 +1,15 @@
 "use strict";
+/* istanbul ignore next */
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+/* istanbul ignore next */
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+/* istanbul ignore next */
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+/* istanbul ignore next */
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+/* istanbul ignore next */
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
@@ -97,6 +102,7 @@ let CurrencyExchangeController = class CurrencyExchangeController extends contro
             'currency_exchange_position',
             'currency_exchange_record',
         ];
+        let exitDueToUserBeingTerminated = false;
         await this.transaction(async (trx) => {
             let data = await trx.currencyExchange.getPositionById(positionId, forUpdate);
             if (data.userId === userInfo.userId) {
@@ -122,7 +128,10 @@ let CurrencyExchangeController = class CurrencyExchangeController extends contro
                 await trx.economy.addToUserBalanceV2(data.userId, data.balance, data.currencyType, forUpdate);
                 await trx.currencyExchange.recordPositionFunding(data.positionId, -data.balance, forUpdate);
                 await trx.economy.createTransaction(data.userId, data.userId, data.balance, data.currencyType, model.economy.transactionType.CurrencyExchangePositionClose, 'Currency Exchange Position Closure', model.catalog.creatorType.User, model.catalog.creatorType.User);
-                throw new this.Conflict('PositionNoLongerAvailable');
+                exitDueToUserBeingTerminated = true;
+            }
+            if (exitDueToUserBeingTerminated) {
+                return;
             }
             let totalUserIsGetting = amount;
             let userIsGiving;
@@ -158,6 +167,9 @@ let CurrencyExchangeController = class CurrencyExchangeController extends contro
             await trx.economy.createTransaction(userInfo.userId, data.userId, totalUserIsGetting, userIsGetting, model.economy.transactionType.CurrencyExchangeTransactionPurchase, 'Purchase of Currency on Exchange', model.catalog.creatorType.User, model.catalog.creatorType.User);
             await trx.economy.createTransaction(data.userId, userInfo.userId, totalUserIsPaying, userIsGiving, model.economy.transactionType.CurrencyExchangeTransactionSale, 'Sale of Currency on Exchange', model.catalog.creatorType.User, model.catalog.creatorType.User);
         });
+        if (exitDueToUserBeingTerminated) {
+            throw new this.Conflict('PositionNoLongerAvailable');
+        }
         return {};
     }
     async getPositionFundingHistoryById(positionId) {
@@ -302,4 +314,4 @@ CurrencyExchangeController = __decorate([
     __metadata("design:paramtypes", [])
 ], CurrencyExchangeController);
 exports.default = CurrencyExchangeController;
-//# sourceMappingURL=currency-exchange.js.map
+

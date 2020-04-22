@@ -22,4 +22,4 @@ var threadPinned;
     threadPinned[threadPinned["false"] = 0] = "false";
     threadPinned[threadPinned["true"] = 1] = "true";
 })(threadPinned = exports.threadPinned || (exports.threadPinned = {}));
-//# sourceMappingURL=forum.js.map
+

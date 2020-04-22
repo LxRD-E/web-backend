@@ -29,7 +29,7 @@ import {
     Use
 } from '@tsed/common';
 import {Description, Returns, ReturnsArray, Summary} from '@tsed/swagger';
-import {GameAuth, YesAuth} from '../../middleware/Auth';
+import {GameAuth, NoAuth, YesAuth} from '../../middleware/Auth';
 import {csrf} from '../../dal/auth';
 /**
  * this is purely used for typings. please access directly from dal instead of here
@@ -457,7 +457,7 @@ export default class GameController extends controller {
      */
     @Get('/client.js')
     @Summary('Get the primary game client.js')
-    @Use(YesAuth)
+    @Use(NoAuth)
     public async getClientScript(
         @Locals('userInfo') userInfo: model.UserSession,
         @Res() res: Res,
