@@ -470,4 +470,4 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
     }
 }
 exports.default = GameDAL;
-//# sourceMappingURL=game.js.map
+

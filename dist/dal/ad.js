@@ -140,4 +140,4 @@ class AdDAL extends _init_1.default {
     }
 }
 exports.default = AdDAL;
-//# sourceMappingURL=ad.js.map
+

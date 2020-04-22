@@ -640,4 +640,4 @@ class CatalogDAL extends _init_1.default {
     }
 }
 exports.default = CatalogDAL;
-//# sourceMappingURL=catalog.js.map
+

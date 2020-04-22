@@ -232,4 +232,4 @@ exports.ErrorTemplate = (title, body) => {
     </body>
     </html>`.replace(/\n/g, '').replace(/  /g, '');
 };
-//# sourceMappingURL=HttpError.js.map
+
