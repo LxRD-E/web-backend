@@ -113,6 +113,7 @@
     "rate-limiter-flexible": "^1.2.2",
     "redis": "^2.8.0",
     "simple-crypto-js": "^2.2.0",
+    "socket-controllers": "0.0.5",
     "speakeasy": "^2.0.0",
     "threads": "^1.0.0",
     "tmp-promise": "^2.0.2",

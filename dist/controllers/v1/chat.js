@@ -16,6 +16,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var ChatController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 const websockets_1 = require("../../start/websockets");
 const model = require("../../models/models");
@@ -25,7 +26,7 @@ const common_1 = require("@tsed/common");
 const Auth_1 = require("../../middleware/Auth");
 const auth_1 = require("../../dal/auth");
 const swagger_1 = require("@tsed/swagger");
-let ChatController = class ChatController extends controller_1.default {
+let ChatController = ChatController_1 = class ChatController extends controller_1.default {
     constructor() {
         super();
     }
@@ -40,29 +41,18 @@ let ChatController = class ChatController extends controller_1.default {
         return results;
     }
     async getChatHistory(userInfo, numericId, goodOffset = 0) {
-        try {
-            const friends = await this.user.getFriendshipStatus(userInfo.userId, numericId);
-            if (!friends.areFriends) {
-                throw false;
-            }
-        }
-        catch (e) {
+        const friends = await this.user.getFriendshipStatus(userInfo.userId, numericId);
+        if (!friends.areFriends) {
             throw new this.BadRequest('InvalidUserId');
         }
-        const history = await this.chat.getConversationByUserId(userInfo.userId, numericId, goodOffset);
-        return history;
+        return await this.chat.getConversationByUserId(userInfo.userId, numericId, goodOffset);
     }
     async sendChatMessage(userInfo, numericId, content) {
         if (!content || content.length < 1 || content.length > 255) {
             throw new this.BadRequest('InvalidMessage');
         }
-        try {
-            const friends = await this.user.getFriendshipStatus(userInfo.userId, numericId);
-            if (!friends.areFriends) {
-                throw false;
-            }
-        }
-        catch (e) {
+        const friends = await this.user.getFriendshipStatus(userInfo.userId, numericId);
+        if (!friends.areFriends) {
             throw new this.BadRequest('InvalidUserId');
         }
         const message = await this.chat.createMessage(numericId, userInfo.userId, content);
@@ -74,21 +64,15 @@ let ChatController = class ChatController extends controller_1.default {
         if (numericStatus !== 1 && numericStatus !== 0) {
             throw new this.BadRequest('InvalidStatus');
         }
-        try {
-            const friends = await this.user.getFriendshipStatus(userInfo.userId, numericId);
-            if (!friends.areFriends) {
-                throw false;
-            }
-        }
-        catch (e) {
+        const friends = await this.user.getFriendshipStatus(userInfo.userId, numericId);
+        if (!friends.areFriends) {
             throw new this.BadRequest('InvalidUserId');
         }
         await this.chat.publishTypingStatus(numericId, userInfo.userId, numericStatus);
         return { success: true };
     }
-    async listenForChatEvents(userInfo) {
-        const messages = await this.chat.subscribeToMessages(userInfo.userId);
-        return messages;
+    async listenForChatEvents(userId, cbOnChatEvents) {
+        return this.chat.subscribeToMessages(userId, cbOnChatEvents);
     }
     async countUnreadMessages(userInfo) {
         const unread = await this.chat.countUnreadMessages(userInfo.userId);
@@ -98,13 +82,56 @@ let ChatController = class ChatController extends controller_1.default {
         await this.chat.markConversationAsRead(userInfo.userId, numericId);
         return { success: true };
     }
+    static async chatWebsocketConnection(ws, userId) {
+        ws.on('message', function incoming(msg) {
+            let str = msg.toString();
+            if (str.length > 250) {
+                ws.close();
+                return;
+            }
+            let decodedMessage = {};
+            try {
+                decodedMessage = JSON.parse(str);
+            }
+            catch (e) {
+                ws.close();
+            }
+            if (decodedMessage && decodedMessage.ping) {
+                ws.send(JSON.stringify({
+                    'pong': Math.floor(new Date().getTime() / 1000),
+                }), (err) => {
+                    if (err) {
+                        console.error(err);
+                    }
+                });
+            }
+            else {
+                ws.close();
+            }
+        });
+        let connector;
+        try {
+            console.log('Setting up REDIS');
+            connector = await new ChatController_1().listenForChatEvents(userId, str => {
+                ws.send(str);
+            });
+        }
+        catch (e) {
+            console.log('Closing ws conn due to redis error', e);
+            connector.disconnect();
+            ws.close();
+        }
+        ws.on('close', function () {
+            console.log('Websocket conn closed - disconnecting callback');
+            connector.disconnect();
+        });
+    }
 };
 __decorate([
     common_1.Post('/metadata'),
     swagger_1.Summary('Grab CSRF Token for chat websocket connection'),
     swagger_1.Description('Might be replaced with a more efficient option in the future'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -112,7 +139,7 @@ __decorate([
 __decorate([
     common_1.Get('/latest'),
     swagger_1.Summary('Get latest conversation userIds'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [model.user.UserInfo]),
@@ -133,8 +160,7 @@ __decorate([
 __decorate([
     common_1.Put('/:userId/send'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidMessage: Message is not valid\nInvalidUserId: userId is invalid' }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __param(2, common_1.BodyParams('content', String)),
@@ -145,8 +171,7 @@ __decorate([
 __decorate([
     common_1.Put('/:userId/typing'),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidStatus: Status must be one of: 0,1\nInvalidUserId: userId is not valid\n' }),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __param(2, common_1.BodyParams('typing', String)),
@@ -155,15 +180,8 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ChatController.prototype, "sendTypingStatus", null);
 __decorate([
-    common_1.UseBefore(Auth_1.YesAuth),
-    __param(0, common_1.Locals('userInfo')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo]),
-    __metadata("design:returntype", Promise)
-], ChatController.prototype, "listenForChatEvents", null);
-__decorate([
     common_1.Get('/unread/count'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [model.user.UserInfo]),
@@ -171,72 +189,28 @@ __decorate([
 ], ChatController.prototype, "countUnreadMessages", null);
 __decorate([
     common_1.Patch('/:userId/read'),
-    common_1.UseBeforeEach(Auth_1.YesAuth),
-    common_1.UseBefore(auth_1.csrf),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [model.user.UserInfo, Number]),
     __metadata("design:returntype", Promise)
 ], ChatController.prototype, "markConversationAsRead", null);
-ChatController = __decorate([
+ChatController = ChatController_1 = __decorate([
     common_1.Controller('/chat'),
     __metadata("design:paramtypes", [])
 ], ChatController);
 exports.ChatController = ChatController;
 websockets_1.wss.on('connection', async function connection(ws, request) {
     if (request.url !== '/chat/websocket.aspx') {
-        console.log('Invalid request URL for websocket');
         return;
     }
     const sess = request.session;
-    if (!sess) {
+    if (!sess || sess && !sess.userdata || sess && sess.userdata && !sess.userdata.id) {
         console.log("No session for websocket");
         ws.close();
         return;
     }
-    console.log('Websocket OK, startin conn info');
-    ws.on('message', function incoming(msg) {
-        let decodedMessage = {};
-        try {
-            decodedMessage = JSON.parse(msg.toString());
-        }
-        catch (e) {
-            ws.close();
-        }
-        if (decodedMessage && decodedMessage.ping) {
-            ws.send(JSON.stringify({
-                'pong': Math.floor(new Date().getTime() / 1000),
-            }), (err) => {
-                if (err) {
-                    console.error(err);
-                }
-            });
-        }
-        else {
-            ws.close();
-        }
-    });
-    const userInfo = new model.user.UserInfo;
-    userInfo.userId = sess.userdata.id;
-    let listener;
-    try {
-        console.log('Setting up REDIS');
-        listener = await new ChatController().listenForChatEvents(userInfo);
-        listener.on('message', (channel, message) => {
-            console.log('MEssage recieved to websocket. Sending message to clients...');
-            ws.send(message);
-        });
-    }
-    catch (e) {
-        console.log('Closing ws conn  due to redis error', e);
-        ws.close();
-    }
-    ws.on('close', function () {
-        console.log('Websocket conn closed - disconnecting redis');
-        if (listener && listener.disconnect) {
-            listener.disconnect();
-        }
-    });
+    await ChatController.chatWebsocketConnection(ws, sess.userdata.id);
 });
 
