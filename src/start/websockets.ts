@@ -13,13 +13,15 @@ export const wss = new WebSocket.Server({
 export const webSocketServer = http.createServer();
 webSocketServer.on('error', err => {
     // Ignore, for now
-    console.log(err);
+    console.error(err);
 });
-webSocketServer.listen(8080);
+webSocketServer.listen(process.env.WS_PORT || 8080);
 
 export default (): void => {
     webSocketServer.on('upgrade', function upgrade(request, socket, head) {
+        console.error('websocket request started.');
         if(request.url.match(/\/game-sockets\/websocket.aspx/g)) {
+            console.error('websocket request is for game-sockets');
             let decodedAuth;
             try {
                 const queryinurl = request.url.slice(request.url.indexOf('?')+1, request.url.length);
@@ -39,6 +41,7 @@ export default (): void => {
                 wss.emit('connection', ws, request, decodedAuth);
             });
         }else{
+            console.error('websocket request is for chat');
             parser(request, {} as unknown as Response, () => {
                 if (!request.session || !request.session.userdata || !request.session.userdata.id) {
                     socket.destroy();

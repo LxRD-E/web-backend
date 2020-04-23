@@ -27,7 +27,7 @@ User=beak
 # !!! CONFIG SETUP REQUIRED !!!
 # MAKE SURE TO SET SECRET_ENCRYPTION_KEY AND SECRET_ENCRYPTION_IV ENVIRONMENTAL VARIABLES
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-Environment=NODE_ENV=production PORT=4001
+Environment=NODE_ENV=production PORT=4001 WS_PORT=4101
 
 [Install]
 WantedBy=multi-user.target
