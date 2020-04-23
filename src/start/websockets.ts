@@ -15,11 +15,13 @@ webSocketServer.on('error', err => {
     // Ignore, for now
     console.log(err);
 });
-webSocketServer.listen(8080);
+webSocketServer.listen(process.env.WS_PORT || 8080);
 
 export default (): void => {
     webSocketServer.on('upgrade', function upgrade(request, socket, head) {
+        console.log('websocket request started.');
         if(request.url.match(/\/game-sockets\/websocket.aspx/g)) {
+            console.log('websocket request is for game-sockets');
             let decodedAuth;
             try {
                 const queryinurl = request.url.slice(request.url.indexOf('?')+1, request.url.length);
@@ -39,6 +41,7 @@ export default (): void => {
                 wss.emit('connection', ws, request, decodedAuth);
             });
         }else{
+            console.log('websocket request is for chat');
             parser(request, {} as unknown as Response, () => {
                 if (!request.session || !request.session.userdata || !request.session.userdata.id) {
                     socket.destroy();
