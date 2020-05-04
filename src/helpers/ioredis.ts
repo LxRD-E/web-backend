@@ -1,7 +1,7 @@
 import config from './config';
-import ioRedis = require('ioredis');
+import IORedis = require('ioredis');
 
-let redis: ioRedis.Redis;
+let redis: IORedis.Redis;
 if (process.env.NODE_ENV !== 'test') {
     const ioRedisConfig = {
         password: config.redis.pass || '',
@@ -11,12 +11,13 @@ if (process.env.NODE_ENV !== 'test') {
         enableOfflineQueue: true,
         sentinelPassword: config.redis.pass||'',
     };
-    redis = new ioRedis(ioRedisConfig);
+    redis = new IORedis(ioRedisConfig);
     redis.on('error', (ev) => {
         console.log('IORedis Error:');
         console.log(ev);
-        redis = new ioRedis(ioRedisConfig);
+        redis = new IORedis(ioRedisConfig);
     });
+    console.log('REDIS was setup!');
 }
 
 export default redis;

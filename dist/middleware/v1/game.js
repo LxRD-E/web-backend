@@ -62,4 +62,28 @@ ValidateGameCreationPermissions = __decorate([
     common_1.Middleware()
 ], ValidateGameCreationPermissions);
 exports.ValidateGameCreationPermissions = ValidateGameCreationPermissions;
+let ServerAuth = class ServerAuth extends _middleware_1.default {
+    async use(req, res) {
+        let auth = req.header('authorization');
+        if (!auth) {
+            throw new Error('No authorization header specified');
+        }
+        let results = await this.auth.decodeGameServerAuthCode(auth);
+        if (this.moment().add(3, 'days').isSameOrAfter(this.moment(results.iat * 1000))) {
+            throw new Error('Bad authorization header');
+        }
+        res.locals.userInfo = await this.user.getInfo(results.userId, ['userId', 'username', 'passwordChanged', 'primaryBalance', 'secondaryBalance', 'theme', 'banned', 'staff', 'dailyAward']);
+    }
+};
+__decorate([
+    __param(0, common_1.Req()),
+    __param(1, common_1.Res()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], ServerAuth.prototype, "use", null);
+ServerAuth = __decorate([
+    common_1.Middleware()
+], ServerAuth);
+exports.ServerAuth = ServerAuth;
 

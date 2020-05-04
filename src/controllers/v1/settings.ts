@@ -38,9 +38,6 @@ export default class SettingsController extends controller {
         super();
     }
 
-    /**
-     * Get the authenicated user's account settings
-     */
     @Get('/')
     @Summary('Get user settings')
     @UseBefore(YesAuth)

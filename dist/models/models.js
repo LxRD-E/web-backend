@@ -56,6 +56,8 @@ const reportAbuse = require("./v1/report-abuse");
 exports.reportAbuse = reportAbuse;
 const currencyExchange = require("./v1/currency-exchange");
 exports.currencyExchange = currencyExchange;
+const dataPersistence = require("./v1/data-persistence");
+exports.dataPersistence = dataPersistence;
 const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 class _errorData {

@@ -178,7 +178,15 @@ let AuthController = class AuthController extends controller_1.default {
         if (enabled.enabled) {
             throw new this.Conflict('TwoFactorAlreadyEnabled');
         }
-        return await this.auth.generateTOTPSecret();
+        try {
+            let res = await this.auth.getCachedTotpResults(userInfo.userId);
+            return JSON.parse(res);
+        }
+        catch (e) {
+        }
+        let results = await this.auth.generateTOTPSecret();
+        await this.auth.setCachedTotpResults(userInfo.userId, JSON.stringify(results));
+        return results;
     }
     async deleteTOTP(userInfo, password) {
         let userPassword = await this.user.getPassword(userInfo.userId);
