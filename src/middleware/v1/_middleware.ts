@@ -1,6 +1,6 @@
 import controller from '../../controllers/controller';
 
-export default class Middleware extends  controller {
+export default class Middleware extends controller {
     constructor() {
         super();
     }

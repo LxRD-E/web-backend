@@ -3,18 +3,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const ioredis_pubsub_1 = require("../helpers/ioredis_pubsub");
 const model = require("../models/models");
 const _init_1 = require("./_init");
-const publisher = ioredis_pubsub_1.default();
-const subscriber = ioredis_pubsub_1.default();
+let publisher;
+let subscriber;
 let _pendingMsgCallbacks = [];
-subscriber.on('connect', async () => {
-    await subscriber.subscribe('ChatMessage');
-    subscriber.on('message', (channel, str) => {
-        console.log(str);
-        _pendingMsgCallbacks.forEach(cb => {
-            cb(str);
+if (process.env.NODE_ENV !== 'test') {
+    publisher = ioredis_pubsub_1.default();
+    subscriber = ioredis_pubsub_1.default();
+    subscriber.on('connect', async () => {
+        await subscriber.subscribe('ChatMessage');
+        subscriber.on('message', (channel, str) => {
+            console.log(str);
+            _pendingMsgCallbacks.forEach(cb => {
+                cb(str);
+            });
         });
     });
-});
+}
 class ChatDAL extends _init_1.default {
     constructor() {
         super();

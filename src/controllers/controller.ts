@@ -18,6 +18,7 @@ import ad from '../dal/ad';
 import support from '../dal/support';
 import reportAbuse from '../dal/report-abuse';
 import currencyExchange from '../dal/currency-exchange';
+import dataPersistence from '../dal/data-persistence';
 import { WWWTemplate } from '../models/v2/Www';
 import xss = require('xss');
 import moment = require('moment');
@@ -59,6 +60,7 @@ export default class StandardController {
     public support = new support();
     public reportAbuse = new reportAbuse();
     public currencyExchange = new currencyExchange();
+    public dataPersistence = new dataPersistence();
     /**
      * Begin a transaction while using normal controller services
      * This method will call trx.commit() internally

@@ -8,19 +8,22 @@ import {Redis} from 'ioredis';
 
 import _init from './_init';
 
-const publisher = redis();
-
-const subscriber = redis();
+let publisher: Redis;
+let subscriber: Redis;
 let _pendingMsgCallbacks: any[] = [];
-subscriber.on('connect', async () => {
-    await subscriber.subscribe('ChatMessage');
-    subscriber.on('message', (channel, str) => {
-        console.log(str);
-        _pendingMsgCallbacks.forEach(cb => {
-            cb(str);
+if (process.env.NODE_ENV !== 'test') {
+    publisher = redis();
+    subscriber = redis();
+    subscriber.on('connect', async () => {
+        await subscriber.subscribe('ChatMessage');
+        subscriber.on('message', (channel, str) => {
+            console.log(str);
+            _pendingMsgCallbacks.forEach(cb => {
+                cb(str);
+            });
         });
     });
-});
+}
 /**
  * Chat Data Access Layer
  */

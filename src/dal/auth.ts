@@ -16,6 +16,7 @@ import {Forbidden} from 'ts-httpexceptions';
 import {Middleware, Req, Request, Res} from '@tsed/common';
 import config from '../helpers/config';
 import {SessionOfLoggedInUser} from '../models/v1/any';
+import redis from "../helpers/ioredis";
 
 // kinda useless but yolo
 const randomBytes = util.promisify(Crypto.randomBytes);
@@ -188,8 +189,7 @@ export const isAuthenticated = async(req: Request): Promise<SessionOfLoggedInUse
         throw false;
     }
     if (req.session.userdata.id) {
-        const sess = req.session.userdata as SessionOfLoggedInUser;
-        return sess;
+        return req.session.userdata as SessionOfLoggedInUser;
     }else{
         throw false;
     }
@@ -259,6 +259,18 @@ export const decryptPasswordHash = (passwordHash: string): string => {
     let passString = decoded[0];
     let passIv = Buffer.from(decoded[1], 'hex');
     return decrypt(passString, PASSWORD_ENCRYPTION_KEY, passIv);
+}
+
+export const getCachedTotpResults = async (userId: number): Promise<string> => {
+    let result = await redis.get('cached_totp_results_'+userId.toString());
+    if (result) {
+        return result;
+    }
+    throw new Error('No code generated');
+}
+
+export const setCachedTotpResults = async (userId: number, val: string): Promise<void> => {
+    await redis.setex('cached_totp_results_'+userId.toString(), 2500, val);
 }
 
 export const generateTOTPSecret = () => {
@@ -342,6 +354,30 @@ export const decodeAuthServiceJWT = (code: string): {userId: number; username: s
 }
 
 
+export const generateGameServerCode = async (userId: number, username: string) => {
+    if (!config.jwt || !config.jwt.gameServerAuthentication) {
+        console.error('No jwt.gameAuthentication specified in config.json');
+        process.exit(1);
+    }
+    let obj = {
+        userId: userId,
+        username: username,
+        isServerAuthorization: true,
+    };
+    return jwt.sign(obj, config.jwt.gameServerAuthentication);
+}
+
+export const decodeGameServerAuthCode = (code: string): {userId: number; username: string; iat: number} => {
+    if (!config.jwt || !config.jwt.gameServerAuthentication) {
+        console.error('No jwt.gameAuthentication specified in config.json');
+        process.exit(1);
+    }
+    let val = jwt.verify(code, config.jwt.gameServerAuthentication) as {userId: number; username: string; isServerAuthorization?: boolean};
+    if (!val.isServerAuthorization) {
+        throw new Error('This token is not an auth code.');
+    }
+    return val as any;
+}
 
 
 export const generateGameAuthCode = async (userId: number, username: string) => {

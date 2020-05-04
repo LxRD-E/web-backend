@@ -19,6 +19,7 @@ const ad_1 = require("../dal/ad");
 const support_1 = require("../dal/support");
 const report_abuse_1 = require("../dal/report-abuse");
 const currency_exchange_1 = require("../dal/currency-exchange");
+const data_persistence_1 = require("../dal/data-persistence");
 const Www_1 = require("../models/v2/Www");
 const xss = require("xss");
 const moment = require("moment");
@@ -52,6 +53,7 @@ class StandardController {
         this.support = new support_1.default();
         this.reportAbuse = new report_abuse_1.default();
         this.currencyExchange = new currency_exchange_1.default();
+        this.dataPersistence = new data_persistence_1.default();
         if (knexOverload) {
             console.log('overloading knex');
             this.user.knex = knexOverload;

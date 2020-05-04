@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const config_1 = require("./config");
-const ioRedis = require("ioredis");
+const IORedis = require("ioredis");
 let redis;
 if (process.env.NODE_ENV !== 'test') {
     const ioRedisConfig = {
@@ -12,12 +12,13 @@ if (process.env.NODE_ENV !== 'test') {
         enableOfflineQueue: true,
         sentinelPassword: config_1.default.redis.pass || '',
     };
-    redis = new ioRedis(ioRedisConfig);
+    redis = new IORedis(ioRedisConfig);
     redis.on('error', (ev) => {
         console.log('IORedis Error:');
         console.log(ev);
-        redis = new ioRedis(ioRedisConfig);
+        redis = new IORedis(ioRedisConfig);
     });
+    console.log('REDIS was setup!');
 }
 exports.default = redis;
 

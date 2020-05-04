@@ -31,6 +31,7 @@ const axios_1 = require("axios");
 const ts_httpexceptions_1 = require("ts-httpexceptions");
 const common_1 = require("@tsed/common");
 const config_1 = require("../helpers/config");
+const ioredis_1 = require("../helpers/ioredis");
 const randomBytes = util.promisify(Crypto.randomBytes);
 exports.hashPassword = async (passwd, bcryptLib = bcrypt) => {
     const salt = await bcryptLib.genSalt(10);
@@ -166,8 +167,7 @@ exports.isAuthenticated = async (req) => {
         throw false;
     }
     if (req.session.userdata.id) {
-        const sess = req.session.userdata;
-        return sess;
+        return req.session.userdata;
     }
     else {
         throw false;
@@ -214,6 +214,16 @@ exports.decryptPasswordHash = (passwordHash) => {
     let passString = decoded[0];
     let passIv = Buffer.from(decoded[1], 'hex');
     return exports.decrypt(passString, PASSWORD_ENCRYPTION_KEY, passIv);
+};
+exports.getCachedTotpResults = async (userId) => {
+    let result = await ioredis_1.default.get('cached_totp_results_' + userId.toString());
+    if (result) {
+        return result;
+    }
+    throw new Error('No code generated');
+};
+exports.setCachedTotpResults = async (userId, val) => {
+    await ioredis_1.default.setex('cached_totp_results_' + userId.toString(), 2500, val);
 };
 exports.generateTOTPSecret = () => {
     return new Promise((res, rej) => {
@@ -288,6 +298,29 @@ exports.decodeAuthServiceJWT = (code) => {
         process.exit(1);
     }
     let val = jwt.verify(code, config_1.default.jwt.authenticationService);
+    return val;
+};
+exports.generateGameServerCode = async (userId, username) => {
+    if (!config_1.default.jwt || !config_1.default.jwt.gameServerAuthentication) {
+        console.error('No jwt.gameAuthentication specified in config.json');
+        process.exit(1);
+    }
+    let obj = {
+        userId: userId,
+        username: username,
+        isServerAuthorization: true,
+    };
+    return jwt.sign(obj, config_1.default.jwt.gameServerAuthentication);
+};
+exports.decodeGameServerAuthCode = (code) => {
+    if (!config_1.default.jwt || !config_1.default.jwt.gameServerAuthentication) {
+        console.error('No jwt.gameAuthentication specified in config.json');
+        process.exit(1);
+    }
+    let val = jwt.verify(code, config_1.default.jwt.gameServerAuthentication);
+    if (!val.isServerAuthorization) {
+        throw new Error('This token is not an auth code.');
+    }
     return val;
 };
 exports.generateGameAuthCode = async (userId, username) => {
