@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const ts_httpexceptions_1 = require("ts-httpexceptions");
 const auth = require("../dal/auth");
 const user_1 = require("../dal/user");
 const moderation_1 = require("../dal/moderation");
@@ -21,16 +20,14 @@ const report_abuse_1 = require("../dal/report-abuse");
 const currency_exchange_1 = require("../dal/currency-exchange");
 const data_persistence_1 = require("../dal/data-persistence");
 const Www_1 = require("../models/v2/Www");
-const xss = require("xss");
-const moment = require("moment");
 const Filter_1 = require("../helpers/Filter");
 const knex_1 = require("../helpers/knex");
-class StandardController {
+const Errors_1 = require("../helpers/Errors");
+const xss = require("xss");
+const moment = require("moment");
+class StandardController extends Errors_1.default {
     constructor(knexOverload) {
-        this.NotFound = ts_httpexceptions_1.NotFound;
-        this.BadRequest = ts_httpexceptions_1.BadRequest;
-        this.Conflict = ts_httpexceptions_1.Conflict;
-        this.Unauthorized = ts_httpexceptions_1.Unauthorized;
+        super();
         this.WWWTemplate = Www_1.WWWTemplate;
         this.xss = xss;
         this.moment = moment;
@@ -75,11 +72,25 @@ class StandardController {
             this.currencyExchange.knex = knexOverload;
         }
     }
-    transaction(callback) {
+    transaction(forUpdate, callback) {
         return knex_1.default.transaction(async (trx) => {
             const newController = new StandardController(trx);
             try {
-                await callback(newController);
+                const originalKnex = newController.user.knex;
+                for (const item of Object.getOwnPropertyNames(newController)) {
+                    let val = newController[item];
+                    if (typeof val.knex !== 'undefined') {
+                        val.knex = (tableName) => {
+                            let newKnex = originalKnex(tableName);
+                            if (forUpdate) {
+                                return newKnex.forUpdate(forUpdate);
+                            }
+                            return newKnex;
+                        };
+                        val.knex.transaction = originalKnex.transaction;
+                    }
+                }
+                return await callback(newController);
             }
             catch (e) {
                 if (typeof e !== 'object') {

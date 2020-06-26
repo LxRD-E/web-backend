@@ -147,6 +147,9 @@ export default class FeedController extends controller {
                 
                 let urls: string[]|undefined = undefined;
                 for (const matchItem of urlsToMatch) {
+                    if (!statusData.status) {
+                        continue;
+                    }
                     let matchDataUrl = statusData.status.match(matchItem);
                     if (matchDataUrl && matchDataUrl[0]) {
                         urls = matchDataUrl;

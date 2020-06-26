@@ -103,7 +103,7 @@ __decorate([
 ], UserInfo.prototype, "forumPostCount", void 0);
 __decorate([
     common_1.PropertyType(String),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], UserInfo.prototype, "forumSignature", void 0);
 __decorate([
     common_1.PropertyType(Number),
@@ -212,7 +212,7 @@ __decorate([
 ], Friendship.prototype, "date", void 0);
 __decorate([
     common_1.PropertyType(String),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], Friendship.prototype, "UserStatus", void 0);
 exports.Friendship = Friendship;
 class ForumInfo {
@@ -227,7 +227,7 @@ __decorate([
 ], ForumInfo.prototype, "permissionLevel", void 0);
 __decorate([
     common_1.PropertyType(String),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], ForumInfo.prototype, "signature", void 0);
 exports.ForumInfo = ForumInfo;
 class MultiGetUsernames {
@@ -264,7 +264,7 @@ __decorate([
 ], UserStatus.prototype, "userId", void 0);
 __decorate([
     common_1.Required(),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], UserStatus.prototype, "status", void 0);
 __decorate([
     common_1.Required(),
@@ -298,7 +298,7 @@ __decorate([
 ], UserStatusForAuthenticated.prototype, "userId", void 0);
 __decorate([
     common_1.Required(),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], UserStatusForAuthenticated.prototype, "status", void 0);
 __decorate([
     common_1.Required(),
@@ -532,7 +532,7 @@ __decorate([
 ], UserInfoResponse.prototype, "username", void 0);
 __decorate([
     common_1.PropertyType(String),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], UserInfoResponse.prototype, "status", void 0);
 __decorate([
     common_1.Required(),
@@ -540,7 +540,7 @@ __decorate([
 ], UserInfoResponse.prototype, "joinDate", void 0);
 __decorate([
     common_1.PropertyType(String),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], UserInfoResponse.prototype, "blurb", void 0);
 __decorate([
     common_1.Required(),
@@ -652,7 +652,7 @@ __decorate([
 ], SearchResult.prototype, "username", void 0);
 __decorate([
     common_1.PropertyType(String),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], SearchResult.prototype, "status", void 0);
 __decorate([
     common_1.Required(),

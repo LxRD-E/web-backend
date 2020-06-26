@@ -11,7 +11,7 @@ const model = require("../models/models");
 const passwordEncryptionKey = config_1.default.encryptionKeys.password;
 const ipEncryptionKey = config_1.default.encryptionKeys.ip;
 class UsersDAL extends _init_1.default {
-    async getInfo(id, specificColumns, forUpdate) {
+    async getInfo(id, specificColumns) {
         if (!specificColumns) {
             specificColumns = ['userId', 'username', 'status', 'joinDate', 'blurb', 'lastOnline', 'banned', 'membership', 'tradingEnabled', 'staff', 'accountStatus'];
         }
@@ -87,9 +87,6 @@ class UsersDAL extends _init_1.default {
             }
         });
         let query = this.knex('users').select(specificColumns).where({ 'users.id': id });
-        if (forUpdate) {
-            query = query.forUpdate(forUpdate);
-        }
         const userInfoSelect = await query;
         const userInfoData = userInfoSelect[0];
         if (userInfoData === undefined) {
@@ -114,9 +111,9 @@ class UsersDAL extends _init_1.default {
     }
     isUsernameOk(username) {
         const onlyOneCharacterAllowedOf = [
-            /\ /g,
+            / /g,
             /\./g,
-            /\_/g,
+            /_/g,
         ];
         for (const Regex of onlyOneCharacterAllowedOf) {
             const matches = username.match(Regex);
@@ -149,17 +146,16 @@ class UsersDAL extends _init_1.default {
     }
     async usernameAvailableForNameChange(contextUserId, username) {
         try {
-            await this.userNameToId(username);
-            return false;
+            let result = await this.userNameToId(username);
+            if (result !== contextUserId) {
+                return false;
+            }
         }
         catch (e) {
         }
         try {
             const pastUsernameInfo = await this.getPastUsernameByName(username);
-            if (pastUsernameInfo.userId !== contextUserId) {
-                return false;
-            }
-            return true;
+            return pastUsernameInfo.userId === contextUserId;
         }
         catch (e) {
         }
@@ -648,7 +644,6 @@ class UsersDAL extends _init_1.default {
                 throw new Error('userIdTwo has already created this request.');
             }
             await trx('friend_request').insert({ "userid_requester": userIdOne, "userid_requestee": userIdTwo }).forUpdate('friend_request');
-            await trx.commit();
         });
     }
     async createFriendship(userIdOne, userIdTwo) {
@@ -728,11 +723,8 @@ class UsersDAL extends _init_1.default {
         }
         return count[0]["Total"];
     }
-    async getUserInventoryByCatalogId(userId, catalogId, forUpdate) {
+    async getUserInventoryByCatalogId(userId, catalogId) {
         let query = this.knex('user_inventory').where({ 'user_inventory.user_id': userId, 'user_inventory.catalog_id': catalogId }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial').orderBy('user_inventory.id', "desc");
-        if (forUpdate) {
-            query = query.forUpdate(forUpdate);
-        }
         const inventory = await query;
         return inventory;
     }

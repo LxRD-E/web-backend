@@ -19,5 +19,5 @@ if (process.env.NODE_ENV !== 'test') {
     });
     console.log('REDIS was setup!');
 }
-
+// @ts-ignore
 export default redis;

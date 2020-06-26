@@ -112,9 +112,9 @@ export default class CurrencyExchangeController extends controller {
             'currency_exchange_position',
             'currency_exchange_fund',
         ];
-        await this.transaction(async (trx) => {
+        return await this.transaction(forUpdate,async (trx): Promise<{positionId: number}> => {
             // Check if already created max positions
-            let allPositions = await trx.currencyExchange.getOpenPositionsByUserId(userInfo.userId, 100, 0, forUpdate);
+            let allPositions = await trx.currencyExchange.getOpenPositionsByUserId(userInfo.userId, 100, 0);
             if (allPositions.length >= 100) {
                 throw new this.Conflict('ReachedMaximumOpenPositions');
             }
@@ -128,15 +128,16 @@ export default class CurrencyExchangeController extends controller {
             }
             // create position
             rate = Math.trunc(rate * 100) / 100;
-            positionId = await trx.currencyExchange.createPosition(userInfo.userId, balance, currency, rate, forUpdate);
+            positionId = await trx.currencyExchange.createPosition(userInfo.userId, balance, currency, rate);
             // Record funding
-            await trx.currencyExchange.recordPositionFunding(positionId, balance, forUpdate);
+            await trx.currencyExchange.recordPositionFunding(positionId, balance);
             // create transaction for user
             await trx.economy.createTransaction(userInfo.userId, 1, -balance, currency, model.economy.transactionType.PurchaseOfCurrencyExchangePosition, 'Purchase of Currency Exchange Position', model.catalog.creatorType.User, model.catalog.creatorType.User);
+
+            return {
+                positionId: positionId,
+            };
         });
-        return {
-            positionId: positionId,
-        };
     }
 
     @Get('/positions/charts/:currencyType')
@@ -181,15 +182,15 @@ export default class CurrencyExchangeController extends controller {
             'currency_exchange_record',
         ];
         let exitDueToUserBeingTerminated = false;
-        await this.transaction(async (trx) => {
-            let data = await trx.currencyExchange.getPositionById(positionId, forUpdate);
+        await this.transaction(forUpdate,async (trx) => {
+            let data = await trx.currencyExchange.getPositionById(positionId);
             if (data.userId === userInfo.userId) {
                 throw new this.Conflict('CannotPurchaseOwnedPosition');
             }
             if (data.balance < amount) {
                 throw new this.Conflict('NotEnoughInPositionBalance');
             }
-            let userBalance = await trx.user.getInfo(userInfo.userId, ['primaryBalance','secondaryBalance'], forUpdate);
+            let userBalance = await trx.user.getInfo(userInfo.userId, ['primaryBalance','secondaryBalance']);
 
             // If authenticated user is buying primary (with their secondary)
             let totalUserIsPaying = data.rate * amount;
@@ -203,15 +204,15 @@ export default class CurrencyExchangeController extends controller {
                 throw new this.Conflict('InvalidPurchaseAmount');
             }
             // Grab seller data
-            let sellerData = await trx.user.getInfo(data.userId, ['accountStatus'], forUpdate);
+            let sellerData = await trx.user.getInfo(data.userId, ['accountStatus']);
             // If seller is not OK
             if (sellerData.accountStatus !== model.user.accountStatus.ok) {
                 // Close the position
-                await trx.currencyExchange.subtractFromPositionBalance(data.positionId, data.balance, forUpdate);
+                await trx.currencyExchange.subtractFromPositionBalance(data.positionId, data.balance);
                 // Refund to seller
-                await trx.economy.addToUserBalanceV2(data.userId, data.balance, data.currencyType, forUpdate);
+                await trx.economy.addToUserBalanceV2(data.userId, data.balance, data.currencyType);
                 // Record negative funding
-                await trx.currencyExchange.recordPositionFunding(data.positionId, -data.balance, forUpdate);
+                await trx.currencyExchange.recordPositionFunding(data.positionId, -data.balance);
                 // Record transaction
                 await trx.economy.createTransaction(data.userId, data.userId, data.balance, data.currencyType, model.economy.transactionType.CurrencyExchangePositionClose, 'Currency Exchange Position Closure', model.catalog.creatorType.User, model.catalog.creatorType.User);
                 // Throw an error
@@ -244,15 +245,15 @@ export default class CurrencyExchangeController extends controller {
             }
             console.log('Ok, continuing');
             // Subtract from position balance
-            await trx.currencyExchange.subtractFromPositionBalance(data.positionId, totalUserIsGetting, forUpdate);
+            await trx.currencyExchange.subtractFromPositionBalance(data.positionId, totalUserIsGetting);
             // Subtract from user balance
-            await trx.economy.subtractFromUserBalanceV2(userInfo.userId, totalUserIsPaying, userIsGiving, forUpdate);
+            await trx.economy.subtractFromUserBalanceV2(userInfo.userId, totalUserIsPaying, userIsGiving);
             // Add to user balance
-            await trx.economy.addToUserBalanceV2(userInfo.userId, totalUserIsGetting, userIsGetting, forUpdate);
+            await trx.economy.addToUserBalanceV2(userInfo.userId, totalUserIsGetting, userIsGetting);
             // Add to position holder balance
-            await trx.economy.addToUserBalanceV2(data.userId,  totalUserIsPaying, userIsGiving, forUpdate);
+            await trx.economy.addToUserBalanceV2(data.userId,  totalUserIsPaying, userIsGiving);
             // Record exchange transaction
-            await trx.currencyExchange.recordCurrencyExchange(data.positionId, userInfo.userId, totalUserIsGetting, totalUserIsPaying, forUpdate);
+            await trx.currencyExchange.recordCurrencyExchange(data.positionId, userInfo.userId, totalUserIsGetting, totalUserIsPaying);
             // Record transactions for both parties
             await trx.economy.createTransaction(userInfo.userId, data.userId, -totalUserIsPaying, userIsGiving, model.economy.transactionType.CurrencyExchangeTransactionPurchase, 'Purchase of Currency on Exchange', model.catalog.creatorType.User, model.catalog.creatorType.User);
             await trx.economy.createTransaction(userInfo.userId, data.userId, totalUserIsGetting, userIsGetting, model.economy.transactionType.CurrencyExchangeTransactionPurchase, 'Purchase of Currency on Exchange', model.catalog.creatorType.User, model.catalog.creatorType.User)
@@ -283,13 +284,13 @@ export default class CurrencyExchangeController extends controller {
         @Locals('userInfo') userInfo: model.UserSession,
         @PathParams('positionId', Number) positionId: number,
     ) {
-        await this.transaction(async (trx) => {
-            const forUpdate = [
-                'users',
-                'currency_exchange_fund',
-                'currency_exchange_position',
-            ];
-            let data = await trx.currencyExchange.getPositionById(positionId, forUpdate);
+        const forUpdate = [
+            'users',
+            'currency_exchange_fund',
+            'currency_exchange_position',
+        ];
+        await this.transaction(forUpdate,async (trx) => {
+            let data = await trx.currencyExchange.getPositionById(positionId);
             if (data.userId !== userInfo.userId) {
                 throw new this.Conflict('UserIsNotOwnerOfPosition');
             }
@@ -297,11 +298,11 @@ export default class CurrencyExchangeController extends controller {
                 throw new this.Conflict('PositionAlreadyClosed');
             }
             // Record negative funding
-            await trx.currencyExchange.recordPositionFunding(positionId, -data.balance, forUpdate);
+            await trx.currencyExchange.recordPositionFunding(positionId, -data.balance);
             // Update position balance
-            await trx.currencyExchange.subtractFromPositionBalance(positionId, data.balance, forUpdate);
+            await trx.currencyExchange.subtractFromPositionBalance(positionId, data.balance);
             // Transfer funding to user
-            await trx.economy.addToUserBalanceV2(userInfo.userId, data.balance, data.currencyType, forUpdate);
+            await trx.economy.addToUserBalanceV2(userInfo.userId, data.balance, data.currencyType);
             // Record transaction
             await trx.economy.createTransaction(userInfo.userId, userInfo.userId, data.balance, data.currencyType, model.economy.transactionType.CurrencyExchangePositionClose, 'Currency Exchange Position Closure', model.catalog.creatorType.User, model.catalog.creatorType.User);
             // Return

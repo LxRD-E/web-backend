@@ -729,7 +729,7 @@ export default class GameController extends controller {
 /**
  * WSS Route
  */
-wss.on('connection', async function connection(ws, req: any, authCode: { userId: number; username: string; }) {
+wss.on('connection', async function connection(ws: any, req: any, authCode: { userId: number; username: string; }) {
     if (req.url !== '/game-sockets/websocket.aspx') {
         // someone elses job
         return;

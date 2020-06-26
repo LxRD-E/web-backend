@@ -681,7 +681,7 @@ class CatalogDAL extends _init {
 
     private addBuffersIfNotExists(uploadedFiles: any[], maxFileSize: number): Promise<void> {
         return new Promise((res, rej) => {
-            const scanFile = async (file) => {
+            const scanFile = async (file: any) => {
                 let buffer = file['buffer'];
                 if (typeof buffer === 'undefined') {
                     let newBuffer = await new Promise((res, rej) => {

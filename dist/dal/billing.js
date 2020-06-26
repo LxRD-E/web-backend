@@ -2,7 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const Billing = require("../models/v1/billing");
 const config_1 = require("../helpers/config");
+const _init_1 = require("./_init");
 const Coinpayments = require("coinpayments");
+const checkoutNodeJssdk = require("@paypal/checkout-server-sdk");
 let coinpaymentsClient;
 if (process.env.NODE_ENV !== 'test') {
     coinpaymentsClient = new Coinpayments({
@@ -11,12 +13,9 @@ if (process.env.NODE_ENV !== 'test') {
     });
 }
 const { verify } = require('coinpayments-ipn');
-const checkoutNodeJssdk = require("@paypal/checkout-server-sdk");
-const _init_1 = require("./_init");
 class BillingDAL extends _init_1.default {
     async getCurrencyProducts() {
-        const items = await this.knex('currency_products').select('currency_products.id as currencyProductId', 'usd_price as usdPrice', 'currency_amount as currencyAmount', 'bonus_catalogid as bonusCatalogId').orderBy('usd_price', 'asc');
-        return items;
+        return this.knex('currency_products').select('currency_products.id as currencyProductId', 'usd_price as usdPrice', 'currency_amount as currencyAmount', 'bonus_catalogid as bonusCatalogId').orderBy('usd_price', 'asc');
     }
     async updateCurrencyProduct(id, usdPrice, amount, bonusCatalogId) {
         await this.knex('currency_products').update({

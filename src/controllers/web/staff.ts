@@ -253,7 +253,7 @@ export class WWWStaffController extends controller {
         @Required()
         @QueryParams('groupId', Number) groupId: number
     ) {
-        const staff = localUserData.staff >= 2 ? true : false;
+        const staff = localUserData.staff >= 2;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -277,12 +277,12 @@ export class WWWStaffController extends controller {
     public async modifyForums(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 3 ? true : false;
+        const staff = userInfo.staff >= 3;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
-        let cats = await this.forum.getCategories();
-        let subs = await this.forum.getSubCategories();
+        let cats: any = await this.forum.getCategories();
+        let subs: any = await this.forum.getSubCategories();
         for (const sub of subs) {
             for (const cat of cats) {
                 if (sub.categoryId === cat.categoryId) {
@@ -302,7 +302,7 @@ export class WWWStaffController extends controller {
     public async staffTickets(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 1 ? true : false;
+        const staff = userInfo.staff >= 1;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -315,7 +315,7 @@ export class WWWStaffController extends controller {
     public async searchUsers(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 1 ? true : false;
+        const staff = userInfo.staff >= 1;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -329,12 +329,12 @@ export class WWWStaffController extends controller {
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
         @Req() req: Req,
     ) {
-        const staff = userInfo.staff >= 1 ? true : false;
+        const staff = userInfo.staff >= 1;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
-        let query: string;
-        let column: string;
+        let query: string|undefined;
+        let column: string|undefined;
         if (req.query.email) {
             query = req.query.email;
             column = 'email';
@@ -351,7 +351,6 @@ export class WWWStaffController extends controller {
             throw new this.BadRequest('SchemaValidationFailed');
         }
         let results: {userId: number; username: string}[] = [];
-        console.log(column);
         if (column === 'email') {
             try {
                 let result = await this.settings.getUserByEmail(query)

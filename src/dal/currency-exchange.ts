@@ -12,7 +12,6 @@ export default class CurrencyExchangeDAL extends _init {
         userId: number,
         limit: number,
         offset: number,
-        forUpdate: string[] = []
     ): Promise<model.currencyExchange.OpenCurrencyPositionsEntry[]>{
         return this.knex('currency_exchange_position')
             .select(
@@ -28,7 +27,6 @@ export default class CurrencyExchangeDAL extends _init {
             })
             .andWhere('balance', '>', 0)
             .limit(limit)
-            .forUpdate(forUpdate)
             .offset(offset);
     }
 
@@ -36,7 +34,6 @@ export default class CurrencyExchangeDAL extends _init {
         currencyType: model.economy.currencyType,
         limit: number,
         offset: number,
-        forUpdate: string[] = []
     ): Promise<model.currencyExchange.OpenCurrencyPositionsEntry[]>{
         return this.knex('currency_exchange_position')
             .select(
@@ -52,7 +49,6 @@ export default class CurrencyExchangeDAL extends _init {
             })
             .andWhere('balance', '>', 0)
             .limit(limit)
-            .forUpdate(forUpdate)
             .orderBy('rate','asc') // order by lowest rate
             .offset(offset);
     }
@@ -63,23 +59,22 @@ export default class CurrencyExchangeDAL extends _init {
      * @param balance
      * @param currencyType
      * @param rate
-     * @param forUpdate
      */
-    public async createPosition(userId: number, balance: number, currencyType: model.economy.currencyType, rate: number, forUpdate: string[]): Promise<number> {
+    public async createPosition(userId: number, balance: number, currencyType: model.economy.currencyType, rate: number): Promise<number> {
         let results = await this.knex('currency_exchange_position').insert({
             'user_id': userId,
             'balance': balance,
             'currency_type': currencyType,
             'rate': rate,
-        }).forUpdate(forUpdate);
+        });
         return results[0] as number;
     }
 
-    public async recordPositionFunding(positionId: number, amount: number, forUpdate: string[]): Promise<void> {
+    public async recordPositionFunding(positionId: number, amount: number): Promise<void> {
         await this.knex('currency_exchange_fund').insert({
             'position_id': positionId,
             'amount': amount,
-        }).forUpdate(forUpdate);
+        });
     }
 
     /**
@@ -113,7 +108,7 @@ export default class CurrencyExchangeDAL extends _init {
             }).orderBy('currency_exchange_record.id','desc');
     }
 
-    public async getPositionById(id: number, forUpdate: string[] = []): Promise<model.currencyExchange.OpenCurrencyPositionsEntry> {
+    public async getPositionById(id: number): Promise<model.currencyExchange.OpenCurrencyPositionsEntry> {
         let result = await this.knex('currency_exchange_position')
             .select(
                 'id as positionId',
@@ -127,7 +122,6 @@ export default class CurrencyExchangeDAL extends _init {
                 'id': id,
             })
             .limit(1)
-            .forUpdate(forUpdate);
         if (!result[0]) {
             throw new Error('InvalidPositionId');
         }
@@ -138,15 +132,14 @@ export default class CurrencyExchangeDAL extends _init {
      * Subtract currency amount from a position
      * @param positionId
      * @param amountToSubtract
-     * @param forUpdate
      */
-    public async subtractFromPositionBalance(positionId: number, amountToSubtract: number, forUpdate: string[] = []): Promise<void> {
+    public async subtractFromPositionBalance(positionId: number, amountToSubtract: number): Promise<void> {
         await this.knex('currency_exchange_position').decrement('balance', amountToSubtract).where({
             'id': positionId,
-        }).limit(1).forUpdate(forUpdate);
+        }).limit(1);
     }
 
-    public async recordCurrencyExchange(positionId: number, buyerUserId: number, amountPurchased: number, amountSold: number, forUpdate?: string[]): Promise<number> {
+    public async recordCurrencyExchange(positionId: number, buyerUserId: number, amountPurchased: number, amountSold: number): Promise<number> {
         let results = await this.knex('currency_exchange_record').insert({
             'buyer_user_id': buyerUserId,
             'position_id': positionId,

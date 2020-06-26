@@ -9,8 +9,7 @@ class ForumDAL extends _init {
      * Get All Categories
      */
     public async getCategories(): Promise<Forum.Categories[]> {
-        const categories = await this.knex("forum_categories").select("id as categoryId","title","description",'weight').orderBy('weight','desc');
-        return categories;
+        return this.knex("forum_categories").select("id as categoryId", "title", "description", 'weight').orderBy('weight', 'desc');
     }
     /**
      * Get Category by id
@@ -240,11 +239,11 @@ class ForumDAL extends _init {
         body: string
     ): Promise<number> {
         let threadId: number;
-        await this.knex.transaction(async (trx) => {
+        return await this.knex.transaction(async (trx): Promise<number> => {
             // confirm user isnt in cooldown
             const latestPost = await trx("forum_posts").select("date_created").where({
                 'userid': userId
-            }).orderBy("id", "desc").limit(1).forUpdate('users','forum_posts','forum_threads');;
+            }).orderBy("id", "desc").limit(1).forUpdate('users','forum_posts','forum_threads');
             if (!latestPost[0]) {
                 // Can post
             }else{
@@ -292,10 +291,8 @@ class ForumDAL extends _init {
             await trx("users").increment('forum_postcount').where({'id': userId}).forUpdate('users','forum_posts','forum_threads');
 
             // commit transaction
-            await trx.commit();
+            return threadId;
         });
-        // return the generated threadId
-        return threadId;
     }
 
     /**
@@ -319,8 +316,8 @@ class ForumDAL extends _init {
      */
     public async createPost(threadId: number, categoryId: number, subCategoryId: number, userId: number, body: string): Promise<number> {
         let postId: number;
-        await this.knex.transaction(async (trx) => {
-            const latestPost = await trx("forum_posts").select("date_created").where({'userid': userId}).orderBy("id", "desc").limit(1).forUpdate('users','forum_posts');;
+        return await this.knex.transaction(async (trx): Promise<number> => {
+            const latestPost = await trx("forum_posts").select("date_created").where({'userid': userId}).orderBy("id", "desc").limit(1).forUpdate('users','forum_posts');
             if (!latestPost[0]) {
                 // User can post
             }else{
@@ -349,10 +346,8 @@ class ForumDAL extends _init {
             // increment post count
             await trx("users").increment('forum_postcount').where({'id': userId}).forUpdate('users','forum_posts');
             // commit
-            await trx.commit();
+            return postId;
         });
-        
-        return postId;
     }
 
     /**

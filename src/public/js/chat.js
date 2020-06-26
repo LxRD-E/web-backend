@@ -32,6 +32,7 @@ function getCsrf() {
 }
 
 function chatInit() {
+    return;
     if (window.location.pathname === '/Membership/NotApproved.aspx') {
         return; // account is banned so dont bother trying to load chat since it wont work
     }
@@ -110,7 +111,7 @@ function chatInit() {
                     </div>
                 </div>
                 <div class="col-2" style="padding: 0;">
-                    <button type="button" class="btn btn-success" id="sendChatMessage" style="margin:0auto;display:block;width: 100%;height:100%;padding-left: 0;padding-right: 0;margin:0;"><i class="fas fa-sign-in-alt"></i>
+                    <button type="button" class="btn btn-success" id="sendChatMessage" style="margin:0 auto;display:block;width: 100%;height:100%;padding-left: 0;padding-right: 0;margin:0;"><i class="fas fa-sign-in-alt"></i>
 
                     </button>
                 </div>

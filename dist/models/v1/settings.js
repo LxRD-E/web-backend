@@ -19,7 +19,7 @@ class EmailModelForSettings {
 }
 __decorate([
     common_1.PropertyType(String),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], EmailModelForSettings.prototype, "email", void 0);
 __decorate([
     common_1.Required(),
@@ -30,7 +30,7 @@ class UserSettings {
 }
 __decorate([
     common_1.PropertyType(String),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], UserSettings.prototype, "blurb", void 0);
 __decorate([
     common_1.Required(),
@@ -42,7 +42,7 @@ __decorate([
 ], UserSettings.prototype, "theme", void 0);
 __decorate([
     common_1.Required(),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], UserSettings.prototype, "forumSignature", void 0);
 __decorate([
     common_1.Required(),

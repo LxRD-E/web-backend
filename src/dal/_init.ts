@@ -6,11 +6,12 @@ import ioredis = require('ioredis');
 import moment = require('moment');
 
 import { NotFound, BadRequest, Conflict, Unauthorized } from 'ts-httpexceptions';
+import TSErrorsBase from "../helpers/Errors";
 /**
  * **Database Access Layer**
  * Provides access to knex and redis for DAL services.
  */
-export default class DAL {
+export default class DAL extends TSErrorsBase {
     // HTTP Exceptions
     public NotFound = NotFound;
     public BadRequest = BadRequest;
@@ -26,6 +27,7 @@ export default class DAL {
         return momentObject.format('YYYY-MM-DD HH:mm:ss');
     }
     constructor(knexService: Knex = knex) {
+        super();
         this.knex = knexService;
         this.redis = redis;
         this.moment = moment;

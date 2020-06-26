@@ -56,6 +56,9 @@ let SettingsController = class SettingsController extends controller_1.default {
             };
         }
         else {
+            if (!userEmail) {
+                throw new Error('userEmail is undefined');
+            }
             let protectedEmail = userEmail.email;
             const matchLen = protectedEmail.match(/.+@/g);
             let totalMatchLen = 0;
@@ -95,6 +98,9 @@ let SettingsController = class SettingsController extends controller_1.default {
                 }
             });
         });
+        if (!userEmail || !userEmail.email) {
+            throw new Error('userEmail is undefined');
+        }
         let newEmail = await this.settings.insertNewEmail(UserInfo.userId, userEmail.email, emailToken);
         try {
             this.settings.sendEmail(userEmail.email, "Email Verification", "Thank you for adding a new email to your account. Visit this link to verify it: https://blockshub.net/email/verify?code=" + emailToken, "<h5>Hello,</h5><p>Thank you for adding a new email to your account. Please click <a href=\"https://blockshub.net/email/verify?code=" + emailToken + "\">here</a> to verify it. If you did not request this, you can ignore this email.<br>Thanks!</p>").then().catch(e => {
@@ -140,6 +146,9 @@ let SettingsController = class SettingsController extends controller_1.default {
     }
     async verifyEmail(userInfo, code) {
         let latestEmail = await this.settings.getUserEmail(userInfo.userId);
+        if (!latestEmail) {
+            throw new Error('User does not have a latestemail');
+        }
         if (moment().isSameOrBefore(moment(latestEmail.date).add(1, "hours"))) {
             if (crypto.timingSafeEqual(Buffer.from(code), Buffer.from(latestEmail.verificationCode))) {
                 await this.settings.markEmailAsVerified(userInfo.userId);

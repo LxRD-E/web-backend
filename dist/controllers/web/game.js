@@ -107,7 +107,8 @@ let WWWGameController = class WWWGameController extends controller_1.default {
         });
     }
     gameGenre(gameGenre, res) {
-        if (!isNaN(parseInt(gameGenre, 10))) {
+        let val = parseInt(gameGenre, 10);
+        if (!isNaN(val)) {
             return res.redirect('/play');
         }
         let genreToRedirectTo = model.game.GameGenres[gameGenre];

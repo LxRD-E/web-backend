@@ -70,6 +70,9 @@ export default class SettingsController extends controller {
                 email: null,
             }
         } else {
+            if (!userEmail) {
+                throw new Error('userEmail is undefined');
+            }
             let protectedEmail = userEmail.email as string;
             const matchLen = protectedEmail.match(/.+@/g);
             let totalMatchLen = 0;
@@ -119,6 +122,9 @@ export default class SettingsController extends controller {
                 }
             });
         });
+        if (!userEmail || !userEmail.email) {
+            throw new Error('userEmail is undefined');
+        }
         let newEmail = await this.settings.insertNewEmail(UserInfo.userId, userEmail.email, emailToken);
         // Send Verify Request
         try {
@@ -193,6 +199,9 @@ export default class SettingsController extends controller {
         @BodyParams('id', String) code: string
     ) {
         let latestEmail = await this.settings.getUserEmail(userInfo.userId);
+        if (!latestEmail) {
+            throw new Error('User does not have a latestemail');
+        }
         if (moment().isSameOrBefore(moment(latestEmail.date).add(1, "hours"))) {
             if (crypto.timingSafeEqual(Buffer.from(code), Buffer.from(latestEmail.verificationCode))) {
                 await this.settings.markEmailAsVerified(userInfo.userId);

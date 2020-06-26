@@ -60,17 +60,12 @@ let UsersController = class UsersController extends controller_1.default {
         return userInfo;
     }
     async getAvatar(id) {
-        try {
-            const avatarObjects = await this.user.getAvatar(id);
-            const avatarColoring = await this.user.getAvatarColors(id);
-            return {
-                avatar: avatarObjects,
-                color: avatarColoring,
-            };
-        }
-        catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
+        const avatarObjects = await this.user.getAvatar(id);
+        const avatarColoring = await this.user.getAvatarColors(id);
+        return {
+            avatar: avatarObjects,
+            color: avatarColoring,
+        };
     }
     async getFriends(id, offset = 0, limit = 100, sort = 'asc') {
         const friends = await this.user.getFriends(id, offset, limit, sort);
@@ -257,7 +252,12 @@ let UsersController = class UsersController extends controller_1.default {
         return await this.user.search(offset, limit, sort, goodSortBy, query);
     }
     async createTradeRequest(req, userInfo, partnerUserId, body) {
-        await this.transaction(async (trx) => {
+        const forUpdate = [
+            'users',
+            'trade_items',
+            'trades',
+        ];
+        await this.transaction(forUpdate, async (trx) => {
             let offerPrimary = 0;
             if (body.offerPrimary) {
                 offerPrimary = body.offerPrimary;

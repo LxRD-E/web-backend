@@ -91,16 +91,12 @@ export class UsersController extends controller {
     public async getAvatar(
         @PathParams('userId', Number) id: number
     ) {
-        try {
-            const avatarObjects = await this.user.getAvatar(id);
-            const avatarColoring = await this.user.getAvatarColors(id);
-            return {
-                avatar: avatarObjects,
-                color: avatarColoring,
-            };
-        } catch (e) {
-            throw new this.BadRequest('InvalidUserId');
-        }
+        const avatarObjects = await this.user.getAvatar(id);
+        const avatarColoring = await this.user.getAvatarColors(id);
+        return {
+            avatar: avatarObjects,
+            color: avatarColoring,
+        };
     }
 
     @Get('/:userId/friends')
@@ -500,7 +496,12 @@ export class UsersController extends controller {
         @Required()
         @BodyParams(model.user.CreateTradeRequest) body: model.user.CreateTradeRequest,
     ) {
-        await this.transaction(async (trx) => {
+        const forUpdate = [
+            'users',
+            'trade_items',
+            'trades',
+        ]
+        await this.transaction(forUpdate,async (trx) => {
             let offerPrimary = 0;
             if (body.offerPrimary) {
                 offerPrimary = body.offerPrimary;

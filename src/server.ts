@@ -11,7 +11,8 @@ import { ServerLoader, ServerSettings } from "@tsed/common";
 import "@tsed/ajv"; // import ajv ts.ed module
 import "@tsed/swagger"; // import swagger Ts.ED module
 import Path = require("path");
-import cons = require('consolidate');
+
+import * as cons from 'consolidate';
 import morgan = require('morgan');
 import {NotFoundMiddleware} from "./middleware/NotFound";
 import logger from './helpers/Logger';
@@ -119,8 +120,6 @@ export class Server extends ServerLoader {
                 // We also use morgan in dev (only)
                 .use(morgan('dev'))
         }
-
-        return null;
     }
 
     public $afterRoutesInit() {

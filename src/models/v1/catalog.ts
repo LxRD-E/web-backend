@@ -169,7 +169,7 @@ export class SearchResults {
     @Required()
     maxSales: number | null;
     @PropertyType(Number)
-    collectibleLowestPrice: number;
+    collectibleLowestPrice: number|null;
 }
 /**
  * catalog_comments

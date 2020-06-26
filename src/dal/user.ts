@@ -25,9 +25,8 @@ class UsersDAL extends _init {
      * Grab a user's info. Throws 'false' if invalid userId is provided
      * @param id User's ID
      * @param specificColumns Specific Columns from the Table to grab
-     * @param forUpdate
      */
-    public async getInfo(id: number, specificColumns?: Array<'userId' | 'username' | 'passwordChanged' | 'primaryBalance' | 'secondaryBalance' | 'membership' | 'dailyAward' | 'status' | 'blurb' | 'joinDate' | 'lastOnline' | 'birthDate' | 'theme' | 'tradingEnabled' | 'staff' | 'banned' | 'forumPostCount' | 'forumSignature' | 'accountStatus' | '2faEnabled' | 'isDeveloper'>, forUpdate?: string[]): Promise<users.UserInfo> {
+    public async getInfo(id: number, specificColumns?: Array<'userId' | 'username' | 'passwordChanged' | 'primaryBalance' | 'secondaryBalance' | 'membership' | 'dailyAward' | 'status' | 'blurb' | 'joinDate' | 'lastOnline' | 'birthDate' | 'theme' | 'tradingEnabled' | 'staff' | 'banned' | 'forumPostCount' | 'forumSignature' | 'accountStatus' | '2faEnabled' | 'isDeveloper'>): Promise<users.UserInfo> {
         if (!specificColumns) {
             specificColumns = ['userId', 'username', 'status', 'joinDate', 'blurb', 'lastOnline', 'banned', 'membership', 'tradingEnabled', 'staff', 'accountStatus'];
         }
@@ -81,9 +80,6 @@ class UsersDAL extends _init {
             }
         });
         let query = this.knex('users').select(specificColumns).where({'users.id': id });
-        if (forUpdate) {
-            query = query.forUpdate(forUpdate);
-        }
         const userInfoSelect = await query;
         const userInfoData = userInfoSelect[0] as users.UserInfo;
         if (userInfoData === undefined) {
@@ -140,9 +136,9 @@ class UsersDAL extends _init {
      */
     public isUsernameOk(username: string): string {
         const onlyOneCharacterAllowedOf =  [
-            /\ /g,
+            / /g,
             /\./g,
-            /\_/g,
+            /_/g,
         ];
         for (const Regex of onlyOneCharacterAllowedOf) {
             const matches = username.match(Regex);
@@ -150,7 +146,7 @@ class UsersDAL extends _init {
                 return 'UsernameConstraint1Space1Period1Underscore';
             }
         }
-        // So far looks good to go... Let's make sure the begining and end don't have a space (to prevent stuff like impersonating)
+        // So far looks good to go... Let's make sure the beginning and end don't have a space (to prevent stuff like impersonating)
         if (username.charAt(0) === " " || username.charAt(username.length-1) === " ") {
             return 'UsernameConstriantCannotEndOrStartWithSpace';
         }
@@ -199,18 +195,17 @@ class UsersDAL extends _init {
     public async usernameAvailableForNameChange(contextUserId: number, username: string): Promise<boolean> {
         // Check if already exists
         try {
-            await this.userNameToId(username);
-            return false;
+            let result = await this.userNameToId(username);
+            if (result !== contextUserId) {
+                return false;
+            }
         }catch(e) {
             // Doesn't Exist
         }
         // Check if exists in past username
         try {
             const pastUsernameInfo = await this.getPastUsernameByName(username);
-            if (pastUsernameInfo.userId !== contextUserId) {
-                return false;
-            }
-            return true;
+            return pastUsernameInfo.userId === contextUserId;
         }catch(e) {
             // Doesn't Exist
         }
@@ -912,8 +907,6 @@ class UsersDAL extends _init {
                 throw new Error('userIdTwo has already created this request.');
             }
             await trx('friend_request').insert({"userid_requester": userIdOne,"userid_requestee":userIdTwo}).forUpdate('friend_request');
-
-            await trx.commit();
         });
     }
 
@@ -1093,11 +1086,8 @@ class UsersDAL extends _init {
      * @param userId User ID
      * @param catalogId Catalog Item's ID
      */
-    public async getUserInventoryByCatalogId(userId: number, catalogId: number, forUpdate?: string[]): Promise<Array<users.UserInventory>> {
+    public async getUserInventoryByCatalogId(userId: number, catalogId: number): Promise<Array<users.UserInventory>> {
         let query = this.knex('user_inventory').where({ 'user_inventory.user_id': userId, 'user_inventory.catalog_id': catalogId }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId','user_inventory.catalog_id as catalogId','user_inventory.price as price','catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial').orderBy('user_inventory.id', "desc");
-        if (forUpdate) {
-            query = query.forUpdate(forUpdate);
-        }
         const inventory = await query;
         return inventory as users.UserInventory[];
     }

@@ -15,8 +15,7 @@ if (process.env.NODE_ENV !== 'test') {
             min: 3,
         }
     };
-    const knexSystem = knexLibrary(mysqlConfig);
-    thingToExport = knexSystem;
+    thingToExport = knexLibrary(mysqlConfig);
 }
 else {
     const func = (table) => {

@@ -117,10 +117,11 @@ export class WWWGameController extends controller {
         @PathParams('gameGenre', String) gameGenre: string,
         @Res() res: Res,
     ) {
-        if (!isNaN(parseInt(gameGenre, 10))) {
+        let val = parseInt(gameGenre, 10);
+        if (!isNaN(val)) {
             return res.redirect('/play');
         }
-        let genreToRedirectTo = model.game.GameGenres[gameGenre];
+        let genreToRedirectTo = model.game.GameGenres[gameGenre as any];
         if (genreToRedirectTo) {
             return res.redirect('/play?genre='+genreToRedirectTo+'&sortBy=1');
         }else{

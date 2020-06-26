@@ -10,7 +10,9 @@
       "experimentalDecorators":true,
       "emitDecoratorMetadata": true,
       "sourceMap": true,
-      "declaration": false    
+      "declaration": false,
+      "strict": true,
+      "strictPropertyInitialization": false
     },
     "exclude": [
       "node_modules"

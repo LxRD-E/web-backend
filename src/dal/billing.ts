@@ -3,21 +3,24 @@
  */
 import * as Billing from '../models/v1/billing';
 import Config from '../helpers/config'
+/*eslint-enable */
+import _init from './_init';
+// @ts-ignore
 import Coinpayments = require('coinpayments');
-let coinpaymentsClient;
+/*eslint-disable */
+// @ts-ignore
+import checkoutNodeJssdk = require('@paypal/checkout-server-sdk');
+
+let coinpaymentsClient: any;
 if (process.env.NODE_ENV !== 'test') {
     coinpaymentsClient = new Coinpayments({
         key: Config.coinpayments.public,
         secret: Config.coinpayments.private,
     });
 }
+// @ts-ignore
 const { verify } = require('coinpayments-ipn');
 
-/*eslint-disable */
-import checkoutNodeJssdk = require('@paypal/checkout-server-sdk');
-
-/*eslint-enable */
-import _init from './_init'; 
 /**
  * Model used for Real-World Billing and Payments
  */
@@ -26,13 +29,12 @@ class BillingDAL extends _init {
      * Get Currency Products for Sale. Ordered by lowest price, asc
      */
     public async getCurrencyProducts(): Promise<Billing.CurrencyProducts[]> {
-        const items = await this.knex('currency_products').select(
+        return this.knex('currency_products').select(
             'currency_products.id as currencyProductId',
             'usd_price as usdPrice',
             'currency_amount as currencyAmount',
             'bonus_catalogid as bonusCatalogId',
-        ).orderBy('usd_price','asc');
-        return items;
+        ).orderBy('usd_price', 'asc');
     }
 
     /**

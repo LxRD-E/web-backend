@@ -10,7 +10,7 @@ import * as model from '../../models/models';
 // banner text stuff
 import StaffDAL  from '../../dal/staff';
 let staff = new StaffDAL();
-let currentBannerText = '';
+let currentBannerText: string = '';
 let bannerTextLocked = false;
 setInterval(() => {
     if (bannerTextLocked) {
@@ -19,7 +19,11 @@ setInterval(() => {
     bannerTextLocked= true;
     staff.getBannerText()
     .then(txt => {
-        currentBannerText = txt;
+        if (txt) {
+            currentBannerText = txt;
+        }else{
+            currentBannerText = '';
+        }
     })
     .catch(e => {
         console.error(e);
@@ -35,6 +39,7 @@ import * as UserModel from '../../models/v1/user';
 export class WWWTemplate {
     constructor(props: WWWTemplate) {
         for (const [key, value] of Object.entries(props)) {
+            // @ts-ignore
             this[key] = value;
         }
     }

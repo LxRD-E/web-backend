@@ -188,7 +188,6 @@ export class ChatController extends controller {
             */
         }catch(e) {
             console.log('Closing ws conn due to redis error',e);
-            connector.disconnect();
             ws.close();
         }
         ws.on('close', function() {

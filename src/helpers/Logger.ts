@@ -54,7 +54,7 @@ export default () => {
         }
         // hour
     }, 3600);
-    console.log = (...args) => {
+    console.log = (...args: any[]) => {
         if (!streamWritable) {
             return; // temp; might wanna set up a queue or something eventually
         }

@@ -20,6 +20,12 @@ export class WWWController extends controller {
         super();
     }
 
+    @Get('/perf.txt')
+    @Summary('Perf')
+    public performanceTest() {
+        return 'BWS OK';
+    }
+
     @Get('/discord')
     @Redirect('https://discord.gg/CAjZfcZ')
     public redirectToDiscord() {}

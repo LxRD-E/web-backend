@@ -109,7 +109,7 @@ class EconomyDAL extends _init {
         return results[0];
     }
 
-    public async addToUserBalanceV2(userId: number, amount: number, currency: model.economy.currencyType, forUpdate: string[]): Promise<void> {
+    public async addToUserBalanceV2(userId: number, amount: number, currency: model.economy.currencyType): Promise<void> {
         let type = '';
         if (currency === model.economy.currencyType.primary) {
             type = 'user_balance1';
@@ -120,9 +120,9 @@ class EconomyDAL extends _init {
         }
         await this.knex('users').increment(type, amount).where({
             'id': userId,
-        }).forUpdate(forUpdate).limit(1);
+        }).limit(1);
     }
-    public async subtractFromUserBalanceV2(userId: number, amount: number, currency: model.economy.currencyType, forUpdate: string[]): Promise<void> {
+    public async subtractFromUserBalanceV2(userId: number, amount: number, currency: model.economy.currencyType): Promise<void> {
         let type = '';
         if (currency === model.economy.currencyType.primary) {
             type = 'user_balance1';
@@ -133,7 +133,7 @@ class EconomyDAL extends _init {
         }
         await this.knex('users').decrement(type, amount).where({
             'id': userId,
-        }).forUpdate(forUpdate).limit(1);
+        }).limit(1);
     }
 
     /**

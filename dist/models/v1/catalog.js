@@ -122,11 +122,11 @@ __decorate([
 ], SearchResults.prototype, "collectible", void 0);
 __decorate([
     common_1.Required(),
-    __metadata("design:type", Number)
+    __metadata("design:type", Object)
 ], SearchResults.prototype, "maxSales", void 0);
 __decorate([
     common_1.PropertyType(Number),
-    __metadata("design:type", Number)
+    __metadata("design:type", Object)
 ], SearchResults.prototype, "collectibleLowestPrice", void 0);
 exports.SearchResults = SearchResults;
 class LowestPriceCollectibleItems {

@@ -82,8 +82,7 @@ let CatalogController = class CatalogController extends controller_1.default {
     }
     async getInfo(id) {
         try {
-            const CatalogInfo = await this.catalog.getInfo(id);
-            return CatalogInfo;
+            return await this.catalog.getInfo(id);
         }
         catch (e) {
             throw new this.BadRequest('InvalidCatalogId');
@@ -421,8 +420,7 @@ let CatalogController = class CatalogController extends controller_1.default {
         catch (e) {
             throw new this.BadRequest('InvalidCatalogId');
         }
-        const userData = userInfo;
-        if (userData.staff < 1) {
+        if (userInfo.staff < 1) {
             throw new this.BadRequest('InvalidPermissions');
         }
         const regenAvatar = async () => {
@@ -448,9 +446,7 @@ let CatalogController = class CatalogController extends controller_1.default {
                     await this.catalog.deleteThumbnail(catalogId);
                     await this.catalog.uploadThumbnail(catalogId, url);
                 }
-                else {
-                    return url;
-                }
+                return url;
             }
             catch (e) {
                 console.error(e);
@@ -612,10 +608,10 @@ let CatalogController = class CatalogController extends controller_1.default {
         const forUpdate = [
             'user_inventory'
         ];
-        await this.transaction(async (trx) => {
+        await this.transaction(forUpdate, async (trx) => {
             let item;
             try {
-                item = await trx.catalog.getInfo(catalogId, ['category', 'catalogId'], forUpdate);
+                item = await trx.catalog.getInfo(catalogId, ['category', 'catalogId']);
             }
             catch (e) {
                 throw new this.BadRequest('InvalidCatalogId');
@@ -634,7 +630,7 @@ let CatalogController = class CatalogController extends controller_1.default {
             if (!allowedForDeletion) {
                 throw new this.Conflict('ItemCannotBeDeleted');
             }
-            let userItems = await trx.user.getUserInventoryByCatalogId(userInfo.userId, item.catalogId, forUpdate);
+            let userItems = await trx.user.getUserInventoryByCatalogId(userInfo.userId, item.catalogId);
             for (const userItem of userItems) {
                 await trx.catalog.deleteUserInventoryId(userItem.userInventoryId);
             }

@@ -44,23 +44,7 @@ let DataPersistenceController = class DataPersistenceController extends controll
         }
     }
     metaData(req, res, gameId) {
-        try {
-            throw new this.Conflict('Data persistence is disabled to prevent merge conflicts.');
-        }
-        catch (e) {
-            if (req.accepts('text')) {
-                res.status(500).send(e.stack).end();
-            }
-            else {
-                res.status(500).send({
-                    success: false,
-                    error: {
-                        code: 'InternalServerError',
-                        message: e.stack,
-                    }
-                });
-            }
-        }
+        throw new Error('Disabled');
     }
     async get(userInfo, gameId, key) {
         await this.confirmOwnership(gameId, userInfo.userId);

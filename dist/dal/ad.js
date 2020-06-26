@@ -7,7 +7,7 @@ const config_1 = require("../helpers/config");
 const _init_1 = require("./_init");
 class AdDAL extends _init_1.default {
     async getRandomAd(adDisplayType) {
-        let modelToUse = new model.ad.Advertisment();
+        let modelToUse = new model.ad.Advertisement();
         await this.knex.transaction(async (trx) => {
             let randomAds = await trx('user_ads')
                 .select('id as adId', 'bid_amount as bidAmount', 'updated_at as updatedAt', 'image_url as imageUrl', 'title')

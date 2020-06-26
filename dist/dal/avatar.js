@@ -5,8 +5,8 @@ const axios_1 = require("axios");
 const Thumbnail = require("../models/v1/thumnails");
 const Catalog = require("../models/v1/catalog");
 const config_1 = require("../helpers/config");
-const crypto = require("crypto");
 const _init_1 = require("./_init");
+const crypto = require("crypto");
 class AvatarDAL extends _init_1.default {
     async createOutfit(userId, thumbnailUrl, name) {
         let outfitCreated = await this.knex('user_outfit').insert({
@@ -34,10 +34,9 @@ class AvatarDAL extends _init_1.default {
         }).where({ 'id': outfitId }).limit(1);
     }
     async getOutfitsForUser(userId, limit = 100, offset = 0) {
-        let outfits = await this.knex('user_outfit').select('id as outfitId', 'user_id as userId', 'name', 'outfit_url as url').where({
+        return this.knex('user_outfit').select('id as outfitId', 'user_id as userId', 'name', 'outfit_url as url').where({
             'user_id': userId,
         }).limit(limit).offset(offset);
-        return outfits;
     }
     async countOutfitsForUser(userId) {
         let outfits = await this.knex('user_outfit').count('id as total').where({
@@ -46,12 +45,10 @@ class AvatarDAL extends _init_1.default {
         return outfits[0]['total'];
     }
     async getOutfitAvatar(outfitId) {
-        const userAvatar = await this.knex('user_outfit_avatar').select('user_outfit_avatar.catalog_id as catalogId', 'type').where({ outfit_id: outfitId });
-        return userAvatar;
+        return this.knex('user_outfit_avatar').select('user_outfit_avatar.catalog_id as catalogId', 'type').where({ outfit_id: outfitId });
     }
     async getOutfitAvatarColors(outfitId) {
-        const userAvatarColors = await this.knex('user_outfit_avatarcolor').select('user_outfit_avatarcolor.*').where({ outfit_id: outfitId });
-        return userAvatarColors;
+        return this.knex('user_outfit_avatarcolor').select('user_outfit_avatarcolor.*').where({ outfit_id: outfitId });
     }
     async updateOutfitUrl(outfitId, url) {
         await this.knex('user_outfit').update({

@@ -5,13 +5,10 @@
 import * as model from '../../models/models';
 // Autoloads
 import controller from '../controller';
-import { BodyParams, Locals, UseBeforeEach, UseBefore, Patch, Controller, Get, Err, ModelStrict, PathParams, Post, Use, Res, Required } from '@tsed/common';
-import { csrf } from '../../dal/auth';
-import { YesAuth } from '../../middleware/Auth';
-import { Summary, Returns, Description } from '@tsed/swagger';
-import { MultipartFile } from '@tsed/multipartfiles';
-import jimp = require('jimp');
-import crypto = require('crypto');
+import {BodyParams, Controller, Get, Locals, PathParams, Post, Use} from '@tsed/common';
+import {csrf} from '../../dal/auth';
+import {YesAuth} from '../../middleware/Auth';
+import {Summary} from '@tsed/swagger';
 import RecaptchaV2 from '../../middleware/RecaptchaV2';
 
 /**
@@ -30,8 +27,7 @@ export default class SupportController extends controller {
     public async getMyTickets(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ) {
-        let tickets = await this.support.getTicketsByUser(userInfo.userId);
-        return tickets;
+        return await this.support.getTicketsByUser(userInfo.userId);
     }
 
     @Get('/ticket/:ticketId/replies')
@@ -45,8 +41,7 @@ export default class SupportController extends controller {
         if (ticketInfo.userId !== userInfo.userId) {
             throw new this.BadRequest('InvalidTicketId');
         }
-        let replies = await this.support.getTicketReplies(ticketId);
-        return replies;
+        return await this.support.getTicketReplies(ticketId);
     }
 
     @Post('/ticket/create')

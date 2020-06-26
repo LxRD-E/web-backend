@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 let currentCookieIndex = 0;
 let cookiesArray = fs.readFileSync(path.join(__dirname, '../../cookies.txt')).toString().split('\n');
-let cookies = [];
+let cookies: string[] = [];
 for (let cook of cookiesArray) {
     cook = cook.replace('\r', '');
     cookies.push(cook);
@@ -31,7 +31,7 @@ export default {
     /**
      * Mark cookie as bad
      */
-    badCookie: (badCookie) => {
+    badCookie: (badCookie: string) => {
         let newCookiesArr = [];
         for (const cookie of cookies) {
             if (badCookie !== cookie) {

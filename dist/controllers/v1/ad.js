@@ -65,6 +65,9 @@ let AdController = class AdController extends controller_1.default {
         else if (ad.adType === model.ad.AdType.ForumThread) {
             url = `/forum/thread/${ad.adRedirectId}?page=1`;
         }
+        if (!url) {
+            throw new this.BadRequest('InvalidAdId');
+        }
         await this.ad.incrementAdClickCount(adId);
         res.redirect(url);
     }
@@ -196,7 +199,7 @@ __decorate([
     common_1.Get('/my/created-ads'),
     swagger_1.Summary('Get created ads by authenticated user'),
     common_1.Use(Auth_1.YesAuth),
-    swagger_1.ReturnsArray(200, { type: model.ad.FullAdvertismentDetails }),
+    swagger_1.ReturnsArray(200, { type: model.ad.FullAdvertisementDetails }),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [model.user.UserInfo]),
@@ -206,7 +209,7 @@ __decorate([
     common_1.Get('/random/:adDisplayType'),
     swagger_1.Summary('Get a semi-random advertisement to display to the user'),
     swagger_1.Description('Advertisements are not targeted to comply with COPPA. Ads are purely based off of user bid amounts, i.e, if one user bids 10 primary and another user bids 1, you have a 90% chance of seeing the first ad and a 10% chance of seeing the second ad.'),
-    swagger_1.Returns(200, { type: model.ad.Advertisment }),
+    swagger_1.Returns(200, { type: model.ad.Advertisement }),
     swagger_1.Returns(409, { type: model.Error, description: 'NoAdvertisementAvailable: Account status does not permit advertisement, or no ads are available to display to the user\n' }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidAdDisplayType: AdDisplayId is invalid\n' }),
     __param(0, swagger_1.Description('The type of ad to grab')),

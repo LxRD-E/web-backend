@@ -8,13 +8,13 @@ import _init from './_init';
 class NotificationsDAL extends _init {
     /**
      * Get a user's Messages
-     * @param userId 
+     * @param userId
+     * @param offset
      */
     public async getMessages(userId: number, offset: number): Promise<Notifications.UserMessages[]> {
-        const messages = await this.knex("user_messages").select("id as messageId","userid_from as userId","message_subject as subject","message_body as body","message_date as date","message_read as read").where({
+        return this.knex("user_messages").select("id as messageId", "userid_from as userId", "message_subject as subject", "message_body as body", "message_date as date", "message_read as read").where({
             'userid_to': userId,
         }).orderBy('id', 'desc').limit(25).offset(offset);
-        return messages;
     }
 
     /**

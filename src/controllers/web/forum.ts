@@ -1,15 +1,8 @@
-import { Controller, Get, All, Next, Req, Res, UseBefore, Render, QueryParams, PathParams, Redirect, Response, Request, Locals, UseAfter, Required, Use, UseBeforeEach } from "@tsed/common";
-import { Description, Summary } from "@tsed/swagger"; // import swagger Ts.ED module
-import { Exception, NotFound, BadRequest } from "ts-httpexceptions";
+import {Controller, Get, Locals, PathParams, QueryParams, Render, Res, UseBefore} from "@tsed/common";
 import * as model from '../../models/models';
-import { WWWTemplate } from '../../models/v2/Www';
 import controller from '../controller'
-import moment = require("moment");
-import xss = require('xss');
-import Config from '../../helpers/config';
 // Models
-import { NoAuth, YesAuth } from "../../middleware/Auth";
-import {numberWithCommas} from '../../helpers/Filter';
+import {YesAuth} from "../../middleware/Auth";
 
 @Controller("/")
 export class WWWForumController extends controller {
@@ -22,19 +15,18 @@ export class WWWForumController extends controller {
     public async index(
         @Locals('userInfo') userInfo: model.user.SessionUserInfo,
     ) {
-        let subs;
+        let subs: any;
         if (!userInfo) {
             subs = await this.forum.getSubCategories();
         }else{
             subs = await this.forum.getSubCategories(userInfo.staff);
         }
         for (const item of subs) {
-            let latestPost = await this.forum.getLatestPost(item.subCategoryId);
-            item.latestPost = latestPost;
+            item.latestPost = await this.forum.getLatestPost(item.subCategoryId);
             item.totalThreads = await this.forum.getThreadCount(item.subCategoryId);
             item.totalPosts = await this.forum.getPostCount(item.subCategoryId);
         }
-        let cats = await this.forum.getCategories();
+        let cats: any[] = await this.forum.getCategories();
         for (const cat of cats) {
             if (!cat['subCategories']) {
                 cat['subCategories'] = [];

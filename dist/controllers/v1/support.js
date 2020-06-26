@@ -29,16 +29,14 @@ let SupportController = class SupportController extends controller_1.default {
         super();
     }
     async getMyTickets(userInfo) {
-        let tickets = await this.support.getTicketsByUser(userInfo.userId);
-        return tickets;
+        return await this.support.getTicketsByUser(userInfo.userId);
     }
     async getTicketReplies(userInfo, ticketId) {
         let ticketInfo = await this.support.getTicketById(ticketId);
         if (ticketInfo.userId !== userInfo.userId) {
             throw new this.BadRequest('InvalidTicketId');
         }
-        let replies = await this.support.getTicketReplies(ticketId);
-        return replies;
+        return await this.support.getTicketReplies(ticketId);
     }
     async createTicket(userInfo, title, body) {
         if (title.length > 255 || title.length < 3) {

@@ -171,7 +171,7 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
         return ViewData;
     }
     async moderationGroup(localUserData, groupId) {
-        const staff = localUserData.staff >= 2 ? true : false;
+        const staff = localUserData.staff >= 2;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -190,7 +190,7 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
         return ViewData;
     }
     async modifyForums(userInfo) {
-        const staff = userInfo.staff >= 3 ? true : false;
+        const staff = userInfo.staff >= 3;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -209,21 +209,21 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
             } });
     }
     async staffTickets(userInfo) {
-        const staff = userInfo.staff >= 1 ? true : false;
+        const staff = userInfo.staff >= 1;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
         return new this.WWWTemplate({ title: 'View Tickets Awaiting Response', userInfo: userInfo });
     }
     async searchUsers(userInfo) {
-        const staff = userInfo.staff >= 1 ? true : false;
+        const staff = userInfo.staff >= 1;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
         return new this.WWWTemplate({ title: 'Search Users', userInfo: userInfo });
     }
     async searchUsersResults(userInfo, req) {
-        const staff = userInfo.staff >= 1 ? true : false;
+        const staff = userInfo.staff >= 1;
         if (!staff) {
             throw new this.BadRequest('InvalidPermissions');
         }
@@ -245,7 +245,6 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
             throw new this.BadRequest('SchemaValidationFailed');
         }
         let results = [];
-        console.log(column);
         if (column === 'email') {
             try {
                 let result = await this.settings.getUserByEmail(query);

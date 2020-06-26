@@ -352,6 +352,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
     /**
      * Upload a Script file to the CDN. Resolves with script name
      * @param content Script Content
+     * @param scriptName
      */
     public uploadScript(content: string, scriptName = crypto.randomBytes(64).toString('hex')): Promise<string> {
         console.log('creating script of name: ' + scriptName);
@@ -380,7 +381,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
 
     /**
      * Delete a Script file from the CDN
-     * @param content Script Content
+     * @param scriptName
      */
     public deleteScript(scriptName: string): Promise<void> {
         return new Promise((resolve, reject): void => {

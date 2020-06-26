@@ -47,21 +47,7 @@ export default class DataPersistenceController extends controller {
         @Res() res: Res,
         @PathParams('gameId', Number) gameId: number,
     ) {
-        try {
-            throw new this.Conflict('Data persistence is disabled to prevent merge conflicts.');
-        }catch(e) {
-            if (req.accepts('text')) {
-                res.status(500).send(e.stack).end();
-            }else{
-                res.status(500).send({
-                    success: false,
-                    error: {
-                        code: 'InternalServerError',
-                        message: e.stack,
-                    }
-                })
-            }
-        }
+        throw new Error('Disabled');
     }
 
     @Get('/:gameId/get/:key')

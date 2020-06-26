@@ -28,8 +28,7 @@ let NotificationsController = class NotificationsController extends controller_1
         super();
     }
     async getMessages(userData, numericOffset = 0) {
-        const messages = await this.notification.getMessages(userData.userId, numericOffset);
-        return messages;
+        return await this.notification.getMessages(userData.userId, numericOffset);
     }
     async markAsRead(userData, numericId) {
         await this.notification.markAsRead(userData.userId, numericId);
@@ -55,8 +54,7 @@ let NotificationsController = class NotificationsController extends controller_1
         };
     }
     async getFriendRequests(userData, numericOffset) {
-        const notifications = await this.user.getFriendRequests(userData.userId, numericOffset);
-        return notifications;
+        return await this.user.getFriendRequests(userData.userId, numericOffset);
     }
 };
 __decorate([

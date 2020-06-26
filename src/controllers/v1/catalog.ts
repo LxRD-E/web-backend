@@ -51,8 +51,7 @@ export class CatalogController extends controller {
         @PathParams('catalogId', Number) id: number
     ): Promise<model.catalog.CatalogInfo> {
         try {
-            const CatalogInfo = await this.catalog.getInfo(id);
-            return CatalogInfo;
+            return await this.catalog.getInfo(id);
         } catch (e) {
             throw new this.BadRequest('InvalidCatalogId');
         }
@@ -490,7 +489,7 @@ export class CatalogController extends controller {
         if (userInfo.staff < 1) {
             throw new this.BadRequest('InvalidPermissions');
         }
-        let category;
+        let category: model.catalog.category;
         try {
             const catalogData = await this.catalog.getInfo(catalogId, ['catalogId', 'category']);
             category = catalogData.category;
@@ -573,15 +572,14 @@ export class CatalogController extends controller {
         yieldUntilComplete: boolean = false,
         setThumbnailOnFinish: boolean = true,
     ): Promise<{ success: true; url?: string; }> {
-        let category;
+        let category: model.catalog.category;
         try {
             const catalogData = await this.catalog.getInfo(catalogId, ['catalogId', 'category']);
             category = catalogData.category;
         } catch (e) {
             throw new this.BadRequest('InvalidCatalogId');
         }
-        const userData = userInfo;
-        if (userData.staff < 1) {
+        if (userInfo.staff < 1) {
             throw new this.BadRequest('InvalidPermissions');
         }
         const regenAvatar = async (): Promise<string> => {
@@ -606,9 +604,8 @@ export class CatalogController extends controller {
                     await this.catalog.deleteThumbnail(catalogId);
                     // Upload/Save thumb
                     await this.catalog.uploadThumbnail(catalogId, url);
-                }else{
-                    return url;
                 }
+                return url;
             } catch (e) {
                 console.error(e);
                 throw e;
@@ -746,7 +743,7 @@ export class CatalogController extends controller {
             // Default for all staff uploads
             moderationStatus = model.catalog.moderatorStatus.Ready;
         }
-        let catalogId;
+        let catalogId: number;
         if (groupUpload && !staffMode) {
             catalogId = await this.catalog.createGroupItem(groupUpload, creatorId, name, description, isForSale, category, price, currency, collectible, maxSales, moderationStatus);
         } else {
@@ -816,10 +813,10 @@ export class CatalogController extends controller {
         const forUpdate = [
             'user_inventory'
         ];
-        await this.transaction(async (trx) => {
+        await this.transaction(forUpdate,async (trx) => {
             let item: model.catalog.CatalogInfo;
             try {
-                item = await trx.catalog.getInfo(catalogId, ['category','catalogId'], forUpdate);
+                item = await trx.catalog.getInfo(catalogId, ['category','catalogId']);
             }catch(e) {
                 throw new this.BadRequest('InvalidCatalogId');
             }
@@ -838,7 +835,7 @@ export class CatalogController extends controller {
                 throw new this.Conflict('ItemCannotBeDeleted');
             }
             // grab all items
-            let userItems = await trx.user.getUserInventoryByCatalogId(userInfo.userId, item.catalogId, forUpdate);
+            let userItems = await trx.user.getUserInventoryByCatalogId(userInfo.userId, item.catalogId);
             // delete
             for (const userItem of userItems) {
                 await trx.catalog.deleteUserInventoryId(userItem.userInventoryId);

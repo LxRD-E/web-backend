@@ -85,6 +85,9 @@ export default class BillingController extends controller {
         // Transaction is OK, continue
         const product = await this.billing.getCurrencyProductById(data.productId);
         const buyerEmail = await this.settings.getUserEmail(data.userId);
+        if (!buyerEmail) {
+            throw new Error('Buyer email does not exist.');
+        }
         const payerFirstName = this.auth.encrypt('', Config.encryptionKeys.payments);
         const payerLastName = this.auth.encrypt('', Config.encryptionKeys.payments);
         const payerEmailAddress = this.auth.encrypt(buyerEmail.email as string, Config.encryptionKeys.payments);
@@ -180,7 +183,7 @@ export default class BillingController extends controller {
             throw new this.BadRequest('InvalidCurrency');
         }
         const userEmail = await this.settings.getUserEmail(userInfo.userId);
-        if (!userEmail.email) {
+        if (!userEmail || !userEmail.email) {
             throw new this.Conflict('EmailVerificationRequired');
         }
         const transactionInfo = await this.billing.createBitcoinTransaction(userEmail.email, userInfo.userId, currencyProductId, currency);

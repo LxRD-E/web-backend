@@ -11,9 +11,10 @@ import * as Catalog from '../models/v1/catalog';
 import * as model from '../models/models';
 
 import config from '../helpers/config';
-import crypto = require('crypto');
 
 import _init from './_init';
+import crypto = require('crypto');
+
 /**
  * Model used for Avatar and Thumbnail Rendering, as well as controlling the User Avatar
  */
@@ -21,7 +22,9 @@ class AvatarDAL extends _init {
 
     /**
      * Create an outfit. Resolves with a promise containing the ID of the outfit
-     * @param name 
+     * @param userId
+     * @param thumbnailUrl
+     * @param name
      */
     public async createOutfit(userId: number, thumbnailUrl: string, name?: string): Promise<number> {
         let outfitCreated = await this.knex('user_outfit').insert({
@@ -63,10 +66,9 @@ class AvatarDAL extends _init {
      * @param offset 
      */
     public async getOutfitsForUser(userId: number, limit: number = 100, offset: number = 0): Promise<model.avatar.UserOutfit[]> {
-        let outfits = await this.knex('user_outfit').select('id as outfitId','user_id as userId','name', 'outfit_url as url').where({
+        return this.knex('user_outfit').select('id as outfitId', 'user_id as userId', 'name', 'outfit_url as url').where({
             'user_id': userId,
         }).limit(limit).offset(offset);
-        return outfits;
     }
 
     /**
@@ -81,13 +83,11 @@ class AvatarDAL extends _init {
     }
 
     public async getOutfitAvatar(outfitId: number): Promise<model.avatar.UserOutfitAvatar[]> {
-        const userAvatar = await this.knex('user_outfit_avatar').select('user_outfit_avatar.catalog_id as catalogId','type').where({outfit_id: outfitId});
-        return userAvatar;
+        return this.knex('user_outfit_avatar').select('user_outfit_avatar.catalog_id as catalogId', 'type').where({outfit_id: outfitId});
     }
 
     public async getOutfitAvatarColors(outfitId: number): Promise<model.avatar.UserOutfitAvatar[]> {
-        const userAvatarColors = await this.knex('user_outfit_avatarcolor').select('user_outfit_avatarcolor.*').where({outfit_id: outfitId});
-        return userAvatarColors;
+        return this.knex('user_outfit_avatarcolor').select('user_outfit_avatarcolor.*').where({outfit_id: outfitId});
     }
 
     /**

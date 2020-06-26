@@ -248,17 +248,17 @@ let EconomyController = class EconomyController extends controller_1.default {
         const expectedCurrency = parseInt(expectedCurrencyStr);
         console.log(`${req.id} start transaction`);
         try {
-            await this.transaction(async (trx) => {
-                const forUpdate = [
-                    'users',
-                    'catalog',
-                    'user_inventory',
-                ];
+            const forUpdate = [
+                'users',
+                'catalog',
+                'user_inventory',
+            ];
+            await this.transaction(forUpdate, async (trx) => {
                 if (userInventoryId === 0) {
                     console.log(`${req.id} get info`);
                     let catalogItemInfo;
                     try {
-                        catalogItemInfo = await trx.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'creatorId', 'creatorType', 'price', 'currency', 'maxSales', 'collectible', 'catalogName'], forUpdate);
+                        catalogItemInfo = await trx.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'creatorId', 'creatorType', 'price', 'currency', 'maxSales', 'collectible', 'catalogName']);
                     }
                     catch (e) {
                         throw new this.BadRequest('InvalidCatalogId');
@@ -291,13 +291,13 @@ let EconomyController = class EconomyController extends controller_1.default {
                         }
                     }
                     console.log(`${req.id} check if owns`);
-                    let owns = await trx.user.getUserInventoryByCatalogId(userInfo.userId, catalogItemInfo.catalogId, forUpdate);
+                    let owns = await trx.user.getUserInventoryByCatalogId(userInfo.userId, catalogItemInfo.catalogId);
                     if (owns[0]) {
                         throw new this.Conflict('AlreadyOwns');
                     }
                     console.log(`${req.id} does not own`);
                     console.log(`${req.id} check if has enough currency`);
-                    const newUserInfo = await this.user.getInfo(userInfo.userId, ['primaryBalance', 'secondaryBalance'], forUpdate);
+                    const newUserInfo = await this.user.getInfo(userInfo.userId, ['primaryBalance', 'secondaryBalance']);
                     if (catalogItemInfo.currency === model.economy.currencyType.primary) {
                         const balance = newUserInfo.primaryBalance;
                         if (catalogItemInfo.price > balance) {
@@ -348,7 +348,7 @@ let EconomyController = class EconomyController extends controller_1.default {
                 else {
                     let catalogItemInfo;
                     try {
-                        catalogItemInfo = await trx.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'maxSales', 'collectible', 'catalogName'], forUpdate);
+                        catalogItemInfo = await trx.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'maxSales', 'collectible', 'catalogName']);
                     }
                     catch (e) {
                         throw new this.BadRequest('InvalidCatalogId');
@@ -361,7 +361,7 @@ let EconomyController = class EconomyController extends controller_1.default {
                     }
                     let usedItemInfo;
                     try {
-                        usedItemInfo = await trx.catalog.getItemByUserInventoryId(userInventoryId, forUpdate);
+                        usedItemInfo = await trx.catalog.getItemByUserInventoryId(userInventoryId);
                     }
                     catch (e) {
                         throw new this.BadRequest('InvalidUserInventoryId');
@@ -383,7 +383,7 @@ let EconomyController = class EconomyController extends controller_1.default {
                     }
                     let sellerInfo;
                     try {
-                        sellerInfo = await trx.user.getInfo(usedItemInfo.userId, undefined, forUpdate);
+                        sellerInfo = await trx.user.getInfo(usedItemInfo.userId, undefined);
                         if (sellerInfo.accountStatus === model.user.accountStatus.deleted || sellerInfo.accountStatus === model.user.accountStatus.terminated) {
                             throw new Error('ItemNoLongerForSale');
                         }
@@ -464,7 +464,7 @@ let EconomyController = class EconomyController extends controller_1.default {
         if (!numericTradeId) {
             throw new this.BadRequest('InvalidTradeId');
         }
-        await this.transaction(async (trx) => {
+        await this.transaction([], async (trx) => {
             let tradeInfo = await trx.economy.getTradeById(numericTradeId);
             if (tradeInfo.status !== model.economy.tradeStatus.Pending) {
                 throw new this.BadRequest('InvalidTradeId');
@@ -491,10 +491,10 @@ let EconomyController = class EconomyController extends controller_1.default {
             'trades',
             'user_inventory',
         ];
-        await this.transaction(async (trx) => {
+        await this.transaction(forUpdate, async (trx) => {
             let tradeInfo;
             try {
-                tradeInfo = await trx.economy.getTradeById(numericTradeId, forUpdate);
+                tradeInfo = await trx.economy.getTradeById(numericTradeId);
             }
             catch (e) {
                 throw new this.BadRequest('InvalidTradeId');
@@ -503,7 +503,7 @@ let EconomyController = class EconomyController extends controller_1.default {
                 throw new this.BadRequest('InvalidTradeId');
             }
             if (tradeInfo.userIdTwo === userInfo.userId) {
-                let partnerInfo = await trx.user.getInfo(tradeInfo.userIdOne, ['accountStatus'], forUpdate);
+                let partnerInfo = await trx.user.getInfo(tradeInfo.userIdOne, ['accountStatus']);
                 if (partnerInfo.accountStatus === model.user.accountStatus.deleted || partnerInfo.accountStatus === model.user.accountStatus.terminated) {
                     throw new this.BadRequest('InvalidPartnerId');
                 }
@@ -519,7 +519,7 @@ let EconomyController = class EconomyController extends controller_1.default {
                     return new Promise((resolve, reject) => {
                         const promises = [];
                         for (const item of items) {
-                            promises.push(trx.catalog.getItemByUserInventoryId(item["userInventoryId"], forUpdate));
+                            promises.push(trx.catalog.getItemByUserInventoryId(item["userInventoryId"]));
                         }
                         Promise.all(promises)
                             .then((results) => {
@@ -576,7 +576,7 @@ let EconomyController = class EconomyController extends controller_1.default {
                 await Promise.all(OwnershipSwap);
                 let currencyToSubtractFromUserOne = tradeInfo.userIdOnePrimary;
                 if (currencyToSubtractFromUserOne) {
-                    let userOneCurrentBalance = await trx.user.getInfo(tradeInfo.userIdOne, ['primaryBalance'], forUpdate);
+                    let userOneCurrentBalance = await trx.user.getInfo(tradeInfo.userIdOne, ['primaryBalance']);
                     if (userOneCurrentBalance.primaryBalance >= currencyToSubtractFromUserOne === false) {
                         throw new this.Conflict('TradeCannotBeCompleted');
                     }
@@ -585,7 +585,7 @@ let EconomyController = class EconomyController extends controller_1.default {
                 }
                 let currencyToSubtractFromUserTwo = tradeInfo.userIdTwoPrimary;
                 if (currencyToSubtractFromUserTwo) {
-                    let userTwoCurrentBalance = await trx.user.getInfo(tradeInfo.userIdTwo, ['primaryBalance'], forUpdate);
+                    let userTwoCurrentBalance = await trx.user.getInfo(tradeInfo.userIdTwo, ['primaryBalance']);
                     if (userTwoCurrentBalance.primaryBalance >= currencyToSubtractFromUserTwo === false) {
                         throw new this.Conflict('TradeCannotBeCompleted');
                     }

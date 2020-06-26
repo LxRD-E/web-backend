@@ -34,8 +34,7 @@ let WWWForumController = class WWWForumController extends controller_1.default {
             subs = await this.forum.getSubCategories(userInfo.staff);
         }
         for (const item of subs) {
-            let latestPost = await this.forum.getLatestPost(item.subCategoryId);
-            item.latestPost = latestPost;
+            item.latestPost = await this.forum.getLatestPost(item.subCategoryId);
             item.totalThreads = await this.forum.getThreadCount(item.subCategoryId);
             item.totalPosts = await this.forum.getPostCount(item.subCategoryId);
         }

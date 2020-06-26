@@ -6,13 +6,28 @@ import * as model from '../../models/models';
 // Errors
 // import ForumError from './error';
 // Filters
-import { filterOffset, filterId, filterLimit, filterSort } from '../../helpers/Filter';
+import {filterId, filterLimit, filterOffset, filterSort} from '../../helpers/Filter';
 // Autoload
-import { Controller, Get, Locals, QueryParams, PathParams, Post, Put, UseBeforeEach, UseBefore, BodyParams, Required, Patch, Delete } from '@tsed/common';
+import {
+    BodyParams,
+    Controller,
+    Delete,
+    Get,
+    Locals,
+    Patch,
+    PathParams,
+    Post,
+    Put,
+    QueryParams,
+    Required,
+    UseBefore,
+    UseBeforeEach
+} from '@tsed/common';
 import controller from '../controller';
-import { Summary } from '@tsed/swagger';
-import { csrf } from '../../dal/auth';
-import { YesAuth } from '../../middleware/Auth';
+import {Summary} from '@tsed/swagger';
+import {csrf} from '../../dal/auth';
+import {YesAuth} from '../../middleware/Auth';
+
 /**
  * Groups Controller
  */
@@ -28,8 +43,7 @@ export class ForumController extends controller {
     @Get('/categories')
     @Summary('Get forum categories')
     public async getCategories(): Promise<model.forum.Categories[]> {
-        const categories = await this.forum.getCategories();
-        return categories;
+        return await this.forum.getCategories();
     }
     /**
      * Get the Sub Categories

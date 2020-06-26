@@ -118,7 +118,6 @@ let ChatController = ChatController_1 = class ChatController extends controller_
         }
         catch (e) {
             console.log('Closing ws conn due to redis error', e);
-            connector.disconnect();
             ws.close();
         }
         ws.on('close', function () {

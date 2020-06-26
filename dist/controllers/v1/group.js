@@ -734,14 +734,14 @@ let GroupsController = class GroupsController extends controller_1.default {
         if (!model.economy.currencyType[currency]) {
             throw new this.BadRequest('InvalidCurrency');
         }
-        await this.transaction(async (trx) => {
-            const forUpdate = [
-                'groups',
-                'users',
-            ];
+        const forUpdate = [
+            'groups',
+            'users',
+        ];
+        await this.transaction(forUpdate, async (trx) => {
             let groupInfo;
             try {
-                groupInfo = await trx.group.getInfo(groupId, forUpdate);
+                groupInfo = await trx.group.getInfo(groupId);
             }
             catch (e) {
                 throw new this.BadRequest('InvalidGroupId');
@@ -751,7 +751,7 @@ let GroupsController = class GroupsController extends controller_1.default {
             }
             let payoutUserInfo;
             try {
-                payoutUserInfo = await trx.user.getInfo(userId, ['banned'], forUpdate);
+                payoutUserInfo = await trx.user.getInfo(userId, ['banned']);
             }
             catch (e) {
                 if (e && e.message === 'InvalidUserId')
@@ -761,11 +761,11 @@ let GroupsController = class GroupsController extends controller_1.default {
             if (payoutUserInfo.banned) {
                 throw new this.BadRequest('InvalidUserId');
             }
-            const userRole = await trx.group.getUserRole(groupId, userId, forUpdate);
+            const userRole = await trx.group.getUserRole(groupId, userId);
             if (userRole.rank === 0) {
                 throw new this.BadRequest('InvalidGroupPermissions');
             }
-            const groupFunds = await trx.group.getGroupFunds(groupId, forUpdate);
+            const groupFunds = await trx.group.getGroupFunds(groupId);
             if (currency === 1) {
                 if (groupFunds.Primary < amount) {
                     throw new this.BadRequest('NotEnoughCurrency');

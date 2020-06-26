@@ -141,8 +141,10 @@ exports.default = async (req, res, next, UserModel = user_1.default, ModModel = 
                 await regenCsrf(req);
             }
             res.locals.userInfo = userInfo;
-            res.locals.csrf = req.session.userdata.csrf;
-            if (req.url.slice(0, 5) !== '/api/') {
+            if (req.session.userdata) {
+                res.locals.csrf = req.session.userdata.csrf;
+            }
+            if (req.url.slice(0, 5) !== '/api/' && userInfo) {
                 let dal = new UserModel();
                 await dal.logOnlineStatus(userInfo.userId);
                 if (moment().isSameOrAfter(moment(userInfo.dailyAward).add(24, 'hours'))) {

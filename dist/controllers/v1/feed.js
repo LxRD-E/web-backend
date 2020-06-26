@@ -110,6 +110,9 @@ let FeedController = class FeedController extends controller_1.default {
                 }
                 let urls = undefined;
                 for (const matchItem of urlsToMatch) {
+                    if (!statusData.status) {
+                        continue;
+                    }
                     let matchDataUrl = statusData.status.match(matchItem);
                     if (matchDataUrl && matchDataUrl[0]) {
                         urls = matchDataUrl;

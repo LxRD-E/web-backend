@@ -33,11 +33,11 @@ const createCsrfSession = async () => {
     return tokenString;
 }
 
-const csrfFailed = async (req, res) => {
+const csrfFailed = async (req: any, res: any) => {
     let cookie = req.cookies['rblxcsrf'];
     // make sure it is valid
     let valid = false;
-    let cookieObject;
+    let cookieObject: any;
     try {
         cookieObject = await decodeJwt(cookie);
         valid = true;
@@ -57,7 +57,7 @@ const csrfFailed = async (req, res) => {
             samesite: 'lax',
             expires: new Date(Date.now() + 86400*30*12 * 1000),
         });
-        let jsonObj;
+        let jsonObj: any;
         try {
             jsonObj = await decodeJwt(session);
         }catch(e){
@@ -110,7 +110,7 @@ export default class CSRFValidate implements IMiddleware {
             console.log('not csrf');
             await csrfFailed(req, res);
         }
-        let sess;
+        let sess: any;
         try {
             sess = await decodeJwt(req.cookies['rblxcsrf']);
         }catch(e) {

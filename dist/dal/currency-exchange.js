@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const _init_1 = require("./_init");
 class CurrencyExchangeDAL extends _init_1.default {
-    async getOpenPositionsByUserId(userId, limit, offset, forUpdate = []) {
+    async getOpenPositionsByUserId(userId, limit, offset) {
         return this.knex('currency_exchange_position')
             .select('id as positionId', 'user_id as userId', 'balance', 'currency_type as currencyType', 'rate', 'created_at as createdAt', 'updated_at as updatedAt')
             .where({
@@ -10,10 +10,9 @@ class CurrencyExchangeDAL extends _init_1.default {
         })
             .andWhere('balance', '>', 0)
             .limit(limit)
-            .forUpdate(forUpdate)
             .offset(offset);
     }
-    async getOpenPositionsByCurrency(currencyType, limit, offset, forUpdate = []) {
+    async getOpenPositionsByCurrency(currencyType, limit, offset) {
         return this.knex('currency_exchange_position')
             .select('id as positionId', 'user_id as userId', 'balance', 'currency_type as currencyType', 'rate', 'created_at as createdAt', 'updated_at as updatedAt')
             .where({
@@ -21,24 +20,23 @@ class CurrencyExchangeDAL extends _init_1.default {
         })
             .andWhere('balance', '>', 0)
             .limit(limit)
-            .forUpdate(forUpdate)
             .orderBy('rate', 'asc')
             .offset(offset);
     }
-    async createPosition(userId, balance, currencyType, rate, forUpdate) {
+    async createPosition(userId, balance, currencyType, rate) {
         let results = await this.knex('currency_exchange_position').insert({
             'user_id': userId,
             'balance': balance,
             'currency_type': currencyType,
             'rate': rate,
-        }).forUpdate(forUpdate);
+        });
         return results[0];
     }
-    async recordPositionFunding(positionId, amount, forUpdate) {
+    async recordPositionFunding(positionId, amount) {
         await this.knex('currency_exchange_fund').insert({
             'position_id': positionId,
             'amount': amount,
-        }).forUpdate(forUpdate);
+        });
     }
     async getPositionFunding(positionId) {
         return this.knex('currency_exchange_fund').select('amount', 'created_at as createdAt').where({
@@ -51,25 +49,24 @@ class CurrencyExchangeDAL extends _init_1.default {
             'currency_exchange_position.currency_type': currencyType,
         }).orderBy('currency_exchange_record.id', 'desc');
     }
-    async getPositionById(id, forUpdate = []) {
+    async getPositionById(id) {
         let result = await this.knex('currency_exchange_position')
             .select('id as positionId', 'user_id as userId', 'balance', 'currency_type as currencyType', 'rate', 'created_at as createdAt', 'updated_at as updatedAt')
             .where({
             'id': id,
         })
-            .limit(1)
-            .forUpdate(forUpdate);
+            .limit(1);
         if (!result[0]) {
             throw new Error('InvalidPositionId');
         }
         return result[0];
     }
-    async subtractFromPositionBalance(positionId, amountToSubtract, forUpdate = []) {
+    async subtractFromPositionBalance(positionId, amountToSubtract) {
         await this.knex('currency_exchange_position').decrement('balance', amountToSubtract).where({
             'id': positionId,
-        }).limit(1).forUpdate(forUpdate);
+        }).limit(1);
     }
-    async recordCurrencyExchange(positionId, buyerUserId, amountPurchased, amountSold, forUpdate) {
+    async recordCurrencyExchange(positionId, buyerUserId, amountPurchased, amountSold) {
         let results = await this.knex('currency_exchange_record').insert({
             'buyer_user_id': buyerUserId,
             'position_id': positionId,

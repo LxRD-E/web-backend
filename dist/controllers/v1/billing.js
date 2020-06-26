@@ -110,6 +110,9 @@ let BillingController = class BillingController extends controller_1.default {
         let data = await this.billing.verifyCryptoTransaction(hmacHeader, payload);
         const product = await this.billing.getCurrencyProductById(data.productId);
         const buyerEmail = await this.settings.getUserEmail(data.userId);
+        if (!buyerEmail) {
+            throw new Error('Buyer email does not exist.');
+        }
         const payerFirstName = this.auth.encrypt('', config_1.default.encryptionKeys.payments);
         const payerLastName = this.auth.encrypt('', config_1.default.encryptionKeys.payments);
         const payerEmailAddress = this.auth.encrypt(buyerEmail.email, config_1.default.encryptionKeys.payments);
@@ -166,7 +169,7 @@ let BillingController = class BillingController extends controller_1.default {
             throw new this.BadRequest('InvalidCurrency');
         }
         const userEmail = await this.settings.getUserEmail(userInfo.userId);
-        if (!userEmail.email) {
+        if (!userEmail || !userEmail.email) {
             throw new this.Conflict('EmailVerificationRequired');
         }
         const transactionInfo = await this.billing.createBitcoinTransaction(userEmail.email, userInfo.userId, currencyProductId, currency);
@@ -206,7 +209,7 @@ __decorate([
     __param(0, common_1.HeaderParams('hmac')),
     __param(1, common_1.BodyParams()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], BillingController.prototype, "bitcoinCurrencyIpn", null);
 __decorate([

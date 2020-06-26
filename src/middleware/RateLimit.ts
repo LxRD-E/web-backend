@@ -31,6 +31,7 @@ const rateLimitTypeConfigs = {
         duration: 60, // per 1 minute by IP
         inmemoryBlockOnConsumed: 500,
         inmemoryBlockDuration: 60,
+        // @ts-ignore
         storeClient: redisClient,
     },
     'loginAttempt': {
@@ -40,6 +41,7 @@ const rateLimitTypeConfigs = {
         duration: 3600, // per 1 hour by IP
         inmemoryBlockOnConsumed: 25,
         inmemoryBlockDuration: 3600,
+        // @ts-ignore
         storeClient: redisClient,
     },
     'twoFactorEnableOrDisable': {
@@ -49,6 +51,7 @@ const rateLimitTypeConfigs = {
         duration: 3600, // per 1 hour by IP
         inmemoryBlockOnConsumed: 25,
         inmemoryBlockDuration: 3600,
+        // @ts-ignore
         storeClient: redisClient,
     },
     'sendFriendRequest': {
@@ -58,6 +61,7 @@ const rateLimitTypeConfigs = {
         duration: 3600, // per 1 hour by IP
         inmemoryBlockOnConsumed: 25,
         inmemoryBlockDuration: 3600,
+        // @ts-ignore
         storeClient: redisClient,
     },
     'passwordResetAttempt': {
@@ -67,10 +71,11 @@ const rateLimitTypeConfigs = {
         duration: 3600, // per 1 hour by IP
         inmemoryBlockOnConsumed: 25,
         inmemoryBlockDuration: 3600,
+        // @ts-ignore
         storeClient: redisClient,
     },
 }
-let rateLimitTypes;
+let rateLimitTypes: any;
 if (process.env.NODE_ENV !== 'test') {
     rateLimitTypes = {
         'default': new RateLimiterRedis(rateLimitTypeConfigs.default),
@@ -91,7 +96,7 @@ export const RateLimiterMiddleware = (typeOfRateLimit: 'default'|'loginAttempt'|
 
         let rateLimiter = rateLimitTypes[typeOfRateLimit];
         rateLimiter.consume(ip)
-            .then((rateLimiterRes) => {
+            .then((rateLimiterRes: { remainingPoints: number; msBeforeNext: number; }) => {
                 const headers = {
                     "X-RateLimit-Limit": rateLimitTypeConfigs[typeOfRateLimit]['points'],
                     "X-RateLimit-Remaining": rateLimiterRes.remainingPoints,
@@ -100,7 +105,7 @@ export const RateLimiterMiddleware = (typeOfRateLimit: 'default'|'loginAttempt'|
                 res.set(headers);
                 next();
             })
-            .catch((rateLimiterRes) => {
+            .catch((rateLimiterRes: any) => {
                 // If internal/redis error
                 if (!rateLimiterRes || !rateLimiterRes.msBeforeNext) {
                     console.log(rateLimiterRes);

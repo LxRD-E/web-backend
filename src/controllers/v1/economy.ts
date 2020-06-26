@@ -367,18 +367,18 @@ export default class EconomyController extends controller {
         // If buying new...
         console.log(`${req.id} start transaction`);
         try {
-            await this.transaction(async (trx) => {
-                const forUpdate = [
-                    'users',
-                    'catalog',
-                    'user_inventory',
-                ]
+            const forUpdate = [
+                'users',
+                'catalog',
+                'user_inventory',
+            ];
+            await this.transaction(forUpdate,async (trx) => {
                 if (userInventoryId === 0) {
                     console.log(`${req.id} get info`);
                     // Buying New
                     let catalogItemInfo: model.catalog.CatalogInfo;
                     try {
-                        catalogItemInfo = await trx.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'creatorId', 'creatorType', 'price', 'currency', 'maxSales', 'collectible', 'catalogName'], forUpdate);
+                        catalogItemInfo = await trx.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'creatorId', 'creatorType', 'price', 'currency', 'maxSales', 'collectible', 'catalogName']);
                     } catch (e) {
                         throw new this.BadRequest('InvalidCatalogId');
                     }
@@ -418,7 +418,7 @@ export default class EconomyController extends controller {
                     }
                     console.log(`${req.id} check if owns`);
                     // Check if owns
-                    let owns = await trx.user.getUserInventoryByCatalogId(userInfo.userId, catalogItemInfo.catalogId, forUpdate);
+                    let owns = await trx.user.getUserInventoryByCatalogId(userInfo.userId, catalogItemInfo.catalogId);
                     if (owns[0]) {
                         // Owns item already
                         throw new this.Conflict('AlreadyOwns');
@@ -427,7 +427,7 @@ export default class EconomyController extends controller {
 
                     // Get balance and check if has enough
                     console.log(`${req.id} check if has enough currency`);
-                    const newUserInfo = await this.user.getInfo(userInfo.userId, ['primaryBalance', 'secondaryBalance'], forUpdate);
+                    const newUserInfo = await this.user.getInfo(userInfo.userId, ['primaryBalance', 'secondaryBalance']);
                     if (catalogItemInfo.currency === model.economy.currencyType.primary) {
                         const balance = newUserInfo.primaryBalance as number;
                         if (catalogItemInfo.price > balance) {
@@ -489,9 +489,9 @@ export default class EconomyController extends controller {
                     return { success: true };
                     // Buying Used
                 } else {
-                    let catalogItemInfo;
+                    let catalogItemInfo: model.catalog.CatalogInfo;
                     try {
-                        catalogItemInfo = await trx.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'maxSales', 'collectible', 'catalogName'], forUpdate);
+                        catalogItemInfo = await trx.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'maxSales', 'collectible', 'catalogName']);
                     } catch (e) {
                         throw new this.BadRequest('InvalidCatalogId');
                     }
@@ -505,7 +505,7 @@ export default class EconomyController extends controller {
                     }
                     let usedItemInfo: model.user.FullUserInventory;
                     try {
-                        usedItemInfo = await trx.catalog.getItemByUserInventoryId(userInventoryId, forUpdate);
+                        usedItemInfo = await trx.catalog.getItemByUserInventoryId(userInventoryId);
                     } catch (e) {
                         throw new this.BadRequest('InvalidUserInventoryId');
                     }
@@ -531,7 +531,7 @@ export default class EconomyController extends controller {
                     }
                     let sellerInfo: model.user.UserInfo;
                     try {
-                        sellerInfo = await trx.user.getInfo(usedItemInfo.userId, undefined, forUpdate);
+                        sellerInfo = await trx.user.getInfo(usedItemInfo.userId, undefined);
                         if (sellerInfo.accountStatus === model.user.accountStatus.deleted || sellerInfo.accountStatus === model.user.accountStatus.terminated) {
                             throw new Error('ItemNoLongerForSale');
                         }
@@ -646,7 +646,7 @@ export default class EconomyController extends controller {
         if (!numericTradeId) {
             throw new this.BadRequest('InvalidTradeId');
         }
-        await this.transaction(async (trx) => {
+        await this.transaction([],async (trx) => {
             let tradeInfo = await trx.economy.getTradeById(numericTradeId);
             if (tradeInfo.status !== model.economy.tradeStatus.Pending) {
                 throw new this.BadRequest('InvalidTradeId');
@@ -686,11 +686,11 @@ export default class EconomyController extends controller {
             'users',
             'trades',
             'user_inventory',
-        ]
-        await this.transaction(async (trx) => {
+        ];
+        await this.transaction(forUpdate,async (trx) => {
             let tradeInfo: model.economy.ExtendedTradeInfo;
             try {
-                tradeInfo = await trx.economy.getTradeById(numericTradeId, forUpdate);
+                tradeInfo = await trx.economy.getTradeById(numericTradeId);
             } catch (e) {
                 throw new this.BadRequest('InvalidTradeId');
             }
@@ -700,7 +700,7 @@ export default class EconomyController extends controller {
             // Continue
             if (tradeInfo.userIdTwo === userInfo.userId) {
                 // Verify Partner isn't terminated
-                let partnerInfo = await trx.user.getInfo(tradeInfo.userIdOne, ['accountStatus'], forUpdate);
+                let partnerInfo = await trx.user.getInfo(tradeInfo.userIdOne, ['accountStatus']);
                 if (partnerInfo.accountStatus === model.user.accountStatus.deleted || partnerInfo.accountStatus === model.user.accountStatus.terminated) {
                     // Unlock economy
                     throw new this.BadRequest('InvalidPartnerId');
@@ -723,7 +723,7 @@ export default class EconomyController extends controller {
                         const promises = [];
                         for (const item of items) {
                             promises.push(
-                                trx.catalog.getItemByUserInventoryId(item["userInventoryId"], forUpdate)
+                                trx.catalog.getItemByUserInventoryId(item["userInventoryId"])
                             );
                         }
                         Promise.all(promises)
@@ -789,7 +789,7 @@ export default class EconomyController extends controller {
                 // If there is offer currency, swap it
                 let currencyToSubtractFromUserOne = tradeInfo.userIdOnePrimary;
                 if (currencyToSubtractFromUserOne) {
-                    let userOneCurrentBalance = await trx.user.getInfo(tradeInfo.userIdOne, ['primaryBalance'], forUpdate);
+                    let userOneCurrentBalance = await trx.user.getInfo(tradeInfo.userIdOne, ['primaryBalance']);
                     if (userOneCurrentBalance.primaryBalance >= currencyToSubtractFromUserOne === false) {
                         throw new this.Conflict('TradeCannotBeCompleted');
                     }
@@ -801,7 +801,7 @@ export default class EconomyController extends controller {
                 // If there is request currency, swap it
                 let currencyToSubtractFromUserTwo = tradeInfo.userIdTwoPrimary;
                 if (currencyToSubtractFromUserTwo) {
-                    let userTwoCurrentBalance = await trx.user.getInfo(tradeInfo.userIdTwo, ['primaryBalance'], forUpdate);
+                    let userTwoCurrentBalance = await trx.user.getInfo(tradeInfo.userIdTwo, ['primaryBalance']);
                     if (userTwoCurrentBalance.primaryBalance >= currencyToSubtractFromUserTwo === false) {
                         throw new this.Conflict('TradeCannotBeCompleted');
                     }

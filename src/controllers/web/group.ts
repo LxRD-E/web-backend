@@ -10,7 +10,7 @@ export class WWWGroupController extends controller {
 
 
     @Get('/groups')
-    @Summary('Search gropus')
+    @Summary('Search groups')
     @Render('search_groups')
     public async groups() { return new this.WWWTemplate({ title: 'Search Groups' }); }
 

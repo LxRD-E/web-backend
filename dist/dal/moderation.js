@@ -9,12 +9,7 @@ class ModerationDAL extends _init_1.default {
             throw false;
         }
         if (banData['terminated'] === 0) {
-            if (this.moment().isSameOrAfter(this.moment(banData['untilUnbanned']))) {
-                banData['unlock'] = true;
-            }
-            else {
-                banData['unlock'] = false;
-            }
+            banData['unlock'] = this.moment().isSameOrAfter(this.moment(banData['untilUnbanned']));
         }
         banData["isEligibleForAppeal"] = true;
         if (this.moment().isSameOrAfter(this.moment(banData['date']).add(30, 'days'))) {

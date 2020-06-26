@@ -22,7 +22,7 @@ export default (): void => {
         console.error('websocket request started.');
         if(request.url.match(/\/game-sockets\/websocket.aspx/g)) {
             console.error('websocket request is for game-sockets');
-            let decodedAuth;
+            let decodedAuth: any;
             try {
                 const queryinurl = request.url.slice(request.url.indexOf('?')+1, request.url.length);
                 const query = querystring.parse(queryinurl);

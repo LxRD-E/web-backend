@@ -6,7 +6,7 @@ import axios from 'axios';
 import config from '../helpers/config';
 
 const webhook = config.webhooks.reports;
-const awaitingRequests = [];
+const awaitingRequests: string[] = [];
 
 (async() => {
     while (true) {

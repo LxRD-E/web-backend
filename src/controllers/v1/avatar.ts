@@ -21,14 +21,8 @@ export default class AvatarController extends controller {
     }
     /**
      * Update the Authenticated User's Avatar
-     * @param LegRGB RGB Array
-     * @param HeadRGB RGB Array
-     * @param TorsoRGB RGB Array
-     * @param Hats Array of Hat Catalog IDs
-     * @param Face Face Catalog ID
-     * @param TShirt TShirt Catalog ID
-     * @param Shirt Shirt Catalog ID
-     * @param Pants Pants Catalog ID
+     * @param userInfo
+     * @param body
      */
     @Patch('/')
     @Summary('Update the authenticated users avatar')

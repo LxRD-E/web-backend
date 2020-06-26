@@ -29,8 +29,7 @@ let ForumController = class ForumController extends controller_1.default {
         super();
     }
     async getCategories() {
-        const categories = await this.forum.getCategories();
-        return categories;
+        return await this.forum.getCategories();
     }
     async getSubCategories(userInfo) {
         let rank = 0;

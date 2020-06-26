@@ -16,7 +16,12 @@ setInterval(() => {
     bannerTextLocked = true;
     staff.getBannerText()
         .then(txt => {
-        currentBannerText = txt;
+        if (txt) {
+            currentBannerText = txt;
+        }
+        else {
+            currentBannerText = '';
+        }
     })
         .catch(e => {
         console.error(e);

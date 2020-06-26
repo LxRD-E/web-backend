@@ -155,7 +155,7 @@ let WWWGroupController = class WWWGroupController extends controller_1.default {
 };
 __decorate([
     common_1.Get('/groups'),
-    swagger_1.Summary('Search gropus'),
+    swagger_1.Summary('Search groups'),
     common_1.Render('search_groups'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),

@@ -276,7 +276,8 @@ export const setCachedTotpResults = async (userId: number, val: string): Promise
 export const generateTOTPSecret = () => {
     return new Promise((res, rej) => {
         let secret = speakeasy.generateSecret({length: 32, name: 'BlocksHub'});
-        qrcode.toDataURL(secret.otpauth_url, (err, text) => {
+        // @ts-ignore
+        qrcode.toDataURL(secret.otpauth_url, (err: any, text: any) => {
             if (err) {
                 return rej(err);
             }

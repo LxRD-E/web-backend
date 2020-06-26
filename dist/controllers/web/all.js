@@ -28,6 +28,9 @@ let WWWController = class WWWController extends controller_1.default {
     constructor() {
         super();
     }
+    performanceTest() {
+        return 'BWS OK';
+    }
     redirectToDiscord() { }
     async Index(userInfo, res) {
         if (userInfo) {
@@ -60,6 +63,13 @@ let WWWController = class WWWController extends controller_1.default {
         return wwwTemp;
     }
 };
+__decorate([
+    common_1.Get('/perf.txt'),
+    swagger_1.Summary('Perf'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], WWWController.prototype, "performanceTest", null);
 __decorate([
     common_1.Get('/discord'),
     common_1.Redirect('https://discord.gg/CAjZfcZ'),

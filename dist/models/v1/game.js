@@ -90,7 +90,7 @@ class GameThumbnail {
 __decorate([
     common_1.Required(),
     common_1.AllowTypes('string', 'null'),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], GameThumbnail.prototype, "url", void 0);
 __decorate([
     common_1.Required(),

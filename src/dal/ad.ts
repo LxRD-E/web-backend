@@ -8,7 +8,7 @@ import aws = require('aws-sdk');
 import config from '../helpers/config';
 import _init from './_init';
 /**
- * Advertisment DAL
+ * Advertisement DAL
  */
 export default class AdDAL extends _init {
 
@@ -16,8 +16,8 @@ export default class AdDAL extends _init {
      * Get a semi-random ad. Will prefer ads with higher bid. This will increment the ad view count
      * @throws {e.message.NoAdvertismentsAvailable} - No advertisment was available
      */
-    public async getRandomAd(adDisplayType: model.ad.AdType): Promise<model.ad.Advertisment> {
-        let modelToUse = new model.ad.Advertisment();
+    public async getRandomAd(adDisplayType: model.ad.AdType): Promise<model.ad.Advertisement> {
+        let modelToUse = new model.ad.Advertisement();
         await this.knex.transaction(async (trx) => {
             let randomAds = await trx('user_ads')
                 .select('id as adId','bid_amount as bidAmount','updated_at as updatedAt','image_url as imageUrl','title')
@@ -39,7 +39,7 @@ export default class AdDAL extends _init {
                     curBid++;
                 }
             }
-            let adChosen: model.ad.Advertisment = _.sample(randomAdsArr);
+            let adChosen: model.ad.Advertisement = _.sample(randomAdsArr);
             modelToUse.adId = adChosen.adId;
             modelToUse.imageUrl = adChosen.imageUrl;
             modelToUse.title = adChosen.title;
@@ -58,7 +58,7 @@ export default class AdDAL extends _init {
      * 
      * @param adId 
      */
-    public async getAdById(adId: number): Promise<model.ad.ExpandedAdvertismentDetails> {
+    public async getAdById(adId: number): Promise<model.ad.ExpandedAdvertisementDetails> {
         let ad = await this.knex('user_ads')
         .select('ad_type as adType', 'ad_redirectid as adRedirectId')
         .where('updated_at','>=', this.knexTime(this.moment().subtract(24, 'hours')))
@@ -69,7 +69,7 @@ export default class AdDAL extends _init {
         return ad[0];
     }
 
-    public async getFullAdInfoById(adId: number): Promise<model.ad.FullAdvertismentDetails> {
+    public async getFullAdInfoById(adId: number): Promise<model.ad.FullAdvertisementDetails> {
         let data = await this.knex('user_ads')
         .select('id as adId','image_url as imageUrl','title','ad_type as adType','ad_redirectid as adRedirectId','moderation_status as moderationStatus','user_id as userId','created_at as createdAt','updated_at as updatedAt','bid_amount as bidAmount','total_bid_amount as totalBidAmount','created_at as createdAt','updated_at as updatedAt').limit(1).where({'id': adId});
         if (!data[0]) {
@@ -83,7 +83,7 @@ export default class AdDAL extends _init {
         return data[0];
     }
 
-    public async getUserAds(userId: number): Promise<model.ad.FullAdvertismentDetails[]> {
+    public async getUserAds(userId: number): Promise<model.ad.FullAdvertisementDetails[]> {
         let data = await this.knex('user_ads')
         .select('id as adId','image_url as imageUrl','title','ad_type as adType','ad_redirectid as adRedirectId','moderation_status as moderationStatus','user_id as userId','created_at as createdAt','updated_at as updatedAt','bid_amount as bidAmount','total_bid_amount as totalBidAmount','created_at as createdAt','updated_at as updatedAt','views','clicks','total_views as totalViews','total_clicks as totalClicks', 'ad_displaytype as adDisplayType').where({'user_id': userId});
         for (const ad of data) {

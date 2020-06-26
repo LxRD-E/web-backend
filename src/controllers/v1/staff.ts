@@ -1086,10 +1086,11 @@ export class StaffController extends controller {
         let status = model.support.TicketStatus;
         let statuses = [];
         for (const item of Object.getOwnPropertyNames(status)) {
-            if (!isNaN(parseInt(item))) {
+            let num = parseInt(item, 10);
+            if (!isNaN(num)) {
                 statuses.push({
                     key: item,
-                    value: status[item],
+                    value: status[num],
                 });
             }
         }

@@ -29,7 +29,7 @@ __decorate([
     common_1.Get('/settings'),
     swagger_1.Summary('Get user settings'),
     common_1.Render('settings'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)

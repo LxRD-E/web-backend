@@ -69,7 +69,7 @@ class EconomyDAL extends _init_1.default {
         let results = await this.knex("transactions").insert({ "userid_to": userIdTo, "userid_from": userIdFrom, "amount": amount, "currency": currency, "type": type, "description": description, "catalogid": numericCatalogId, "user_inventoryid": numericInventoryId, "from_type": fromType, "to_type": toType });
         return results[0];
     }
-    async addToUserBalanceV2(userId, amount, currency, forUpdate) {
+    async addToUserBalanceV2(userId, amount, currency) {
         let type = '';
         if (currency === model.economy.currencyType.primary) {
             type = 'user_balance1';
@@ -82,9 +82,9 @@ class EconomyDAL extends _init_1.default {
         }
         await this.knex('users').increment(type, amount).where({
             'id': userId,
-        }).forUpdate(forUpdate).limit(1);
+        }).limit(1);
     }
-    async subtractFromUserBalanceV2(userId, amount, currency, forUpdate) {
+    async subtractFromUserBalanceV2(userId, amount, currency) {
         let type = '';
         if (currency === model.economy.currencyType.primary) {
             type = 'user_balance1';
@@ -97,7 +97,7 @@ class EconomyDAL extends _init_1.default {
         }
         await this.knex('users').decrement(type, amount).where({
             'id': userId,
-        }).forUpdate(forUpdate).limit(1);
+        }).limit(1);
     }
     async addToUserBalance(userId, amount, currency) {
         await this.knex.transaction(async (trx) => {

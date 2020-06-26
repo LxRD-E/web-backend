@@ -4,11 +4,12 @@
 // models
 import * as model from '../../models/models';
 // Autoload
-import { Controller, UseBefore, Get, QueryParams, Locals, PathParams, Patch, UseBeforeEach, Use, Post, BodyParams, Required } from '@tsed/common';
+import {BodyParams, Controller, Get, Locals, Patch, PathParams, Post, QueryParams, Required, Use} from '@tsed/common';
 import controller from '../controller';
-import { YesAuth } from '../../middleware/Auth';
-import { Summary, Description, Returns } from '@tsed/swagger';
-import { csrf } from '../../dal/auth';
+import {YesAuth} from '../../middleware/Auth';
+import {Description, Returns, Summary} from '@tsed/swagger';
+import {csrf} from '../../dal/auth';
+
 /*
  * Notifications Controller
  */
@@ -17,10 +18,7 @@ export class NotificationsController extends controller {
     constructor() {
         super();
     }
-    /**
-     * Get the Authenticated User's Messages
-     * @param offset 
-     */
+
     @Get('/messages')
     @Summary('Get all messages')
     @Use(YesAuth)
@@ -28,14 +26,9 @@ export class NotificationsController extends controller {
         @Locals('userInfo') userData: model.user.SessionUserInfo,
         @QueryParams('offset', Number) numericOffset: number = 0,
     ) {
-        const messages = await this.notification.getMessages(userData.userId, numericOffset);
-        return messages;
+        return await this.notification.getMessages(userData.userId, numericOffset);
     }
 
-    /**
-     * Mark a Message as read
-     * @param messageId 
-     */
     @Patch('/message/:id/read')
     @Summary('Mark message as read')
     @Use(csrf, YesAuth)
@@ -50,10 +43,6 @@ export class NotificationsController extends controller {
         };
     }
 
-    /**
-     * Mark a Message as read
-     * @param messageId 
-     */
     @Post('/message/multi-mark-as-read')
     @Summary('Mark multiple message as read')
     @Description('Maxiumum amount of 100 ids can be specified')
@@ -75,9 +64,6 @@ export class NotificationsController extends controller {
         };
     }
 
-    /**
-     * Count user's unread messages
-     */
     @Get('/count')
     @Summary('Count all unread notifications')
     @Use(YesAuth)
@@ -93,16 +79,12 @@ export class NotificationsController extends controller {
 
     }
 
-    /**
-     * Get the authenticated user's friend requests
-     */
     @Get('/requests')
     @Use(YesAuth)
     public async getFriendRequests(
         @Locals('userInfo') userData: model.user.SessionUserInfo,
         @QueryParams('offset', Number) numericOffset: number
     ) {
-        const notifications = await this.user.getFriendRequests(userData.userId, numericOffset);
-        return notifications;
+        return await this.user.getFriendRequests(userData.userId, numericOffset);
     }
 }

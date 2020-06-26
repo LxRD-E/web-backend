@@ -11,7 +11,7 @@ import * as model from '../../models/models';
 // Middleware
 import * as middleware from '../../middleware/middleware';
 // Auth stuff
-import { setSession, isAuthenticated, verifyPassword, saveSession, hashPassword, csrf } from '../../dal/auth';
+import { csrf } from '../../dal/auth';
 // Autoload
 import controller from '../controller';
 import { NoAuth, YesAuth } from "../../middleware/Auth";

@@ -26,7 +26,7 @@ export default class AdController extends controller {
     @Get('/my/created-ads')
     @Summary('Get created ads by authenticated user')
     @Use(YesAuth)
-    @ReturnsArray(200, {type: model.ad.FullAdvertismentDetails})
+    @ReturnsArray(200, {type: model.ad.FullAdvertisementDetails})
     public async getCreatedAds(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ) {
@@ -36,7 +36,7 @@ export default class AdController extends controller {
     @Get('/random/:adDisplayType')
     @Summary('Get a semi-random advertisement to display to the user')
     @Description('Advertisements are not targeted to comply with COPPA. Ads are purely based off of user bid amounts, i.e, if one user bids 10 primary and another user bids 1, you have a 90% chance of seeing the first ad and a 10% chance of seeing the second ad.')
-    @Returns(200, {type: model.ad.Advertisment})
+    @Returns(200, {type: model.ad.Advertisement})
     @Returns(409, {type: model.Error, description: 'NoAdvertisementAvailable: Account status does not permit advertisement, or no ads are available to display to the user\n'})
     @Returns(400, {type: model.Error, description: 'InvalidAdDisplayType: AdDisplayId is invalid\n'})
     public async getAdvertisement(
@@ -46,7 +46,7 @@ export default class AdController extends controller {
         if (!model.ad.AdDisplayType[adDisplayType])  {
             throw new this.BadRequest('InvalidAdDisplayType');
         }
-        let ad: model.ad.Advertisment;
+        let ad: model.ad.Advertisement;
         try {
             ad = await this.ad.getRandomAd(adDisplayType);
         }catch(e){
@@ -66,7 +66,7 @@ export default class AdController extends controller {
         @PathParams('adId', Number) adId: number,
         @Res() res: Res,
     ) {
-        let ad: model.ad.ExpandedAdvertismentDetails;
+        let ad: model.ad.ExpandedAdvertisementDetails;
         try {
             ad = await this.ad.getAdById(adId);
         }catch{
@@ -79,6 +79,9 @@ export default class AdController extends controller {
             url = `/groups/`+ad.adRedirectId+`/--`;
         }else if (ad.adType === model.ad.AdType.ForumThread) {
             url = `/forum/thread/${ad.adRedirectId}?page=1`;
+        }
+        if (!url) {
+            throw new this.BadRequest('InvalidAdId');
         }
         // increment
         await this.ad.incrementAdClickCount(adId);

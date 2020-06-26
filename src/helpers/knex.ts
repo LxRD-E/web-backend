@@ -1,5 +1,6 @@
 import config from './config';
 import knexLibrary = require('knex');
+
 let thingToExport: knexLibrary<any, unknown[]>;
 if (process.env.NODE_ENV !== 'test') {
     let mysqlConfig = {
@@ -21,8 +22,7 @@ if (process.env.NODE_ENV !== 'test') {
         min: 3,
     }
     }
-    const knexSystem = knexLibrary(mysqlConfig as any);
-    thingToExport = knexSystem;
+    thingToExport = knexLibrary(mysqlConfig as any);
 }else{
     const func: any = (table: string) => {
         console.error('process.env is test; knex should not be accessed. exiting with code 1');
@@ -30,8 +30,9 @@ if (process.env.NODE_ENV !== 'test') {
     }
     thingToExport = func;
 }
-export default thingToExport;
 
+
+export default thingToExport;
 /*
 if (process.env.NODE_ENV === 'production') {
     setInterval(() => {

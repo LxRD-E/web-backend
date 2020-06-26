@@ -17,7 +17,7 @@ class DataPersistenceDAL extends _init_1.default {
     async get(gameId, key) {
         const fullKey = 'dp_game_' + gameId.toString() + '_' + key;
         let results = await this.redis.get(fullKey);
-        if (results === '') {
+        if (!results || results === '') {
             return undefined;
         }
         let decodedResults = JSON.parse(results);

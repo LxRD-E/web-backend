@@ -35,7 +35,7 @@ class ChatDAL extends _init {
         super();
         this.publisher = publisher;
         this.subscriber = subscriber;
-        const _internalCallbackForMsgEventFromRedis = (str) => {
+        const _internalCallbackForMsgEventFromRedis = (str: any) => {
             let decoded: {userIdTo: number; userIdFrom: number; [key: string]: any;}
             try {
                 decoded = JSON.parse(str);
@@ -55,7 +55,7 @@ class ChatDAL extends _init {
             });
             this.callbacksForNewMessages = newArr;
         }
-        _pendingMsgCallbacks.push((str) => {
+        _pendingMsgCallbacks.push((str: any) => {
             _internalCallbackForMsgEventFromRedis(str);
         });
     }

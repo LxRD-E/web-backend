@@ -99,7 +99,7 @@ __decorate([
 ], userTransactions.prototype, "catalogId", void 0);
 __decorate([
     common_1.PropertyType(Number),
-    __metadata("design:type", Number)
+    __metadata("design:type", Object)
 ], userTransactions.prototype, "userInventoryId", void 0);
 exports.userTransactions = userTransactions;
 class GroupTransactions extends userTransactions {
@@ -137,7 +137,7 @@ __decorate([
 __decorate([
     common_1.Required(),
     common_1.AllowTypes('number', 'null'),
-    __metadata("design:type", Number)
+    __metadata("design:type", Object)
 ], TradeItems.prototype, "serial", void 0);
 __decorate([
     common_1.Required(),

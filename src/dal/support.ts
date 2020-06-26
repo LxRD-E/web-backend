@@ -1,19 +1,13 @@
-/**
- * Imports
- */
-import _ = require('lodash');
-import axios from 'axios';
 import * as model from '../models/models';
-import aws = require('aws-sdk');
-import config from '../helpers/config';
 import _init from './_init';
+
 /**
  * Support Ticket DAL
  */
 export default class SupportDAL extends _init {
 
     public async getTicketsByUser(userId: number): Promise<model.support.SupportTicket[]> {
-        let tickets = await this.knex('support_tickets').select(
+        return this.knex('support_tickets').select(
             'id as ticketId',
             'ticket_status as ticketStatus',
             'user_id as userId',
@@ -21,12 +15,11 @@ export default class SupportDAL extends _init {
             'updated_at as updatedAt',
             'ticket_title as ticketTitle',
             'ticket_body as ticketBody',
-        ).where({'user_id': userId}).orderBy('id','desc');
-        return tickets;
+        ).where({'user_id': userId}).orderBy('id', 'desc');
     }
 
     public async getTicketsAwaitingSupportResponse(): Promise<model.support.SupportTicket[]> {
-        let tickets = await this.knex('support_tickets').select(
+        return this.knex('support_tickets').select(
             'id as ticketId',
             'ticket_status as ticketStatus',
             'user_id as userId',
@@ -34,12 +27,11 @@ export default class SupportDAL extends _init {
             'updated_at as updatedAt',
             'ticket_title as ticketTitle',
             'ticket_body as ticketBody',
-        ).where({'ticket_status': model.support.TicketStatus.PendingSupportResponse}).orderBy('id','asc');
-        return tickets;
+        ).where({'ticket_status': model.support.TicketStatus.PendingSupportResponse}).orderBy('id', 'asc');
     }
 
     public async getTicketsNotClosed(): Promise<model.support.SupportTicket[]> {
-        let tickets = await this.knex('support_tickets').select(
+        return this.knex('support_tickets').select(
             'id as ticketId',
             'ticket_status as ticketStatus',
             'user_id as userId',
@@ -47,8 +39,7 @@ export default class SupportDAL extends _init {
             'updated_at as updatedAt',
             'ticket_title as ticketTitle',
             'ticket_body as ticketBody',
-        ).where('ticket_status', '!=', model.support.TicketStatus.Closed).orderBy('id','asc');
-        return tickets;
+        ).where('ticket_status', '!=', model.support.TicketStatus.Closed).orderBy('id', 'asc');
     }
 
     public async getTicketById(ticketId: number): Promise<model.support.SupportTicket> {
@@ -68,25 +59,23 @@ export default class SupportDAL extends _init {
     }
 
     public async getTicketReplies(ticketId: number): Promise<model.support.SupportTicketReply[]> {
-        let replies = await this.knex('support_ticket_responses').select(
+        return this.knex('support_ticket_responses').select(
             'id as replyId',
             'user_id as userId',
             'created_at as createdAt',
             'updated_at as updatedAt',
             'ticket_body as ticketBody',
         ).where({'support_ticket_id': ticketId, 'visible_to_client': true});
-        return replies;
     }
 
     public async getTicketRepliesAll(ticketId: number): Promise<model.support.SupportTicketReply[]> {
-        let replies = await this.knex('support_ticket_responses').select(
+        return this.knex('support_ticket_responses').select(
             'id as replyId',
             'user_id as userId',
             'created_at as createdAt',
             'updated_at as updatedAt',
             'ticket_body as ticketBody',
         ).where({'support_ticket_id': ticketId});
-        return replies;
     }
 
     public async createTicket(

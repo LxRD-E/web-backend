@@ -61,7 +61,6 @@ let Server = class Server extends common_1.ServerLoader {
                 .use(Express.static(Path.join(__dirname, './public/')))
                 .use(morgan('dev'));
         }
-        return null;
     }
     $afterRoutesInit() {
         this.use(NotFound_1.NotFoundMiddleware);

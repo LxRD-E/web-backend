@@ -18,7 +18,7 @@ export enum AdDisplayType {
     'Skyscraper',
 }
 
-export class Advertisment {
+export class Advertisement {
     @PropertyType(Number)
     adId: number;
     @PropertyType(String)
@@ -27,7 +27,7 @@ export class Advertisment {
     title: string;
 }
 
-export class ExpandedAdvertismentDetails {
+export class ExpandedAdvertisementDetails {
     adType: number;
     adRedirectId: number;
 }
@@ -37,7 +37,7 @@ export class AdClickResponse {
     url: string;
 }
 
-export class FullAdvertismentDetails {
+export class FullAdvertisementDetails {
     @Required()
     adId: number;
     @AllowTypes('string','null')
