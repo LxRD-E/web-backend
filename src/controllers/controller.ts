@@ -87,9 +87,11 @@ export default class StandardController extends TSErrorsBase {
      */
     public transaction<A extends this, T extends (this: TransactionThis<A>, arg1: IStandardControllerTRX) => Promise<any>>(thisParam: any, forUpdate: string[], callback: T): Promise<ReturnType<T>> {
         // Yeah, runtime type checks are dumb but if everybody writes proper unit tests then this shouldn't be an issue...
-        let stringifiedCallback = callback.toString();
-        if (stringifiedCallback.slice(0, 'async function '.length) !== 'async function ' && stringifiedCallback.slice(0,'function '.length) !== 'function ') {
-            throw new Error('StandardController.transaction() does not support arrow functions.');
+        if (process.env.NODE_ENV === 'development') {
+            let stringifiedCallback = callback.toString();
+            if (stringifiedCallback.slice(0, 'async function '.length) !== 'async function ' && stringifiedCallback.slice(0,'function '.length) !== 'function ') {
+                throw new Error('StandardController.transaction() does not support arrow functions.');
+            }
         }
         return knex.transaction(async (trx) => {
             const newController: IStandardControllerTRX = new StandardController(trx);
