@@ -311,8 +311,21 @@ $(document).on('click', '.openOutfitsPage', function () {
 });
 
 $(document).on('click', '.userInventoryItem', function () {
-    console.log(window.TShirt);
-    if ($(this).find(".card").css("border") === "2px solid rgb(40, 167, 69)") {
+    let isSelected = $(this).find(".card").attr('data-selected') === 'true';
+    let select = (el) => {
+        if (!el) {
+            el = $(this);
+        }
+        el.find(".card").attr('data-selected', 'true');
+    }
+    let unSelect = (el) => {
+        if (!el) {
+            el = $(this);
+        }
+        el.find(".card").attr('data-selected', 'false');
+    }
+    if (isSelected) {
+        unSelect();
         $(this).find(".card").css("border", "1px solid rgba(0, 0, 0, 0.125)");
         if (parseInt($(this).attr("data-category")) === 4) {
             window.Face = false;
@@ -335,6 +348,7 @@ $(document).on('click', '.userInventoryItem', function () {
                 window.Face = parseInt($(this).attr("data-catalogid"));
                 $('#userInventoryDiv').children(".userInventoryItem").each(function () {
                     $(this).find(".card").css("border", "1px solid rgba(0, 0, 0, 0.125)");
+                    unSelect($(this));
                 });
                 break;
             }
@@ -342,6 +356,7 @@ $(document).on('click', '.userInventoryItem', function () {
                 window.TShirt = parseInt($(this).attr("data-catalogid"));
                 $('#userInventoryDiv').children(".userInventoryItem").each(function () {
                     $(this).find(".card").css("border", "1px solid rgba(0, 0, 0, 0.125)");
+                    unSelect($(this));
                 });
                 break;
             }
@@ -349,6 +364,7 @@ $(document).on('click', '.userInventoryItem', function () {
                 window.Shirt = parseInt($(this).attr("data-catalogid"));
                 $('#userInventoryDiv').children(".userInventoryItem").each(function () {
                     $(this).find(".card").css("border", "1px solid rgba(0, 0, 0, 0.125)");
+                    unSelect($(this));
                 });
                 break;
             }
@@ -356,12 +372,14 @@ $(document).on('click', '.userInventoryItem', function () {
                 window.Pants = parseInt($(this).attr("data-catalogid"));
                 $('#userInventoryDiv').children(".userInventoryItem").each(function () {
                     $(this).find(".card").css("border", "1px solid rgba(0, 0, 0, 0.125)");
+                    unSelect($(this));
                 });
                 break;
             }
             case 5: {
                 $('#userInventoryDiv').children(".userInventoryItem").each(function () {
                     $(this).find(".card").css("border", "1px solid rgba(0, 0, 0, 0.125)");
+                    unSelect($(this));
                     var index = window.wearingItems.indexOf(parseInt($(this).attr("data-catalogid")));
                     if (index > -1) {
                         window.wearingItems.splice(index, 1);
@@ -377,6 +395,7 @@ $(document).on('click', '.userInventoryItem', function () {
             }
         }
         $(this).find(".card").css("border", "2px solid rgb(40, 167, 69)");
+        select($(this));
     }
 });
 

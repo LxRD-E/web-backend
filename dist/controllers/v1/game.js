@@ -48,7 +48,7 @@ const scriptOptions = {
     stringArrayEncoding: 'rc4',
     stringArrayThreshold: 1,
     deadCodeInjection: true,
-    deadCodeInjectionThreshold: 0.8,
+    deadCodeInjectionThreshold: 0.18,
     renameGlobals: true,
     domainLock: allowedDomains,
 };
@@ -56,7 +56,7 @@ const COPYRIGHT_DISCLAIMER = `/**
  * Copyright (c) BlocksHub - All Rights Reserved
  * Unauthorized copying of this file, via any medium, is strictly prohibited.
  * You are not allowed to copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software.
- * This software includes various open-source libraries which have licenses provided where relevent and required.
+ * This software includes various open-source libraries which have licenses provided where relevant and required.
  * View our full terms of service here: https://blockshub.net/terms
  */`;
 let simpleCryptoData = model.game.getSimpleCrypto();
