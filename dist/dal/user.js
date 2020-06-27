@@ -13,7 +13,7 @@ const ipEncryptionKey = config_1.default.encryptionKeys.ip;
 class UsersDAL extends _init_1.default {
     async getInfo(id, specificColumns) {
         if (!specificColumns) {
-            specificColumns = ['userId', 'username', 'status', 'joinDate', 'blurb', 'lastOnline', 'banned', 'membership', 'tradingEnabled', 'staff', 'accountStatus'];
+            specificColumns = ['userId', 'username', 'status', 'joinDate', 'blurb', 'lastOnline', 'banned', 'tradingEnabled', 'staff', 'accountStatus'];
         }
         specificColumns.forEach((element, index, array) => {
             if (element === 'userId') {
@@ -30,9 +30,6 @@ class UsersDAL extends _init_1.default {
             }
             else if (element === 'passwordChanged') {
                 array[index] = 'password_changed as passwordChanged';
-            }
-            else if (element === 'membership') {
-                array[index] = 'user_membership as membership';
             }
             else if (element === 'forumSignature') {
                 array[index] = 'forum_signature as forumSignature';
@@ -63,9 +60,6 @@ class UsersDAL extends _init_1.default {
             }
             else if (element === 'status') {
                 array[index] = 'user_status as status';
-            }
-            else if (element === 'membership') {
-                array[index] = 'user_membership as membership';
             }
             else if (element === 'tradingEnabled') {
                 array[index] = 'user_tradingenabled as tradingEnabled';
@@ -244,7 +238,6 @@ class UsersDAL extends _init_1.default {
             'user_staff': users.staff.false,
             'is_banned': users.banned.false,
             'forum_postcount': 0,
-            'user_membership': date,
             'user_balancedailyaward': date,
         });
         return insert[0];

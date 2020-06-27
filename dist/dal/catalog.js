@@ -60,7 +60,11 @@ class CatalogDAL extends _init_1.default {
     async multiGetThumbnailsFromIds(ids) {
         const query = this.knex('thumbnails').select('thumbnails.url', 'thumbnails.reference_id as catalogId').innerJoin('catalog', 'catalog.id', 'thumbnails.reference_id');
         ids.forEach((id) => {
-            query.orWhere({ 'thumbnails.reference_id': id, 'thumbnails.type': 'catalog', 'catalog.is_pending': model.catalog.moderatorStatus.Ready });
+            query.orWhere({
+                'thumbnails.reference_id': id,
+                'thumbnails.type': 'catalog',
+                'catalog.is_pending': model.catalog.moderatorStatus.Ready
+            });
         });
         const thumbnails = await query;
         return thumbnails;
@@ -74,7 +78,11 @@ class CatalogDAL extends _init_1.default {
         return usernames;
     }
     async getThumbnailById(id) {
-        const thumbnail = await this.knex('thumbnails').select('thumbnails.url', 'thumbnails.reference_id as catalogId', 'thumbnails.id as thumbnailId').where({ 'thumbnails.reference_id': id, 'thumbnails.type': 'catalog', 'catalog.is_pending': model.catalog.moderatorStatus.Ready }).innerJoin('catalog', 'catalog.id', 'thumbnails.reference_id').orderBy('thumbnails.id', 'desc').limit(1);
+        const thumbnail = await this.knex('thumbnails').select('thumbnails.url', 'thumbnails.reference_id as catalogId', 'thumbnails.id as thumbnailId').where({
+            'thumbnails.reference_id': id,
+            'thumbnails.type': 'catalog',
+            'catalog.is_pending': model.catalog.moderatorStatus.Ready
+        }).innerJoin('catalog', 'catalog.id', 'thumbnails.reference_id').orderBy('thumbnails.id', 'desc').limit(1);
         return thumbnail[0];
     }
     async countAllItemsForSale() {
@@ -84,16 +92,32 @@ class CatalogDAL extends _init_1.default {
     async getCatalog(offset, category, orderBy, orderByType, query) {
         const selectQuery = this.knex("catalog").select("catalog.id as catalogId", "catalog.name as catalogName", "catalog.price", "catalog.currency", "catalog.creator as creatorId", "catalog.creator_type as creatorType", "catalog.original_creatorid as userId", "catalog.is_collectible as collectible", "catalog.max_sales as maxSales").limit(25).offset(offset).orderBy(orderBy, orderByType);
         if (category === model.catalog.searchCategory.Any) {
-            selectQuery.where({ "is_for_sale": model.catalog.isForSale.true, "is_pending": model.catalog.moderatorStatus.Ready });
+            selectQuery.where({
+                "is_for_sale": model.catalog.isForSale.true,
+                "is_pending": model.catalog.moderatorStatus.Ready
+            });
         }
         else if (category === model.catalog.searchCategory.Featured) {
-            selectQuery.where({ "is_for_sale": model.catalog.isForSale.true, "is_pending": model.catalog.moderatorStatus.Ready, 'catalog.original_creatorid': 1, 'catalog.creator_type': model.catalog.creatorType.User });
+            selectQuery.where({
+                "is_for_sale": model.catalog.isForSale.true,
+                "is_pending": model.catalog.moderatorStatus.Ready,
+                'catalog.original_creatorid': 1,
+                'catalog.creator_type': model.catalog.creatorType.User
+            });
         }
         else if (category === model.catalog.searchCategory.Collectibles) {
-            selectQuery.where({ "is_for_sale": model.catalog.isForSale.false, "is_pending": model.catalog.moderatorStatus.Ready, "is_collectible": model.catalog.collectible.true });
+            selectQuery.where({
+                "is_for_sale": model.catalog.isForSale.false,
+                "is_pending": model.catalog.moderatorStatus.Ready,
+                "is_collectible": model.catalog.collectible.true
+            });
         }
         else {
-            selectQuery.where({ "is_for_sale": model.catalog.isForSale.true, "is_pending": model.catalog.moderatorStatus.Ready, "category": category });
+            selectQuery.where({
+                "is_for_sale": model.catalog.isForSale.true,
+                "is_pending": model.catalog.moderatorStatus.Ready,
+                "category": category
+            });
         }
         if (query) {
             selectQuery.andWhere("name", "like", "%" + query + "%");
@@ -124,7 +148,16 @@ class CatalogDAL extends _init_1.default {
         return queryCompleted;
     }
     async updateCatalogItemInfo(catalogId, name, description, price, currency, stock, collectible, isForSale, moderation) {
-        await this.knex("catalog").update({ "name": name, "description": description, "price": price, "currency": currency, "max_sales": stock, "is_collectible": collectible, "is_for_sale": isForSale, "is_pending": moderation }).where({ "id": catalogId }).limit(1);
+        await this.knex("catalog").update({
+            "name": name,
+            "description": description,
+            "price": price,
+            "currency": currency,
+            "max_sales": stock,
+            "is_collectible": collectible,
+            "is_for_sale": isForSale,
+            "is_pending": moderation
+        }).where({ "id": catalogId }).limit(1);
     }
     async getOwners(catalogId, offset, limit, orderBy) {
         const owners = await this.knex('user_inventory').where({ 'user_inventory.catalog_id': catalogId }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial', 'user_inventory.user_id as userId').orderBy('user_inventory.id', orderBy).limit(limit).offset(offset);
@@ -132,14 +165,20 @@ class CatalogDAL extends _init_1.default {
     }
     async getRecommended(catalogId) {
         const itemData = await this.getInfo(catalogId, ['creatorId', 'creatorType']);
-        const recommended = await this.knex("catalog").select("catalog.id as catalogId", "catalog.name as catalogName", "catalog.price", "catalog.currency", "catalog.creator as creatorId", "catalog.creator_type as creatorType", "catalog.is_collectible as collectible", "catalog.max_sales as maxSales").limit(6).where({ "creator": itemData.creatorId, "creator_type": itemData.creatorType }).orderBy('id', 'desc').andWhere("catalog.id", "!=", catalogId).andWhere({
+        const recommended = await this.knex("catalog").select("catalog.id as catalogId", "catalog.name as catalogName", "catalog.price", "catalog.currency", "catalog.creator as creatorId", "catalog.creator_type as creatorType", "catalog.is_collectible as collectible", "catalog.max_sales as maxSales").limit(6).where({
+            "creator": itemData.creatorId,
+            "creator_type": itemData.creatorType
+        }).orderBy('id', 'desc').andWhere("catalog.id", "!=", catalogId).andWhere({
             'is_pending': model.catalog.moderatorStatus.Ready,
             'is_for_sale': model.catalog.isForSale.true,
         });
         return recommended;
     }
     async getComments(catalogId, offset) {
-        const Comments = await this.knex("catalog_comments").select("id as commentId", "catalog_id as catalogId", "userid as userId", "date", "comment").where({ "catalog_id": catalogId, 'is_deleted': 0 }).limit(25).offset(offset).orderBy('id', 'desc');
+        const Comments = await this.knex("catalog_comments").select("id as commentId", "catalog_id as catalogId", "userid as userId", "date", "comment").where({
+            "catalog_id": catalogId,
+            'is_deleted': 0
+        }).limit(25).offset(offset).orderBy('id', 'desc');
         return Comments;
     }
     async getCharts(catalogId) {
@@ -150,15 +189,22 @@ class CatalogDAL extends _init_1.default {
         });
         return transactions;
     }
-    async calculateAveragePrice(catalogId) {
-        const time = this.moment().subtract(360, 'days').format('YYYY-MM-DD HH:mm:ss');
-        const transactions = await this.knex("transactions").where("catalogid", "=", catalogId).andWhere("amount", "<", 0).andWhere("currency", "=", 1).andWhere("date", ">", time).andWhere("transactions.userid_from", "!=", 1).select("transactions.amount", "transactions.date");
-        let averagePrice = 0;
-        transactions.forEach((k) => {
-            averagePrice += Math.abs(k["amount"]);
-        });
-        averagePrice = Math.floor(averagePrice / transactions.length);
-        return averagePrice;
+    async calculateAveragePrice(catalogId, currentAveragePrice, salePrice) {
+        if (salePrice <= 0) {
+            return 0;
+        }
+        if (currentAveragePrice == salePrice) {
+            return currentAveragePrice;
+        }
+        if (currentAveragePrice <= 0) {
+            return salePrice;
+        }
+        if (currentAveragePrice > salePrice) {
+            return Math.floor(currentAveragePrice * .9) + (salePrice * .1);
+        }
+        else {
+            return Math.ceil(currentAveragePrice * .9) + (salePrice * .1);
+        }
     }
     async setAveragePrice(catalogId, value) {
         await this.knex('catalog').update({

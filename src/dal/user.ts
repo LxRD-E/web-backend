@@ -26,9 +26,9 @@ class UsersDAL extends _init {
      * @param id User's ID
      * @param specificColumns Specific Columns from the Table to grab
      */
-    public async getInfo(id: number, specificColumns?: Array<'userId' | 'username' | 'passwordChanged' | 'primaryBalance' | 'secondaryBalance' | 'membership' | 'dailyAward' | 'status' | 'blurb' | 'joinDate' | 'lastOnline' | 'birthDate' | 'theme' | 'tradingEnabled' | 'staff' | 'banned' | 'forumPostCount' | 'forumSignature' | 'accountStatus' | '2faEnabled' | 'isDeveloper'>): Promise<users.UserInfo> {
+    public async getInfo(id: number, specificColumns?: Array<'userId' | 'username' | 'passwordChanged' | 'primaryBalance' | 'secondaryBalance' | 'dailyAward' | 'status' | 'blurb' | 'joinDate' | 'lastOnline' | 'birthDate' | 'theme' | 'tradingEnabled' | 'staff' | 'banned' | 'forumPostCount' | 'forumSignature' | 'accountStatus' | '2faEnabled' | 'isDeveloper'>): Promise<users.UserInfo> {
         if (!specificColumns) {
-            specificColumns = ['userId', 'username', 'status', 'joinDate', 'blurb', 'lastOnline', 'banned', 'membership', 'tradingEnabled', 'staff', 'accountStatus'];
+            specificColumns = ['userId', 'username', 'status', 'joinDate', 'blurb', 'lastOnline', 'banned', 'tradingEnabled', 'staff', 'accountStatus'];
         }
         specificColumns.forEach((element: string, index: number, array: Array<string>): void => {
             if (element === 'userId') {
@@ -41,8 +41,6 @@ class UsersDAL extends _init {
                 array[index] = 'user_balancedailyaward as dailyAward';
             }else if (element === 'passwordChanged') {
                 array[index] = 'password_changed as passwordChanged';
-            }else if (element === 'membership') {
-                array[index] = 'user_membership as membership';
             }else if (element === 'forumSignature') {
                 array[index] = 'forum_signature as forumSignature';
             }else if (element === 'forumPostCount') {
@@ -63,8 +61,6 @@ class UsersDAL extends _init {
                 array[index] = 'user_staff as staff';
             }else if (element === 'status') {
                 array[index] = 'user_status as status';
-            }else if (element === 'membership') {
-                array[index] = 'user_membership as membership';
             }else if (element === 'tradingEnabled') {
                 array[index] = 'user_tradingenabled as tradingEnabled';
             }else if (element === 'theme') {
@@ -343,7 +339,6 @@ class UsersDAL extends _init {
             'user_staff': users.staff.false,
             'is_banned': users.banned.false,
             'forum_postcount': 0,
-            'user_membership': date,
             'user_balancedailyaward': date,
         });
         return insert[0];

@@ -275,7 +275,6 @@ let EconomyController = class EconomyController extends controller_1.default {
                     if (catalogItemInfo.currency !== expectedCurrency) {
                         throw new this.BadRequest('CurrencyHasChanged');
                     }
-                    console.log(`${req.id} if serialed collectible`);
                     let serial = null;
                     if (catalogItemInfo.collectible === model.catalog.collectible.true && catalogItemInfo.maxSales !== 0) {
                         const sales = await trx.catalog.countSales(catalogItemInfo.catalogId);
@@ -290,13 +289,10 @@ let EconomyController = class EconomyController extends controller_1.default {
                             }
                         }
                     }
-                    console.log(`${req.id} check if owns`);
                     let owns = await trx.user.getUserInventoryByCatalogId(userInfo.userId, catalogItemInfo.catalogId);
                     if (owns[0]) {
                         throw new this.Conflict('AlreadyOwns');
                     }
-                    console.log(`${req.id} does not own`);
-                    console.log(`${req.id} check if has enough currency`);
                     const newUserInfo = await this.user.getInfo(userInfo.userId, ['primaryBalance', 'secondaryBalance']);
                     if (catalogItemInfo.currency === model.economy.currencyType.primary) {
                         const balance = newUserInfo.primaryBalance;
@@ -313,22 +309,18 @@ let EconomyController = class EconomyController extends controller_1.default {
                     else {
                         throw new this.BadRequest('InvalidCurrencySpecified');
                     }
-                    console.log(`${req.id} has enough currency. creating item for user`);
                     let inventoryId = await trx.catalog.createItemForUserInventory(userInfo.userId, catalogItemInfo.catalogId, serial);
                     const amtToSubtractFromSeller = Math.abs(catalogItemInfo.price * 0.3);
                     const amtToSeller = catalogItemInfo.price - amtToSubtractFromSeller;
                     let transactionIdForBuyer = 0;
                     let transactionIdForSeller = 0;
-                    console.log(`${req.id} subtracting balance from user`);
                     await trx.economy.subtractFromUserBalance(userInfo.userId, catalogItemInfo.price, catalogItemInfo.currency);
-                    console.log(`${req.id} create transaction`);
                     if (catalogItemInfo.creatorType === model.catalog.creatorType.User) {
                         transactionIdForSeller = await trx.economy.createTransaction(userInfo.userId, catalogItemInfo.creatorId, -catalogItemInfo.price, catalogItemInfo.currency, model.economy.transactionType.PurchaseOfItem, "Purchase of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
                     }
                     else {
                         transactionIdForSeller = await trx.economy.createTransaction(userInfo.userId, catalogItemInfo.creatorId, -catalogItemInfo.price, catalogItemInfo.currency, model.economy.transactionType.PurchaseOfItem, "Purchase of " + catalogItemInfo.catalogName, model.catalog.creatorType.Group, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
                     }
-                    console.log(`${req.id} transaction created. giving money to seller`);
                     if (catalogItemInfo.creatorType === model.catalog.creatorType.User) {
                         await trx.economy.addToUserBalance(catalogItemInfo.creatorId, amtToSeller, catalogItemInfo.currency);
                         transactionIdForBuyer = await trx.economy.createTransaction(catalogItemInfo.creatorId, userInfo.userId, amtToSeller, catalogItemInfo.currency, model.economy.transactionType.SaleOfItem, "Sale of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
@@ -338,11 +330,7 @@ let EconomyController = class EconomyController extends controller_1.default {
                         transactionIdForBuyer = await trx.economy.createTransaction(catalogItemInfo.creatorId, userInfo.userId, amtToSeller, catalogItemInfo.currency, model.economy.transactionType.SaleOfItem, "Sale of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.Group, catalogItemInfo.catalogId, inventoryId);
                     }
                     console.log(`${req.id} gave money to seller. now log ip`);
-                    this.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem).then(d => {
-                    }).catch(e => {
-                        console.error(e);
-                    });
-                    console.log(`${req.id} return success`);
+                    await this.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem);
                     return { success: true };
                 }
                 else {
@@ -404,21 +392,9 @@ let EconomyController = class EconomyController extends controller_1.default {
                     await trx.economy.addToUserBalance(usedItemInfo.userId, amtToSeller, model.economy.currencyType.primary);
                     await trx.economy.createTransaction(usedItemInfo.userId, userInfo.userId, amtToSeller, model.economy.currencyType.primary, model.economy.transactionType.SaleOfItem, "Sale of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, usedItemInfo.userInventoryId);
                     await trx.user.editItemPrice(usedItemInfo.userInventoryId, 0);
-                    const backgroundTasksAfterPurchase = async () => {
-                        try {
-                            await this.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem);
-                            const averagePrice = await this.catalog.calculateAveragePrice(catalogItemInfo.catalogId);
-                            console.log("Price: " + averagePrice);
-                            await this.catalog.setAveragePrice(catalogItemInfo.catalogId, averagePrice);
-                        }
-                        catch (e) {
-                            console.error(e);
-                        }
-                    };
-                    backgroundTasksAfterPurchase().then(d => {
-                    })
-                        .catch(e => {
-                    });
+                    await this.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem);
+                    const averagePrice = await this.catalog.calculateAveragePrice(catalogItemInfo.catalogId, catalogItemInfo.averagePrice, expectedPrice);
+                    await this.catalog.setAveragePrice(catalogItemInfo.catalogId, averagePrice);
                     this.regenAvatarAfterItemTransferOwners(usedItemInfo.userId, usedItemInfo.catalogId).then(d => {
                         console.log(d);
                     }).catch(e => {
@@ -429,7 +405,7 @@ let EconomyController = class EconomyController extends controller_1.default {
             });
         }
         catch (e) {
-            console.log(`${req.id} got error`, e);
+            console.error(`${req.id} got error`, e);
             throw e;
         }
         return { success: true };
@@ -658,7 +634,10 @@ __decorate([
     common_1.Get('/trades/:type'),
     swagger_1.Summary('Get user trades'),
     swagger_1.ReturnsArray(200, { type: model.economy.TradeInfo }),
-    swagger_1.Returns(400, { type: model.Error, description: 'InvalidTradeType: TradeType must be one of: inbound,outbound,completed,inactive\n' }),
+    swagger_1.Returns(400, {
+        type: model.Error,
+        description: 'InvalidTradeType: TradeType must be one of: inbound,outbound,completed,inactive\n'
+    }),
     common_1.Use(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('type', String)),
@@ -684,7 +663,10 @@ __decorate([
     common_1.UseBefore(Auth_1.YesAuth),
     swagger_1.ReturnsArray(200, { type: model.economy.GroupTransactions }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidGroupId: GroupID is not valid\n' }),
-    swagger_1.Returns(409, { type: model.Error, description: 'InvalidPermissions: User is not authorized to view transaction history\n' }),
+    swagger_1.Returns(409, {
+        type: model.Error,
+        description: 'InvalidPermissions: User is not authorized to view transaction history\n'
+    }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __param(2, common_1.QueryParams('offset', Number)),
@@ -697,7 +679,10 @@ __decorate([
     swagger_1.Summary('Convert one currency to another'),
     common_1.UseBeforeEach(auth_1.csrf),
     common_1.UseBefore(Auth_1.YesAuth),
-    swagger_1.Returns(400, { type: model.Error, description: 'InvalidAmount: Amount must be < 100,000 & > 0\nNotEnoughCurrency: Not enough currency for this transaction\nInvalidCurrency: Invalid Currency Specified' }),
+    swagger_1.Returns(400, {
+        type: model.Error,
+        description: 'InvalidAmount: Amount must be < 100,000 & > 0\nNotEnoughCurrency: Not enough currency for this transaction\nInvalidCurrency: Invalid Currency Specified'
+    }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.BodyParams('currency', Number)),
@@ -711,8 +696,14 @@ __decorate([
     common_1.Post('/:id/buy'),
     swagger_1.Summary('Purchase a catalog item'),
     swagger_1.Description('Notes: User can own multiple collectible items but can only own one non-collectible item. If a collectible item is still listed for sale, the user can only own one and cannot own multiple until it is taken off sale or sells out.'),
-    swagger_1.Returns(400, { type: model.Error, description: 'InvalidCatalogId: CatalogId is invalid\nNoLongerForSale: Item is no longer for sale\nSellerHasChanged: The userId of the seller has changed\nPriceHasChanged: Price has changed\nCurrencyHasChanged: Currency has changed\nNotEnoughCurrency: User does not have enough currency for this purchase\nInvalidCurrencySpecified: Currency of product is invalid\nItemStillForSale: You cannot purchase collectible items that have not finished selling yet\nInvalidUserInventoryId: Invalid userInventoryId\nItemNoLongerForSale: Item is no longer for sale\nInvalidUserId: Seller userId is invalid\n' }),
-    swagger_1.Returns(409, { type: model.Error, description: 'ConstraintEmailVerificationRequired: Your account must have a verified email before you can purchase something.\nAlreadyOwns: User already owns the item specified\n' }),
+    swagger_1.Returns(400, {
+        type: model.Error,
+        description: 'InvalidCatalogId: CatalogId is invalid\nNoLongerForSale: Item is no longer for sale\nSellerHasChanged: The userId of the seller has changed\nPriceHasChanged: Price has changed\nCurrencyHasChanged: Currency has changed\nNotEnoughCurrency: User does not have enough currency for this purchase\nInvalidCurrencySpecified: Currency of product is invalid\nItemStillForSale: You cannot purchase collectible items that have not finished selling yet\nInvalidUserInventoryId: Invalid userInventoryId\nItemNoLongerForSale: Item is no longer for sale\nInvalidUserId: Seller userId is invalid\n'
+    }),
+    swagger_1.Returns(409, {
+        type: model.Error,
+        description: 'ConstraintEmailVerificationRequired: Your account must have a verified email before you can purchase something.\nAlreadyOwns: User already owns the item specified\n'
+    }),
     common_1.Use(auth_1.csrf, Auth_1.YesAuth, TwoStepCheck_1.default('BuyItem')),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('id', Number)),
@@ -734,7 +725,10 @@ __decorate([
     swagger_1.Summary('Get the items involved in a specific tradeId'),
     swagger_1.Description('Requestee is authenticated user, requested is the partner involved with the trade'),
     swagger_1.Returns(200, { type: model.economy.TradeItemsResponse }),
-    swagger_1.Returns(400, { type: model.Error, description: 'InvalidTradeId: TradeId is invalid or you do not have permission to view it\n' }),
+    swagger_1.Returns(400, {
+        type: model.Error,
+        description: 'InvalidTradeId: TradeId is invalid or you do not have permission to view it\n'
+    }),
     common_1.UseBeforeEach(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('tradeId', Number)),
@@ -745,7 +739,10 @@ __decorate([
 __decorate([
     common_1.Delete('/trades/:tradeId'),
     swagger_1.Summary('Decline/cancel a trade by the tradeId'),
-    swagger_1.Returns(400, { type: model.Error, description: 'InvalidTradeId: TradeId is invalid (Doesnt exist, already declined/state doesnt allow decling, does not involve user, etc)\n' }),
+    swagger_1.Returns(400, {
+        type: model.Error,
+        description: 'InvalidTradeId: TradeId is invalid (Doesnt exist, already declined/state doesnt allow decling, does not involve user, etc)\n'
+    }),
     common_1.UseBeforeEach(auth_1.csrf),
     common_1.UseBefore(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
@@ -757,9 +754,18 @@ __decorate([
 __decorate([
     common_1.Post('/trades/:tradeId'),
     swagger_1.Summary('Accept a trade'),
-    swagger_1.Returns(400, { type: model.Error, description: 'InvalidTradeId: TradeId is invalid\nInvalidPartnerId: Trade cannot be completed due to an internal error\nNotAuthorized: User is not authorized to modify this trade (ex: didnt create the trade, already accepted, already declined, etc)' }),
-    swagger_1.Returns(500, { type: model.Error, description: 'InternalServerError: Trade cannot be completed due to an internal error\n' }),
-    swagger_1.Returns(409, { type: model.Error, description: 'OneOrMoreItemsNotAvailable: One or more of the items involved in the trade are no longer available\nCooldown: Try again later\nTradeCannotBeCompleted: Generic error is preventing trade from being completed.\n' }),
+    swagger_1.Returns(400, {
+        type: model.Error,
+        description: 'InvalidTradeId: TradeId is invalid\nInvalidPartnerId: Trade cannot be completed due to an internal error\nNotAuthorized: User is not authorized to modify this trade (ex: didnt create the trade, already accepted, already declined, etc)'
+    }),
+    swagger_1.Returns(500, {
+        type: model.Error,
+        description: 'InternalServerError: Trade cannot be completed due to an internal error\n'
+    }),
+    swagger_1.Returns(409, {
+        type: model.Error,
+        description: 'OneOrMoreItemsNotAvailable: One or more of the items involved in the trade are no longer available\nCooldown: Try again later\nTradeCannotBeCompleted: Generic error is preventing trade from being completed.\n'
+    }),
     common_1.UseBeforeEach(auth_1.csrf),
     common_1.UseBefore(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),

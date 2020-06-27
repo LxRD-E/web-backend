@@ -54,12 +54,6 @@ export class UserInfo {
     @Required()
     secondaryBalance: number;
     /**
-     * The date that the user's membership expires
-     * @deprecated
-     */
-    @Required()
-    membership: Date;
-    /**
      * The date that the user last recieved their daily currency
      */
     @Required()

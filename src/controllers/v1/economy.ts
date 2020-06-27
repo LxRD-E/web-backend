@@ -37,7 +37,7 @@ export default class EconomyController extends controller {
 
     @Get('/metadata/collectible-resale-fee')
     @Summary('Get item resale fee percentage for collectibles')
-    @Returns(200, { type: model.economy.FeeMetaData })
+    @Returns(200, {type: model.economy.FeeMetaData})
     public getResellFeeCollectible() {
         return {
             fee: model.economy.RESELL_ITEM_FEE,
@@ -46,7 +46,7 @@ export default class EconomyController extends controller {
 
     @Get('/metadata/sell-fee')
     @Summary('Get item resale fee percentage for normal items (shirts, pants, etc)')
-    @Returns(200, { type: model.economy.FeeMetaData })
+    @Returns(200, {type: model.economy.FeeMetaData})
     public getSellFee() {
         return {
             fee: model.economy.SELL_ITEM_FEE,
@@ -55,7 +55,7 @@ export default class EconomyController extends controller {
 
     @Get('/metadata/currency-conversion-rate')
     @Summary('Get currency conversion metadata')
-    @Returns(200, { type: model.economy.CurrencyConversionMetadata })
+    @Returns(200, {type: model.economy.CurrencyConversionMetadata})
     @Use(YesAuth)
     public getCurrencyConversionMetadata() {
         return {
@@ -75,8 +75,11 @@ export default class EconomyController extends controller {
 
     @Get('/trades/:type')
     @Summary('Get user trades')
-    @ReturnsArray(200, { type: model.economy.TradeInfo })
-    @Returns(400, { type: model.Error, description: 'InvalidTradeType: TradeType must be one of: inbound,outbound,completed,inactive\n' })
+    @ReturnsArray(200, {type: model.economy.TradeInfo})
+    @Returns(400, {
+        type: model.Error,
+        description: 'InvalidTradeType: TradeType must be one of: inbound,outbound,completed,inactive\n'
+    })
     @Use(YesAuth)
     public async getTrades(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -152,7 +155,7 @@ export default class EconomyController extends controller {
     @Get('/transactions')
     @Summary('Get transaction history for the authenticated user')
     @UseBefore(YesAuth)
-    @ReturnsArray(200, { type: model.economy.userTransactions })
+    @ReturnsArray(200, {type: model.economy.userTransactions})
     public async getTransactions(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @QueryParams('offset', Number) offset: number = 0
@@ -164,9 +167,12 @@ export default class EconomyController extends controller {
     @Get('/group/:groupId/transactions')
     @Summary('Get transaction history for the group. User must have manage permission')
     @UseBefore(YesAuth)
-    @ReturnsArray(200, { type: model.economy.GroupTransactions })
-    @Returns(400, { type: model.Error, description: 'InvalidGroupId: GroupID is not valid\n' })
-    @Returns(409, { type: model.Error, description: 'InvalidPermissions: User is not authorized to view transaction history\n' })
+    @ReturnsArray(200, {type: model.economy.GroupTransactions})
+    @Returns(400, {type: model.Error, description: 'InvalidGroupId: GroupID is not valid\n'})
+    @Returns(409, {
+        type: model.Error,
+        description: 'InvalidPermissions: User is not authorized to view transaction history\n'
+    })
     public async getGroupTransactions(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number,
@@ -175,7 +181,7 @@ export default class EconomyController extends controller {
         let data;
         try {
             data = await this.group.getUserRole(groupId, userInfo.userId);
-        } catch{
+        } catch {
             throw new this.BadRequest('InvalidGroupId');
         }
         if (data.permissions.manage !== 1) {
@@ -189,7 +195,10 @@ export default class EconomyController extends controller {
     @Summary('Convert one currency to another')
     @UseBeforeEach(csrf)
     @UseBefore(YesAuth)
-    @Returns(400, { type: model.Error, description: 'InvalidAmount: Amount must be < 100,000 & > 0\nNotEnoughCurrency: Not enough currency for this transaction\nInvalidCurrency: Invalid Currency Specified' })
+    @Returns(400, {
+        type: model.Error,
+        description: 'InvalidAmount: Amount must be < 100,000 & > 0\nNotEnoughCurrency: Not enough currency for this transaction\nInvalidCurrency: Invalid Currency Specified'
+    })
     public async convertCurrency(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
@@ -268,7 +277,7 @@ export default class EconomyController extends controller {
             await unlockEconomy();
 
             // Return success
-            return { success: true };
+            return {success: true};
         } else if (originCurrency === model.economy.currencyType.secondary) {
             if (numericAmount < 10) {
                 // Unlock economy
@@ -313,7 +322,7 @@ export default class EconomyController extends controller {
                 // Unlock economy
                 await unlockEconomy();
                 // Return success
-                return { success: true };
+                return {success: true};
             } else {
                 // Unlock economy
                 await unlockEconomy();
@@ -329,8 +338,14 @@ export default class EconomyController extends controller {
     @Post('/:id/buy')
     @Summary('Purchase a catalog item')
     @Description('Notes: User can own multiple collectible items but can only own one non-collectible item. If a collectible item is still listed for sale, the user can only own one and cannot own multiple until it is taken off sale or sells out.')
-    @Returns(400, { type: model.Error, description: 'InvalidCatalogId: CatalogId is invalid\nNoLongerForSale: Item is no longer for sale\nSellerHasChanged: The userId of the seller has changed\nPriceHasChanged: Price has changed\nCurrencyHasChanged: Currency has changed\nNotEnoughCurrency: User does not have enough currency for this purchase\nInvalidCurrencySpecified: Currency of product is invalid\nItemStillForSale: You cannot purchase collectible items that have not finished selling yet\nInvalidUserInventoryId: Invalid userInventoryId\nItemNoLongerForSale: Item is no longer for sale\nInvalidUserId: Seller userId is invalid\n' })
-    @Returns(409, { type: model.Error, description: 'ConstraintEmailVerificationRequired: Your account must have a verified email before you can purchase something.\nAlreadyOwns: User already owns the item specified\n' })
+    @Returns(400, {
+        type: model.Error,
+        description: 'InvalidCatalogId: CatalogId is invalid\nNoLongerForSale: Item is no longer for sale\nSellerHasChanged: The userId of the seller has changed\nPriceHasChanged: Price has changed\nCurrencyHasChanged: Currency has changed\nNotEnoughCurrency: User does not have enough currency for this purchase\nInvalidCurrencySpecified: Currency of product is invalid\nItemStillForSale: You cannot purchase collectible items that have not finished selling yet\nInvalidUserInventoryId: Invalid userInventoryId\nItemNoLongerForSale: Item is no longer for sale\nInvalidUserId: Seller userId is invalid\n'
+    })
+    @Returns(409, {
+        type: model.Error,
+        description: 'ConstraintEmailVerificationRequired: Your account must have a verified email before you can purchase something.\nAlreadyOwns: User already owns the item specified\n'
+    })
     @Use(csrf, YesAuth, TwoStepCheck('BuyItem'))
     public async buy(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -372,7 +387,7 @@ export default class EconomyController extends controller {
                 'catalog',
                 'user_inventory',
             ];
-            await this.transaction(forUpdate,async (trx) => {
+            await this.transaction(forUpdate, async (trx) => {
                 if (userInventoryId === 0) {
                     console.log(`${req.id} get info`);
                     // Buying New
@@ -398,7 +413,6 @@ export default class EconomyController extends controller {
                         // Currency has changed
                         throw new this.BadRequest('CurrencyHasChanged');
                     }
-                    console.log(`${req.id} if serialed collectible`);
                     let serial = null;
                     if (catalogItemInfo.collectible === model.catalog.collectible.true && catalogItemInfo.maxSales !== 0) {
                         // Unique. Verify some stuff and grab serial
@@ -416,17 +430,14 @@ export default class EconomyController extends controller {
                             }
                         }
                     }
-                    console.log(`${req.id} check if owns`);
                     // Check if owns
                     let owns = await trx.user.getUserInventoryByCatalogId(userInfo.userId, catalogItemInfo.catalogId);
                     if (owns[0]) {
                         // Owns item already
                         throw new this.Conflict('AlreadyOwns');
                     }
-                    console.log(`${req.id} does not own`);
 
                     // Get balance and check if has enough
-                    console.log(`${req.id} check if has enough currency`);
                     const newUserInfo = await this.user.getInfo(userInfo.userId, ['primaryBalance', 'secondaryBalance']);
                     if (catalogItemInfo.currency === model.economy.currencyType.primary) {
                         const balance = newUserInfo.primaryBalance as number;
@@ -441,7 +452,6 @@ export default class EconomyController extends controller {
                     } else {
                         throw new this.BadRequest('InvalidCurrencySpecified');
                     }
-                    console.log(`${req.id} has enough currency. creating item for user`);
                     // Create and Give item
                     let inventoryId = await trx.catalog.createItemForUserInventory(userInfo.userId, catalogItemInfo.catalogId, serial);
                     // Define seller amount
@@ -452,10 +462,8 @@ export default class EconomyController extends controller {
                     let transactionIdForBuyer: number = 0;
                     let transactionIdForSeller: number = 0;
                     // Subtract Balance
-                    console.log(`${req.id} subtracting balance from user`);
                     await trx.economy.subtractFromUserBalance(userInfo.userId, catalogItemInfo.price, catalogItemInfo.currency);
                     // Create Transaction
-                    console.log(`${req.id} create transaction`);
                     if (catalogItemInfo.creatorType === model.catalog.creatorType.User) {
                         // Give to user seller
                         transactionIdForSeller = await trx.economy.createTransaction(userInfo.userId, catalogItemInfo.creatorId, -catalogItemInfo.price, catalogItemInfo.currency, model.economy.transactionType.PurchaseOfItem, "Purchase of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
@@ -463,7 +471,6 @@ export default class EconomyController extends controller {
                         // Give to group seller
                         transactionIdForSeller = await trx.economy.createTransaction(userInfo.userId, catalogItemInfo.creatorId, -catalogItemInfo.price, catalogItemInfo.currency, model.economy.transactionType.PurchaseOfItem, "Purchase of " + catalogItemInfo.catalogName, model.catalog.creatorType.Group, model.catalog.creatorType.User, catalogItemInfo.catalogId, inventoryId);
                     }
-                    console.log(`${req.id} transaction created. giving money to seller`);
                     // Give money to seller
                     if (catalogItemInfo.creatorType === model.catalog.creatorType.User) {
                         // Give to user
@@ -479,14 +486,9 @@ export default class EconomyController extends controller {
                     console.log(`${req.id} gave money to seller. now log ip`);
                     // Log Purchase
                     // doesnt really matter if this fails, which is why it isnt awaited
-                    this.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem).then(d => {
-
-                    }).catch(e => {
-                        console.error(e);
-                    });
-                    console.log(`${req.id} return success`);
+                    await this.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem);
                     // Return Success
-                    return { success: true };
+                    return {success: true};
                     // Buying Used
                 } else {
                     let catalogItemInfo: model.catalog.CatalogInfo;
@@ -565,25 +567,13 @@ export default class EconomyController extends controller {
                     // Take Item Off Sale
                     await trx.user.editItemPrice(usedItemInfo.userInventoryId, 0);
                     // Additional Background Tasks
-                    const backgroundTasksAfterPurchase = async () => {
-                        try {
-                            // Log IP
-                            await this.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem);
-                            // Grab RAP
-                            const averagePrice = await this.catalog.calculateAveragePrice(catalogItemInfo.catalogId);
-                            console.log("Price: " + averagePrice);
-                            // Update RAP
-                            await this.catalog.setAveragePrice(catalogItemInfo.catalogId, averagePrice);
-                        } catch (e) {
-                            console.error(e);
-                        }
-                    }
-                    backgroundTasksAfterPurchase().then(d => {
+                    // Log IP
+                    await this.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem);
+                    // Grab RAP
+                    const averagePrice = await this.catalog.calculateAveragePrice(catalogItemInfo.catalogId, catalogItemInfo.averagePrice, expectedPrice);
+                    // Update RAP
+                    await this.catalog.setAveragePrice(catalogItemInfo.catalogId, averagePrice);
 
-                    })
-                        .catch(e => {
-
-                        })
                     this.regenAvatarAfterItemTransferOwners(usedItemInfo.userId, usedItemInfo.catalogId).then(d => {
                         console.log(d);
                     }).catch(e => {
@@ -595,17 +585,20 @@ export default class EconomyController extends controller {
             });
 
         } catch (e) {
-            console.log(`${req.id} got error`, e);
+            console.error(`${req.id} got error`, e);
             throw e;
         }
-        return { success: true };
+        return {success: true};
     }
 
     @Get('/trades/:tradeId/items')
     @Summary('Get the items involved in a specific tradeId')
     @Description('Requestee is authenticated user, requested is the partner involved with the trade')
-    @Returns(200, { type: model.economy.TradeItemsResponse })
-    @Returns(400, { type: model.Error, description: 'InvalidTradeId: TradeId is invalid or you do not have permission to view it\n' })
+    @Returns(200, {type: model.economy.TradeItemsResponse})
+    @Returns(400, {
+        type: model.Error,
+        description: 'InvalidTradeId: TradeId is invalid or you do not have permission to view it\n'
+    })
     @UseBeforeEach(YesAuth)
     public async getTradeItems(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -624,11 +617,11 @@ export default class EconomyController extends controller {
         if (tradeInfo.userIdOne === userInfo.userId) {
             const requestedTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requested, numericTradeId);
             const requesteeTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requester, numericTradeId);
-            return { 'requested': requestedTradeItems, 'offer': requesteeTradeItems };
+            return {'requested': requestedTradeItems, 'offer': requesteeTradeItems};
         } else if (tradeInfo.userIdTwo === userInfo.userId) {
             const requestedTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requester, numericTradeId);
             const requesteeTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requested, numericTradeId);
-            return { 'requested': requestedTradeItems, 'offer': requesteeTradeItems };
+            return {'requested': requestedTradeItems, 'offer': requesteeTradeItems};
         } else {
             throw new this.BadRequest('InvalidTradeId');
         }
@@ -636,7 +629,10 @@ export default class EconomyController extends controller {
 
     @Delete('/trades/:tradeId')
     @Summary('Decline/cancel a trade by the tradeId')
-    @Returns(400, { type: model.Error, description: 'InvalidTradeId: TradeId is invalid (Doesnt exist, already declined/state doesnt allow decling, does not involve user, etc)\n' })
+    @Returns(400, {
+        type: model.Error,
+        description: 'InvalidTradeId: TradeId is invalid (Doesnt exist, already declined/state doesnt allow decling, does not involve user, etc)\n'
+    })
     @UseBeforeEach(csrf)
     @UseBefore(YesAuth)
     public async declineTrade(
@@ -646,7 +642,7 @@ export default class EconomyController extends controller {
         if (!numericTradeId) {
             throw new this.BadRequest('InvalidTradeId');
         }
-        await this.transaction([],async (trx) => {
+        await this.transaction([], async (trx) => {
             let tradeInfo = await trx.economy.getTradeById(numericTradeId);
             if (tradeInfo.status !== model.economy.tradeStatus.Pending) {
                 throw new this.BadRequest('InvalidTradeId');
@@ -667,9 +663,18 @@ export default class EconomyController extends controller {
 
     @Post('/trades/:tradeId')
     @Summary('Accept a trade')
-    @Returns(400, { type: model.Error, description: 'InvalidTradeId: TradeId is invalid\nInvalidPartnerId: Trade cannot be completed due to an internal error\nNotAuthorized: User is not authorized to modify this trade (ex: didnt create the trade, already accepted, already declined, etc)' })
-    @Returns(500, { type: model.Error, description: 'InternalServerError: Trade cannot be completed due to an internal error\n' })
-    @Returns(409, { type: model.Error, description: 'OneOrMoreItemsNotAvailable: One or more of the items involved in the trade are no longer available\nCooldown: Try again later\nTradeCannotBeCompleted: Generic error is preventing trade from being completed.\n' })
+    @Returns(400, {
+        type: model.Error,
+        description: 'InvalidTradeId: TradeId is invalid\nInvalidPartnerId: Trade cannot be completed due to an internal error\nNotAuthorized: User is not authorized to modify this trade (ex: didnt create the trade, already accepted, already declined, etc)'
+    })
+    @Returns(500, {
+        type: model.Error,
+        description: 'InternalServerError: Trade cannot be completed due to an internal error\n'
+    })
+    @Returns(409, {
+        type: model.Error,
+        description: 'OneOrMoreItemsNotAvailable: One or more of the items involved in the trade are no longer available\nCooldown: Try again later\nTradeCannotBeCompleted: Generic error is preventing trade from being completed.\n'
+    })
     @UseBeforeEach(csrf)
     @UseBefore(YesAuth)
     public async acceptTrade(
@@ -687,7 +692,7 @@ export default class EconomyController extends controller {
             'trades',
             'user_inventory',
         ];
-        await this.transaction(forUpdate,async (trx) => {
+        await this.transaction(forUpdate, async (trx) => {
             let tradeInfo: model.economy.ExtendedTradeInfo;
             try {
                 tradeInfo = await trx.economy.getTradeById(numericTradeId);

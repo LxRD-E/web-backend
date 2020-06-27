@@ -52,10 +52,6 @@ __decorate([
 __decorate([
     common_1.Required(),
     __metadata("design:type", Date)
-], UserInfo.prototype, "membership", void 0);
-__decorate([
-    common_1.Required(),
-    __metadata("design:type", Date)
 ], UserInfo.prototype, "dailyAward", void 0);
 __decorate([
     common_1.Required(),
