@@ -336,7 +336,7 @@ let EconomyController = class EconomyController extends controller_1.default {
                 else {
                     let catalogItemInfo;
                     try {
-                        catalogItemInfo = await trx.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'maxSales', 'collectible', 'catalogName']);
+                        catalogItemInfo = await trx.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'maxSales', 'collectible', 'catalogName', 'averagePrice']);
                     }
                     catch (e) {
                         throw new this.BadRequest('InvalidCatalogId');
@@ -393,7 +393,6 @@ let EconomyController = class EconomyController extends controller_1.default {
                     await trx.economy.createTransaction(usedItemInfo.userId, userInfo.userId, amtToSeller, model.economy.currencyType.primary, model.economy.transactionType.SaleOfItem, "Sale of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, usedItemInfo.userInventoryId);
                     await trx.user.editItemPrice(usedItemInfo.userInventoryId, 0);
                     await trx.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem);
-                    console.log('current average price', catalogItemInfo.averagePrice);
                     const averagePrice = await trx.catalog.calculateAveragePrice(catalogItemInfo.catalogId, catalogItemInfo.averagePrice || 0, expectedPrice);
                     await trx.catalog.setAveragePrice(catalogItemInfo.catalogId, averagePrice);
                     this.regenAvatarAfterItemTransferOwners(usedItemInfo.userId, usedItemInfo.catalogId).then(d => {

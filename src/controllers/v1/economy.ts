@@ -493,7 +493,7 @@ export default class EconomyController extends controller {
                 } else {
                     let catalogItemInfo: model.catalog.CatalogInfo;
                     try {
-                        catalogItemInfo = await trx.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'maxSales', 'collectible', 'catalogName']);
+                        catalogItemInfo = await trx.catalog.getInfo(catalogId, ['catalogId', 'forSale', 'maxSales', 'collectible', 'catalogName', 'averagePrice']);
                     } catch (e) {
                         throw new this.BadRequest('InvalidCatalogId');
                     }
@@ -572,7 +572,6 @@ export default class EconomyController extends controller {
                     // Log IP
                     await trx.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem);
                     // Grab RAP
-                    console.log('current average price',catalogItemInfo.averagePrice);
                     const averagePrice = await trx.catalog.calculateAveragePrice(catalogItemInfo.catalogId, catalogItemInfo.averagePrice || 0, expectedPrice);
                     // Update RAP
                     await trx.catalog.setAveragePrice(catalogItemInfo.catalogId, averagePrice);
