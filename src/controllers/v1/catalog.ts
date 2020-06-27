@@ -213,29 +213,27 @@ export class CatalogController extends controller {
         return SearchResults;
     }
 
-    /**
-     * Update a Catalog Item
-     * @param catalogId Catalog Item ID
-     */
     @Patch('/:catalogId/info')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
+    @Returns(400, {type: model.Error, description: 'InvalidCatalogId: catalogId is invalid\nInvalidModerationStatus: Moderation status is invalid\nInvalidPermissions: Requester is not authorized to edit this item\nInvalidCatalogName: Name is invalid\nInvalidCatalogDescription: Description is invalid\nInvalidIsForSaleOption: isForSale must be 0 or 1\nConstraintPriceTooHigh: Price is too high\nInvalidCurrency: Currency type is invalid\nInvalidCategory: Category is invalid\nInvalidCollectibleState: collectible must be 0 or 1\nInvalidModerationStatus: Moderation status is not valid\n'})
     public async updateItemInfo(
         @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Required()
         @PathParams('catalogId', Number) catalogId: number,
-        @BodyParams('name', String) newName: string,
-        @BodyParams('description', String) newDescription: string,
-        @BodyParams('isForSale', Number) isForSale: number,
-        @BodyParams('price', Number) newPrice: number,
-        @BodyParams('currency', Number) currency: number,
-        @BodyParams('stock', Number) stock: number,
-        @BodyParams('collectible', Number) collectible: number,
-        @BodyParams('moderation', Number) moderation: number
+        @BodyParams('name', String) newName?: string,
+        @BodyParams('description', String) newDescription?: string,
+        @BodyParams('isForSale', Number) isForSale?: number,
+        @BodyParams('price', Number) newPrice?: number,
+        @BodyParams('currency', Number) currency?: number,
+        @BodyParams('stock', Number) stock?: number,
+        @BodyParams('collectible', Number) collectible?: number,
+        @BodyParams('moderation', Number) moderation?: number,
+        @BodyParams('category', Number) category?: number,
     ) {
         // Confirm is creator and/or has perms
         let CatalogInfo;
         try {
-            CatalogInfo = await this.catalog.getInfo(catalogId, ['catalogId', 'creatorId', 'creatorType', 'status']);
+            CatalogInfo = await this.catalog.getInfo(catalogId, ['catalogId', 'creatorId', 'creatorType', 'status', 'category']);
         } catch (e) {
             throw new this.BadRequest('InvalidCatalogId');
         }
@@ -253,6 +251,12 @@ export class CatalogController extends controller {
             if (groupRole.permissions.manage === 0) {
                 throw new this.BadRequest('InvalidPermissions');
             }
+        }
+        if (!newName) {
+            newName = CatalogInfo.catalogName;
+        }
+        if (!newDescription) {
+            newDescription = CatalogInfo.description;
         }
         // String
         if (newName.length > 32 || newName.length < 3) {
@@ -279,6 +283,13 @@ export class CatalogController extends controller {
         if (currency !== model.economy.currencyType.primary && currency !== model.economy.currencyType.secondary) {
             throw new this.BadRequest('InvalidCurrency');
         }
+        if (!category) {
+            category = CatalogInfo.category;
+        }
+        console.log('cat',category);
+        if (typeof model.catalog.category[category] !== 'string') {
+            throw new this.BadRequest('InvalidCategory');
+        }
         let newStock = 0;
         let newCollectible = model.catalog.collectible.false;
         let moderationStatus = CatalogInfo.status;
@@ -286,6 +297,9 @@ export class CatalogController extends controller {
             newStock = filterId(stock) as number;
             if (!newStock) {
                 newStock = 0;
+            }
+            if (!collectible) {
+                collectible = CatalogInfo.collectible;
             }
             newCollectible = collectible;
             if (collectible !== 1 && collectible !== 0) {
@@ -298,7 +312,7 @@ export class CatalogController extends controller {
             }
             moderationStatus = newModerationStatus;
         }
-        await this.catalog.updateCatalogItemInfo(catalogId, newName, newDescription, newPrice, currency, newStock, newCollectible, isForSale, moderationStatus);
+        await this.catalog.updateCatalogItemInfo(catalogId, newName, newDescription, newPrice, currency, newStock, newCollectible, isForSale, moderationStatus, category);
         return { success: true };
     }
 

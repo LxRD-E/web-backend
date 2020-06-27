@@ -3,7 +3,6 @@ $(document).on('click', '#unBanUser', function() {
     request("/staff/user/"+userid+"/unban", "POST",)
         .then(function() {
             success("This user has been unbanned.", function() {
-                window.location.href = "/staff";
             })
         })
         .catch(function(e) {

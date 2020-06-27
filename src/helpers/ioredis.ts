@@ -1,5 +1,5 @@
 import config from './config';
-import IORedis = require('ioredis');
+import * as IORedis from 'ioredis';
 
 let redis: IORedis.Redis;
 if (process.env.NODE_ENV !== 'test') {

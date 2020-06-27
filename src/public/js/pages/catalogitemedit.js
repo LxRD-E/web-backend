@@ -6,6 +6,7 @@ $(document).on('click', '#editAssetClick', function() {
     var stock = $("#assetStock").val();
     var isForSale = parseInt($('#isForSale').val());
     var moderationLevel = parseInt($('#moderation').val());
+    var cat = $('#category').val();
     if (isNaN(moderationLevel)) {
         moderationLevel = 0;
     }
@@ -20,7 +21,7 @@ $(document).on('click', '#editAssetClick', function() {
         }
     }
     console.log(collectible);
-    request("/catalog/"+$('#catalogdata').attr("data-id")+"/info", "PATCH", JSON.stringify({name:name,description:desc,price:price,currency:currency,stock:stock,collectible:collectible,isForSale:isForSale,moderation:moderationLevel}))
+    request("/catalog/"+$('#catalogdata').attr("data-id")+"/info", "PATCH", JSON.stringify({name:name,description:desc,price:price,currency:currency,stock:stock,collectible:collectible,isForSale:isForSale,moderation:moderationLevel,category: parseInt(cat, 10)}))
         .then((d) => {
             success("This item has been updated!", function() {
                 window.location.href = "/catalog/"+$('#catalogdata').attr("data-id");

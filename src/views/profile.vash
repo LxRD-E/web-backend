@@ -8,12 +8,30 @@
         <meta name="twitter:image1" content="https://blockshub.net/api/v1/user/@model.page.userId/thumbnail/redirect">
     })
     @html.block('content', function(model) {
+        @{
+                model.badges = [];
+                @if (model.page.joinDate.unix() >= new Date().getTime() - 86400 * 24 * 365) {
+                    model.badges.push({
+                        'name': 'Veteran',
+                        description: 'This user has been on BlocksHub for over 1 year.',
+                        image: 'https://cdn.blockshub.net/static/badges/book.png',
+                    })
+                }
+
+                @if (model.page.staff >= 1) {
+                    model.badges.push({
+                        'name': 'Staff',
+                        description: 'This user is an official administrator at BlocksHub.',
+                        image: 'https://cdn.blockshub.net/static/badges/gear%281%29.png',
+                    })
+                }
+        }
         <div id="profiledata" data-userid ="@model.page.userId" data-username="@model.page.username"></div>
         @if (model.page.deleted) {
             <div class="row" style="margin:0;margin-top:1rem;" id="bannerText">
                 <div class="col-12 bg-danger text-white">
                     <div class="container">
-                        <h6 style="margin-top:1rem;margin-bottom:1rem;">This user's account has been terminated.</h6>
+                        <h6 style="margin-top:1rem;margin-bottom:1rem;">This user has been permanently suspended from accessing BlocksHub.</h6>
                     </div>
                 </div>
             </div>
@@ -202,14 +220,13 @@
     </div>
     <div class="row">
         <div class="col-12">
-        <!-- TODO: move this card somewhere else... -->
             <div id="groups" style="display:none;">
                 <div class="card-title text-left" style="margin-bottom:0;">
                     <div class="row">
-                        <div class="col-sm-6">
+                        <div class="col-6 col-lg-9">
                             <h3>@model.page.username's Groups <span id="groupsCountDiv"></span></h3>
                         </div>
-                        <div class="col-sm-6 text-right">
+                        <div class="col-6 col-lg-3 text-right">
                             <a href="/users/@model.page.userId/groups">See All</a>
                         </div>
                     </div>
@@ -219,6 +236,31 @@
                 </div>
             </div>
         </div>
+        @if (model.badges.length >= 1) {
+            <div class="col-12">
+                    <div id="badges">
+                        <div class="card-title text-left" style="margin-bottom:0;">
+                            <div class="row">
+                                <div class="col-12">
+                                    <h3>@model.page.username's Badges <span id="badgesCountDiv"></span></h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" id="profileBadgesDiv" style="padding-left:0.5rem;padding-right:0.5rem;">
+                                @for (const badge of model.badges) {
+                                    <div class="col-4 col-md-3 col-lg-2" title="@badge.description" style="padding-bottom: 1rem;padding-left: 0.5rem;padding-right: 0.5rem;">
+                                        <div class="card">
+                                            <div class="card-body" style="padding:0.5rem;">
+                                                <img src="@badge.image" style="margin:0 auto;display:block;width: 100%; height: auto;" />
+                                                <p style="font-size:1rem;font-weight:700;text-align:center;margin-top:0.5rem;">@badge.name</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                        </div>
+                    </div>
+            </div>
+        }
     </div>
 
     <div class="row">

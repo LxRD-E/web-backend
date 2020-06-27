@@ -21,6 +21,7 @@ export class ValidateUserId extends controller {
             }
             throw e;
         }
+        // yay gdpr
         if (info.accountStatus === model.user.accountStatus.deleted) {
             throw new this.BadRequest('InvalidUserId');
         }

@@ -10,9 +10,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const Sentry = require("./helpers/sentry");
 if (process.env.NODE_ENV === 'production') {
-    const Sentry = require('@sentry/node');
-    Sentry.init({ dsn: 'https://dccc8567d5714c75a7b884ffd1d73843@sentry.io/2506252' });
+    Sentry.init();
 }
 console.log('staging enabled:', process.env.IS_STAGING === '1');
 const Express = require("express");
@@ -20,8 +20,8 @@ const common_1 = require("@tsed/common");
 require("@tsed/ajv");
 require("@tsed/swagger");
 const Path = require("path");
+const responseTime = require("response-time");
 const cons = require("consolidate");
-const morgan = require("morgan");
 const NotFound_1 = require("./middleware/NotFound");
 const Logger_1 = require("./helpers/Logger");
 const remove_swagger_branding_1 = require("./helpers/remove-swagger-branding");
@@ -45,6 +45,9 @@ let Server = class Server extends common_1.ServerLoader {
         this.expressApp.disable('x-powered-by');
         this.set('trust proxy', 1);
         this.use(session_1.default);
+        this.use(responseTime({
+            suffix: false
+        }));
         websockets_1.default();
         this.use(Any_1.default);
         this.use(Any_1.generateCspWithNonce);
@@ -58,8 +61,7 @@ let Server = class Server extends common_1.ServerLoader {
         }));
         if (process.env.NODE_ENV === 'development') {
             this
-                .use(Express.static(Path.join(__dirname, './public/')))
-                .use(morgan('dev'));
+                .use(Express.static(Path.join(__dirname, './public/')));
         }
     }
     $afterRoutesInit() {

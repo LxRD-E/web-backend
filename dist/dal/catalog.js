@@ -147,7 +147,7 @@ class CatalogDAL extends _init_1.default {
         }
         return queryCompleted;
     }
-    async updateCatalogItemInfo(catalogId, name, description, price, currency, stock, collectible, isForSale, moderation) {
+    async updateCatalogItemInfo(catalogId, name, description, price, currency, stock, collectible, isForSale, moderation, newCategory) {
         await this.knex("catalog").update({
             "name": name,
             "description": description,
@@ -156,7 +156,8 @@ class CatalogDAL extends _init_1.default {
             "max_sales": stock,
             "is_collectible": collectible,
             "is_for_sale": isForSale,
-            "is_pending": moderation
+            "is_pending": moderation,
+            'category': newCategory,
         }).where({ "id": catalogId }).limit(1);
     }
     async getOwners(catalogId, offset, limit, orderBy) {

@@ -125,7 +125,7 @@ __decorate([
 ], WWWAuthController.prototype, "redirectIfNoLongerBanned", null);
 __decorate([
     common_1.Get('/login'),
-    common_1.UseBeforeEach(Auth_1.NoAuth),
+    common_1.Use(Auth_1.NoAuth),
     common_1.Render('login'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -133,7 +133,7 @@ __decorate([
 ], WWWAuthController.prototype, "login", null);
 __decorate([
     common_1.Get('/signup'),
-    common_1.UseBeforeEach(Auth_1.NoAuth),
+    common_1.Use(Auth_1.NoAuth),
     common_1.Render('signup'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -141,7 +141,7 @@ __decorate([
 ], WWWAuthController.prototype, "signup", null);
 __decorate([
     common_1.Get('/dashboard'),
-    common_1.UseBeforeEach(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth),
     common_1.Render('dashboard'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -159,7 +159,7 @@ __decorate([
 ], WWWAuthController.prototype, "ModerationHistory", null);
 __decorate([
     common_1.Get('/avatar'),
-    common_1.UseBeforeEach(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth),
     common_1.Render('avatar'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -168,7 +168,7 @@ __decorate([
 ], WWWAuthController.prototype, "Avatar", null);
 __decorate([
     common_1.Get('/email/verify'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth),
     common_1.Render('email_verify'),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.QueryParams('code', String)),
@@ -186,7 +186,7 @@ __decorate([
 ], WWWAuthController.prototype, "resetPasswordRequest", null);
 __decorate([
     common_1.Get('/reset/password'),
-    common_1.UseBefore(Auth_1.NoAuth),
+    common_1.Use(Auth_1.NoAuth),
     common_1.Render('reset_password'),
     __param(0, common_1.Res()),
     __param(1, common_1.QueryParams('code', String)),
@@ -198,7 +198,7 @@ __decorate([
 __decorate([
     common_1.Get('/notifications'),
     swagger_1.Summary('Notifications page'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth),
     common_1.Render('notifications'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),

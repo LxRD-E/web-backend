@@ -233,7 +233,7 @@ class CatalogDAL extends _init {
      * Update a catalog item's info
      * @param catalogId Catalog Item's ID
      */
-    public async updateCatalogItemInfo(catalogId: number, name: string, description: string, price: number, currency: model.economy.currencyType, stock: number, collectible: model.catalog.collectible, isForSale: model.catalog.isForSale, moderation: model.catalog.moderatorStatus): Promise<void> {
+    public async updateCatalogItemInfo(catalogId: number, name: string, description: string, price: number, currency: model.economy.currencyType, stock: number, collectible: model.catalog.collectible, isForSale: model.catalog.isForSale, moderation: model.catalog.moderatorStatus, newCategory: model.catalog.category): Promise<void> {
         await this.knex("catalog").update({
             "name": name,
             "description": description,
@@ -242,7 +242,8 @@ class CatalogDAL extends _init {
             "max_sales": stock,
             "is_collectible": collectible,
             "is_for_sale": isForSale,
-            "is_pending": moderation
+            "is_pending": moderation,
+            'category': newCategory,
         }).where({"id": catalogId}).limit(1);
     }
 

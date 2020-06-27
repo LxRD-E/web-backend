@@ -39,7 +39,7 @@ export class WWWCatalogController extends controller {
     }
 
     @Get('/catalog/:catalogId/:catalogName/edit')
-    @UseBefore(YesAuth)
+    @Use(YesAuth)
     @Render('catalogitemedit')
     public async catalogItemEdit(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
@@ -73,6 +73,7 @@ export class WWWCatalogController extends controller {
         ViewData.page.catalogName = catalogData.catalogName;
         ViewData.page.description = catalogData.description;
         ViewData.page.collectible = catalogData.collectible;
+        ViewData.page.category = catalogData.category;
         ViewData.page.forSale = catalogData.forSale;
         ViewData.page.userId = catalogData.creatorId;
         ViewData.page.category = catalogData.category;
@@ -83,6 +84,7 @@ export class WWWCatalogController extends controller {
         ViewData.page.sales = salesCount;
         ViewData.page.status = catalogData.status;
         ViewData.title = catalogData.catalogName;
+        ViewData.page.categories = model.catalog.category;
         return ViewData;
     }
 

@@ -1,8 +1,8 @@
 import config from './config';
-import ioRedis = require('ioredis');
+import * as IORedis from 'ioredis';
 
-let redis: ioRedis.Redis;
-let exportedFunc: () => ioRedis.Redis;
+let redis: IORedis.Redis;
+let exportedFunc: () => IORedis.Redis;
 if (process.env.NODE_ENV !== 'test') {
     const ioRedisConfig = {
         password: config.redis.pass || '',
@@ -14,7 +14,7 @@ if (process.env.NODE_ENV !== 'test') {
     };
 
     exportedFunc = () => {
-        let conn = new ioRedis(ioRedisConfig);
+        let conn = new IORedis(ioRedisConfig);
         conn.on('error', (ev) => {
             console.log('IORedis Error:');
             console.log(ev);

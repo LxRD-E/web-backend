@@ -12,7 +12,6 @@ $(document).on('click', '#banUser', function() {
     request("/staff/user/"+userid+"/ban", "POST", JSON.stringify({"reason":reason,"privateReason": privateReason,"length":len,"lengthType":lenType,"terminated":term,"deleted":del}))
         .then(function() {
             success("This user has been banned.", function() {
-                window.location.href = "/staff";
             })
         })
         .catch(function(e) {

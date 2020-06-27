@@ -18,14 +18,21 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const HttpError_1 = require("../helpers/HttpError");
+const Sentry = require("../helpers/sentry");
+const logError = (status, code, path, method) => {
+    if (process.env.NODE_ENV === 'production') {
+        return;
+    }
+    return console.log('[' + method.toUpperCase() + '] ' + path + ' [' + status.toString() + '] - ' + code);
+};
 const common_1 = require("@tsed/common");
 let MyGEHMiddleware = class MyGEHMiddleware extends common_1.GlobalErrorHandlerMiddleware {
     use(error, request, response) {
         if (error && error.message && error.message === 'LogoutRequired' && request.accepts('html')) {
+            logError(302, 'LogoutRequired', request.originalUrl, request.method);
             return response.redirect('/');
         }
         try {
-            console.error(error);
             if (error.name === 'BAD_REQUEST') {
                 let fullErrorMessage;
                 if (error.errorMessage) {
@@ -43,14 +50,19 @@ let MyGEHMiddleware = class MyGEHMiddleware extends common_1.GlobalErrorHandlerM
                 if (error.message && HttpError_1.HttpErrors[error.message]) {
                     fullErrorMessage.code = error.message;
                 }
+                logError(400, error.message, request.originalUrl, request.method);
                 if (request.accepts('json') && !request.accepts('html')) {
                     return response.status(400).json({ success: false, error: fullErrorMessage });
                 }
                 else {
+                    if (process.env.NODE_ENV === 'development') {
+                        return response.status(400).set('content-type', 'text/plain').send(error.stack).end();
+                    }
                     return response.status(400).send(HttpError_1.ErrorTemplate('400: Bad Request', 'You or your browser sent an invalid request.')).end();
                 }
             }
             else if (error.name === 'NOT_FOUND') {
+                logError(404, 'NOT_FOUND', request.originalUrl, request.method);
                 if (request.accepts('html')) {
                     return response.status(404).send(HttpError_1.ErrorTemplate('404: Not Found', 'The page you tried to view does not seem to exist.')).end();
                 }
@@ -66,10 +78,12 @@ let MyGEHMiddleware = class MyGEHMiddleware extends common_1.GlobalErrorHandlerM
                 if (error.message && HttpError_1.HttpErrors[error.message]) {
                     fullErrorMessage.code = error.message;
                 }
+                logError(409, fullErrorMessage.code, request.originalUrl, request.method);
                 return response.status(409).json({ success: false, error: fullErrorMessage });
             }
             else if (error.name === 'UNAUTHORIZED') {
                 if (request.accepts('html')) {
+                    logError(401, 'LoginRequired', request.originalUrl, request.method);
                     response.redirect('/login');
                 }
                 else if (request.accepts('json')) {
@@ -79,6 +93,7 @@ let MyGEHMiddleware = class MyGEHMiddleware extends common_1.GlobalErrorHandlerM
                     if (error.message && HttpError_1.HttpErrors[error.message]) {
                         fullErrorMessage.code = error.message;
                     }
+                    logError(401, fullErrorMessage.code, request.originalUrl, request.method);
                     return response.status(401).json({ success: false, error: fullErrorMessage });
                 }
                 else {
@@ -99,12 +114,18 @@ let MyGEHMiddleware = class MyGEHMiddleware extends common_1.GlobalErrorHandlerM
                     return response.status(415).json({ success: false, error: { code: HttpError_1.HttpErrors[HttpError_1.HttpErrors.InvalidAcceptHeader] } });
                 }
             }
+            else {
+                throw error;
+            }
         }
         catch (e) {
-            console.log(e);
+            console.error(e);
+            if (Sentry.isEnabled()) {
+                Sentry.Sentry.captureException(e);
+            }
         }
         if (request.accepts('json') && !request.accepts('html')) {
-            return response.status(500).json({ success: false, message: 'An internal server error has ocurred.', error: { code: HttpError_1.HttpErrors[HttpError_1.HttpErrors.InternalServerError] } });
+            return response.status(500).json({ success: false, message: 'An internal server error has occurred.', error: { code: HttpError_1.HttpErrors[HttpError_1.HttpErrors.InternalServerError] } });
         }
         if (request.accepts('html')) {
             return response.status(500).send(HttpError_1.ErrorTemplate('500: Internal Server Error', 'BlocksHub seems to be experiencing some issues right now. Please try again later.')).end();

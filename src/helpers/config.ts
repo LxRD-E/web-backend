@@ -37,6 +37,11 @@ if (process.env.NODE_ENV !== 'test') {
     }
     // generate proper path to config, read file, decrypt file, json.parse file
     const configString = JSON.parse(decrypt(readFileSync(join(__dirname, '../../config.json')).toString(), secretEncryptionKey, secretEncryptionIV));
+
+    // trying to connect directly to "127.0.0.1" causes timeout issues (that auto-resolve after a re-connect attempt)...
+    if (configString.redis.host === '127.0.0.1') {
+        configString.redis.host = 'localhost';
+    }
     // duplicate original object
     configJson = Object.freeze(configString);
 }else{

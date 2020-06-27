@@ -67,6 +67,7 @@ let WWWCatalogController = class WWWCatalogController extends controller_1.defau
         ViewData.page.catalogName = catalogData.catalogName;
         ViewData.page.description = catalogData.description;
         ViewData.page.collectible = catalogData.collectible;
+        ViewData.page.category = catalogData.category;
         ViewData.page.forSale = catalogData.forSale;
         ViewData.page.userId = catalogData.creatorId;
         ViewData.page.category = catalogData.category;
@@ -77,6 +78,7 @@ let WWWCatalogController = class WWWCatalogController extends controller_1.defau
         ViewData.page.sales = salesCount;
         ViewData.page.status = catalogData.status;
         ViewData.title = catalogData.catalogName;
+        ViewData.page.categories = model.catalog.category;
         return ViewData;
     }
     async redirectToCatalogItem(res, catalogId) {
@@ -145,7 +147,7 @@ __decorate([
 ], WWWCatalogController.prototype, "catalogItemCreate", null);
 __decorate([
     common_1.Get('/catalog/:catalogId/:catalogName/edit'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth),
     common_1.Render('catalogitemedit'),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('catalogId', Number)),

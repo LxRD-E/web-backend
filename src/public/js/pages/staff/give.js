@@ -4,7 +4,6 @@ $(document).on('click', '#giveItem', function() {
     request("/staff/user/"+userid+"/give/"+catalogItemId, "POST")
         .then(function() {
             success("The Item Specified has been given to the Specified user.", function() {
-                window.location.href = "/staff";
             })
         })
         .catch(function(e) {

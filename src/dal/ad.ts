@@ -14,7 +14,7 @@ export default class AdDAL extends _init {
 
     /**
      * Get a semi-random ad. Will prefer ads with higher bid. This will increment the ad view count
-     * @throws {e.message.NoAdvertismentsAvailable} - No advertisment was available
+     * @throws {e.message.NoAdvertismentsAvailable} - No advertisement was available
      */
     public async getRandomAd(adDisplayType: model.ad.AdType): Promise<model.ad.Advertisement> {
         let modelToUse = new model.ad.Advertisement();

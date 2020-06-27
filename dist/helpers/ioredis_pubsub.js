@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const config_1 = require("./config");
-const ioRedis = require("ioredis");
+const IORedis = require("ioredis");
 let redis;
 let exportedFunc;
 if (process.env.NODE_ENV !== 'test') {
@@ -14,7 +14,7 @@ if (process.env.NODE_ENV !== 'test') {
         sentinelPassword: config_1.default.redis.pass || '',
     };
     exportedFunc = () => {
-        let conn = new ioRedis(ioRedisConfig);
+        let conn = new IORedis(ioRedisConfig);
         conn.on('error', (ev) => {
             console.log('IORedis Error:');
             console.log(ev);

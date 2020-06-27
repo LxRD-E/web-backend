@@ -5,7 +5,6 @@ $(document).on('click', '#giveCurrency', function() {
     request("/staff/user/"+userId+"/currency", "PUT", JSON.stringify({amount: amount,currency: currency}))
         .then((d) => {
             success("Currency has been added to the specified user's balance.", function() {
-                window.location.href = "/staff";
             });
         })
         .catch((e) => {

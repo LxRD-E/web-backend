@@ -187,10 +187,10 @@ let CatalogController = class CatalogController extends controller_1.default {
         }
         return SearchResults;
     }
-    async updateItemInfo(userInfo, catalogId, newName, newDescription, isForSale, newPrice, currency, stock, collectible, moderation) {
+    async updateItemInfo(userInfo, catalogId, newName, newDescription, isForSale, newPrice, currency, stock, collectible, moderation, category) {
         let CatalogInfo;
         try {
-            CatalogInfo = await this.catalog.getInfo(catalogId, ['catalogId', 'creatorId', 'creatorType', 'status']);
+            CatalogInfo = await this.catalog.getInfo(catalogId, ['catalogId', 'creatorId', 'creatorType', 'status', 'category']);
         }
         catch (e) {
             throw new this.BadRequest('InvalidCatalogId');
@@ -210,6 +210,12 @@ let CatalogController = class CatalogController extends controller_1.default {
             if (groupRole.permissions.manage === 0) {
                 throw new this.BadRequest('InvalidPermissions');
             }
+        }
+        if (!newName) {
+            newName = CatalogInfo.catalogName;
+        }
+        if (!newDescription) {
+            newDescription = CatalogInfo.description;
         }
         if (newName.length > 32 || newName.length < 3) {
             throw new this.BadRequest('InvalidCatalogName');
@@ -232,6 +238,13 @@ let CatalogController = class CatalogController extends controller_1.default {
         if (currency !== model.economy.currencyType.primary && currency !== model.economy.currencyType.secondary) {
             throw new this.BadRequest('InvalidCurrency');
         }
+        if (!category) {
+            category = CatalogInfo.category;
+        }
+        console.log('cat', category);
+        if (typeof model.catalog.category[category] !== 'string') {
+            throw new this.BadRequest('InvalidCategory');
+        }
         let newStock = 0;
         let newCollectible = model.catalog.collectible.false;
         let moderationStatus = CatalogInfo.status;
@@ -239,6 +252,9 @@ let CatalogController = class CatalogController extends controller_1.default {
             newStock = Filter_1.filterId(stock);
             if (!newStock) {
                 newStock = 0;
+            }
+            if (!collectible) {
+                collectible = CatalogInfo.collectible;
             }
             newCollectible = collectible;
             if (collectible !== 1 && collectible !== 0) {
@@ -250,7 +266,7 @@ let CatalogController = class CatalogController extends controller_1.default {
             }
             moderationStatus = newModerationStatus;
         }
-        await this.catalog.updateCatalogItemInfo(catalogId, newName, newDescription, newPrice, currency, newStock, newCollectible, isForSale, moderationStatus);
+        await this.catalog.updateCatalogItemInfo(catalogId, newName, newDescription, newPrice, currency, newStock, newCollectible, isForSale, moderationStatus, category);
         return { success: true };
     }
     async getOwners(catalogId, offset = 0, limit = 100, sort = 'desc') {
@@ -706,9 +722,10 @@ __decorate([
 ], CatalogController.prototype, "searchCatalog", null);
 __decorate([
     common_1.Patch('/:catalogId/info'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    swagger_1.Returns(400, { type: model.Error, description: 'InvalidCatalogId: catalogId is invalid\nInvalidModerationStatus: Moderation status is invalid\nInvalidPermissions: Requester is not authorized to edit this item\nInvalidCatalogName: Name is invalid\nInvalidCatalogDescription: Description is invalid\nInvalidIsForSaleOption: isForSale must be 0 or 1\nConstraintPriceTooHigh: Price is too high\nInvalidCurrency: Currency type is invalid\nInvalidCategory: Category is invalid\nInvalidCollectibleState: collectible must be 0 or 1\nInvalidModerationStatus: Moderation status is not valid\n' }),
     __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Required()),
     __param(1, common_1.PathParams('catalogId', Number)),
     __param(2, common_1.BodyParams('name', String)),
     __param(3, common_1.BodyParams('description', String)),
@@ -718,8 +735,9 @@ __decorate([
     __param(7, common_1.BodyParams('stock', Number)),
     __param(8, common_1.BodyParams('collectible', Number)),
     __param(9, common_1.BodyParams('moderation', Number)),
+    __param(10, common_1.BodyParams('category', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, String, String, Number, Number, Number, Number, Number, Number]),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String, String, Number, Number, Number, Number, Number, Number, Number]),
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "updateItemInfo", null);
 __decorate([

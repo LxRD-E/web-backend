@@ -1,4 +1,4 @@
-import { Controller, Get, All, Next, Req, Res, UseBefore, Render, QueryParams, PathParams, Redirect, Response, Request, Locals, UseAfter, Required, Use, UseBeforeEach } from "@tsed/common";
+import { Controller, Get, All, Next, Req, Res, Render, QueryParams, PathParams, Redirect, Response, Request, Locals, UseAfter, Required, Use } from "@tsed/common";
 import { Description, Summary } from "@tsed/swagger"; // import swagger Ts.ED module
 import { Exception, NotFound, BadRequest } from "ts-httpexceptions";
 import * as Express from 'express';
@@ -25,7 +25,7 @@ export class WWWAuthController extends controller {
 
     // Login
     @Get('/login')
-    @UseBeforeEach(NoAuth)
+    @Use(NoAuth)
     @Render('login')
     public login() {
         return new WWWTemplate({
@@ -35,7 +35,7 @@ export class WWWAuthController extends controller {
 
     // Signup page
     @Get('/signup')
-    @UseBeforeEach(NoAuth)
+    @Use(NoAuth)
     @Render('signup')
     public signup() {
         return new WWWTemplate({
@@ -45,7 +45,7 @@ export class WWWAuthController extends controller {
 
     // Dashboard
     @Get('/dashboard')
-    @UseBeforeEach(YesAuth)
+    @Use(YesAuth)
     @Render('dashboard')
     public dashboard(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
@@ -71,7 +71,7 @@ export class WWWAuthController extends controller {
 
     // User avatar customization
     @Get('/avatar')
-    @UseBeforeEach(YesAuth)
+    @Use(YesAuth)
     @Render('avatar')
     public Avatar(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
@@ -86,7 +86,7 @@ export class WWWAuthController extends controller {
      * Load Email Verification Area
      */
     @Get('/email/verify')
-    @UseBefore(YesAuth)
+    @Use(YesAuth)
     @Render('email_verify')
     public async emailVerification(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
@@ -108,7 +108,7 @@ export class WWWAuthController extends controller {
     }
 
     @Get('/reset/password')
-    @UseBefore(NoAuth)
+    @Use(NoAuth)
     @Render('reset_password')
     public async resetPassword(
         @Res() res: Res,
@@ -144,7 +144,7 @@ export class WWWAuthController extends controller {
 
     @Get('/notifications')
     @Summary('Notifications page')
-    @UseBefore(YesAuth)
+    @Use(YesAuth)
     @Render('notifications')
     public loadNotifications(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,

@@ -1,9 +1,9 @@
 /**
  * Sentry Error Logging
  */
+import * as Sentry from './helpers/sentry';
 if (process.env.NODE_ENV === 'production') {
-    const Sentry = require('@sentry/node');
-    Sentry.init({ dsn: 'https://dccc8567d5714c75a7b884ffd1d73843@sentry.io/2506252' });
+    Sentry.init();
 }
 console.log('staging enabled:', process.env.IS_STAGING === '1');
 import * as Express from "express";
@@ -11,6 +11,9 @@ import { ServerLoader, ServerSettings } from "@tsed/common";
 import "@tsed/ajv"; // import ajv ts.ed module
 import "@tsed/swagger"; // import swagger Ts.ED module
 import Path = require("path");
+
+// @ts-ignore
+import responseTime = require('response-time')
 
 import * as cons from 'consolidate';
 import morgan = require('morgan');
@@ -95,10 +98,21 @@ export class Server extends ServerLoader {
         // Setup sessions
         this.set('trust proxy', 1) // trust first proxy
         this.use(session);
-        // Setup websockets
+        // Setup x-response-time
+        this.use(responseTime({
+            suffix: false
+        }));
+        // Setup websocket servers
         ws();
         // Setup any() middleware
         this.use(Any);
+        /*
+        this.use(async (req: Express.Request, res: Express.Response, next: Express.NextFunction) => {
+            console.time('request_'+req.id);
+            await Any(req, res, next);
+            console.timeEnd('request_'+req.id);
+        })
+         */
         // Setup generateCspWithNonce() middleware
         this.use(generateCspWithNonce)
         // Setup Middleware
@@ -118,7 +132,7 @@ export class Server extends ServerLoader {
                 // Serve static on dev only (we use nginx for static serve in production)
                 .use(Express.static(Path.join(__dirname, './public/')))
                 // We also use morgan in dev (only)
-                .use(morgan('dev'))
+                // .use(morgan('dev'))
         }
     }
 

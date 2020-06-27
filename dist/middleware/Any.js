@@ -5,6 +5,10 @@ const os = require("os");
 const util = require("util");
 const moment = require("moment");
 const randomBytes = util.promisify(crypto.randomBytes);
+randomBytes(64).then(() => {
+}).catch(err => {
+    console.error(err);
+});
 const Users = require("../models/v1/user");
 const Moderation = require("../models/v1/moderation");
 const ts_httpexceptions_1 = require("ts-httpexceptions");
@@ -19,7 +23,7 @@ exports.csp = {
     'media-src': `'none'`,
     'frame-ancestors': `'self'`,
     'img-src': `'self' data: https://cdn.blockshub.net/ https://hindigamerclub-game.ewr1.vultrobjects.com/ https://www.google-analytics.com/`,
-    'connect-src': `'self' ws://localhost:8080/ https://sentry.io/`,
+    'connect-src': `'self' ws://localhost:8080/ https://sentry.io/ https://ka-f.fontawesome.com/releases/v5.13.1/css/free.min.css`,
     'object-src': `'none'`,
     'base-uri': `'self'`,
 };

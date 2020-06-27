@@ -57,7 +57,6 @@ $(document).on('click', '#updateCurrencyProduct', function() {
     }))
         .then((d) => {
             success("This item has been updated.", function() {
-                window.location.href = "/staff";
             });
         })
         .catch((e) => {

@@ -29,6 +29,9 @@ if (process.env.NODE_ENV !== 'test') {
         process.exit(1);
     }
     const configString = JSON.parse(decrypt(fs_1.readFileSync(path_1.join(__dirname, '../../config.json')).toString(), secretEncryptionKey, secretEncryptionIV));
+    if (configString.redis.host === '127.0.0.1') {
+        configString.redis.host = 'localhost';
+    }
     configJson = Object.freeze(configString);
 }
 else {
