@@ -266,6 +266,9 @@ let CatalogController = class CatalogController extends controller_1.default {
             }
             moderationStatus = newModerationStatus;
         }
+        else {
+            category = CatalogInfo.category;
+        }
         await this.catalog.updateCatalogItemInfo(catalogId, newName, newDescription, newPrice, currency, newStock, newCollectible, isForSale, moderationStatus, category);
         return { success: true };
     }

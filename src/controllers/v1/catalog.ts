@@ -311,6 +311,8 @@ export class CatalogController extends controller {
                 throw new this.BadRequest('InvalidModerationStatus');
             }
             moderationStatus = newModerationStatus;
+        }else{
+            category = CatalogInfo.category;
         }
         await this.catalog.updateCatalogItemInfo(catalogId, newName, newDescription, newPrice, currency, newStock, newCollectible, isForSale, moderationStatus, category);
         return { success: true };
