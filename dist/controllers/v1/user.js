@@ -257,7 +257,7 @@ let UsersController = class UsersController extends controller_1.default {
             'trade_items',
             'trades',
         ];
-        await this.transaction(forUpdate, async (trx) => {
+        await this.transaction(this, forUpdate, async function (trx) {
             let offerPrimary = 0;
             if (body.offerPrimary) {
                 offerPrimary = body.offerPrimary;

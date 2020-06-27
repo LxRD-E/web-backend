@@ -813,7 +813,7 @@ export class CatalogController extends controller {
         const forUpdate = [
             'user_inventory'
         ];
-        await this.transaction(forUpdate,async (trx) => {
+        await this.transaction(this, forUpdate,async function (trx) {
             let item: model.catalog.CatalogInfo;
             try {
                 item = await trx.catalog.getInfo(catalogId, ['category','catalogId']);

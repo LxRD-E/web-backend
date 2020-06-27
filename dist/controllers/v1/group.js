@@ -738,7 +738,7 @@ let GroupsController = class GroupsController extends controller_1.default {
             'groups',
             'users',
         ];
-        await this.transaction(forUpdate, async (trx) => {
+        await this.transaction(this, forUpdate, async function (trx) {
             let groupInfo;
             try {
                 groupInfo = await trx.group.getInfo(groupId);

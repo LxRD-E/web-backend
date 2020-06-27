@@ -29,6 +29,25 @@ import {QueryBuilder} from "knex";
 
 type ValidTableNames = 'catalog' | 'catalog_assets' | 'catalog_comments' | 'chat_messages' | 'currency_exchange_fund' | 'currency_exchange_position' | 'currency_exchange_record' | 'currency_products' | 'currency_transactions' | 'forum_categories' | 'forum_posts' | 'forum_subcategories' | 'forum_threads' | 'friendships' | 'friend_request' | 'game' | 'game_map' | 'game_script' | 'game_server' | 'game_server_players' | 'game_thumbnails' | 'groups' | 'group_members' | 'group_members_pending' | 'group_ownership_change' | 'group_roles' | 'group_shout' | 'group_wall' | 'knex_migrations' | 'knex_migrations_lock' | 'moderation_ban' | 'moderation_currency' | 'moderation_give' | 'password_resets' | 'support_tickets' | 'support_ticket_responses' | 'thumbnails' | 'thumbnail_hashes' | 'trades' | "trade_items" | 'transactions' | 'users' | 'user_usernames' | 'user_ads' | 'user_avatar' | 'user_avatarcolor' | 'user_emails' | 'user_inventory' | 'user_ip' | 'user_messages'  | 'user_moderation' | 'user_outfit' | 'user_outfit_avatar' | 'user_outfit_avatarcolor' | 'user_staff_comments' | 'user_status' | 'user_status_abuse_report' | 'user_status_comment' | 'user_status_comment_reply' | 'user_status_reactions';
 
+type TransactionThis<T> = {
+    auth: never;
+    user: never;
+    mod: never;
+    group: never;
+    game: never;
+    forum: never;
+    economy: never;
+    chat: never;
+    catalog: never;
+    billing: never;
+    avatar: never;
+    notification: never;
+    settings: never;
+    staff: never;
+    ad: never;
+    support: never;
+} & T;
+
 /**
  * Standard controller that all other controllers should extend.
  * 
@@ -63,8 +82,15 @@ export default class StandardController extends TSErrorsBase {
     /**
      * Begin a transaction while using normal controller services
      * This method will call trx.commit() internally
+     *
+     * # Note: Do not use an arrow function with this method. Typing will break.
      */
-    public transaction<T extends (arg1: IStandardControllerTRX) => Promise<any>>(forUpdate: string[], callback: T): Promise<ReturnType<T>> {
+    public transaction<A extends this, T extends (this: TransactionThis<A>, arg1: IStandardControllerTRX) => Promise<any>>(thisParam: any, forUpdate: string[], callback: T): Promise<ReturnType<T>> {
+        // Yeah, runtime type checks are dumb but if everybody writes proper unit tests then this shouldn't be an issue...
+        let stringifiedCallback = callback.toString();
+        if (stringifiedCallback.slice(0, 'async function '.length) !== 'async function ' && stringifiedCallback.slice(0,'function '.length) !== 'function ') {
+            throw new Error('StandardController.transaction() does not support arrow functions.');
+        }
         return knex.transaction(async (trx) => {
             const newController: IStandardControllerTRX = new StandardController(trx);
             try {
@@ -83,7 +109,7 @@ export default class StandardController extends TSErrorsBase {
                         val.knex.transaction = originalKnex.transaction;
                     }
                 }
-                return await callback(newController);
+                return await callback.apply(thisParam, [newController]);
             }catch(e) {
                 if (typeof e !== 'object') {
                     console.log('found the one that isnt an object, ',e);

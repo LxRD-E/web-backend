@@ -1226,7 +1226,7 @@ export class GroupsController extends controller {
             'groups',
             'users',
         ];
-        await this.transaction(forUpdate,async (trx) => {
+        await this.transaction(this, forUpdate,async function (trx) {
             // Confirm group is valid
             let groupInfo: model.group.groupDetails;
             try {

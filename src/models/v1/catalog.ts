@@ -80,7 +80,7 @@ export interface CatalogInfo {
     /**
      * The Average Sales Price of the Catalog item
      */
-    averagePrice: number;
+    averagePrice?: number;
     /**
      * The date the item was created
      */

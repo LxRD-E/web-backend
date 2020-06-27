@@ -608,7 +608,7 @@ let CatalogController = class CatalogController extends controller_1.default {
         const forUpdate = [
             'user_inventory'
         ];
-        await this.transaction(forUpdate, async (trx) => {
+        await this.transaction(this, forUpdate, async function (trx) {
             let item;
             try {
                 item = await trx.catalog.getInfo(catalogId, ['category', 'catalogId']);

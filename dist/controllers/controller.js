@@ -72,7 +72,11 @@ class StandardController extends Errors_1.default {
             this.currencyExchange.knex = knexOverload;
         }
     }
-    transaction(forUpdate, callback) {
+    transaction(thisParam, forUpdate, callback) {
+        let stringifiedCallback = callback.toString();
+        if (stringifiedCallback.slice(0, 'async function '.length) !== 'async function ' && stringifiedCallback.slice(0, 'function '.length) !== 'function ') {
+            throw new Error('StandardController.transaction() does not support arrow functions.');
+        }
         return knex_1.default.transaction(async (trx) => {
             const newController = new StandardController(trx);
             try {
@@ -90,7 +94,7 @@ class StandardController extends Errors_1.default {
                         val.knex.transaction = originalKnex.transaction;
                     }
                 }
-                return await callback(newController);
+                return await callback.apply(thisParam, [newController]);
             }
             catch (e) {
                 if (typeof e !== 'object') {

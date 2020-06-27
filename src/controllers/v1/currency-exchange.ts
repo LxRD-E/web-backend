@@ -112,7 +112,7 @@ export default class CurrencyExchangeController extends controller {
             'currency_exchange_position',
             'currency_exchange_fund',
         ];
-        return await this.transaction(forUpdate,async (trx): Promise<{positionId: number}> => {
+        return await this.transaction(this, forUpdate,async function (trx) {
             // Check if already created max positions
             let allPositions = await trx.currencyExchange.getOpenPositionsByUserId(userInfo.userId, 100, 0);
             if (allPositions.length >= 100) {
@@ -182,7 +182,7 @@ export default class CurrencyExchangeController extends controller {
             'currency_exchange_record',
         ];
         let exitDueToUserBeingTerminated = false;
-        await this.transaction(forUpdate,async (trx) => {
+        await this.transaction(this, forUpdate,async function (trx) {
             let data = await trx.currencyExchange.getPositionById(positionId);
             if (data.userId === userInfo.userId) {
                 throw new this.Conflict('CannotPurchaseOwnedPosition');
@@ -289,7 +289,7 @@ export default class CurrencyExchangeController extends controller {
             'currency_exchange_fund',
             'currency_exchange_position',
         ];
-        await this.transaction(forUpdate,async (trx) => {
+        await this.transaction(this, forUpdate,async function (trx) {
             let data = await trx.currencyExchange.getPositionById(positionId);
             if (data.userId !== userInfo.userId) {
                 throw new this.Conflict('UserIsNotOwnerOfPosition');

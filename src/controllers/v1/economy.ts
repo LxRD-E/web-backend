@@ -387,7 +387,7 @@ export default class EconomyController extends controller {
                 'catalog',
                 'user_inventory',
             ];
-            await this.transaction(forUpdate, async (trx) => {
+            await this.transaction(this, forUpdate, async function (trx) {
                 if (userInventoryId === 0) {
                     console.log(`${req.id} get info`);
                     // Buying New
@@ -438,7 +438,7 @@ export default class EconomyController extends controller {
                     }
 
                     // Get balance and check if has enough
-                    const newUserInfo = await this.user.getInfo(userInfo.userId, ['primaryBalance', 'secondaryBalance']);
+                    const newUserInfo = await trx.user.getInfo(userInfo.userId, ['primaryBalance', 'secondaryBalance']);
                     if (catalogItemInfo.currency === model.economy.currencyType.primary) {
                         const balance = newUserInfo.primaryBalance as number;
                         if (catalogItemInfo.price > balance) {
@@ -486,7 +486,7 @@ export default class EconomyController extends controller {
                     console.log(`${req.id} gave money to seller. now log ip`);
                     // Log Purchase
                     // doesnt really matter if this fails, which is why it isnt awaited
-                    await this.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem);
+                    await trx.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem);
                     // Return Success
                     return {success: true};
                     // Buying Used
@@ -566,13 +566,16 @@ export default class EconomyController extends controller {
                     await trx.economy.createTransaction(usedItemInfo.userId, userInfo.userId, amtToSeller, model.economy.currencyType.primary, model.economy.transactionType.SaleOfItem, "Sale of " + catalogItemInfo.catalogName, model.catalog.creatorType.User, model.catalog.creatorType.User, catalogItemInfo.catalogId, usedItemInfo.userInventoryId);
                     // Take Item Off Sale
                     await trx.user.editItemPrice(usedItemInfo.userInventoryId, 0);
+
                     // Additional Background Tasks
+
                     // Log IP
-                    await this.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem);
+                    await trx.user.logUserIp(userInfo.userId, ipAddress, model.user.ipAddressActions.PurchaseOfItem);
                     // Grab RAP
-                    const averagePrice = await this.catalog.calculateAveragePrice(catalogItemInfo.catalogId, catalogItemInfo.averagePrice, expectedPrice);
+                    console.log('current average price',catalogItemInfo.averagePrice);
+                    const averagePrice = await trx.catalog.calculateAveragePrice(catalogItemInfo.catalogId, catalogItemInfo.averagePrice || 0, expectedPrice);
                     // Update RAP
-                    await this.catalog.setAveragePrice(catalogItemInfo.catalogId, averagePrice);
+                    await trx.catalog.setAveragePrice(catalogItemInfo.catalogId, averagePrice);
 
                     this.regenAvatarAfterItemTransferOwners(usedItemInfo.userId, usedItemInfo.catalogId).then(d => {
                         console.log(d);
@@ -642,7 +645,7 @@ export default class EconomyController extends controller {
         if (!numericTradeId) {
             throw new this.BadRequest('InvalidTradeId');
         }
-        await this.transaction([], async (trx) => {
+        await this.transaction(this,[], async function (trx) {
             let tradeInfo = await trx.economy.getTradeById(numericTradeId);
             if (tradeInfo.status !== model.economy.tradeStatus.Pending) {
                 throw new this.BadRequest('InvalidTradeId');
@@ -692,7 +695,7 @@ export default class EconomyController extends controller {
             'trades',
             'user_inventory',
         ];
-        await this.transaction(forUpdate, async (trx) => {
+        await this.transaction(this, forUpdate, async function (trx) {
             let tradeInfo: model.economy.ExtendedTradeInfo;
             try {
                 tradeInfo = await trx.economy.getTradeById(numericTradeId);
