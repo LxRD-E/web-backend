@@ -75,6 +75,13 @@ __decorate([
     __metadata("design:type", Array)
 ], TransferItemsRequest.prototype, "userInventoryIds", void 0);
 exports.TransferItemsRequest = TransferItemsRequest;
+class ProvideItemsEntry {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], ProvideItemsEntry.prototype, "catalogId", void 0);
+exports.ProvideItemsEntry = ProvideItemsEntry;
 class ProvideItemsRequest {
 }
 __decorate([
@@ -85,7 +92,7 @@ __decorate([
 __decorate([
     common_1.Required(),
     swagger_1.Description('An array of {catalogId} to transfer to the user'),
-    common_1.PropertyType(Number),
+    common_1.PropertyType(ProvideItemsEntry),
     common_1.MinItems(1),
     common_1.MaxItems(1000),
     __metadata("design:type", Array)

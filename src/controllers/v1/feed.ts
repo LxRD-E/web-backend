@@ -60,6 +60,7 @@ export default class FeedController extends controller {
             'https://www.blockshub.net',
             'http://www.blockshub.net',
             'http://localhost:3000',
+            'http://localhost.:3000',
         ];
         refererValue = refererValue.toLowerCase();
         let goodReferer = false;

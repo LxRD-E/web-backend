@@ -43,12 +43,15 @@ let UsersController = class UsersController extends controller_1.default {
         }
         return userInfo;
     }
-    async getInfoByUsername(userName) {
+    async getInfoByUsername(userName, session) {
         let userId;
         let userInfo;
         try {
             userId = await this.user.userNameToId(userName);
             userInfo = await this.user.getInfo(userId);
+            if (session && session.staff >= 1) {
+                return userInfo;
+            }
         }
         catch (e) {
             throw new this.BadRequest('InvalidUsername');
@@ -268,8 +271,9 @@ __decorate([
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUsername: Username is deleted or invalid\n' }),
     __param(0, common_1.Required()),
     __param(0, common_1.QueryParams('username', String)),
+    __param(1, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, model.UserSession]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getInfoByUsername", null);
 __decorate([

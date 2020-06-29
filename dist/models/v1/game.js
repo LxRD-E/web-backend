@@ -18,6 +18,31 @@ const Catalog = require("./catalog");
 const common_1 = require("@tsed/common");
 const crypto = require("crypto");
 const _ = require("lodash");
+const config_1 = require("../../helpers/config");
+exports.GAME_KEY = config_1.default.encryptionKeys.game;
+const allowedDomains = [];
+if (process.env.NODE_ENV === 'development') {
+    allowedDomains.push('http://localhost/', 'http://localhost:3000/', 'http://localhost', 'http://localhost:3000');
+}
+else {
+    allowedDomains.push('https://blockshub.net/', 'https://www.blockshub.net/', 'https://www.blockshub.net', 'https://blockshub.net');
+}
+exports.scriptOptions = {
+    transformObjectKeys: true,
+    debugProtection: true,
+    compact: true,
+    log: false,
+    sourceMap: false,
+    rotateStringArray: true,
+    selfDefending: true,
+    stringArray: true,
+    stringArrayEncoding: 'rc4',
+    stringArrayThreshold: 1,
+    deadCodeInjection: true,
+    deadCodeInjectionThreshold: 0.18,
+    renameGlobals: true,
+    domainLock: allowedDomains,
+};
 var GameState;
 (function (GameState) {
     GameState[GameState["public"] = 1] = "public";

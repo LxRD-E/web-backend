@@ -5,7 +5,7 @@ import * as Sentry from './helpers/sentry';
 if (process.env.NODE_ENV === 'production') {
     Sentry.init();
 }
-console.log('staging enabled:', process.env.IS_STAGING === '1');
+console.log('[info] staging enabled:', process.env.IS_STAGING === '1');
 import * as Express from "express";
 import { ServerLoader, ServerSettings } from "@tsed/common";
 import "@tsed/ajv"; // import ajv ts.ed module
@@ -25,6 +25,7 @@ import session from './start/session';
 import ws from './start/websockets';
 import Any, {generateCspWithNonce} from './middleware/Any';
 import multer = require('multer');
+import {NextFunction} from "express";
 removeSwaggerBranding();
 // If production
 if (process.env.NODE_ENV === 'production') {
@@ -33,12 +34,15 @@ if (process.env.NODE_ENV === 'production') {
 }
 let multerMemStore = multer.memoryStorage();
 
-/*
+
 // @ts-ignore
 require('blocked-at')((time: any, stack: any) => {
     console.log(`Blocked for ${time}ms, operation started here:`, stack)
+}, {
+    trimFalsePositives: false,
+    threshold: 100,
 })
- */
+
 
 
 @ServerSettings({
@@ -97,13 +101,48 @@ export class Server extends ServerLoader {
 
         // Disable x-powered-by
         this.expressApp.disable('x-powered-by');
-        // Setup sessions
-        this.set('trust proxy', 1) // trust first proxy
-        this.use(session);
         // Setup x-response-time
         this.use(responseTime({
             suffix: false
         }));
+        // Dev env specific setup
+        if (process.env.NODE_ENV === 'development') {
+            this
+                // Serve static on dev only (we use nginx for static serve in production)
+                .use(Express.static(Path.join(__dirname, './public/')))
+            // We also use morgan in dev (only)
+            // .use(morgan('dev'))
+        }
+        // Setup sessions
+        this.set('trust proxy', 1) // trust first proxy
+        this.use((req: Request, res: Response, next: NextFunction) => {
+            let toSkip = [
+                /\/api\/v1\/game\/(\d+)\/map/g,
+                /\/api\/v1\/game\/(\d+)\/scripts/g,
+                /\/api\/v1\/game\/client.js/g,
+            ]
+            for (const skip of toSkip) {
+                if (req.url.slice(0,req.url.indexOf('?')).match(skip)) {
+                    console.log('skip due to match',skip);
+                    return next();
+                }
+            }
+            // @ts-ignore
+            return session(req, res, next);
+        });
+        /*
+        // internal debug
+        this.use((req: Express.Request, res: Express.Response, next: Express.NextFunction) => {
+            let start = new Date().getTime();
+            req.on('end', () => {
+                console.log('On end');
+                let end = new Date().getTime();
+                console.log('['+req.method+'] '+req.url+' '+(end-start)+'ms');
+            });
+            next();
+        });
+
+         */
         // Setup websocket servers
         ws();
         // Setup any() middleware
@@ -127,15 +166,6 @@ export class Server extends ServerLoader {
             .use(bodyParser.urlencoded({
                 extended: true
             }));
-
-        // Dev env specific setup
-        if (process.env.NODE_ENV === 'development') {
-            this
-                // Serve static on dev only (we use nginx for static serve in production)
-                .use(Express.static(Path.join(__dirname, './public/')))
-                // We also use morgan in dev (only)
-                // .use(morgan('dev'))
-        }
     }
 
     public $afterRoutesInit() {

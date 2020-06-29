@@ -3,16 +3,11 @@
  */
 // libraries
 import jsObfuse = require('javascript-obfuscator');
-/**
- * **warning** this library is insecure. see issue #1
- * @deprecated
- */
-import SimpleCrypto from "simple-crypto-js";
 // models
 import * as model from '../../models/models';
 // middleware
 import * as middleware from '../../middleware/middleware';
-
+// tsed stuff
 import controller from '../controller';
 import {
     BodyParams,
@@ -31,6 +26,8 @@ import {
 import {Description, Returns, ReturnsArray, Summary} from '@tsed/swagger';
 import {GameAuth, NoAuth, YesAuth} from '../../middleware/Auth';
 import {csrf} from '../../dal/auth';
+// services
+import * as services from '../../services';
 /**
  * this is purely used for typings. please access directly from dal instead of here
  */
@@ -39,46 +36,7 @@ import {wss} from '../../start/websockets';
 
 import config from '../../helpers/config';
 
-const GAME_KEY = config.encryptionKeys.game;
-
-const allowedDomains = [] as string[];
-if (process.env.NODE_ENV === 'development') {
-    allowedDomains.push(
-        'http://localhost/',
-        'http://localhost:3000/',
-        'http://localhost',
-        'http://localhost:3000',
-    );
-} else {
-    allowedDomains.push(
-        'https://blockshub.net/',
-        'https://www.blockshub.net/',
-        'https://www.blockshub.net',
-        'https://blockshub.net',
-    );
-}
-
-
-const scriptOptions = {
-    transformObjectKeys: true,
-    debugProtection: true,
-    compact: true,
-    log: false,
-    sourceMap: false,
-    rotateStringArray: true,
-    selfDefending: true,
-    stringArray: true,
-    stringArrayEncoding: 'rc4' as any, // eslint-disable-line
-    stringArrayThreshold: 1,
-    deadCodeInjection: true,
-    deadCodeInjectionThreshold: 0.18,
-    renameGlobals: true,
-
-    // these break stuff for some reason ... not really important anyway though (except the domainlock part ;-;)
-
-    // disableConsoleOutput: true,
-    domainLock: allowedDomains,
-};
+const GAME_KEY = model.game.GAME_KEY;
 
 const COPYRIGHT_DISCLAIMER = `/**
  * Copyright (c) BlocksHub - All Rights Reserved
@@ -267,7 +225,7 @@ const script = jsObfuse.obfuscate(`
                 });
             });
         })()
-    `, scriptOptions);
+    `, model.game.scriptOptions);
 let code = COPYRIGHT_DISCLAIMER + '\n' + script.getObfuscatedCode();
 
 /**
@@ -337,6 +295,7 @@ export default class GameController extends controller {
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ) {
         let canPlayGames = true; // default
+        /*
         let canCreateGames = false; // default
         if (userInfo.staff >= 1) {
             canCreateGames = true;
@@ -348,6 +307,8 @@ export default class GameController extends controller {
                 canCreateGames = true;
             }
         }
+        */
+        let canCreateGames = true; // yeah
         return {
             canPlayGames: canPlayGames,
             canCreateGames: canCreateGames,
@@ -392,7 +353,6 @@ export default class GameController extends controller {
         try {
             gameInfo = await this.game.getInfo(gameId);
         } catch (e) {
-            console.log(e);
             throw new this.BadRequest('InvalidGameId');
         }
         if (gameInfo.gameState !== model.game.GameState.public) {
@@ -401,16 +361,8 @@ export default class GameController extends controller {
         // Game Exists, so grab map/content
         const map = await this.game.getGameMap(gameId);
         const mapContent = await this.game.getMapContent(map.scriptUrl);
-        const script = jsObfuse.obfuscate(`
-            (function(scene){
-                // Script Goes Here
-
-                ${mapContent}
-
-                // End Script
-            })();
-            `, scriptOptions);
-        return new SimpleCrypto(GAME_KEY).encrypt(script.getObfuscatedCode());
+        // Return encrypted/obfuscated
+        return await services.encryptScript.async.encryptAndObfuscateScript(mapContent);
     }
 
     @Get('/:gameId/scripts')
@@ -440,16 +392,7 @@ export default class GameController extends controller {
             const content = await this.game.getScriptContent(script.scriptUrl);
             scriptString = scriptString + '\n' + content;
         }
-        const script = jsObfuse.obfuscate(`
-            (function(scene){
-                // Script Goes Here
-
-                ${scriptString}
-
-                // End Script
-            })();
-            `, scriptOptions);
-        return new SimpleCrypto(GAME_KEY).encrypt(script.getObfuscatedCode());
+        return await services.encryptScript.async.encryptAndObfuscateScript(scriptString);
     }
 
     /**

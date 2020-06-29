@@ -22,8 +22,8 @@ import {
     PathParams,
     Post,
     Put,
-    QueryParams,
-    Required,
+    QueryParams, Req,
+    Required, Res, Session,
     Use,
     UseBeforeEach
 } from '@tsed/common';
@@ -830,14 +830,14 @@ export class StaffController extends controller {
         ];
         await this.transaction(this, forUpdate, async function(trx) {
             for (const item of body.catalogIds) {
-                let badDecisions = await trx.user.getUserInventoryByCatalogId(50, item);
-                if (badDecisions.length >= 1) {
+                let badDecisions = await trx.user.getUserInventoryByCatalogId(50, item.catalogId);
+                if (badDecisions.length >= 1 && body.userIdTo !== 50) {
                     // Steal from BadDecisions and give to user
                     let item = badDecisions[0];
                     await trx.catalog.updateUserInventoryIdOwner(item.userInventoryId, body.userIdTo);
                 }else{
                     // Create a new item
-                    await trx.catalog.createItemForUserInventory(body.userIdTo, item);
+                    await trx.catalog.createItemForUserInventory(body.userIdTo, item.catalogId);
                 }
             }
         });
@@ -846,7 +846,7 @@ export class StaffController extends controller {
 
     @Patch('/user/inventory/transfer-item')
     @Summary('Transfer one or more item(s) from the {userId}')
-    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.TakeItemFromUser))
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.TakeItemFromUser, model.staff.Permission.GiveItemToUser))
     public async transferItem(
         @Required()
         @BodyParams(model.staff.TransferItemsRequest) body: model.staff.TransferItemsRequest,
@@ -1228,6 +1228,37 @@ export class StaffController extends controller {
             throw new this.BadRequest('InvalidPermissions');
         }
         await this.user.updateIsDeveloper(userId, isDeveloper);
+        return {};
+    }
+
+    @Delete('/user/session-impersonation')
+    @Summary('Disable impersonation')
+    @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ImpersonateUser))
+    public async deleteImpersonation(
+        @Req() req: Req,
+    ) {
+        if (req.session) {
+            delete req.session.impersonateUserId;
+        }
+        return {}
+    }
+
+    @Put('/user/session-impersonation')
+    @Summary('Impersonate a user')
+    @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ImpersonateUser))
+    public async createImpersonation(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Req() req: Req,
+        @Required()
+        @BodyParams('userId', Number) userId: number,
+    ) {
+        let info = await this.user.getInfo(userId);
+        if (info.staff >= userInfo.staff) {
+            throw new Error('Cannot impersonate this user');
+        }
+        if (req.session) {
+            req.session.impersonateUserId = userId;
+        }
         return {};
     }
 }

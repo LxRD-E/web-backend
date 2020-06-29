@@ -34,12 +34,21 @@ export const AddPermissionsToLocals = async (req: Request, res: Response, next: 
 }
 
 
-export const validate = (level: model.staff.Permission) => {
+export const validate = (level: model.staff.Permission, ...extraLevels: model.staff.Permission[]) => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
-            let userInfo = res.locals.userInfo;
+            const session = req.session;
+            const userInfo: model.UserSession = Object.assign({}, res.locals.userInfo);
             if (!userInfo) {
                 throw new dal.Conflict('InvalidPermissions');
+            }
+            if (session && session.userdata) {
+                if (session.impersonateUserId) {
+                    const _newRequest = await dal.user.getInfo(session.userdata.id, ['userId','username','staff']);
+                    userInfo.userId = _newRequest.userId;
+                    userInfo.username = _newRequest.username;
+                    userInfo.staff = _newRequest.staff;
+                }
             }
             if (!level) {
                 if (userInfo.staff >= 1) {

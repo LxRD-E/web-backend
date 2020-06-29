@@ -51,12 +51,21 @@ exports.AddPermissionsToLocals = async (req, res, next) => {
         return next(err);
     }
 };
-exports.validate = (level) => {
+exports.validate = (level, ...extraLevels) => {
     return async (req, res, next) => {
         try {
-            let userInfo = res.locals.userInfo;
+            const session = req.session;
+            const userInfo = Object.assign({}, res.locals.userInfo);
             if (!userInfo) {
                 throw new dal.Conflict('InvalidPermissions');
+            }
+            if (session && session.userdata) {
+                if (session.impersonateUserId) {
+                    const _newRequest = await dal.user.getInfo(session.userdata.id, ['userId', 'username', 'staff']);
+                    userInfo.userId = _newRequest.userId;
+                    userInfo.username = _newRequest.username;
+                    userInfo.staff = _newRequest.staff;
+                }
             }
             if (!level) {
                 if (userInfo.staff >= 1) {

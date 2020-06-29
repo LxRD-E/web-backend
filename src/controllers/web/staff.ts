@@ -117,6 +117,21 @@ export class WWWStaffController extends controller {
         return new this.WWWTemplate({title: 'Give Currency', userInfo: userInfo});
     }
 
+    @Get('/staff/user/inventory')
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.GiveItemToUser, model.staff.Permission.TakeItemFromUser))
+    @Render('staff/user/inventory')
+    public async modifyUserInventory(
+        @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
+        @Required()
+        @QueryParams('userId', Number) userId: number,
+    ) {
+        let infoOfUserToEdit = await this.user.getInfo(userId);
+        console.log('info', infoOfUserToEdit);
+        return new this.WWWTemplate({title: 'Modify User Inventory', userInfo: userInfo, page: {
+            profileData: infoOfUserToEdit
+        }});
+    }
+
     @Get('/staff/banner')
     @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.ManageBanner))
     @Render('staff/banner')
@@ -195,8 +210,14 @@ export class WWWStaffController extends controller {
             for (const extraPerm in allStaffPermissionTypes) {
                 let int = parseInt(extraPerm as any, 10);
                 if (isNaN(int)) {
-                    let included = staffPermissionSelect.map(val => {return val.string === extraPerm});
-                    if (!included[0]) {
+                    let isIncluded = false;
+                    for (const val of staffPermissionSelect) {
+                        if (val.string === extraPerm) {
+                            isIncluded = true;
+                            break;
+                        }
+                    }
+                    if (!isIncluded) {
                         staffPermissionSelect.push({
                             string: extraPerm,
                             selected: false,

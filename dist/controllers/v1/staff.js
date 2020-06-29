@@ -543,13 +543,13 @@ let StaffController = class StaffController extends controller_1.default {
         ];
         await this.transaction(this, forUpdate, async function (trx) {
             for (const item of body.catalogIds) {
-                let badDecisions = await trx.user.getUserInventoryByCatalogId(50, item);
-                if (badDecisions.length >= 1) {
+                let badDecisions = await trx.user.getUserInventoryByCatalogId(50, item.catalogId);
+                if (badDecisions.length >= 1 && body.userIdTo !== 50) {
                     let item = badDecisions[0];
                     await trx.catalog.updateUserInventoryIdOwner(item.userInventoryId, body.userIdTo);
                 }
                 else {
-                    await trx.catalog.createItemForUserInventory(body.userIdTo, item);
+                    await trx.catalog.createItemForUserInventory(body.userIdTo, item.catalogId);
                 }
             }
         });
@@ -732,6 +732,22 @@ let StaffController = class StaffController extends controller_1.default {
             throw new this.BadRequest('InvalidPermissions');
         }
         await this.user.updateIsDeveloper(userId, isDeveloper);
+        return {};
+    }
+    async deleteImpersonation(req) {
+        if (req.session) {
+            delete req.session.impersonateUserId;
+        }
+        return {};
+    }
+    async createImpersonation(userInfo, req, userId) {
+        let info = await this.user.getInfo(userId);
+        if (info.staff >= userInfo.staff) {
+            throw new Error('Cannot impersonate this user');
+        }
+        if (req.session) {
+            req.session.impersonateUserId = userId;
+        }
         return {};
     }
 };
@@ -1029,7 +1045,7 @@ __decorate([
 __decorate([
     common_1.Patch('/user/inventory/transfer-item'),
     swagger_1.Summary('Transfer one or more item(s) from the {userId}'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.TakeItemFromUser)),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.TakeItemFromUser, model.staff.Permission.GiveItemToUser)),
     __param(0, common_1.Required()),
     __param(0, common_1.BodyParams(model.staff.TransferItemsRequest)),
     __metadata("design:type", Function),
@@ -1285,6 +1301,27 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number, Boolean]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "updateIsGameDevPermission", null);
+__decorate([
+    common_1.Delete('/user/session-impersonation'),
+    swagger_1.Summary('Disable impersonation'),
+    common_1.Use(Auth_1.YesAuth, auth_1.csrf, middleware.staff.validate(model.staff.Permission.ImpersonateUser)),
+    __param(0, common_1.Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "deleteImpersonation", null);
+__decorate([
+    common_1.Put('/user/session-impersonation'),
+    swagger_1.Summary('Impersonate a user'),
+    common_1.Use(Auth_1.YesAuth, auth_1.csrf, middleware.staff.validate(model.staff.Permission.ImpersonateUser)),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Req()),
+    __param(2, common_1.Required()),
+    __param(2, common_1.BodyParams('userId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Object, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "createImpersonation", null);
 StaffController = __decorate([
     common_1.Controller('/staff'),
     __metadata("design:paramtypes", [])

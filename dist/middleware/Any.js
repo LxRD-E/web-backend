@@ -125,9 +125,18 @@ exports.default = async (req, res, next, UserModel = user_1.default, ModModel = 
     }
     res.locals.ip = exports.getIp(req);
     if (req.session) {
-        if (req.session.userdata) {
+        const userData = Object.assign({}, req.session.userdata);
+        let impersonateUserId = req.session.impersonateUserId;
+        let isImpersonating = typeof impersonateUserId === 'number';
+        if (impersonateUserId) {
+            userData.id = impersonateUserId;
+            const impersonateUserInfo = await new UserModel().getInfo(impersonateUserId, ['passwordChanged', 'username']);
+            userData.passwordUpdated = impersonateUserInfo.passwordChanged;
+            userData.username = impersonateUserInfo.username;
+            res.locals.impersonateUserId = impersonateUserId;
+        }
+        if (userData) {
             let userInfo;
-            const userData = req.session.userdata;
             if (!userData.id || userData.passwordUpdated === undefined || !userData.username) {
                 if (!userData.csrf) {
                     await setSession(req);
@@ -158,19 +167,21 @@ exports.default = async (req, res, next, UserModel = user_1.default, ModModel = 
                 await regenCsrf(req);
             }
             res.locals.userInfo = userInfo;
-            if (req.session.userdata) {
-                res.locals.csrf = req.session.userdata.csrf;
+            if (userData) {
+                res.locals.csrf = userData.csrf;
             }
             if (req.url.slice(0, 5) !== '/api/' && userInfo) {
                 let dal = new UserModel();
-                await dal.logOnlineStatus(userInfo.userId);
-                if (moment().isSameOrAfter(moment(userInfo.dailyAward).add(24, 'hours'))) {
-                    await new economy_1.default().createTransaction(userInfo.userId, 1, 10, model.economy.currencyType.secondary, model.economy.transactionType.DailyStipendSecondary, 'Daily Stipend', model.catalog.creatorType.User, model.catalog.creatorType.User);
-                    await new economy_1.default().addToUserBalance(userInfo.userId, 10, model.economy.currencyType.secondary);
-                    await dal.updateDailyAward(userInfo.userId);
+                if (!isImpersonating) {
+                    await dal.logOnlineStatus(userInfo.userId);
+                    if (moment().isSameOrAfter(moment(userInfo.dailyAward).add(24, 'hours'))) {
+                        await new economy_1.default().createTransaction(userInfo.userId, 1, 10, model.economy.currencyType.secondary, model.economy.transactionType.DailyStipendSecondary, 'Daily Stipend', model.catalog.creatorType.User, model.catalog.creatorType.User);
+                        await new economy_1.default().addToUserBalance(userInfo.userId, 10, model.economy.currencyType.secondary);
+                        await dal.updateDailyAward(userInfo.userId);
+                    }
                 }
             }
-            if (userInfo && userInfo.banned === Users.banned.true) {
+            if (!isImpersonating && userInfo && userInfo.banned === Users.banned.true) {
                 if (req.url === "/Membership/NotApproved.aspx?ID=" + userData.id) {
                     let banData;
                     try {
@@ -190,7 +201,7 @@ exports.default = async (req, res, next, UserModel = user_1.default, ModModel = 
                         };
                     }
                     res.render("banned", {
-                        csrf: req.session.userdata.csrf,
+                        csrf: userData.csrf,
                         ban: banData,
                         title: "Account Banned",
                         domain: "blockshub.net",

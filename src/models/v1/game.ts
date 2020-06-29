@@ -2,6 +2,48 @@ import * as Catalog from './catalog';
 import { PropertyType, Required, AllowTypes } from '@tsed/common';
 import crypto = require('crypto');
 import _ = require('lodash');
+import config from "../../helpers/config";
+
+export const GAME_KEY: string = config.encryptionKeys.game;
+
+
+const allowedDomains = [] as string[];
+if (process.env.NODE_ENV === 'development') {
+    allowedDomains.push(
+        'http://localhost/',
+        'http://localhost:3000/',
+        'http://localhost',
+        'http://localhost:3000',
+    );
+} else {
+    allowedDomains.push(
+        'https://blockshub.net/',
+        'https://www.blockshub.net/',
+        'https://www.blockshub.net',
+        'https://blockshub.net',
+    );
+}
+
+export const scriptOptions = {
+    transformObjectKeys: true,
+    debugProtection: true,
+    compact: true,
+    log: false,
+    sourceMap: false,
+    rotateStringArray: true,
+    selfDefending: true,
+    stringArray: true,
+    stringArrayEncoding: 'rc4' as any, // eslint-disable-line
+    stringArrayThreshold: 1,
+    deadCodeInjection: true,
+    deadCodeInjectionThreshold: 0.18,
+    renameGlobals: true,
+
+    // these break stuff for some reason ... not really important anyway though (except the domainlock part ;-;)
+
+    // disableConsoleOutput: true,
+    domainLock: allowedDomains,
+};
 
 export enum GameState {
     'public' = 1,

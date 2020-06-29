@@ -62,6 +62,13 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
     async giveCurrency(userInfo) {
         return new this.WWWTemplate({ title: 'Give Currency', userInfo: userInfo });
     }
+    async modifyUserInventory(userInfo, userId) {
+        let infoOfUserToEdit = await this.user.getInfo(userId);
+        console.log('info', infoOfUserToEdit);
+        return new this.WWWTemplate({ title: 'Modify User Inventory', userInfo: userInfo, page: {
+                profileData: infoOfUserToEdit
+            } });
+    }
     async editBanner(userInfo) {
         return new this.WWWTemplate({ title: 'Edit Banner', userInfo: userInfo });
     }
@@ -125,8 +132,14 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
             for (const extraPerm in allStaffPermissionTypes) {
                 let int = parseInt(extraPerm, 10);
                 if (isNaN(int)) {
-                    let included = staffPermissionSelect.map(val => { return val.string === extraPerm; });
-                    if (!included[0]) {
+                    let isIncluded = false;
+                    for (const val of staffPermissionSelect) {
+                        if (val.string === extraPerm) {
+                            isIncluded = true;
+                            break;
+                        }
+                    }
+                    if (!isIncluded) {
                         staffPermissionSelect.push({
                             string: extraPerm,
                             selected: false,
@@ -350,6 +363,17 @@ __decorate([
     __metadata("design:paramtypes", [UserModel.SessionUserInfo]),
     __metadata("design:returntype", Promise)
 ], WWWStaffController.prototype, "giveCurrency", null);
+__decorate([
+    common_1.Get('/staff/user/inventory'),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.GiveItemToUser, model.staff.Permission.TakeItemFromUser)),
+    common_1.Render('staff/user/inventory'),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Required()),
+    __param(1, common_1.QueryParams('userId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [UserModel.SessionUserInfo, Number]),
+    __metadata("design:returntype", Promise)
+], WWWStaffController.prototype, "modifyUserInventory", null);
 __decorate([
     common_1.Get('/staff/banner'),
     common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.ManageBanner)),

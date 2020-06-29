@@ -68,13 +68,17 @@ export class UsersController extends controller {
     @Returns(400, { type: model.Error, description: 'InvalidUsername: Username is deleted or invalid\n' })
     public async getInfoByUsername(
         @Required()
-        @QueryParams('username', String) userName: string
+        @QueryParams('username', String) userName: string,
+        @Locals('userInfo') session?: model.UserSession,
     ) {
         let userId;
         let userInfo: model.user.UserInfo;
         try {
             userId = await this.user.userNameToId(userName);
             userInfo = await this.user.getInfo(userId);
+            if (session && session.staff >= 1) {
+                return userInfo;
+            }
         } catch (e) {
             throw new this.BadRequest('InvalidUsername');
         }

@@ -21,7 +21,7 @@ const common_1 = require("@tsed/common");
 const controller_1 = require("../../controllers/controller");
 const model = require("../../models/models");
 let ValidateUserId = class ValidateUserId extends controller_1.default {
-    async use(userId) {
+    async use(userId, session) {
         let info;
         try {
             info = await this.user.getInfo(userId, ["accountStatus"]);
@@ -32,6 +32,9 @@ let ValidateUserId = class ValidateUserId extends controller_1.default {
             }
             throw e;
         }
+        if (session && session.staff >= 1) {
+            return;
+        }
         if (info.accountStatus === model.user.accountStatus.deleted) {
             throw new this.BadRequest('InvalidUserId');
         }
@@ -39,8 +42,9 @@ let ValidateUserId = class ValidateUserId extends controller_1.default {
 };
 __decorate([
     __param(0, common_1.PathParams('userId', Number)),
+    __param(1, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Number, model.UserSession]),
     __metadata("design:returntype", Promise)
 ], ValidateUserId.prototype, "use", null);
 ValidateUserId = __decorate([

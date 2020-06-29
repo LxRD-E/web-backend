@@ -40,6 +40,7 @@ let FeedController = class FeedController extends controller_1.default {
             'https://www.blockshub.net',
             'http://www.blockshub.net',
             'http://localhost:3000',
+            'http://localhost.:3000',
         ];
         refererValue = refererValue.toLowerCase();
         let goodReferer = false;

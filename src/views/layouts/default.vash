@@ -462,6 +462,13 @@
 
         @html.raw(model.javascript)
 
+        @if (model.impersonateUserId) {
+                                <div class="col-12">
+                                    <p id="leave-impersonate">Exit Impersonation</p>
+                                </div>
+                                <script src="/js/impersonate.js?v=@model.v" nonce="@model.nonce"></script>
+        }
+
         <!-- Locale -->
         <script nonce="@model.nonce" src="/js/locale/en.js?v=@model.v"></script>
         <!-- app.js -->

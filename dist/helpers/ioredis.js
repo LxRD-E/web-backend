@@ -18,7 +18,6 @@ if (process.env.NODE_ENV !== 'test') {
         console.log(ev);
         redis = new IORedis(ioRedisConfig);
     });
-    console.log('REDIS was setup!');
 }
 exports.default = redis;
 

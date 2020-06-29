@@ -18,7 +18,6 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const jsObfuse = require("javascript-obfuscator");
-const simple_crypto_js_1 = require("simple-crypto-js");
 const model = require("../../models/models");
 const middleware = require("../../middleware/middleware");
 const controller_1 = require("../controller");
@@ -26,32 +25,9 @@ const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 const Auth_1 = require("../../middleware/Auth");
 const auth_1 = require("../../dal/auth");
+const services = require("../../services");
 const websockets_1 = require("../../start/websockets");
-const config_1 = require("../../helpers/config");
-const GAME_KEY = config_1.default.encryptionKeys.game;
-const allowedDomains = [];
-if (process.env.NODE_ENV === 'development') {
-    allowedDomains.push('http://localhost/', 'http://localhost:3000/', 'http://localhost', 'http://localhost:3000');
-}
-else {
-    allowedDomains.push('https://blockshub.net/', 'https://www.blockshub.net/', 'https://www.blockshub.net', 'https://blockshub.net');
-}
-const scriptOptions = {
-    transformObjectKeys: true,
-    debugProtection: true,
-    compact: true,
-    log: false,
-    sourceMap: false,
-    rotateStringArray: true,
-    selfDefending: true,
-    stringArray: true,
-    stringArrayEncoding: 'rc4',
-    stringArrayThreshold: 1,
-    deadCodeInjection: true,
-    deadCodeInjectionThreshold: 0.18,
-    renameGlobals: true,
-    domainLock: allowedDomains,
-};
+const GAME_KEY = model.game.GAME_KEY;
 const COPYRIGHT_DISCLAIMER = `/**
  * Copyright (c) BlocksHub - All Rights Reserved
  * Unauthorized copying of this file, via any medium, is strictly prohibited.
@@ -237,7 +213,7 @@ const script = jsObfuse.obfuscate(`
                 });
             });
         })()
-    `, scriptOptions);
+    `, model.game.scriptOptions);
 let code = COPYRIGHT_DISCLAIMER + '\n' + script.getObfuscatedCode();
 let GameController = class GameController extends controller_1.default {
     async getGames(offset = 0, limit = 25, sortBy = 1, genre = 1, creatorId, creatorType) {
@@ -274,16 +250,7 @@ let GameController = class GameController extends controller_1.default {
     }
     async getMetaData(userInfo) {
         let canPlayGames = true;
-        let canCreateGames = false;
-        if (userInfo.staff >= 1) {
-            canCreateGames = true;
-        }
-        if (!canCreateGames) {
-            let devStatus = await this.user.getInfo(userInfo.userId, ['isDeveloper']);
-            if (devStatus.isDeveloper === 1) {
-                canCreateGames = true;
-            }
-        }
+        let canCreateGames = true;
         return {
             canPlayGames: canPlayGames,
             canCreateGames: canCreateGames,
@@ -303,7 +270,6 @@ let GameController = class GameController extends controller_1.default {
             gameInfo = await this.game.getInfo(gameId);
         }
         catch (e) {
-            console.log(e);
             throw new this.BadRequest('InvalidGameId');
         }
         if (gameInfo.gameState !== model.game.GameState.public) {
@@ -311,16 +277,7 @@ let GameController = class GameController extends controller_1.default {
         }
         const map = await this.game.getGameMap(gameId);
         const mapContent = await this.game.getMapContent(map.scriptUrl);
-        const script = jsObfuse.obfuscate(`
-            (function(scene){
-                // Script Goes Here
-
-                ${mapContent}
-
-                // End Script
-            })();
-            `, scriptOptions);
-        return new simple_crypto_js_1.default(GAME_KEY).encrypt(script.getObfuscatedCode());
+        return await services.encryptScript.async.encryptAndObfuscateScript(mapContent);
     }
     async getClientScripts(gameId, res) {
         res.set('access-control-allow-origin', 'null');
@@ -342,16 +299,7 @@ let GameController = class GameController extends controller_1.default {
             const content = await this.game.getScriptContent(script.scriptUrl);
             scriptString = scriptString + '\n' + content;
         }
-        const script = jsObfuse.obfuscate(`
-            (function(scene){
-                // Script Goes Here
-
-                ${scriptString}
-
-                // End Script
-            })();
-            `, scriptOptions);
-        return new simple_crypto_js_1.default(GAME_KEY).encrypt(script.getObfuscatedCode());
+        return await services.encryptScript.async.encryptAndObfuscateScript(scriptString);
     }
     async getClientScript(userInfo, res) {
         res.set({ 'content-type': 'application/javascript' });

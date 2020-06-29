@@ -259,9 +259,9 @@ $(document).on('click', '#update-full-permissions', function(e) {
        let pendingEditPerms = [];
        for (const edit of permsProvidedByUser) {
            if (edit.selected) {
-               all.push(request('/staff/permissions/'+profileUserId+'/'+edit.name, 'PUT'));
+               all.push(request('/staff/permissions/'+profileUserId+'/'+edit.name, 'PUT').catch(err => {}));
            }else{
-               all.push(request('/staff/permissions/'+profileUserId+'/'+edit.name, 'DELETE'));
+               all.push(request('/staff/permissions/'+profileUserId+'/'+edit.name, 'DELETE').catch(err => {}));
            }
        }
        Promise.all(all).then(d => {

@@ -14,7 +14,7 @@ const Sentry = require("./helpers/sentry");
 if (process.env.NODE_ENV === 'production') {
     Sentry.init();
 }
-console.log('staging enabled:', process.env.IS_STAGING === '1');
+console.log('[info] staging enabled:', process.env.IS_STAGING === '1');
 const Express = require("express");
 const common_1 = require("@tsed/common");
 require("@tsed/ajv");
@@ -34,6 +34,12 @@ if (process.env.NODE_ENV === 'production') {
     Logger_1.default();
 }
 let multerMemStore = multer.memoryStorage();
+require('blocked-at')((time, stack) => {
+    console.log(`Blocked for ${time}ms, operation started here:`, stack);
+}, {
+    trimFalsePositives: false,
+    threshold: 100,
+});
 let Server = class Server extends common_1.ServerLoader {
     $onInit() {
         this.set("views", this.settings.get("viewsDir"));
@@ -43,11 +49,28 @@ let Server = class Server extends common_1.ServerLoader {
     $beforeRoutesInit() {
         const cookieParser = require('cookie-parser'), bodyParser = require('body-parser'), compress = require('compression'), methodOverride = require('method-override');
         this.expressApp.disable('x-powered-by');
-        this.set('trust proxy', 1);
-        this.use(session_1.default);
         this.use(responseTime({
             suffix: false
         }));
+        if (process.env.NODE_ENV === 'development') {
+            this
+                .use(Express.static(Path.join(__dirname, './public/')));
+        }
+        this.set('trust proxy', 1);
+        this.use((req, res, next) => {
+            let toSkip = [
+                /\/api\/v1\/game\/(\d+)\/map/g,
+                /\/api\/v1\/game\/(\d+)\/scripts/g,
+                /\/api\/v1\/game\/client.js/g,
+            ];
+            for (const skip of toSkip) {
+                if (req.url.slice(0, req.url.indexOf('?')).match(skip)) {
+                    console.log('skip due to match', skip);
+                    return next();
+                }
+            }
+            return session_1.default(req, res, next);
+        });
         websockets_1.default();
         this.use(Any_1.default);
         this.use(Any_1.generateCspWithNonce);
@@ -59,10 +82,6 @@ let Server = class Server extends common_1.ServerLoader {
             .use(bodyParser.urlencoded({
             extended: true
         }));
-        if (process.env.NODE_ENV === 'development') {
-            this
-                .use(Express.static(Path.join(__dirname, './public/')));
-        }
     }
     $afterRoutesInit() {
         this.use(NotFound_1.NotFoundMiddleware);

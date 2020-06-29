@@ -190,7 +190,7 @@ let CatalogController = class CatalogController extends controller_1.default {
     async updateItemInfo(userInfo, catalogId, newName, newDescription, isForSale, newPrice, currency, stock, collectible, moderation, category) {
         let CatalogInfo;
         try {
-            CatalogInfo = await this.catalog.getInfo(catalogId, ['catalogId', 'creatorId', 'creatorType', 'status', 'category']);
+            CatalogInfo = await this.catalog.getInfo(catalogId, ['catalogId', 'creatorId', 'creatorType', 'status', 'category', 'collectible']);
         }
         catch (e) {
             throw new this.BadRequest('InvalidCatalogId');
@@ -257,7 +257,7 @@ let CatalogController = class CatalogController extends controller_1.default {
                 collectible = CatalogInfo.collectible;
             }
             newCollectible = collectible;
-            if (collectible !== 1 && collectible !== 0) {
+            if (newCollectible !== 1 && newCollectible !== 0) {
                 throw new this.BadRequest('InvalidCollectibleState');
             }
             const newModerationStatus = moderation;

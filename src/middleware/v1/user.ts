@@ -9,7 +9,9 @@ import { Returns } from "@tsed/swagger";
 @Middleware()
 export class ValidateUserId extends controller {
     public async use(
+
         @PathParams('userId', Number) userId: number,
+        @Locals('userInfo') session?: model.UserSession,
     ) {
         // Verify User Exists
         let info;
@@ -20,6 +22,9 @@ export class ValidateUserId extends controller {
                 throw new this.BadRequest('InvalidUserId');
             }
             throw e;
+        }
+        if (session && session.staff >= 1) {
+            return; // skip validation for staff
         }
         // yay gdpr
         if (info.accountStatus === model.user.accountStatus.deleted) {

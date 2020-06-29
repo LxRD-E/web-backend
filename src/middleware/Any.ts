@@ -159,10 +159,22 @@ export default async (req: Request, res: Response, next: NextFunction, UserModel
     res.locals.ip = getIp(req);
     // If sessions are up/working
     if (req.session) {
+        const userData: SessionUserData = Object.assign({}, req.session.userdata);
+        // If impersonating
+        let impersonateUserId: number|undefined = req.session.impersonateUserId;
+        let isImpersonating = typeof impersonateUserId === 'number';
+        if (impersonateUserId) {
+            userData.id = impersonateUserId;
+
+            const impersonateUserInfo = await new UserModel().getInfo(impersonateUserId, ['passwordChanged','username']);
+            userData.passwordUpdated = impersonateUserInfo.passwordChanged;
+            userData.username = impersonateUserInfo.username;
+
+            res.locals.impersonateUserId = impersonateUserId;
+        }
         // If user data exists
-        if (req.session.userdata) {
+        if (userData) {
             let userInfo;
-            const userData = req.session.userdata as SessionUserData;
             if (!userData.id || userData.passwordUpdated === undefined || !userData.username) {
                 // Not logged in
                 if (!userData.csrf) {
@@ -205,28 +217,31 @@ export default async (req: Request, res: Response, next: NextFunction, UserModel
             // Setup Locals
             res.locals.userInfo = userInfo;
             // csrf local (so that it auto loads into the view)
-            if (req.session.userdata) {
-                res.locals.csrf = req.session.userdata.csrf;
+            if (userData) {
+                res.locals.csrf = userData.csrf;
             }
             // If not api request
             if (req.url.slice(0,5) !== '/api/' && userInfo) {
                 let dal = new UserModel();
                 // Update last online
-                await dal.logOnlineStatus(userInfo.userId)
-                // Give currency for being online (if applicable)
+                if (!isImpersonating) {
+                    await dal.logOnlineStatus(userInfo.userId)
 
-                // If over 24 hours since user got award for currency,
-                if (moment().isSameOrAfter(moment(userInfo.dailyAward).add(24, 'hours'))) {
-                    // Create transaction
-                    await new EconomyDAL().createTransaction(userInfo.userId, 1, 10, model.economy.currencyType.secondary, model.economy.transactionType.DailyStipendSecondary, 'Daily Stipend', model.catalog.creatorType.User, model.catalog.creatorType.User);
-                    // Give money
-                    await new EconomyDAL().addToUserBalance(userInfo.userId, 10, model.economy.currencyType.secondary);
-                    // Log user as awarded (aka update the dailyAward date)
-                    await dal.updateDailyAward(userInfo.userId);
+                    // Give currency for being online (if applicable)
+
+                    // If over 24 hours since user got award for currency,
+                    if (moment().isSameOrAfter(moment(userInfo.dailyAward).add(24, 'hours'))) {
+                        // Create transaction
+                        await new EconomyDAL().createTransaction(userInfo.userId, 1, 10, model.economy.currencyType.secondary, model.economy.transactionType.DailyStipendSecondary, 'Daily Stipend', model.catalog.creatorType.User, model.catalog.creatorType.User);
+                        // Give money
+                        await new EconomyDAL().addToUserBalance(userInfo.userId, 10, model.economy.currencyType.secondary);
+                        // Log user as awarded (aka update the dailyAward date)
+                        await dal.updateDailyAward(userInfo.userId);
+                    }
                 }
             }
             // If banned
-            if (userInfo && userInfo.banned === Users.banned.true) {
+            if (!isImpersonating && userInfo && userInfo.banned === Users.banned.true) {
                 if (req.url === "/Membership/NotApproved.aspx?ID="+userData.id) {
                     let banData: Moderation.ModerationAction;
                     try {
@@ -246,7 +261,7 @@ export default async (req: Request, res: Response, next: NextFunction, UserModel
                     }
                     // Return ban page
                     res.render("banned", {
-                        csrf: req.session.userdata.csrf,
+                        csrf: userData.csrf,
                         ban: banData,
                         title: "Account Banned",
                         domain: "blockshub.net",
