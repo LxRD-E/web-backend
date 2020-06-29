@@ -226,6 +226,7 @@ $(document).on('click', '#update-full-permissions', function(e) {
               })
           }
        });
+       /*
        let includedPerms = [];
        for (const newPerm of permsProvidedByUser) {
            let found = false;
@@ -253,14 +254,10 @@ $(document).on('click', '#update-full-permissions', function(e) {
            throw new Error('Over 250 perms to change...');
        }
 
-
+*/
        let all = [];
        let pendingEditPerms = [];
-       for (const edit of edited) {
-           if (pendingEditPerms.includes(edit.name)) {
-               console.error('[error] pending perms includes',edit.name,'but it was tried again?');
-           }
-           pendingEditPerms.push(edit.name);
+       for (const edit of permsProvidedByUser) {
            if (edit.selected) {
                all.push(request('/staff/permissions/'+profileUserId+'/'+edit.name, 'PUT'));
            }else{
