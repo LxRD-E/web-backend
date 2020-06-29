@@ -26,8 +26,7 @@ export default class AvatarController extends controller {
      */
     @Patch('/')
     @Summary('Update the authenticated users avatar')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     @Returns(400, { type: model.Error, description: 'AvatarCooldown: You cannot update your avatar right now\nInvalidCatalogIds: One or more of the catalog ids specified are invalid and/or not owned by the authenticated user\n' })
     public async update(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -43,10 +42,8 @@ export default class AvatarController extends controller {
         let Pants = body.Pants;
         // Perform a rate-limit check
         let canEdit = await this.avatar.canUserModifyAvatar(userInfo.userId);
-        if (!canEdit) {
-            if (process.env.NODE_ENV === 'production') {
-                throw new this.BadRequest('AvatarCooldown');
-            }
+        if (!canEdit && process.env.NODE_ENV === 'production') {
+            throw new this.BadRequest('AvatarCooldown');
         }
         // Filter RGB Values
         // Array is duplicated since direct RGB values have to be saved in the database, not color3 (which this converts rgb to if its valid)

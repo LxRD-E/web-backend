@@ -26,29 +26,7 @@ let ValidateGameCreationPermissions = class ValidateGameCreationPermissions exte
         this.UserCache = this.cache('userId');
     }
     async use(userInfo, res) {
-        let cacheResults = this.UserCache.checkForCache(userInfo.userId);
-        if (cacheResults) {
-            if (!cacheResults.isGameDev) {
-                throw new this.Conflict('GameDeveloperPermissionsRequired');
-            }
-            else {
-                return;
-            }
-        }
-        if (userInfo.staff >= 1) {
-        }
-        else {
-            let devStatus = await this.user.getInfo(userInfo.userId, ['isDeveloper']);
-            if (devStatus.isDeveloper === 1) {
-            }
-            else {
-                throw new this.Conflict('GameDeveloperPermissionsRequired');
-            }
-        }
-        this.UserCache.addToCache({
-            data: { isGameDev: true, userId: userInfo.userId },
-            createdAt: new Date().getTime(),
-        });
+        return;
     }
 };
 __decorate([

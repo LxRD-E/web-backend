@@ -12,8 +12,10 @@ import Config from '../../helpers/config';
 import * as UserModel from '../../models/v1/user';
 import { NoAuth, YesAuth } from "../../middleware/Auth";
 import {numberWithCommas} from '../../helpers/Filter';
+import * as Middleware from '../../middleware/middleware';
 
 @Controller("/")
+@UseBefore(Middleware.staff.AddPermissionsToLocals)
 export class WWWStaffController extends controller {
     constructor() {
         super();
@@ -26,150 +28,106 @@ export class WWWStaffController extends controller {
     }
 
     @Get('/staff/directory')
-    @UseBefore(YesAuth)
+    @Use(YesAuth)
     @Render('staff/index')
     public async directoryStaff(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 1;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({title: 'Staff Directory', userInfo: userInfo});
     }
 
     @Get('/staff/create')
-    @UseBefore(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.UploadStaffAssets))
     @Render('staff/create')
     public async createItem(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 1;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({title: 'Staff Create', userInfo: userInfo});
     }
 
     @Get('/staff/currency-product')
-    @UseBefore(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.ManageCurrencyProducts))
     @Render('staff/currency_product')
     public async currencyProductEditor(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 3;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({title: 'Currency Products', userInfo: userInfo});
     }
 
     @Get('/staff/ban')
-    @UseBefore(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.BanUser))
     @Render('staff/ban')
     public async ban(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 2;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({title: 'Ban a User', userInfo: userInfo});
     }
 
     @Get('/staff/unban')
-    @UseBefore(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.UnbanUser))
     @Render('staff/unban')
     public async unban(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 2;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({title: 'Unban a User', userInfo: userInfo});
     }
 
     @Get('/staff/password')
-    @UseBefore(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.ResetPassword))
     @Render('staff/password')
     public async resetPassword(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 2;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({title: 'Reset a password', userInfo: userInfo});
     }
 
     @Get('/staff/catalog')
-    @UseBefore(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.ReviewPendingItems))
     @Render('staff/catalog_moderation')
     public async catalogPending(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 1;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({title: 'Items Awaiting Moderator Approval', userInfo: userInfo});
     }
 
     @Get('/staff/report-abuse/user-status')
-    @UseBefore(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.ReviewAbuseReports))
     @Render('staff/report-abuse/user-status')
     public async reportAbuseUserStatus(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 1;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({title: 'User Status Reports', userInfo: userInfo});
     }
 
     @Get('/staff/give')
-    @UseBefore(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.GiveItemToUser))
     @Render('staff/give')
     public async giveItem(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 3;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({title: 'Give an Item', userInfo: userInfo});
     }
 
     @Get('/staff/give/currency')
-    @UseBefore(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.GiveCurrencyToUser))
     @Render('staff/give_currency')
     public async giveCurrency(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 3;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({title: 'Give Currency', userInfo: userInfo});
     }
 
     @Get('/staff/banner')
-    @UseBefore(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.ManageBanner))
     @Render('staff/banner')
     public async editBanner(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 2;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({title: 'Edit Banner', userInfo: userInfo});
     }
 
     @Get('/staff/user/profile')
-    @UseBefore(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.ReviewUserInformation))
     @Render('staff/user/profile')
     public async moderationProfile(
         @Locals('userInfo') localUserData: UserModel.SessionUserInfo,
@@ -187,6 +145,8 @@ export class WWWStaffController extends controller {
         let isEmailVerified = false;
         let userEmails = [];
         let twoFactorEnabled = false;
+        let allStaffPermissionTypes = model.staff.Permission;
+        let alreadySelectedPermissions = await this.staff.getPermissions(userId);
         try {
             userInfo = await this.user.getInfo(userId, ['accountStatus','userId','username','primaryBalance','secondaryBalance','blurb','staff','birthDate','dailyAward','lastOnline','status','joinDate','forumSignature', '2faEnabled', 'isDeveloper']);
             if (userInfo['2faEnabled'] === 1) {
@@ -217,11 +177,40 @@ export class WWWStaffController extends controller {
         ViewData.page.ModerationHistory = moderationHistory;
         ViewData.page.userEmails = userEmails;
         ViewData.page.twoFactorEnabled = twoFactorEnabled;
+
+        const staffPermissionSelect: {string: string; selected: boolean}[] = [];
+        let currentUserInfo = await this.staff.getPermissions(userInfo.userId);
+        if (currentUserInfo.includes(model.staff.Permission.ManageStaff) || localUserData.staff >= 100) {
+            for (const perm of alreadySelectedPermissions) {
+                let int = parseInt(perm as any, 10);
+                if (!isNaN(int)) {
+                    let str = model.staff.Permission[int];
+                    staffPermissionSelect.push({
+                        string: str,
+                        selected: true,
+                    })
+                }
+            }
+
+            for (const extraPerm in allStaffPermissionTypes) {
+                let int = parseInt(extraPerm as any, 10);
+                if (isNaN(int)) {
+                    let included = staffPermissionSelect.map(val => {return val.string === extraPerm});
+                    if (!included[0]) {
+                        staffPermissionSelect.push({
+                            string: extraPerm,
+                            selected: false,
+                        })
+                    }
+                }
+            }
+        }
+        ViewData.page.staffPermissionSelect = staffPermissionSelect;
         return ViewData;
     }
 
     @Get('/staff/user/trades')
-    @UseBefore(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.GiveItemToUser))
     @Render('staff/user/trades')
     public async moderationTrades(
         @Locals('userInfo') localUserData: UserModel.SessionUserInfo,
@@ -246,7 +235,7 @@ export class WWWStaffController extends controller {
     }
 
     @Get('/staff/groups/manage')
-    @UseBefore(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.ManageGroup))
     @Render('staff/groups/manage')
     public async moderationGroup(
         @Locals('userInfo') localUserData: UserModel.SessionUserInfo,
@@ -272,15 +261,11 @@ export class WWWStaffController extends controller {
     }
 
     @Get('/staff/forums')
-    @UseBefore(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.ManageForumCategories))
     @Render('staff/forums')
     public async modifyForums(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 3;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         let cats: any = await this.forum.getCategories();
         let subs: any = await this.forum.getSubCategories();
         for (const sub of subs) {
@@ -297,42 +282,30 @@ export class WWWStaffController extends controller {
     }
 
     @Get('/staff/tickets')
-    @UseBefore(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.ManageSupportTickets))
     @Render('staff/tickets')
     public async staffTickets(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 1;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({title: 'View Tickets Awaiting Response', userInfo: userInfo});
     }
 
     @Get('/staff/user/search')
-    @Use(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.ReviewUserInformation))
     @Render('staff/user/search')
     public async searchUsers(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
-        const staff = userInfo.staff >= 1;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({title: 'Search Users', userInfo: userInfo});
     }
 
     @Get('/staff/user/search_results')
-    @Use(YesAuth)
+    @Use(YesAuth, Middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo))
     @Render('staff/user/search_results')
     public async searchUsersResults(
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
         @Req() req: Req,
     ) {
-        const staff = userInfo.staff >= 1;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         let query: string|undefined;
         let column: string|undefined;
         if (req.query.email) {

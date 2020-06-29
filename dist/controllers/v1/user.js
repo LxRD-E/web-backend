@@ -18,7 +18,6 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const model = require("../../models/models");
-const Filter_1 = require("../../helpers/Filter");
 const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 const controller_1 = require("../controller");
@@ -250,104 +249,6 @@ let UsersController = class UsersController extends controller_1.default {
             throw new this.BadRequest('InvalidQuery');
         }
         return await this.user.search(offset, limit, sort, goodSortBy, query);
-    }
-    async createTradeRequest(req, userInfo, partnerUserId, body) {
-        const forUpdate = [
-            'users',
-            'trade_items',
-            'trades',
-        ];
-        await this.transaction(this, forUpdate, async function (trx) {
-            let offerPrimary = 0;
-            if (body.offerPrimary) {
-                offerPrimary = body.offerPrimary;
-            }
-            let requestPrimary = 0;
-            if (body.requestPrimary) {
-                requestPrimary = body.requestPrimary;
-            }
-            let requestedItems = body.requestedItems;
-            let offerItems = body.offerItems;
-            const partnerInfo = await trx.user.getInfo(partnerUserId, ['userId', 'accountStatus', 'tradingEnabled']);
-            if (partnerInfo.accountStatus === model.user.accountStatus.deleted || partnerInfo.accountStatus === model.user.accountStatus.terminated) {
-                throw new this.BadRequest('InvalidUserId');
-            }
-            if (offerPrimary > userInfo.primaryBalance) {
-                throw new this.Conflict('NotEnoughPrimaryCurrencyForOffer');
-            }
-            if (offerPrimary >= 1000000) {
-                throw new this.BadRequest('PrimaryOfferTooLarge');
-            }
-            if (requestPrimary >= 1000000) {
-                throw new this.BadRequest('PrimaryRequestTooLarge');
-            }
-            const localInfo = await trx.user.getInfo(userInfo.userId, ['tradingEnabled']);
-            if (localInfo.tradingEnabled === model.user.tradingEnabled.false) {
-                throw new this.Conflict('CannotTradeWithUser');
-            }
-            if (partnerInfo.tradingEnabled === model.user.tradingEnabled.false) {
-                throw new this.Conflict('CannotTradeWithUser');
-            }
-            if (partnerInfo.userId === userInfo.userId) {
-                throw new this.Conflict('CannotTradeWithUser');
-            }
-            if (!Array.isArray(requestedItems) || !Array.isArray(offerItems) || offerItems.length < 1 || offerItems.length > 4 || requestedItems.length < 1 || requestedItems.length > 4) {
-                throw new this.BadRequest('InvalidItemsSpecified');
-            }
-            const safeRequestedItems = [];
-            for (const unsafeInventoryId of requestedItems) {
-                const userInventoryId = Filter_1.filterId(unsafeInventoryId);
-                if (!userInventoryId) {
-                    throw new this.BadRequest('InvalidItemsSpecified');
-                }
-                const info = await trx.catalog.getItemByUserInventoryId(userInventoryId);
-                if (info.userId !== partnerUserId) {
-                    throw new this.BadRequest('InvalidItemsSpecified');
-                }
-                if (info.collectible === model.catalog.collectible.false) {
-                    throw new this.BadRequest('InvalidItemsSpecified');
-                }
-                safeRequestedItems.push({
-                    'catalogId': info.catalogId,
-                    'userInventoryId': userInventoryId,
-                });
-            }
-            const safeRequesteeItems = [];
-            for (const unsafeInventoryId of offerItems) {
-                const userInventoryId = Filter_1.filterId(unsafeInventoryId);
-                if (!userInventoryId) {
-                    throw new this.BadRequest('InvalidItemsSpecified');
-                }
-                const info = await trx.catalog.getItemByUserInventoryId(userInventoryId);
-                if (info.userId !== userInfo.userId) {
-                    throw new this.BadRequest('InvalidItemsSpecified');
-                }
-                if (info.collectible === model.catalog.collectible.false) {
-                    throw new this.BadRequest('InvalidItemsSpecified');
-                }
-                safeRequesteeItems.push({
-                    'userInventoryId': userInventoryId,
-                    'catalogId': info.catalogId,
-                });
-            }
-            const count = await trx.economy.countPendingTradesBetweenUsers(userInfo.userId, partnerUserId);
-            if (count >= 4) {
-                throw new this.Conflict('TooManyPendingTrades');
-            }
-            const tradeId = await trx.economy.createTrade(userInfo.userId, partnerUserId, offerPrimary, requestPrimary);
-            await trx.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requested, safeRequestedItems);
-            await trx.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requester, safeRequesteeItems);
-            await trx.notification.createMessage(partnerUserId, 1, `Trade Request from ${userInfo.username}`, `Hi,
-${userInfo.username} has sent you a new trade request. You can view it in the trades tab.`);
-            let ip = req.ip;
-            if (req.headers['cf-connecting-ip']) {
-                ip = req.headers['cf-connecting-ip'];
-            }
-            await trx.user.logUserIp(userInfo.userId, ip, model.user.ipAddressActions.TradeSent);
-        });
-        return {
-            'success': true,
-        };
     }
 };
 __decorate([
@@ -630,24 +531,6 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number, Object, String, String]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "search", null);
-__decorate([
-    common_1.Put('/:userId/trade/request'),
-    swagger_1.Summary('Create a trade request'),
-    swagger_1.Description('offerItems and requestedItems should both be arrays of userInventoryIds'),
-    swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is terminated or invalid\nInvalidItemsSpecified: One or more of the userInventoryId(s) are invalid\nPrimaryRequestTooLarge: Primary Currency Request is too large\nPrimaryOfferTooLarge: Primary Currency offer is too large\n' }),
-    swagger_1.Returns(409, { type: model.Error, description: 'CannotTradeWithUser: Authenticated user has trading disabled or partner has trading disabled\nTooManyPendingTrades: You have too many pending trades with this user\nNotEnoughPrimaryCurrencyForOffer: User does not have enough currency for this offer\n' }),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth, TwoStepCheck_1.default('TradeRequest')),
-    __param(0, common_1.Req()),
-    __param(1, common_1.Locals('userInfo')),
-    __param(2, common_1.Required()),
-    __param(2, swagger_1.Description('The userId to open a trade with')),
-    __param(2, common_1.PathParams('userId', Number)),
-    __param(3, common_1.Required()),
-    __param(3, common_1.BodyParams(model.user.CreateTradeRequest)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, model.UserSession, Number, model.user.CreateTradeRequest]),
-    __metadata("design:returntype", Promise)
-], UsersController.prototype, "createTradeRequest", null);
 UsersController = __decorate([
     common_1.Controller('/user'),
     swagger_1.Description('Endpoints regarding user information'),

@@ -3,6 +3,24 @@ var userid = userData.attr("data-userid");
 var traderData = $('#tradedata')
 var traderId = traderData.attr("data-userid");
 
+let metadata = {
+    isEnabled: false,
+    maxItemsPerSide: 4,
+    maxRequestPrimary: 100,
+    maxOfferPrimary: 100,
+};
+const getMetaData = () => {
+    return request('/economy/trades/metadata', 'GET').then(data => {
+        metadata = data;
+    })
+}
+getMetaData().then().catch(err => {
+    warning('Oops, it looks like something went wrong loading this page.', err => {
+        window.location.reload();
+    });
+    throw err;
+});
+
 /**
  * @type {{userInventoryId: number; catalogId: number; catalogName: string; serial: number|undefined}[]}
  */
@@ -329,8 +347,8 @@ $(document).on('click', '.trade-item-requester-items', function(e) {
     if (inOffer(UserInventoryId) || inRequest(UserInventoryId)) {
         return; // skip
     }
-    if (CurrentOffer.length >= 4) {
-        warning('You can only include up to four items, per user, in a trade.');
+    if (CurrentOffer.length >= metadata.maxItemsPerSide) {
+        warning('You can only include up to '+metadata.maxItemsPerSide+' items, per user, in a trade.');
         return;
     }
     CurrentOffer.push({
@@ -448,8 +466,8 @@ $(document).on('click', '.trade-item-requestee-items', function(e) {
     if (inOffer(UserInventoryId) || inRequest(UserInventoryId)) {
         return; // skip
     }
-    if (CurrentRequest.length >= 4) {
-        warning('You can only include up to four items, per user, in a trade.');
+    if (CurrentRequest.length >= metadata.maxItemsPerSide) {
+        warning('You can only include up to '+metadata.maxItemsPerSide+' items, per user, in a trade.');
         return;
     }
     CurrentRequest.push({
@@ -491,7 +509,7 @@ $(document).on('click', '#send-trade', function(e) {
         let requestedUserInventoryIds = [];
         CurrentRequest.forEach(i => requestedUserInventoryIds.push(i.userInventoryId));
         //questionYesNo('Sending trade...', function() {
-            request('/user/'+traderId+'/trade/request', 'PUT', {
+            request('/economy/trades/user/'+traderId+'/request', 'PUT', {
                 offerItems: requesteeUserInventoryIds,
                 requestedItems: requestedUserInventoryIds,
                 requestPrimary: currentRequestPrimary,

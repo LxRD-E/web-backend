@@ -622,7 +622,7 @@ describe('POST /api/v1/economy/trades/{tradeId}', () => {
         let requestUserInventoryId = userTwoInv.data.items[0]['userInventoryId'];
 
         // create trade
-        let create = await userOne.put('/user/'+userTwoId+'/trade/request', {
+        let create = await userOne.put('/economy/trades/user/'+userTwoId+'/request', {
             offerItems: [
                 offerUserInventoryId,
             ],
@@ -704,7 +704,7 @@ describe('POST /api/v1/economy/trades/{tradeId}', () => {
 
 
         // create trade
-        let create = await userOne.put('/user/'+userTwoId+'/trade/request', {
+        let create = await userOne.put('/economy/trades/user/'+userTwoId+'/request', {
             offerItems: [
                 offerUserInventoryId,
             ],
@@ -792,7 +792,7 @@ describe('POST /api/v1/economy/trades/{tradeId}', () => {
 
 
         // create trade
-        let create = await userOne.put('/user/'+userTwoId+'/trade/request', {
+        let create = await userOne.put('/economy/trades/user/'+userTwoId+'/request', {
             offerItems: [
                 offerUserInventoryId,
             ],
@@ -874,7 +874,7 @@ describe('POST /api/v1/economy/trades/{tradeId}', () => {
 
 
         // create trade
-        let create = await userOne.put('/user/'+userTwoId+'/trade/request', {
+        let create = await userOne.put('/economy/trades/user/'+userTwoId+'/request', {
             offerItems: [
                 offerUserInventoryId,
             ],
@@ -942,7 +942,7 @@ describe('POST /api/v1/economy/trades/{tradeId}', () => {
         let requestUserInventoryId = userTwoInv.data.items[0]['userInventoryId'];
 
         // create trades
-        let create = await userOne.put('/user/'+userTwoId+'/trade/request', {
+        let create = await userOne.put('/economy/trades/user/'+userTwoId+'/request', {
             offerItems: [
                 offerUserInventoryId,
             ],
@@ -953,7 +953,7 @@ describe('POST /api/v1/economy/trades/{tradeId}', () => {
         });
         assert.strictEqual(create.status, 200);
         // create trades
-        let createTwo = await userOne.put('/user/'+userTwoId+'/trade/request', {
+        let createTwo = await userOne.put('/economy/trades/user/'+userTwoId+'/request', {
             offerItems: [
                 offerUserInventoryId,
             ],
@@ -964,7 +964,7 @@ describe('POST /api/v1/economy/trades/{tradeId}', () => {
         });
         assert.strictEqual(createTwo.status, 200);
         // create trades
-        let createThree = await userOne.put('/user/'+userTwoId+'/trade/request', {
+        let createThree = await userOne.put('/economy/trades/user/'+userTwoId+'/request', {
             offerItems: [
                 offerUserInventoryId,
             ],
@@ -975,7 +975,7 @@ describe('POST /api/v1/economy/trades/{tradeId}', () => {
         });
         assert.strictEqual(createThree.status, 200);
         // create trades
-        let createFour = await userOne.put('/user/'+userTwoId+'/trade/request', {
+        let createFour = await userOne.put('/economy/trades/user/'+userTwoId+'/request', {
             offerItems: [
                 offerUserInventoryId,
             ],

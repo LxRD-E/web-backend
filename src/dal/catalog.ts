@@ -406,7 +406,7 @@ class CatalogDAL extends _init {
     public async getCatalogItemAssets(catalogId: number): Promise<model.catalog.CatalogAssetItem[]> {
         const assets = await this.knex('catalog_assets').select('id as assetId', 'date_created as dateCreated', 'assettype as assetType', 'filename as fileName', 'filetype as fileType').where({'catalogid': catalogId});
         if (!assets[0]) {
-            throw new Error('This item does not contain any assets');
+            throw new Error('This item ('+catalogId+') does not contain any assets');
         }
         return assets;
     }
@@ -427,8 +427,10 @@ class CatalogDAL extends _init {
      * @param isForSale
      * @param category
      * @param price
+     * @param currency
      * @param isCollectible is the item collectible?
-     * @param maxSales If the item is a unique collectible, how many sales can it have before it goes offsale?
+     * @param maxSales If the item is a unique collectible, how many sales can it have before it goes off sale?
+     * @param moderationStatus
      */
     public async createUserItem(userId: number, name: string, description: string, isForSale: model.catalog.isForSale, category: model.catalog.category, price: number, currency: model.economy.currencyType, isCollectible: model.catalog.collectible, maxSales = 0, moderationStatus = model.catalog.moderatorStatus.Pending): Promise<number> {
         const date = this.moment().format('YYYY-MM-DD HH:mm:ss');

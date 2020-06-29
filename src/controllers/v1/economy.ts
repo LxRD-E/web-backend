@@ -25,6 +25,8 @@ import {
 } from '@tsed/common';
 import {Description, Returns, ReturnsArray, Summary} from '@tsed/swagger';
 import TwoStepCheck from '../../middleware/TwoStepCheck';
+import TwoStepMiddleware from '../../middleware/TwoStepCheck';
+import {filterId} from "../../helpers/Filter";
 
 /**
  * Economy Controller
@@ -71,6 +73,12 @@ export default class EconomyController extends controller {
                 maxAmount: model.economy.CONVERSION_SECONDARY_TO_PRIMARY_MAX,
             }
         }
+    }
+
+    @Get('/trades/metadata')
+    @Summary('Trading metadata')
+    public getTradeMetadata() {
+        return model.economy.trade;
     }
 
     @Get('/trades/:type')
@@ -160,8 +168,7 @@ export default class EconomyController extends controller {
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @QueryParams('offset', Number) offset: number = 0
     ): Promise<model.economy.userTransactions[]> {
-        const transactions = await this.economy.getUserTransactions(userInfo.userId, offset);
-        return transactions;
+        return await this.economy.getUserTransactions(userInfo.userId, offset);
     }
 
     @Get('/group/:groupId/transactions')
@@ -593,6 +600,165 @@ export default class EconomyController extends controller {
         return {success: true};
     }
 
+    @Put('/trades/user/:userId/request')
+    @Summary('Create a trade request')
+    @Description('offerItems and requestedItems should both be arrays of userInventoryIds')
+    @Returns(400, {
+        type: model.Error,
+        description: 'InvalidUserId: UserId is terminated or invalid\nInvalidItemsSpecified: One or more of the userInventoryId(s) are invalid\nPrimaryRequestTooLarge: Primary Currency Request is too large\nPrimaryOfferTooLarge: Primary Currency offer is too large\n'
+    })
+    @Returns(409, {
+        type: model.Error,
+        description: 'CannotTradeWithUser: Authenticated user has trading disabled or partner has trading disabled\nTooManyPendingTrades: You have too many pending trades with this user\nNotEnoughPrimaryCurrencyForOffer: User does not have enough currency for this offer\n'
+    })
+    @Returns(503, {type: model.Error, description: 'Unavailable: Feature is unavailable\n'})
+    @Use(csrf, YesAuth, TwoStepMiddleware('TradeRequest'))
+    public async createTradeRequest(
+        @Req() req: Req,
+        @Locals('userInfo') userInfo: model.UserSession,
+        @Required()
+        @Description('The userId to open a trade with')
+        @PathParams('userId', Number) partnerUserId: number,
+        @Required()
+        @BodyParams(model.user.CreateTradeRequest) body: model.user.CreateTradeRequest,
+    ) {
+        if (!model.economy.trade.isEnabled) {
+            throw new this.ServiceUnavailable('Unavailable');
+        }
+        const forUpdate = [
+            'users',
+            'trade_items',
+            'trades',
+        ]
+        await this.transaction(this, forUpdate, async function (trx) {
+            let offerPrimary = 0;
+            if (body.offerPrimary) {
+                offerPrimary = body.offerPrimary;
+            }
+            let requestPrimary = 0;
+            if (body.requestPrimary) {
+                requestPrimary = body.requestPrimary;
+            }
+            let requestedItems = body.requestedItems;
+            let offerItems = body.offerItems;
+            const partnerInfo = await trx.user.getInfo(partnerUserId, ['userId', 'accountStatus', 'tradingEnabled']);
+            if (partnerInfo.accountStatus === model.user.accountStatus.deleted || partnerInfo.accountStatus === model.user.accountStatus.terminated) {
+                throw new this.BadRequest('InvalidUserId');
+            }
+            // Check offer primary
+            if (offerPrimary > userInfo.primaryBalance) {
+                throw new this.Conflict('NotEnoughPrimaryCurrencyForOffer');
+            }
+            // Check total offer
+            if (offerPrimary >= model.economy.trade.maxOfferPrimary) {
+                throw new this.BadRequest('PrimaryOfferTooLarge');
+            }
+            if (requestPrimary >= model.economy.trade.maxRequestPrimary) {
+                throw new this.BadRequest('PrimaryRequestTooLarge');
+            }
+            // Reset if non-0
+            if (offerPrimary <= 0) {
+                offerPrimary = 0;
+            }
+            if (requestPrimary <= 0) {
+                requestPrimary = 0;
+            }
+            const localInfo = await trx.user.getInfo(userInfo.userId, ['tradingEnabled']);
+            // Check if user has Trading Disabled
+            if (localInfo.tradingEnabled === model.user.tradingEnabled.false) {
+                throw new this.Conflict('CannotTradeWithUser');
+            }
+            // Check if Partner has Trading Disabled
+            if (partnerInfo.tradingEnabled === model.user.tradingEnabled.false) {
+                throw new this.Conflict('CannotTradeWithUser');
+            }
+            // If partner is current user
+            if (partnerInfo.userId === userInfo.userId) {
+                throw new this.Conflict('CannotTradeWithUser');
+            }
+            if (
+                !Array.isArray(requestedItems) ||
+                !Array.isArray(offerItems) ||
+                offerItems.length < 1 ||
+                offerItems.length > model.economy.trade.maxItemsPerSide ||
+                requestedItems.length < 1 ||
+                requestedItems.length > model.economy.trade.maxItemsPerSide
+            ) {
+                throw new this.BadRequest('InvalidItemsSpecified');
+            }
+            const safeRequestedItems: model.economy.TradeItemObject[] = [];
+            // Check Items User is Requesting
+            for (const unsafeInventoryId of requestedItems) {
+                const userInventoryId = filterId(unsafeInventoryId) as number;
+                if (!userInventoryId) {
+                    throw new this.BadRequest('InvalidItemsSpecified');
+                }
+                // Verify item exists and is owned by partner
+                const info = await trx.catalog.getItemByUserInventoryId(userInventoryId);
+                if (info.userId !== partnerUserId) {
+                    // Owned by someone else
+                    throw new this.BadRequest('InvalidItemsSpecified');
+                }
+                if (info.collectible === model.catalog.collectible.false) {
+                    // Not collectible
+                    throw new this.BadRequest('InvalidItemsSpecified');
+                }
+                safeRequestedItems.push({
+                    'catalogId': info.catalogId,
+                    'userInventoryId': userInventoryId,
+                });
+            }
+            const safeRequesteeItems: model.economy.TradeItemObject[] = [];
+            // Check Items user is Providing
+            for (const unsafeInventoryId of offerItems) {
+                const userInventoryId = filterId(unsafeInventoryId) as number;
+                if (!userInventoryId) {
+                    throw new this.BadRequest('InvalidItemsSpecified');
+                }
+                // Verify item exists and is owned by authenticated user
+                const info = await trx.catalog.getItemByUserInventoryId(userInventoryId);
+                if (info.userId !== userInfo.userId) {
+                    // Owned by someone else
+                    throw new this.BadRequest('InvalidItemsSpecified');
+                }
+                if (info.collectible === model.catalog.collectible.false) {
+                    // Not collectible
+                    throw new this.BadRequest('InvalidItemsSpecified');
+                }
+                safeRequesteeItems.push({
+                    'userInventoryId': userInventoryId,
+                    'catalogId': info.catalogId,
+                });
+            }
+            // Create Trade
+            // Count outbound/inbound trades between users
+            const count = await trx.economy.countPendingTradesBetweenUsers(userInfo.userId, partnerUserId);
+            // Confirm they aren't spamming trades
+            if (count >= 4) {
+                throw new this.Conflict('TooManyPendingTrades');
+            }
+            // Create
+            const tradeId = await trx.economy.createTrade(userInfo.userId, partnerUserId, offerPrimary, requestPrimary);
+            // Add Requested Items
+            await trx.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requested, safeRequestedItems);
+            // Add Self Items
+            await trx.economy.addItemsToTrade(tradeId, model.economy.tradeSides.Requester, safeRequesteeItems);
+            // Send Message to Partner
+            await trx.notification.createMessage(partnerUserId, 1, `Trade Request from ${userInfo.username}`, `Hi,
+${userInfo.username} has sent you a new trade request. You can view it in the trades tab.`);
+            // Log ip
+            let ip = req.ip;
+            if (req.headers['cf-connecting-ip']) {
+                ip = req.headers['cf-connecting-ip'] as string;
+            }
+            await trx.user.logUserIp(userInfo.userId, ip, model.user.ipAddressActions.TradeSent);
+        });
+        // Return Success
+        return {
+            'success': true,
+        };
+    }
+
     @Get('/trades/:tradeId/items')
     @Summary('Get the items involved in a specific tradeId')
     @Description('Requestee is authenticated user, requested is the partner involved with the trade')
@@ -641,10 +807,13 @@ export default class EconomyController extends controller {
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('tradeId', Number) numericTradeId: number
     ) {
+        if (!model.economy.trade.isEnabled) {
+            throw new this.ServiceUnavailable('Unavailable');
+        }
         if (!numericTradeId) {
             throw new this.BadRequest('InvalidTradeId');
         }
-        await this.transaction(this,[], async function (trx) {
+        await this.transaction(this, [], async function (trx) {
             let tradeInfo = await trx.economy.getTradeById(numericTradeId);
             if (tradeInfo.status !== model.economy.tradeStatus.Pending) {
                 throw new this.BadRequest('InvalidTradeId');
@@ -677,12 +846,14 @@ export default class EconomyController extends controller {
         type: model.Error,
         description: 'OneOrMoreItemsNotAvailable: One or more of the items involved in the trade are no longer available\nCooldown: Try again later\nTradeCannotBeCompleted: Generic error is preventing trade from being completed.\n'
     })
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     public async acceptTrade(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('tradeId', Number) numericTradeId: number
     ) {
+        if (!model.economy.trade.isEnabled) {
+            throw new this.ServiceUnavailable('Unavailable');
+        }
         if (!numericTradeId) {
             throw new this.BadRequest('InvalidTradeId');
         }
@@ -705,158 +876,108 @@ export default class EconomyController extends controller {
                 throw new this.BadRequest('InvalidTradeId');
             }
             // Continue
-            if (tradeInfo.userIdTwo === userInfo.userId) {
-                // Verify Partner isn't terminated
-                let partnerInfo = await trx.user.getInfo(tradeInfo.userIdOne, ['accountStatus']);
-                if (partnerInfo.accountStatus === model.user.accountStatus.deleted || partnerInfo.accountStatus === model.user.accountStatus.terminated) {
-                    // Unlock economy
-                    throw new this.BadRequest('InvalidPartnerId');
-                }
-                // requestedTradeItems = items authentiocated user will recieve
-                const requestedTradeItems = await trx.economy.getTradeItems(model.economy.tradeSides.Requester, numericTradeId);
-                if (requestedTradeItems.length < 1) {
-                    // Throw error
-                    throw new Error('Internal');
-                }
-                // requesteeTradeItems = items authenticated user will give
-                const requesteeTradeItems = await trx.economy.getTradeItems(model.economy.tradeSides.Requested, numericTradeId);
-                if (requesteeTradeItems.length < 1) {
-                    // Throw error
-                    throw new Error('Internal');
-                }
-                // Verify Ownership of Items
-                const verifyOwnershipOfItems = (userId: number, items: model.economy.TradeItems[]): Promise<void> => {
-                    return new Promise((resolve, reject): void => {
-                        const promises = [];
-                        for (const item of items) {
-                            promises.push(
-                                trx.catalog.getItemByUserInventoryId(item["userInventoryId"])
-                            );
-                        }
-                        Promise.all(promises)
-                            .then((results) => {
-                                for (const result of results) {
-                                    if (result.userId !== userId) {
-                                        console.log(result.userId);
-                                        console.log(userId);
-                                        reject(0);
-                                        return;
-                                    }
-                                }
-                                resolve();
-                            })
-                            .catch((e) => {
-                                reject(e);
-                            });
-                    });
-                }
-                // Swap item owners
-                const swapOwnersOfItems = (userId: number, items: model.economy.TradeItems[]): Promise<void> => {
-                    return new Promise((resolve, reject): void => {
-                        const promises = [];
-                        for (const item of items) {
-                            promises.push(
-                                trx.catalog.updateUserInventoryIdOwner(item["userInventoryId"], userId),
-                                trx.user.editItemPrice(item["userInventoryId"], 0),
-                            );
-                        }
-                        Promise.all(promises)
-                            .then(() => {
-                                resolve();
-                            })
-                            .catch(() => {
-                                reject();
-                            });
-                    });
-                }
-                try {
-                    // Validate Owners
-                    const OwnershipValidation = [
-                        verifyOwnershipOfItems(tradeInfo.userIdOne, requestedTradeItems),
-                        verifyOwnershipOfItems(tradeInfo.userIdTwo, requesteeTradeItems),
-                    ];
-                    await Promise.all(OwnershipValidation);
-                } catch (e) {
-                    // Cancel Trade
-                    try {
-                        await trx.economy.declineTradeById(numericTradeId);
-                    } catch (e) {
-                        throw e;
-                    }
-                    // Return error
-                    throw new this.Conflict('OneOrMoreItemsNotAvailable');
-                }
-                // Owners are valid. Swap ownership
-                // Swap Owners
-                const OwnershipSwap = [
-                    swapOwnersOfItems(tradeInfo.userIdTwo, requestedTradeItems),
-                    swapOwnersOfItems(tradeInfo.userIdOne, requesteeTradeItems),
-                ]
-                await Promise.all(OwnershipSwap);
-                // If there is offer currency, swap it
-                let currencyToSubtractFromUserOne = tradeInfo.userIdOnePrimary;
-                if (currencyToSubtractFromUserOne) {
-                    let userOneCurrentBalance = await trx.user.getInfo(tradeInfo.userIdOne, ['primaryBalance']);
-                    if (userOneCurrentBalance.primaryBalance >= currencyToSubtractFromUserOne === false) {
-                        throw new this.Conflict('TradeCannotBeCompleted');
-                    }
-                    // subtract from userone balance
-                    await trx.economy.subtractFromUserBalance(tradeInfo.userIdOne, currencyToSubtractFromUserOne, model.economy.currencyType.primary);
-                    // add to usertwo balance
-                    await trx.economy.addToUserBalance(tradeInfo.userIdTwo, currencyToSubtractFromUserOne, model.economy.currencyType.primary);
-                }
-                // If there is request currency, swap it
-                let currencyToSubtractFromUserTwo = tradeInfo.userIdTwoPrimary;
-                if (currencyToSubtractFromUserTwo) {
-                    let userTwoCurrentBalance = await trx.user.getInfo(tradeInfo.userIdTwo, ['primaryBalance']);
-                    if (userTwoCurrentBalance.primaryBalance >= currencyToSubtractFromUserTwo === false) {
-                        throw new this.Conflict('TradeCannotBeCompleted');
-                    }
-                    // subtract from usertwo balance
-                    await trx.economy.subtractFromUserBalance(tradeInfo.userIdTwo, currencyToSubtractFromUserTwo, model.economy.currencyType.primary);
-                    // add to userone balance
-                    await trx.economy.addToUserBalance(tradeInfo.userIdOne, currencyToSubtractFromUserTwo, model.economy.currencyType.primary);
-                }
-
-                // Update trade status
-                await trx.economy.markTradeAccepted(numericTradeId);
-                // Startup background task 
-                const renderAvatarAndSendNotification = async () => {
-                    // Send Success Message
-                    try {
-                        const s = requestedTradeItems.length > 1 ? 's' : '';
-                        await trx.notification.createMessage(tradeInfo.userIdOne, 1, 'Trade Accepted', 'Hello,\n' + userInfo.username + ' has accepted your trade. You can view your new item' + s + ' in your inventory.');
-                    } catch (e) {
-                        console.error(e);
-                    }
-                    // Regen Avatars
-                    try {
-                        const itemIdsOne = [];
-                        for (const item of requestedTradeItems) {
-                            itemIdsOne.push(item.catalogId);
-                        }
-                        const itemIdsTwo = [];
-                        for (const item of requesteeTradeItems) {
-                            itemIdsTwo.push(item.catalogId);
-                        }
-                        // Gen avatars
-                        await this.regenAvatarAfterItemTransferOwners(tradeInfo.userIdOne, itemIdsOne);
-                        await this.regenAvatarAfterItemTransferOwners(tradeInfo.userIdTwo, itemIdsTwo);
-                    } catch (e) {
-                        console.log(e);
-                    }
-                };
-                renderAvatarAndSendNotification().catch(e => {
-                    console.error(e);
-                })
-                // Success!
-                // Dont return anything.
-                return;
-
-            } else {
-                // You can't accept your own trade
+            if (tradeInfo.userIdTwo !== userInfo.userId) {
                 throw new this.BadRequest('NotAuthorized');
             }
+            // Verify Partner isn't terminated
+            let partnerInfo = await trx.user.getInfo(tradeInfo.userIdOne, ['accountStatus']);
+            if (partnerInfo.accountStatus === model.user.accountStatus.deleted || partnerInfo.accountStatus === model.user.accountStatus.terminated) {
+                // Unlock economy
+                throw new this.BadRequest('InvalidPartnerId');
+            }
+            // requestedTradeItems = items authenticated user will receive
+            const requestedTradeItems = await trx.economy.getTradeItems(model.economy.tradeSides.Requester, numericTradeId);
+            if (requestedTradeItems.length < 1) {
+                // Throw error
+                throw new Error('NotEnoughItemsInRequested');
+            }
+            // requesteeTradeItems = items authenticated user will give
+            const requesteeTradeItems = await trx.economy.getTradeItems(model.economy.tradeSides.Requested, numericTradeId);
+            if (requesteeTradeItems.length < 1) {
+                // Throw error
+                throw new Error('NotEnoughItemsInRequestee');
+            }
+            // Verify Ownership of Items
+            const verifyOwnershipOfItems = async (userId: number, items: model.economy.TradeItems[]): Promise<void> => {
+                for (const item of items) {
+                    let currentOwner = await trx.catalog.getItemByUserInventoryId(item["userInventoryId"]);
+                    if (currentOwner.userId !== userId) {
+                        console.log(currentOwner.userId);
+                        console.log(userId);
+                        throw new this.Conflict('OneOrMoreItemsNotAvailable');
+                    }
+                }
+            }
+            // Swap item owners
+            const swapOwnersOfItems = async (userId: number, items: model.economy.TradeItems[]): Promise<void> => {
+                for (const item of items) {
+                    await trx.catalog.updateUserInventoryIdOwner(item["userInventoryId"], userId);
+                    await trx.user.editItemPrice(item["userInventoryId"], 0);
+                }
+            }
+
+            // Validate Owners
+            await verifyOwnershipOfItems(tradeInfo.userIdOne, requestedTradeItems);
+            await verifyOwnershipOfItems(tradeInfo.userIdTwo, requesteeTradeItems);
+            // If there is offer currency, swap it
+            const currencyToSubtractFromUserOne = tradeInfo.userIdOnePrimary;
+            if (currencyToSubtractFromUserOne) {
+                let userOneCurrentBalance = await trx.user.getInfo(tradeInfo.userIdOne, ['primaryBalance']);
+                if (!(userOneCurrentBalance.primaryBalance >= currencyToSubtractFromUserOne)) {
+                    throw new this.Conflict('TradeCannotBeCompleted');
+                }
+                // subtract from userone balance
+                await trx.economy.subtractFromUserBalanceV2(tradeInfo.userIdOne, currencyToSubtractFromUserOne, model.economy.currencyType.primary);
+                // add to usertwo balance
+                await trx.economy.addToUserBalanceV2(tradeInfo.userIdTwo, currencyToSubtractFromUserOne, model.economy.currencyType.primary);
+            }
+            // If there is request currency, swap it
+            const currencyToSubtractFromUserTwo = tradeInfo.userIdTwoPrimary;
+            if (currencyToSubtractFromUserTwo) {
+                let userTwoCurrentBalance = await trx.user.getInfo(tradeInfo.userIdTwo, ['primaryBalance']);
+                if (!(userTwoCurrentBalance.primaryBalance >= currencyToSubtractFromUserTwo)) {
+                    throw new this.Conflict('TradeCannotBeCompleted');
+                }
+                // subtract from usertwo balance
+                await trx.economy.subtractFromUserBalanceV2(tradeInfo.userIdTwo, currencyToSubtractFromUserTwo, model.economy.currencyType.primary);
+                // add to userone balance
+                await trx.economy.addToUserBalanceV2(tradeInfo.userIdOne, currencyToSubtractFromUserTwo, model.economy.currencyType.primary);
+            }
+
+            // Swap Owners
+            await swapOwnersOfItems(tradeInfo.userIdTwo, requestedTradeItems);
+            await swapOwnersOfItems(tradeInfo.userIdOne, requesteeTradeItems);
+
+            // Update trade status
+            await trx.economy.markTradeAccepted(numericTradeId);
+            // Startup background task
+            const renderAvatarAndSendNotification = async () => {
+                // Regen Avatars
+                try {
+                    const itemIdsOne = [];
+                    for (const item of requestedTradeItems) {
+                        itemIdsOne.push(item.catalogId);
+                    }
+                    const itemIdsTwo = [];
+                    for (const item of requesteeTradeItems) {
+                        itemIdsTwo.push(item.catalogId);
+                    }
+                    // Gen avatars
+                    await this.regenAvatarAfterItemTransferOwners(tradeInfo.userIdOne, itemIdsOne);
+                    await this.regenAvatarAfterItemTransferOwners(tradeInfo.userIdTwo, itemIdsTwo);
+                } catch (e) {
+                    console.log(e);
+                }
+            };
+            // Send Success Message
+            const s = requestedTradeItems.length > 1 ? 's' : '';
+            await trx.notification.createMessage(tradeInfo.userIdOne, 1, 'Trade Accepted', 'Hello,\n' + userInfo.username + ' has accepted your trade. You can view your new item' + s + ' in your inventory.');
+            renderAvatarAndSendNotification().then().catch(e => {
+                console.error(e);
+            })
+            // Success!
+            // Dont return anything.
+            return;
         });
         return {};
     }

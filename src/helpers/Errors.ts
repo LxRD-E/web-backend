@@ -1,4 +1,4 @@
-import {NotFound, BadRequest, Conflict, Unauthorized} from 'ts-httpexceptions';
+import {NotFound, BadRequest, Conflict, Unauthorized, ServiceUnvailable as ServiceUnavailable} from 'ts-httpexceptions';
 
 import {HttpErrors} from './HttpError';
 /**
@@ -10,6 +10,7 @@ class TSErrorsBase {
     public BadRequest = BadRequest;
     public Conflict = Conflict;
     public Unauthorized = Unauthorized;
+    public ServiceUnavailable = ServiceUnavailable;
     // Codes
     public errors = HttpErrors;
 }

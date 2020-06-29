@@ -237,6 +237,43 @@ class StaffDAL extends _init {
     public async updateGameThumbnailState(gameThumbnailId: number, state: number): Promise<void> {
         await this.knex('game_thumbnails').update({"moderation_status": state}).where({'id': gameThumbnailId}).limit(1);
     }
+
+    /**
+     * Get permissions for the {userId}
+     * @param userId
+     */
+    public async getPermissions(userId: number): Promise<model.staff.Permission[]> {
+        let results = await this.knex('user_staff_permission').select('permission','user_id').where({
+            'user_id': userId,
+        }) as {permission: number}[];
+        return results.map(val => {
+            return val.permission;
+        });
+    }
+
+    /**
+     * Add a permission to the {userId}
+     * @param userId
+     * @param permission
+     */
+    public async addPermissions(userId: number, permission: model.staff.Permission): Promise<void> {
+        await this.knex('user_staff_permission').insert({
+            'user_id': userId,
+            'permission': permission,
+        })
+    }
+
+    /**
+     * Delete a permission from the {userId}
+     * @param userId
+     * @param permission
+     */
+    public async deletePermissions(userId: number, permission: model.staff.Permission): Promise<void> {
+        await this.knex('user_staff_permission').delete().where({
+            'user_id': userId,
+            'permission': permission,
+        })
+    }
 }
 
 export default StaffDAL;

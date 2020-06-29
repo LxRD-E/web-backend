@@ -8,6 +8,7 @@ class TSErrorsBase {
         this.BadRequest = ts_httpexceptions_1.BadRequest;
         this.Conflict = ts_httpexceptions_1.Conflict;
         this.Unauthorized = ts_httpexceptions_1.Unauthorized;
+        this.ServiceUnavailable = ts_httpexceptions_1.ServiceUnvailable;
         this.errors = HttpError_1.HttpErrors;
     }
 }

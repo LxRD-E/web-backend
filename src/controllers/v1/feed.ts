@@ -2,21 +2,34 @@
  * Imports
  */
 // TSed
-import { Controller, Get, All, Next, Req, Res, UseBefore, Render, QueryParams, PathParams, Redirect, Response, Request, Locals, UseAfter, Required, Use, Err, Post, BodyParams, HeaderParams, Session, UseBeforeEach, PropertyType, MinItems, MaxItems, Maximum, Minimum, Patch, Delete } from "@tsed/common";
-import { Description, Summary, Returns, ReturnsArray, Hidden } from "@tsed/swagger"; // import swagger Ts.ED module
-import moment = require('moment');
-import { RateLimiterMiddleware } from '../../middleware/RateLimit';
+import {
+    BodyParams,
+    Controller,
+    Delete,
+    Get,
+    Locals,
+    Patch,
+    PathParams,
+    Post,
+    QueryParams,
+    Req,
+    Required,
+    Res,
+    Use,
+    UseBeforeEach
+} from "@tsed/common";
+import {Description, Returns, ReturnsArray, Summary} from "@tsed/swagger"; // import swagger Ts.ED module
 // Models
 import * as model from '../../models/models';
 // Middleware
 import * as middleware from '../../middleware/middleware';
 // Auth stuff
-import { setSession, isAuthenticated, verifyPassword, saveSession, hashPassword, csrf } from '../../dal/auth';
+import {csrf} from '../../dal/auth';
 // Autoload
 import controller from '../controller';
-import { NoAuth, YesAuth } from "../../middleware/Auth";
-import RecaptchaV2 from '../../middleware/RecaptchaV2';
-import { UserInfo } from "../../models/v1/user";
+import {YesAuth} from "../../middleware/Auth";
+import moment = require('moment');
+
 /**
  * Feed Controller
  */
@@ -84,7 +97,7 @@ export default class FeedController extends controller {
     ) {
         // urls to match for users of any age
         let urlsToMatch = [
-            /https:\/\/www\.youtube\.com\/watch\?v\=([a-zA-Z\d-_+]+)/g,
+            /https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z\d-_+]+)/g,
             /https:\/\/www\.roblox\.com\/([a-zA-Z\d-_+\/]+)/g,
             /https:\/\/www\.hindigamer\.club\/([a-zA-Z\d-_+\/]+)/g,
             /https:\/\/hindigamer\.club\/([a-zA-Z\d-_+\/]+)/g,
@@ -92,13 +105,17 @@ export default class FeedController extends controller {
         // check age of user
         let userAgeInfo = await this.user.getInfo(userInfo.userId, ['birthDate']);
         let userAge = moment(userAgeInfo.birthDate);
-        if (userAge.isSameOrBefore(moment().subtract(13, 'years'))) {
+        if (userInfo.staff >= 1 || userAge.isSameOrBefore(moment().subtract(18, 'years'))) {
+            urlsToMatch = [
+                /(https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/g
+            ];
+        }else if (userAge.isSameOrBefore(moment().subtract(13, 'years'))) {
             // urls to match for users 13+
             urlsToMatch.push(
                 /https:\/\/discord\.gg\/([a-zA-Z\d-_+\/]+)/g,
                 /https:\/\/discordapp\.com\/([a-zA-Z\d-_+\/]+)/g,
-                /https:\/\/www\.facebook\.com\/([a-zA-Z\d-_\+\?\&\.]+)/g,
-                /https:\/\/facebook\.com\/([a-zA-Z\d-_\+\?\&\.]+)/g,
+                /https:\/\/www\.facebook\.com\/([a-zA-Z\d-_+?&.]+)/g,
+                /https:\/\/facebook\.com\/([a-zA-Z\d-_+?&.]+)/g,
             );
             if (userAge.isSameOrBefore(moment().subtract(18, 'years'))) {
                 // allow any url
@@ -106,11 +123,6 @@ export default class FeedController extends controller {
                     /(https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/g
                 ];
             }
-        }
-        if (userInfo.staff >= 1) {
-            urlsToMatch = [
-                /(https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/g
-            ];
         }
         // First, validate
         let idsArray = ids.split(',');
@@ -168,8 +180,7 @@ export default class FeedController extends controller {
             jobsToProcess.push(processStatus(statusData));
         }
         await Promise.all(jobsToProcess);
-        let results = await this.auth.multiGetOgTagsForYoutubeLinks(urlsToGrab);
-        return results;
+        return await this.auth.multiGetOgTagsForYoutubeLinks(urlsToGrab);
     }
 
     @Get('/friends')

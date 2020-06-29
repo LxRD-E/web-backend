@@ -38,10 +38,8 @@ let AvatarController = class AvatarController extends controller_1.default {
         let Shirt = body.Shirt;
         let Pants = body.Pants;
         let canEdit = await this.avatar.canUserModifyAvatar(userInfo.userId);
-        if (!canEdit) {
-            if (process.env.NODE_ENV === 'production') {
-                throw new this.BadRequest('AvatarCooldown');
-            }
+        if (!canEdit && process.env.NODE_ENV === 'production') {
+            throw new this.BadRequest('AvatarCooldown');
         }
         const LegArray = Filter_1.filterRGB([...LegRGB]);
         const TorsoArray = Filter_1.filterRGB([...TorsoRGB]);
@@ -463,8 +461,7 @@ let AvatarController = class AvatarController extends controller_1.default {
 __decorate([
     common_1.Patch('/'),
     swagger_1.Summary('Update the authenticated users avatar'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     swagger_1.Returns(400, { type: model.Error, description: 'AvatarCooldown: You cannot update your avatar right now\nInvalidCatalogIds: One or more of the catalog ids specified are invalid and/or not owned by the authenticated user\n' }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.BodyParams(model.avatar.UpdateAvatarPayload)),

@@ -25,7 +25,6 @@ import {
     QueryParams,
     Required,
     Use,
-    UseBefore,
     UseBeforeEach
 } from '@tsed/common';
 import {Description, Returns, ReturnsArray, Summary} from '@tsed/swagger';
@@ -40,39 +39,100 @@ export class StaffController extends controller {
     constructor() {
         super();
     }
-    /**
-     * Validate a user has proper staff permissions to access the specified endpoint
-     * @param userInfo 
-     * @param permLevel 
-     */
-    public validate(userInfo: model.user.UserInfo, permLevel: number): void {
-        const staff = userInfo.staff >= permLevel ? true : false;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
+
+    @Get('/permissions')
+    @Summary('Get all permissions')
+    public getPermissions() {
+        return model.staff.Permission;
+    }
+
+    @Get('/permissions/:userId')
+    @Summary('Get permissions for the {userId}')
+    @Use(YesAuth, middleware.staff.validate(0))
+    public async getPermissionsForUserId(
+        @PathParams('userId', Number) userId: number,
+    ) {
+        let allPermissions = await this.staff.getPermissions(userId);
+        let permissionsObject: any = {};
+        for (const perm of allPermissions) {
+            permissionsObject[perm] = model.staff.Permission[perm];
+            permissionsObject[model.staff.Permission[perm]] = perm;
         }
+        return permissionsObject;
+    }
+
+    @Put('/permissions/:userId/:permission')
+    @Summary('Give a permission to the {userId}')
+    @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ManageStaff))
+    public async setPermissionForUserId(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Required()
+        @PathParams('userId', Number) userId: number,
+        @Required()
+        @PathParams('permission', String) permission: string,
+    ) {
+        if (userInfo.userId === userId) {
+            let isOk = await this.staff.getPermissions(userId);
+            if (isOk.includes(model.staff.Permission.ManageSelf) || userInfo.staff >= 100) {
+                // Ok
+            }else{
+                // Bad
+                throw new this.Conflict('InvalidPermissions');
+            }
+        }
+        let permissionId: number = (model.staff.Permission[permission as any] as any);
+
+        if (!permissionId) {
+            throw new this.BadRequest('InvalidPermissionId');
+        }
+        await this.staff.addPermissions(userId, permissionId);
+        return {};
+    }
+
+    @Delete('/permissions/:userId/:permission')
+    @Summary('Remove a permission from the {userId}')
+    @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ManageStaff))
+    public async deletePermissionForUserId(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Required()
+        @PathParams('userId', Number) userId: number,
+        @Required()
+        @PathParams('permission', String) permission: string,
+    ) {
+        if (userInfo.userId === userId) {
+            let isOk = await this.staff.getPermissions(userId);
+            if (isOk.includes(model.staff.Permission.ManageSelf) || userInfo.staff >= 100) {
+                // Ok
+            }else{
+                // Bad
+                throw new this.Conflict('InvalidPermissions');
+            }
+        }
+        let permissionId: number = (model.staff.Permission[permission as any] as any);
+
+        if (!permissionId) {
+            throw new this.BadRequest('InvalidPermissionId');
+        }
+        console.log('deleted',permissionId);
+        await this.staff.deletePermissions(userId, permissionId);
+        return {};
     }
 
     @Get('/user/:userId/transactions')
     @Summary('Get transaction history for the {userId}')
-    @Use(YesAuth)
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation))
     @ReturnsArray(200, {type: model.economy.userTransactions})
     public async getTransactions(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @QueryParams('offset', Number) offset: number = 0,
         @PathParams('userId', Number) userId: number,
     ): Promise<model.economy.userTransactions[]> {
-        this.validate(userInfo, 1);
-        const transactions = await this.economy.getUserTransactions(userId, offset);
-        return transactions;
+        return await this.economy.getUserTransactions(userId, offset);
     }
-    /**
-     * Ban a User
-     * @param deleted Delete the account? This cannot be reversed after 30 days
-     */
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+
     @Post('/user/:userId/ban')
     @Summary('Ban a user')
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.BanUser))
     public async ban(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number,
@@ -83,7 +143,6 @@ export class StaffController extends controller {
         @BodyParams('terminated', String) terminated: string,
         @BodyParams('deleted', String) deleted: string,
     ) {
-        this.validate(userInfo, 2);
         // Verify id
         const numericId = filterId(userId) as number;
         if (!numericId) {
@@ -162,20 +221,14 @@ export class StaffController extends controller {
             'success': true,
         };
     }
-    /**
-     * Unban a User
-     * @param userId 
-     */
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+
     @Post('/user/:userId/unban')
     @Summary('Unban a user')
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.UnbanUser))
     public async unban(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number
     ) {
-        // Verify User
-        this.validate(userInfo, 2);
         // Verify id
         const numericId = filterId(userId) as number;
         if (!numericId) {
@@ -201,16 +254,15 @@ export class StaffController extends controller {
     }
     /**
      * Get Accounts **potentially** associated with a specific userId. This can return duplicate results. This does not guarntee they are the same person
-     * @param userId 
+     * @param userId
      */
-    @UseBefore(YesAuth)
     @Get('/user/:userId/associated-accounts')
     @Summary('Get potentially associated accounts in respect to the provided userId. Can return duplicate results. Results should be taken with a grain of salt')
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation))
     public async getAssociatedAccounts(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number
     ) {
-        this.validate(userInfo, 1);
         // Verify User Exists
         try {
             await this.user.getInfo(userId, ['userId']);
@@ -249,44 +301,30 @@ export class StaffController extends controller {
             accounts: arrayOfAssociatedAccounts,
         };
     }
-    /**
-     * Get Comments on a User made by staff
-     * @param userId 
-     * @param offset 
-     * @param limit 
-     */
-    @UseBefore(YesAuth)
+
     @Get('/user/:userId/comments')
     @Summary('Get staff comments posted to a userId')
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation))
     public async getUserComments(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number,
         @QueryParams('offset', Number) offset: number = 0,
         @QueryParams('limit', Number) limit: number = 100,
     ) {
-        this.validate(userInfo, 1);
         const comments = await this.staff.getUserComments(userId, offset, limit);
         return {
             comments: comments,
         };
     }
 
-    /**
-     * Create a Comment on a user moderation profile
-     * @param userId 
-     * @param comment 
-     */
     @Post('/user/:userId/comment')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
     @Summary('Post a comment to a user profile')
+    @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ReviewUserInformation))
     public async createUserComment(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number,
         @BodyParams('comment', String) comment: string
     ): Promise<{ success: true }> {
-        // Validate
-        this.validate(userInfo, 1);
         if (!comment || comment.length < 4 || comment.length > 1024) {
             throw new this.BadRequest('CommentTooLarge');
         }
@@ -302,19 +340,13 @@ export class StaffController extends controller {
         };
     }
 
-    /**
-     * Reset a user's password. Returns new password
-     * @param userId 
-     */
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
     @Post('/user/:userId/resetpassword')
     @Summary('Reset a users password. Returns a link for the staff member to give to the user')
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.ResetPassword))
     public resetPassword(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number,
     ) {
-        this.validate(userInfo, 2);
         return new Promise((resolve, reject): void => {
             // Verify User
             const staff = userInfo.staff > 1 ? true : false;
@@ -356,21 +388,14 @@ export class StaffController extends controller {
         });
     }
 
-    /**
-     * Give an Item to a User
-     * @param userId 
-     */
     @Post('/user/:userId/give/:catalogId')
     @Summary('Give an item to a user')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.GiveItemToUser))
     public async give(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number,
         @PathParams('catalogId', Number) catalogId: number
     ) {
-        // Verify User
-        this.validate(userInfo, 3);
         // Verify id
         const numericId = filterId(userId) as number;
         if (!numericId) {
@@ -411,21 +436,15 @@ export class StaffController extends controller {
         // Return success
         return { 'success': true };
     }
-    /**
-     * Give Currency to a User
-     * @param userId 
-     */
+
     @Put('/user/:userId/currency')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.GiveCurrencyToUser))
     public async giveCurrency(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number,
         @BodyParams('amount', Number) amount: number,
         @BodyParams('currency', Number) currency: model.economy.currencyType
     ) {
-        // Verify User
-        this.validate(userInfo, 3);
         // Verify id
         const numericId = filterId(userId) as number;
         if (!numericId) {
@@ -457,33 +476,23 @@ export class StaffController extends controller {
         return { 'success': true };
     }
 
-    /**
-     * Get items awaiting moderation
-     */
-    @UseBefore(YesAuth)
     @Get('/catalog/pending')
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewPendingItems))
     public async getPendingModerationCatalogItems(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ) {
         // Verify User
-        this.validate(userInfo, 1);
-        const data = await this.staff.getItems();
-        return data;
+        return await this.staff.getItems();
     }
 
-    /**
-     * Multi-Get Catalog Thumbnails at once, ignoring moderation status
-     * @param ids CSV of IDs
-     */
-    @UseBefore(YesAuth)
+
     @Get('/catalog/thumbnails')
     @Summary('Multi-get thumbnails, ignoring moderation state')
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewPendingItems))
     public async multiGetThumbnails(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @QueryParams('ids', String) ids: string
     ): Promise<model.catalog.ThumbnailResponse[]> {
-        // Verify User
-        this.validate(userInfo, 1);
         // Convert CSV to array
         const idsArray = ids.split(',');
         if (idsArray.length < 1) {
@@ -501,14 +510,14 @@ export class StaffController extends controller {
         if (safeIds.length > 25 || safeIds.length < 1) {
             throw new this.BadRequest('InvalidIds');
         }
-        const thumbnails = await this.staff.multiGetThumbnailsFromIdsIgnoreModeration(safeIds);
-        return thumbnails;
+        return await this.staff.multiGetThumbnailsFromIdsIgnoreModeration(safeIds);
     }
 
     @Get('/thumbnails')
     @Summary('Multi-get thumbnails by CSV of gameIds, ignoring moderation')
     @Description('Invalid IDs will be filtered out')
     @ReturnsArray(200, {type: model.game.GameThumbnail})
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewPendingItems))
     public async multiGetGameThumbnails(
         @Required()
         @QueryParams('ids', String) gameIds: string,
@@ -533,25 +542,17 @@ export class StaffController extends controller {
         if (safeIds.length > 25) {
             throw new this.BadRequest('TooManyIds');
         }
-        let results = await this.game.multiGetGameThumbnails(safeIds, true);
-        return results;
+        return await this.game.multiGetGameThumbnails(safeIds, true);
     }
 
-    /**
-     * Update ad item state
-     * @param userInfo 
-     * @param catalogId 
-     * @param moderationStatus 
-     */
     @Patch('/ad/:adId/')
     @Summary('Update ad item state')
-    @Use(csrf, YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.ManageAssets))
     public async updateAdState(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('adId', Number) adId: number,
         @BodyParams('state', Number) moderationStatus: number
     ) {
-        this.validate(userInfo, 1);
         if (moderationStatus !== 1 && moderationStatus !== 2) {
             throw new this.BadRequest('InvalidState');
         }
@@ -566,21 +567,14 @@ export class StaffController extends controller {
         };
     }
 
-    /**
-     * Update a game thumbnail
-     * @param userInfo 
-     * @param catalogId 
-     * @param moderationStatus 
-     */
     @Patch('/game-thumbnail/:gameThumbnailId/')
     @Summary('Update a game thumbnail item state')
-    @Use(csrf, YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.ReviewPendingItems))
     public async updateGameThumbnailState(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('gameThumbnailId', Number) gameThumbnailId: number,
         @BodyParams('state', Number) moderationStatus: number
     ) {
-        this.validate(userInfo, 1);
         if (moderationStatus !== 1 && moderationStatus !== 2) {
             throw new this.BadRequest('InvalidState');
         }
@@ -590,23 +584,14 @@ export class StaffController extends controller {
         };
     }
 
-    /**
-     * Update Item State
-     * @param catalogId 
-     * @param moderationStatus 
-     */
     @Patch('/catalog/:catalogId')
     @Summary('Update items moderation state')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.ReviewPendingItems))
     public async updateItemStatus(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('catalogId', Number) catalogId: number,
         @BodyParams('state', Number) moderationStatus: number
     ) {
-        console.log(catalogId);
-        // Verify User
-        this.validate(userInfo, 1);
         const numericCatalogId = filterId(catalogId) as number;
         let itemInfo = await this.catalog.getInfo(numericCatalogId, ['creatorId', 'creatorType', 'catalogName'])
         let numericState = filterId(moderationStatus) as number;
@@ -626,14 +611,9 @@ export class StaffController extends controller {
         };
     }
 
-    /**
-     * Force a user's avatar to be re/generated
-     * @param userId 
-     */
     @Post('/user/:userId/avatar')
     @Summary('Force a users avatar to be [re]generated')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.RegenerateThumbnails))
     public async regenAvatar(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number,
@@ -641,9 +621,6 @@ export class StaffController extends controller {
         yieldUntilComplete: boolean = false,
         setUserUrl: boolean = true,
     ) {
-        // Verify User
-        this.validate(userInfo, 1);
-
         const numericUserId = filterId(userId) as number;
         if (!numericUserId) {
             throw new this.BadRequest('InvalidUserId');
@@ -717,22 +694,14 @@ export class StaffController extends controller {
         };
     }
 
-    /**
-     * Update the Site Banner
-     * @param enabled 
-     * @param bannerText 
-     */
     @Patch('/banner')
     @Summary('Update site-wide banner text')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.ManageBanner))
     public async updateBanner(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @BodyParams('enabled', Number) enabled: number,
         @BodyParams('text', String) bannerText: string
     ) {
-        // Verify User
-        this.validate(userInfo, 2);
         let isEnabled = filterId(enabled) as number;
         if (!isEnabled) {
             isEnabled = 0;
@@ -758,14 +727,11 @@ export class StaffController extends controller {
      */
     @Delete('/user/:userId/blurb')
     @Summary('Delete a users blurb')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo))
     public async deleteBlurb(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number
     ) {
-        // Verify User
-        this.validate(userInfo, 1);
         await this.settings.updateBlurb(userId, '[ Content Deleted ]');
         return {
             'success': true,
@@ -777,14 +743,11 @@ export class StaffController extends controller {
      */
     @Delete('/user/:userId/status')
     @Summary('Delete a users status')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo))
     public async deleteStatus(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number
     ) {
-        // Verify User
-        this.validate(userInfo, 1);
         // grab id of current status
         let currentStatus = await this.user.multiGetStatus([userId], 0, 1);
         if (currentStatus[0]) {
@@ -804,53 +767,41 @@ export class StaffController extends controller {
      */
     @Delete('/user/:userId/forum/signature')
     @Summary('Delete a users forum signature')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo))
     public async deleteForumSignature(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number
     ) {
         // Verify User
-        this.validate(userInfo, 1);
         await this.settings.updateSignature(userId, '[ Content Deleted ]');
         return {
             'success': true,
         };
     }
 
-    /**
-     * Delete a User's 2FA Status
-     */
     @Delete('/user/:userId/two-factor')
     @Summary('Disable an accounts two-factor authentcation')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.ManagePrivateUserInfo))
     public async disableTwoFactor(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number
     ) {
         // Verify User
-        this.validate(userInfo, 1);
         await this.settings.disable2fa(userId);
         return {
             'success': true,
         };
     }
 
-     /**
-     * Clear a users balance
-     */
     @Delete('/user/:userId/clear-balance/:currencyTypeId')
     @Summary('Clear the balance of the {currencyTypeId} for the {userId}')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.TakeCurrencyFromUser))
     public async clearBalance(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userId', Number) userId: number,
         @PathParams('currencyTypeId', Number) currencyTypeId: number
     ) {
         // Verify User
-        this.validate(userInfo, 2);
         if (currencyTypeId !== 1 && currencyTypeId !== 2) {
             throw new this.BadRequest('InvalidCurrencyType');
         }
@@ -866,47 +817,82 @@ export class StaffController extends controller {
         };
     }
 
-    /**
-     * Get all staff
-     * @param offset 
-     */
+    @Put('/user/inventory/provide-items')
+    @Summary('Provide items to the {userId}')
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.GiveItemToUser))
+    public async provideItemToUser(
+        @Required()
+        @BodyParams(model.staff.ProvideItemsRequest) body: model.staff.ProvideItemsRequest,
+    ) {
+        const forUpdate = [
+            'users',
+            'user_inventory',
+        ];
+        await this.transaction(this, forUpdate, async function(trx) {
+            for (const item of body.catalogIds) {
+                let badDecisions = await trx.user.getUserInventoryByCatalogId(50, item);
+                if (badDecisions.length >= 1) {
+                    // Steal from BadDecisions and give to user
+                    let item = badDecisions[0];
+                    await trx.catalog.updateUserInventoryIdOwner(item.userInventoryId, body.userIdTo);
+                }else{
+                    // Create a new item
+                    await trx.catalog.createItemForUserInventory(body.userIdTo, item);
+                }
+            }
+        });
+        return {};
+    }
+
+    @Patch('/user/inventory/transfer-item')
+    @Summary('Transfer one or more item(s) from the {userId}')
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.TakeItemFromUser))
+    public async transferItem(
+        @Required()
+        @BodyParams(model.staff.TransferItemsRequest) body: model.staff.TransferItemsRequest,
+    ) {
+        const forUpdate = [
+            'users',
+            'user_inventory',
+        ];
+        await this.transaction(this, forUpdate, async function(trx) {
+            for (const item of body.userInventoryIds) {
+                let itemData = await trx.user.getItemByInventoryId(item);
+                if (itemData.userId !== body.userIdFrom) {
+                    throw new this.BadRequest('InvalidUserId');
+                }
+                await trx.user.editItemPrice(item, 0);
+                await trx.catalog.updateUserInventoryIdOwner(item, body.userIdTo);
+            }
+        });
+        return {};
+    }
+
     @Get('/search')
     @Summary('Search staff')
     public async search(
         @QueryParams('offset', Number) offset: number = 0
     ) {
         const numericOffset = filterOffset(offset);
-        const results = await this.staff.search(numericOffset);
-        return results;
+        return await this.staff.search(numericOffset);
     }
 
-    /**
-     * Get the Web Server's Status
-     */
     @Get('/status/web')
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.ManageWeb))
     public async getServerStatus(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ): Promise<model.staff.SystemUsageStats> {
         // Verify User
-        this.validate(userInfo, 1);
-        const status = await this.staff.getServerStatus();
-        return status;
+        return await this.staff.getServerStatus();
     }
 
-    /**
-     * Update a User's Staff Rank
-     * @param userId 
-     */
     @Patch('/user/:userId/rank')
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.ManageStaff))
     public async updateUserStaffRank(
         @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('userId', Number) userId: number, 
+        @PathParams('userId', Number) userId: number,
         @BodyParams('rank', Number) newRank: number
     ) {
-        this.validate(userInfo, 3);
         if (newRank !== 0 && newRank !== 1 && newRank !== 2 && newRank !== 3) {
             throw new this.BadRequest('InvalidRank');
         }
@@ -928,7 +914,7 @@ export class StaffController extends controller {
 
     @Patch('/forum/category/:categoryId')
     @Summary('Update a forum category')
-    @Use(csrf, YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.ManageForumCategories))
     public async updateForumCategory(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
@@ -940,8 +926,6 @@ export class StaffController extends controller {
         @Required()
         @BodyParams('weight', Number) weight: number = 0,
     ) {
-        // Validate staff rank
-        this.validate(userInfo, 3);
         // Update cat
         await this.forum.updateCategory(catId, title, description, weight);
         // Return success
@@ -952,7 +936,7 @@ export class StaffController extends controller {
 
     @Put('/forum/category/')
     @Summary('Update a forum category')
-    @Use(csrf, YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.ManageForumCategories))
     public async createForumCategory(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
@@ -962,8 +946,6 @@ export class StaffController extends controller {
         @Required()
         @BodyParams('weight', Number) weight: number = 0,
     ) {
-        // Validate staff rank
-        this.validate(userInfo, 3);
         // Update cat
         await this.forum.createCategory(title, description, weight);
         // Return success
@@ -974,7 +956,7 @@ export class StaffController extends controller {
 
     @Patch('/forum/sub-category/:subCategoryId')
     @Summary('Update a forum subCategory')
-    @Use(csrf,YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.ManageForumCategories))
     public async updateForumSubCategory(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
@@ -991,8 +973,6 @@ export class StaffController extends controller {
         @BodyParams('postPermissionLevel', Number) postPermissionLevel: number,
         @BodyParams('weight', Number) weight: number = 0,
     ) {
-        // Validate staff rank
-        this.validate(userInfo, 3);
         // Update sub
         await this.forum.updateSubCategory(subId, catId, title, desc, readPermissionLevel, postPermissionLevel, weight);
         // Return success
@@ -1003,7 +983,7 @@ export class StaffController extends controller {
 
     @Put('/forum/sub-category/')
     @Summary('Create a forum subCategory')
-    @Use(csrf,YesAuth)
+    @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.ManageForumCategories))
     public async createForumSubCategory(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
@@ -1018,8 +998,6 @@ export class StaffController extends controller {
         @BodyParams('postPermissionLevel', Number) postPermissionLevel: number,
         @BodyParams('weight', Number) weight: number = 0,
     ) {
-        // Validate staff rank
-        this.validate(userInfo, 3);
         // Create sub
         await this.forum.createSubCategory(catId, title, desc, readPermissionLevel, postPermissionLevel, weight);
         // Return success
@@ -1030,48 +1008,41 @@ export class StaffController extends controller {
 
     @Get('/support/tickets-awaiting-response')
     @Summary('Get support tickets awaiting cs response')
-    @Use(YesAuth)
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ManageSupportTickets))
     public async getTickets(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ) {
-        this.validate(userInfo, 1);
-        let tickets = this.support.getTicketsAwaitingSupportResponse();
-        return tickets;
+        return this.support.getTicketsAwaitingSupportResponse();
     }
 
     @Get('/support/tickets-all')
     @Summary('Get all support tickets, excluding ones that are closed')
-    @Use(YesAuth)
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ManageSupportTickets))
     public async getAllTickets(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ) {
-        this.validate(userInfo, 1);
-        let tickets = this.support.getTicketsNotClosed();
-        return tickets;
+        return this.support.getTicketsNotClosed();
     }
 
     @Get('/support/ticket/:ticketId/replies')
     @Summary('Get replies to ticket')
-    @Use(YesAuth)
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ManageSupportTickets))
     public async getRepliesToTicket(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('ticketId', Number) ticketId: number
     ) {
-        this.validate(userInfo, 1);
-        let responses = await this.support.getTicketRepliesAll(ticketId);
-        return responses;
+        return await this.support.getTicketRepliesAll(ticketId);
     }
 
     @Post('/support/ticket/:ticketId/reply')
     @Summary('Reply to a ticket')
-    @Use(csrf, YesAuth)
+    @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ManageSupportTickets))
     public async replyToTicket(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('ticketId', Number) ticketId: number,
         @BodyParams('body', String) body: string,
         @BodyParams('visibleToClient', Boolean) visibleToClient: boolean = true,
     ) {
-        this.validate(userInfo, 1);
         // reply
         await this.support.replyToTicket(ticketId, userInfo.userId, body, visibleToClient);
         // return success
@@ -1101,13 +1072,12 @@ export class StaffController extends controller {
 
     @Patch('/support/ticket/:ticketId/status')
     @Summary('Update ticket_status')
-    @Use(csrf, YesAuth)
+    @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ManageSupportTickets))
     public async updateTicketStatus(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('ticketId', Number) ticketId: number,
         @BodyParams('status', Number) status: number,
     ) {
-        this.validate(userInfo, 1);
         if (!model.support.TicketStatus[status]) {
             throw new this.BadRequest('InvalidTicketStatus');
         }
@@ -1120,13 +1090,12 @@ export class StaffController extends controller {
 
     @Patch('/groups/:groupId/status')
     @Summary('Update a groups status')
-    @Use(csrf, YesAuth)
+    @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ManageGroup))
     public async updateGroupStatus(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number,
         @BodyParams('status', Number) status: number,
     ) {
-        this.validate(userInfo, 2);
         if (!model.group.groupStatus[status]) {
             throw new this.BadRequest('InvalidGroupStatus');
         }
@@ -1140,19 +1109,17 @@ export class StaffController extends controller {
 
     @Get('/feed/friends/abuse-reports')
     @Summary('Get latest abuse reports for friend feed')
-    @Use(YesAuth)
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewAbuseReports))
     @ReturnsArray(200, {type: model.reportAbuse.ReportedStatusEntry})
     public async latestAbuseReports(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ) {
-        this.validate(userInfo, 1);
-        let pendingAbuseReports = await this.reportAbuse.latestReportedUserStatuses();
-        return pendingAbuseReports;
+        return await this.reportAbuse.latestReportedUserStatuses();
     }
 
     @Patch('/feed/friends/abuse-report/:reportId/')
     @Summary('Update a friends feed abuse-report status')
-    @Use(csrf, YesAuth)
+    @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ReviewAbuseReports))
     @Returns(200, {description: 'Abuse report has been updated'})
     public async updateAbuseReportStatus(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -1160,7 +1127,6 @@ export class StaffController extends controller {
         @Required()
         @BodyParams('status', Number) status: number,
     ) {
-        this.validate(userInfo, 1);
         if (!model.reportAbuse.ReportStatus[status]) {
             throw new this.BadRequest('InvalidStatus');
         }
@@ -1174,12 +1140,12 @@ export class StaffController extends controller {
     @Delete('/feed/friends/:userStatusId')
     @Summary('Delete a userStatusId')
     @Use(csrf, YesAuth)
+    @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo))
     @Returns(200, {description: 'Status Deleted'})
     public async deleteUserStatusId(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userStatusId', Number) userStatusId: number,
     ) {
-        this.validate(userInfo, 1);
         let info = await this.user.getStatusById(userStatusId);
         // update status to delete
         await this.user.updateStatusByid(userStatusId, '[ Content Deleted ]');
@@ -1196,7 +1162,7 @@ export class StaffController extends controller {
     @Description('Requestee is authenticated user, requested is the partner involved with the trade')
     @Returns(200, { type: model.economy.TradeItemsResponse })
     @Returns(400, { type: model.Error, description: 'InvalidTradeId: TradeId is invalid or you do not have permission to view it\n' })
-    @UseBeforeEach(YesAuth)
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo))
     public async getTradeItems(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('tradeId', Number) numericTradeId: number,
@@ -1204,9 +1170,6 @@ export class StaffController extends controller {
         @Description('userId to impersonate')
         @QueryParams('userId', Number) userId: number,
     ) {
-        if (userInfo.staff >= 2  === false) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         let tradeInfo: model.economy.ExtendedTradeInfo;
         try {
             tradeInfo = await this.economy.getTradeById(numericTradeId);
@@ -1228,7 +1191,7 @@ export class StaffController extends controller {
 
     @Get('/economy/trades/:type')
     @Summary('Get user trades')
-    @Use(YesAuth)
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo))
     @ReturnsArray(200, { type: model.economy.TradeInfo })
     @Returns(400, { type: model.Error, description: 'InvalidTradeType: TradeType must be one of: inbound,outbound,completed,inactive\n' })
     public async getTrades(
@@ -1253,7 +1216,7 @@ export class StaffController extends controller {
 
     @Post('/user/:userId/game-dev')
     @Summary('Modify is_developer state of the {userId}')
-    @Use(csrf, YesAuth, middleware.user.ValidateUserId)
+    @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo))
     public async updateIsGameDevPermission(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()

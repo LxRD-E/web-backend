@@ -348,10 +348,8 @@ class AvatarDAL extends _init {
         jsonString.Hats.OBJ = jsonString.Hats.OBJ.sort();
         jsonString.Hats.Texture = jsonString.Hats.Texture.sort();
         */
-        // Define hash
-        const hash = crypto.createHash('sha256').update(JSON.stringify(jsonString)).digest('hex');
-        // Return
-        return hash;
+        // create hash
+        return crypto.createHash('sha256').update(JSON.stringify(jsonString)).digest('hex');
     }
 
     /**
@@ -363,10 +361,8 @@ class AvatarDAL extends _init {
         if (!latestModification || !latestModification[0]) {
             return true;
         }
-        if (this.moment().isSameOrAfter(this.moment(latestModification[0]["date"]).add(15, "seconds"))) {
-            return true;
-        }
-        return false;
+        return this.moment().isSameOrAfter(this.moment(latestModification[0]["date"]).add(15, "seconds"));
+
     }
 
     /**

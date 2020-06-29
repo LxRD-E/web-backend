@@ -146,6 +146,26 @@ class StaffDAL extends _init_1.default {
     async updateGameThumbnailState(gameThumbnailId, state) {
         await this.knex('game_thumbnails').update({ "moderation_status": state }).where({ 'id': gameThumbnailId }).limit(1);
     }
+    async getPermissions(userId) {
+        let results = await this.knex('user_staff_permission').select('permission', 'user_id').where({
+            'user_id': userId,
+        });
+        return results.map(val => {
+            return val.permission;
+        });
+    }
+    async addPermissions(userId, permission) {
+        await this.knex('user_staff_permission').insert({
+            'user_id': userId,
+            'permission': permission,
+        });
+    }
+    async deletePermissions(userId, permission) {
+        await this.knex('user_staff_permission').delete().where({
+            'user_id': userId,
+            'permission': permission,
+        });
+    }
 }
 exports.default = StaffDAL;
 

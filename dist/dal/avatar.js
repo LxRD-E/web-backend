@@ -169,18 +169,14 @@ class AvatarDAL extends _init_1.default {
     createThumbnailHash(thumbnailJson) {
         const jsonString = JSON.parse(JSON.stringify(thumbnailJson));
         jsonString.UserId = 0;
-        const hash = crypto.createHash('sha256').update(JSON.stringify(jsonString)).digest('hex');
-        return hash;
+        return crypto.createHash('sha256').update(JSON.stringify(jsonString)).digest('hex');
     }
     async canUserModifyAvatar(userId) {
         const latestModification = await this.knex("user_avatar").select("date").where({ "userid": userId }).orderBy("id", "desc").limit(1);
         if (!latestModification || !latestModification[0]) {
             return true;
         }
-        if (this.moment().isSameOrAfter(this.moment(latestModification[0]["date"]).add(15, "seconds"))) {
-            return true;
-        }
-        return false;
+        return this.moment().isSameOrAfter(this.moment(latestModification[0]["date"]).add(15, "seconds"));
     }
     async generateAvatarFromModels(userId, avatarColors, avatar) {
         const avatarObject = {

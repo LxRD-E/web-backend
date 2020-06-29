@@ -58,6 +58,7 @@ export const getCspString = (): string => {
 }
 
 export const lbOrigin = crypto.randomBytes(8).toString('base64');
+export const version = crypto.randomBytes(8).toString('hex');
 /**
  * Generate CSP with nonce middleware
  */
@@ -112,7 +113,13 @@ export const generateCspWithNonce = async (req: Request, res: Response, next: Ne
         // CSP Headers
         'Content-Security-Policy': headerString,
     });
+    // Version
+    res.locals.version =
+    // Nonce
     res.locals.nonce = nonce;
+    // Setup js
+    res.locals.javascript = getJavascript(nonce, version);
+    // OK
     next();
 }
 
@@ -126,6 +133,17 @@ export const getIp = (req: Request): string => {
         }
         return req.connection.remoteAddress;
     }
+}
+
+export const getJavascript = (nonce: string, version: string): string => {
+    return `
+        <script nonce="${nonce}" src="/js/warning.js"></script>
+        <script nonce="${nonce}" src="/js/bundle/sentry.bundle.js?v=${version}"></script>
+        <script nonce="${nonce}">
+            Sentry.init({ dsn: 'https://a5c3a9adef4a4e149a1e2d1651b9da4d@sentry.io/2505702' });
+        </script>
+        <script nonce="${nonce}" src="/js/bundle/main.bundle.js?v=${version}"></script>
+        <script nonce="${nonce}" src="/js/bundle/bootstrap.bundle.js?v=${version}"></script>`;
 }
 
 export default async (req: Request, res: Response, next: NextFunction, UserModel = UserDAL, ModModel = ModDAL, setSession = setSessionNormal, regenCsrf = regenCsrfNormal): Promise<void> => {

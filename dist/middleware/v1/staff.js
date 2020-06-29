@@ -34,4 +34,50 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StaffValidateLevelOne.prototype, "use", null);
 exports.StaffValidateLevelOne = StaffValidateLevelOne;
+const dal = new controller_1.default();
+exports.AddPermissionsToLocals = async (req, res, next) => {
+    try {
+        let userInfo = res.locals.userInfo;
+        if (!userInfo || userInfo.staff === 0) {
+            return next();
+        }
+        userInfo.staffPermissions = await dal.staff.getPermissions(userInfo.userId);
+        res.locals.hasPerm = (permission) => {
+            return userInfo.staff >= 100 || userInfo.staffPermissions.includes(model.staff.Permission[permission]);
+        };
+        next();
+    }
+    catch (err) {
+        return next(err);
+    }
+};
+exports.validate = (level) => {
+    return async (req, res, next) => {
+        try {
+            let userInfo = res.locals.userInfo;
+            if (!userInfo) {
+                throw new dal.Conflict('InvalidPermissions');
+            }
+            if (!level) {
+                if (userInfo.staff >= 1) {
+                    return next();
+                }
+                else {
+                    throw new dal.Conflict('InvalidPermissions');
+                }
+            }
+            if (userInfo.staff >= 100) {
+                return next();
+            }
+            const userPermissions = await dal.staff.getPermissions(userInfo.userId);
+            if (userPermissions.includes(level)) {
+                return next();
+            }
+            throw new dal.Conflict('InvalidPermissions');
+        }
+        catch (err) {
+            return next(err);
+        }
+    };
+};
 

@@ -715,16 +715,12 @@ __decorate([
     common_1.Required(),
     swagger_1.Description('An array of userInventoryIds that the authenticated user wishes to offer'),
     common_1.PropertyType(Number),
-    common_1.MinItems(1),
-    common_1.MaxItems(4),
     __metadata("design:type", Array)
 ], CreateTradeRequest.prototype, "offerItems", void 0);
 __decorate([
     common_1.Required(),
     swagger_1.Description('An array of userInventoryIds that the userId wants in return for their offer'),
     common_1.PropertyType(Number),
-    common_1.MinItems(1),
-    common_1.MaxItems(4),
     __metadata("design:type", Array)
 ], CreateTradeRequest.prototype, "requestedItems", void 0);
 __decorate([

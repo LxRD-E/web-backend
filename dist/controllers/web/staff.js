@@ -24,6 +24,7 @@ const controller_1 = require("../controller");
 const moment = require("moment");
 const UserModel = require("../../models/v1/user");
 const Auth_1 = require("../../middleware/Auth");
+const Middleware = require("../../middleware/middleware");
 let WWWStaffController = class WWWStaffController extends controller_1.default {
     constructor() {
         super();
@@ -32,80 +33,36 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
         return new this.WWWTemplate({ title: 'Staff' });
     }
     async directoryStaff(userInfo) {
-        const staff = userInfo.staff >= 1;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({ title: 'Staff Directory', userInfo: userInfo });
     }
     async createItem(userInfo) {
-        const staff = userInfo.staff >= 1;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({ title: 'Staff Create', userInfo: userInfo });
     }
     async currencyProductEditor(userInfo) {
-        const staff = userInfo.staff >= 3;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({ title: 'Currency Products', userInfo: userInfo });
     }
     async ban(userInfo) {
-        const staff = userInfo.staff >= 2;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({ title: 'Ban a User', userInfo: userInfo });
     }
     async unban(userInfo) {
-        const staff = userInfo.staff >= 2;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({ title: 'Unban a User', userInfo: userInfo });
     }
     async resetPassword(userInfo) {
-        const staff = userInfo.staff >= 2;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({ title: 'Reset a password', userInfo: userInfo });
     }
     async catalogPending(userInfo) {
-        const staff = userInfo.staff >= 1;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({ title: 'Items Awaiting Moderator Approval', userInfo: userInfo });
     }
     async reportAbuseUserStatus(userInfo) {
-        const staff = userInfo.staff >= 1;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({ title: 'User Status Reports', userInfo: userInfo });
     }
     async giveItem(userInfo) {
-        const staff = userInfo.staff >= 3;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({ title: 'Give an Item', userInfo: userInfo });
     }
     async giveCurrency(userInfo) {
-        const staff = userInfo.staff >= 3;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({ title: 'Give Currency', userInfo: userInfo });
     }
     async editBanner(userInfo) {
-        const staff = userInfo.staff >= 2;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({ title: 'Edit Banner', userInfo: userInfo });
     }
     async moderationProfile(localUserData, userId) {
@@ -120,6 +77,8 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
         let isEmailVerified = false;
         let userEmails = [];
         let twoFactorEnabled = false;
+        let allStaffPermissionTypes = model.staff.Permission;
+        let alreadySelectedPermissions = await this.staff.getPermissions(userId);
         try {
             userInfo = await this.user.getInfo(userId, ['accountStatus', 'userId', 'username', 'primaryBalance', 'secondaryBalance', 'blurb', 'staff', 'birthDate', 'dailyAward', 'lastOnline', 'status', 'joinDate', 'forumSignature', '2faEnabled', 'isDeveloper']);
             if (userInfo['2faEnabled'] === 1) {
@@ -150,6 +109,33 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
         ViewData.page.ModerationHistory = moderationHistory;
         ViewData.page.userEmails = userEmails;
         ViewData.page.twoFactorEnabled = twoFactorEnabled;
+        const staffPermissionSelect = [];
+        let currentUserInfo = await this.staff.getPermissions(userInfo.userId);
+        if (currentUserInfo.includes(model.staff.Permission.ManageStaff) || localUserData.staff >= 100) {
+            for (const perm of alreadySelectedPermissions) {
+                let int = parseInt(perm, 10);
+                if (!isNaN(int)) {
+                    let str = model.staff.Permission[int];
+                    staffPermissionSelect.push({
+                        string: str,
+                        selected: true,
+                    });
+                }
+            }
+            for (const extraPerm in allStaffPermissionTypes) {
+                let int = parseInt(extraPerm, 10);
+                if (isNaN(int)) {
+                    let included = staffPermissionSelect.map(val => { return val.string === extraPerm; });
+                    if (!included[0]) {
+                        staffPermissionSelect.push({
+                            string: extraPerm,
+                            selected: false,
+                        });
+                    }
+                }
+            }
+        }
+        ViewData.page.staffPermissionSelect = staffPermissionSelect;
         return ViewData;
     }
     async moderationTrades(localUserData, userId) {
@@ -190,10 +176,6 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
         return ViewData;
     }
     async modifyForums(userInfo) {
-        const staff = userInfo.staff >= 3;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         let cats = await this.forum.getCategories();
         let subs = await this.forum.getSubCategories();
         for (const sub of subs) {
@@ -209,24 +191,12 @@ let WWWStaffController = class WWWStaffController extends controller_1.default {
             } });
     }
     async staffTickets(userInfo) {
-        const staff = userInfo.staff >= 1;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({ title: 'View Tickets Awaiting Response', userInfo: userInfo });
     }
     async searchUsers(userInfo) {
-        const staff = userInfo.staff >= 1;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         return new this.WWWTemplate({ title: 'Search Users', userInfo: userInfo });
     }
     async searchUsersResults(userInfo, req) {
-        const staff = userInfo.staff >= 1;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         let query;
         let column;
         if (req.query.email) {
@@ -292,7 +262,7 @@ __decorate([
 ], WWWStaffController.prototype, "listOfStaff", null);
 __decorate([
     common_1.Get('/staff/directory'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth),
     common_1.Render('staff/index'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -301,7 +271,7 @@ __decorate([
 ], WWWStaffController.prototype, "directoryStaff", null);
 __decorate([
     common_1.Get('/staff/create'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.UploadStaffAssets)),
     common_1.Render('staff/create'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -310,7 +280,7 @@ __decorate([
 ], WWWStaffController.prototype, "createItem", null);
 __decorate([
     common_1.Get('/staff/currency-product'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.ManageCurrencyProducts)),
     common_1.Render('staff/currency_product'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -319,7 +289,7 @@ __decorate([
 ], WWWStaffController.prototype, "currencyProductEditor", null);
 __decorate([
     common_1.Get('/staff/ban'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.BanUser)),
     common_1.Render('staff/ban'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -328,7 +298,7 @@ __decorate([
 ], WWWStaffController.prototype, "ban", null);
 __decorate([
     common_1.Get('/staff/unban'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.UnbanUser)),
     common_1.Render('staff/unban'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -337,7 +307,7 @@ __decorate([
 ], WWWStaffController.prototype, "unban", null);
 __decorate([
     common_1.Get('/staff/password'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.ResetPassword)),
     common_1.Render('staff/password'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -346,7 +316,7 @@ __decorate([
 ], WWWStaffController.prototype, "resetPassword", null);
 __decorate([
     common_1.Get('/staff/catalog'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.ReviewPendingItems)),
     common_1.Render('staff/catalog_moderation'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -355,7 +325,7 @@ __decorate([
 ], WWWStaffController.prototype, "catalogPending", null);
 __decorate([
     common_1.Get('/staff/report-abuse/user-status'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.ReviewAbuseReports)),
     common_1.Render('staff/report-abuse/user-status'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -364,7 +334,7 @@ __decorate([
 ], WWWStaffController.prototype, "reportAbuseUserStatus", null);
 __decorate([
     common_1.Get('/staff/give'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.GiveItemToUser)),
     common_1.Render('staff/give'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -373,7 +343,7 @@ __decorate([
 ], WWWStaffController.prototype, "giveItem", null);
 __decorate([
     common_1.Get('/staff/give/currency'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.GiveCurrencyToUser)),
     common_1.Render('staff/give_currency'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -382,7 +352,7 @@ __decorate([
 ], WWWStaffController.prototype, "giveCurrency", null);
 __decorate([
     common_1.Get('/staff/banner'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.ManageBanner)),
     common_1.Render('staff/banner'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -391,7 +361,7 @@ __decorate([
 ], WWWStaffController.prototype, "editBanner", null);
 __decorate([
     common_1.Get('/staff/user/profile'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.ReviewUserInformation)),
     common_1.Render('staff/user/profile'),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
@@ -402,7 +372,7 @@ __decorate([
 ], WWWStaffController.prototype, "moderationProfile", null);
 __decorate([
     common_1.Get('/staff/user/trades'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.GiveItemToUser)),
     common_1.Render('staff/user/trades'),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
@@ -413,7 +383,7 @@ __decorate([
 ], WWWStaffController.prototype, "moderationTrades", null);
 __decorate([
     common_1.Get('/staff/groups/manage'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.ManageGroup)),
     common_1.Render('staff/groups/manage'),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
@@ -424,7 +394,7 @@ __decorate([
 ], WWWStaffController.prototype, "moderationGroup", null);
 __decorate([
     common_1.Get('/staff/forums'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.ManageForumCategories)),
     common_1.Render('staff/forums'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -433,7 +403,7 @@ __decorate([
 ], WWWStaffController.prototype, "modifyForums", null);
 __decorate([
     common_1.Get('/staff/tickets'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.ManageSupportTickets)),
     common_1.Render('staff/tickets'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -442,7 +412,7 @@ __decorate([
 ], WWWStaffController.prototype, "staffTickets", null);
 __decorate([
     common_1.Get('/staff/user/search'),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.ReviewUserInformation)),
     common_1.Render('staff/user/search'),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -451,7 +421,7 @@ __decorate([
 ], WWWStaffController.prototype, "searchUsers", null);
 __decorate([
     common_1.Get('/staff/user/search_results'),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, Middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo)),
     common_1.Render('staff/user/search_results'),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Req()),
@@ -461,6 +431,7 @@ __decorate([
 ], WWWStaffController.prototype, "searchUsersResults", null);
 WWWStaffController = __decorate([
     common_1.Controller("/"),
+    common_1.UseBefore(Middleware.staff.AddPermissionsToLocals),
     __metadata("design:paramtypes", [])
 ], WWWStaffController);
 exports.WWWStaffController = WWWStaffController;

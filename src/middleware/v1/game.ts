@@ -13,6 +13,8 @@ export class ValidateGameCreationPermissions extends middleware {
         @Locals('userInfo') userInfo: model.UserSession,
         @Res() res: Res,
     ) {
+        return;
+        /*
         let cacheResults = this.UserCache.checkForCache(userInfo.userId) as {isGameDev: boolean;}|false;
         if (cacheResults) {
             if (!cacheResults.isGameDev) {
@@ -37,6 +39,8 @@ export class ValidateGameCreationPermissions extends middleware {
             data: {isGameDev: true, userId: userInfo.userId},
             createdAt: new Date().getTime(),
         });
+
+         */
     }
 }
 

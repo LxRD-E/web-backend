@@ -31,19 +31,55 @@ let StaffController = class StaffController extends controller_1.default {
     constructor() {
         super();
     }
-    validate(userInfo, permLevel) {
-        const staff = userInfo.staff >= permLevel ? true : false;
-        if (!staff) {
-            throw new this.BadRequest('InvalidPermissions');
+    getPermissions() {
+        return model.staff.Permission;
+    }
+    async getPermissionsForUserId(userId) {
+        let allPermissions = await this.staff.getPermissions(userId);
+        let permissionsObject = {};
+        for (const perm of allPermissions) {
+            permissionsObject[perm] = model.staff.Permission[perm];
+            permissionsObject[model.staff.Permission[perm]] = perm;
         }
+        return permissionsObject;
+    }
+    async setPermissionForUserId(userInfo, userId, permission) {
+        if (userInfo.userId === userId) {
+            let isOk = await this.staff.getPermissions(userId);
+            if (isOk.includes(model.staff.Permission.ManageSelf) || userInfo.staff >= 100) {
+            }
+            else {
+                throw new this.Conflict('InvalidPermissions');
+            }
+        }
+        let permissionId = model.staff.Permission[permission];
+        if (!permissionId) {
+            throw new this.BadRequest('InvalidPermissionId');
+        }
+        await this.staff.addPermissions(userId, permissionId);
+        return {};
+    }
+    async deletePermissionForUserId(userInfo, userId, permission) {
+        if (userInfo.userId === userId) {
+            let isOk = await this.staff.getPermissions(userId);
+            if (isOk.includes(model.staff.Permission.ManageSelf) || userInfo.staff >= 100) {
+            }
+            else {
+                throw new this.Conflict('InvalidPermissions');
+            }
+        }
+        let permissionId = model.staff.Permission[permission];
+        if (!permissionId) {
+            throw new this.BadRequest('InvalidPermissionId');
+        }
+        console.log('deleted', permissionId);
+        await this.staff.deletePermissions(userId, permissionId);
+        return {};
     }
     async getTransactions(userInfo, offset = 0, userId) {
-        this.validate(userInfo, 1);
-        const transactions = await this.economy.getUserTransactions(userId, offset);
-        return transactions;
+        return await this.economy.getUserTransactions(userId, offset);
     }
     async ban(userInfo, userId, reason, privateReason, length, lengthType, terminated, deleted) {
-        this.validate(userInfo, 2);
         const numericId = Filter_1.filterId(userId);
         if (!numericId) {
             throw new this.BadRequest('InvalidUserId');
@@ -111,7 +147,6 @@ let StaffController = class StaffController extends controller_1.default {
         };
     }
     async unban(userInfo, userId) {
-        this.validate(userInfo, 2);
         const numericId = Filter_1.filterId(userId);
         if (!numericId) {
             throw new this.BadRequest('InvalidUserid');
@@ -130,7 +165,6 @@ let StaffController = class StaffController extends controller_1.default {
         };
     }
     async getAssociatedAccounts(userInfo, userId) {
-        this.validate(userInfo, 1);
         try {
             await this.user.getInfo(userId, ['userId']);
         }
@@ -165,14 +199,12 @@ let StaffController = class StaffController extends controller_1.default {
         };
     }
     async getUserComments(userInfo, userId, offset = 0, limit = 100) {
-        this.validate(userInfo, 1);
         const comments = await this.staff.getUserComments(userId, offset, limit);
         return {
             comments: comments,
         };
     }
     async createUserComment(userInfo, userId, comment) {
-        this.validate(userInfo, 1);
         if (!comment || comment.length < 4 || comment.length > 1024) {
             throw new this.BadRequest('CommentTooLarge');
         }
@@ -188,7 +220,6 @@ let StaffController = class StaffController extends controller_1.default {
         };
     }
     resetPassword(userInfo, userId) {
-        this.validate(userInfo, 2);
         return new Promise((resolve, reject) => {
             const staff = userInfo.staff > 1 ? true : false;
             if (!staff) {
@@ -225,7 +256,6 @@ let StaffController = class StaffController extends controller_1.default {
         });
     }
     async give(userInfo, userId, catalogId) {
-        this.validate(userInfo, 3);
         const numericId = Filter_1.filterId(userId);
         if (!numericId) {
             throw new this.BadRequest('InvalidUserId');
@@ -262,7 +292,6 @@ let StaffController = class StaffController extends controller_1.default {
         return { 'success': true };
     }
     async giveCurrency(userInfo, userId, amount, currency) {
-        this.validate(userInfo, 3);
         const numericId = Filter_1.filterId(userId);
         if (!numericId) {
             throw new this.BadRequest('InvalidUserId');
@@ -288,12 +317,9 @@ let StaffController = class StaffController extends controller_1.default {
         return { 'success': true };
     }
     async getPendingModerationCatalogItems(userInfo) {
-        this.validate(userInfo, 1);
-        const data = await this.staff.getItems();
-        return data;
+        return await this.staff.getItems();
     }
     async multiGetThumbnails(userInfo, ids) {
-        this.validate(userInfo, 1);
         const idsArray = ids.split(',');
         if (idsArray.length < 1) {
             throw new this.BadRequest('InvalidIds');
@@ -309,8 +335,7 @@ let StaffController = class StaffController extends controller_1.default {
         if (safeIds.length > 25 || safeIds.length < 1) {
             throw new this.BadRequest('InvalidIds');
         }
-        const thumbnails = await this.staff.multiGetThumbnailsFromIdsIgnoreModeration(safeIds);
-        return thumbnails;
+        return await this.staff.multiGetThumbnailsFromIdsIgnoreModeration(safeIds);
     }
     async multiGetGameThumbnails(gameIds) {
         if (!gameIds) {
@@ -333,11 +358,9 @@ let StaffController = class StaffController extends controller_1.default {
         if (safeIds.length > 25) {
             throw new this.BadRequest('TooManyIds');
         }
-        let results = await this.game.multiGetGameThumbnails(safeIds, true);
-        return results;
+        return await this.game.multiGetGameThumbnails(safeIds, true);
     }
     async updateAdState(userInfo, adId, moderationStatus) {
-        this.validate(userInfo, 1);
         if (moderationStatus !== 1 && moderationStatus !== 2) {
             throw new this.BadRequest('InvalidState');
         }
@@ -351,7 +374,6 @@ let StaffController = class StaffController extends controller_1.default {
         };
     }
     async updateGameThumbnailState(userInfo, gameThumbnailId, moderationStatus) {
-        this.validate(userInfo, 1);
         if (moderationStatus !== 1 && moderationStatus !== 2) {
             throw new this.BadRequest('InvalidState');
         }
@@ -361,8 +383,6 @@ let StaffController = class StaffController extends controller_1.default {
         };
     }
     async updateItemStatus(userInfo, catalogId, moderationStatus) {
-        console.log(catalogId);
-        this.validate(userInfo, 1);
         const numericCatalogId = Filter_1.filterId(catalogId);
         let itemInfo = await this.catalog.getInfo(numericCatalogId, ['creatorId', 'creatorType', 'catalogName']);
         let numericState = Filter_1.filterId(moderationStatus);
@@ -381,7 +401,6 @@ let StaffController = class StaffController extends controller_1.default {
         };
     }
     async regenAvatar(userInfo, userId, allowHashes = false, yieldUntilComplete = false, setUserUrl = true) {
-        this.validate(userInfo, 1);
         const numericUserId = Filter_1.filterId(userId);
         if (!numericUserId) {
             throw new this.BadRequest('InvalidUserId');
@@ -454,7 +473,6 @@ let StaffController = class StaffController extends controller_1.default {
         };
     }
     async updateBanner(userInfo, enabled, bannerText) {
-        this.validate(userInfo, 2);
         let isEnabled = Filter_1.filterId(enabled);
         if (!isEnabled) {
             isEnabled = 0;
@@ -476,14 +494,12 @@ let StaffController = class StaffController extends controller_1.default {
         };
     }
     async deleteBlurb(userInfo, userId) {
-        this.validate(userInfo, 1);
         await this.settings.updateBlurb(userId, '[ Content Deleted ]');
         return {
             'success': true,
         };
     }
     async deleteStatus(userInfo, userId) {
-        this.validate(userInfo, 1);
         let currentStatus = await this.user.multiGetStatus([userId], 0, 1);
         if (currentStatus[0]) {
             let data = currentStatus[0];
@@ -495,21 +511,18 @@ let StaffController = class StaffController extends controller_1.default {
         };
     }
     async deleteForumSignature(userInfo, userId) {
-        this.validate(userInfo, 1);
         await this.settings.updateSignature(userId, '[ Content Deleted ]');
         return {
             'success': true,
         };
     }
     async disableTwoFactor(userInfo, userId) {
-        this.validate(userInfo, 1);
         await this.settings.disable2fa(userId);
         return {
             'success': true,
         };
     }
     async clearBalance(userInfo, userId, currencyTypeId) {
-        this.validate(userInfo, 2);
         if (currencyTypeId !== 1 && currencyTypeId !== 2) {
             throw new this.BadRequest('InvalidCurrencyType');
         }
@@ -523,18 +536,50 @@ let StaffController = class StaffController extends controller_1.default {
             success: true,
         };
     }
+    async provideItemToUser(body) {
+        const forUpdate = [
+            'users',
+            'user_inventory',
+        ];
+        await this.transaction(this, forUpdate, async function (trx) {
+            for (const item of body.catalogIds) {
+                let badDecisions = await trx.user.getUserInventoryByCatalogId(50, item);
+                if (badDecisions.length >= 1) {
+                    let item = badDecisions[0];
+                    await trx.catalog.updateUserInventoryIdOwner(item.userInventoryId, body.userIdTo);
+                }
+                else {
+                    await trx.catalog.createItemForUserInventory(body.userIdTo, item);
+                }
+            }
+        });
+        return {};
+    }
+    async transferItem(body) {
+        const forUpdate = [
+            'users',
+            'user_inventory',
+        ];
+        await this.transaction(this, forUpdate, async function (trx) {
+            for (const item of body.userInventoryIds) {
+                let itemData = await trx.user.getItemByInventoryId(item);
+                if (itemData.userId !== body.userIdFrom) {
+                    throw new this.BadRequest('InvalidUserId');
+                }
+                await trx.user.editItemPrice(item, 0);
+                await trx.catalog.updateUserInventoryIdOwner(item, body.userIdTo);
+            }
+        });
+        return {};
+    }
     async search(offset = 0) {
         const numericOffset = Filter_1.filterOffset(offset);
-        const results = await this.staff.search(numericOffset);
-        return results;
+        return await this.staff.search(numericOffset);
     }
     async getServerStatus(userInfo) {
-        this.validate(userInfo, 1);
-        const status = await this.staff.getServerStatus();
-        return status;
+        return await this.staff.getServerStatus();
     }
     async updateUserStaffRank(userInfo, userId, newRank) {
-        this.validate(userInfo, 3);
         if (newRank !== 0 && newRank !== 1 && newRank !== 2 && newRank !== 3) {
             throw new this.BadRequest('InvalidRank');
         }
@@ -555,50 +600,39 @@ let StaffController = class StaffController extends controller_1.default {
         return { success: true };
     }
     async updateForumCategory(userInfo, catId, title, description = '', weight = 0) {
-        this.validate(userInfo, 3);
         await this.forum.updateCategory(catId, title, description, weight);
         return {
             success: true,
         };
     }
     async createForumCategory(userInfo, title, description = '', weight = 0) {
-        this.validate(userInfo, 3);
         await this.forum.createCategory(title, description, weight);
         return {
             success: true,
         };
     }
     async updateForumSubCategory(userInfo, subId, catId, title, desc, readPermissionLevel, postPermissionLevel, weight = 0) {
-        this.validate(userInfo, 3);
         await this.forum.updateSubCategory(subId, catId, title, desc, readPermissionLevel, postPermissionLevel, weight);
         return {
             success: true,
         };
     }
     async createForumSubCategory(userInfo, catId, title, desc, readPermissionLevel, postPermissionLevel, weight = 0) {
-        this.validate(userInfo, 3);
         await this.forum.createSubCategory(catId, title, desc, readPermissionLevel, postPermissionLevel, weight);
         return {
             success: true,
         };
     }
     async getTickets(userInfo) {
-        this.validate(userInfo, 1);
-        let tickets = this.support.getTicketsAwaitingSupportResponse();
-        return tickets;
+        return this.support.getTicketsAwaitingSupportResponse();
     }
     async getAllTickets(userInfo) {
-        this.validate(userInfo, 1);
-        let tickets = this.support.getTicketsNotClosed();
-        return tickets;
+        return this.support.getTicketsNotClosed();
     }
     async getRepliesToTicket(userInfo, ticketId) {
-        this.validate(userInfo, 1);
-        let responses = await this.support.getTicketRepliesAll(ticketId);
-        return responses;
+        return await this.support.getTicketRepliesAll(ticketId);
     }
     async replyToTicket(userInfo, ticketId, body, visibleToClient = true) {
-        this.validate(userInfo, 1);
         await this.support.replyToTicket(ticketId, userInfo.userId, body, visibleToClient);
         return {
             success: true,
@@ -621,7 +655,6 @@ let StaffController = class StaffController extends controller_1.default {
         };
     }
     async updateTicketStatus(userInfo, ticketId, status) {
-        this.validate(userInfo, 1);
         if (!model.support.TicketStatus[status]) {
             throw new this.BadRequest('InvalidTicketStatus');
         }
@@ -631,7 +664,6 @@ let StaffController = class StaffController extends controller_1.default {
         };
     }
     async updateGroupStatus(userInfo, groupId, status) {
-        this.validate(userInfo, 2);
         if (!model.group.groupStatus[status]) {
             throw new this.BadRequest('InvalidGroupStatus');
         }
@@ -641,12 +673,9 @@ let StaffController = class StaffController extends controller_1.default {
         };
     }
     async latestAbuseReports(userInfo) {
-        this.validate(userInfo, 1);
-        let pendingAbuseReports = await this.reportAbuse.latestReportedUserStatuses();
-        return pendingAbuseReports;
+        return await this.reportAbuse.latestReportedUserStatuses();
     }
     async updateAbuseReportStatus(userInfo, reportId, status) {
-        this.validate(userInfo, 1);
         if (!model.reportAbuse.ReportStatus[status]) {
             throw new this.BadRequest('InvalidStatus');
         }
@@ -656,7 +685,6 @@ let StaffController = class StaffController extends controller_1.default {
         };
     }
     async deleteUserStatusId(userInfo, userStatusId) {
-        this.validate(userInfo, 1);
         let info = await this.user.getStatusById(userStatusId);
         await this.user.updateStatusByid(userStatusId, '[ Content Deleted ]');
         await this.user.updateStatusWithoutInsert(info.userId, '[ Content Deleted ]');
@@ -665,9 +693,6 @@ let StaffController = class StaffController extends controller_1.default {
         };
     }
     async getTradeItems(userInfo, numericTradeId, userId) {
-        if (userInfo.staff >= 2 === false) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
         let tradeInfo;
         try {
             tradeInfo = await this.economy.getTradeById(numericTradeId);
@@ -711,9 +736,51 @@ let StaffController = class StaffController extends controller_1.default {
     }
 };
 __decorate([
+    common_1.Get('/permissions'),
+    swagger_1.Summary('Get all permissions'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], StaffController.prototype, "getPermissions", null);
+__decorate([
+    common_1.Get('/permissions/:userId'),
+    swagger_1.Summary('Get permissions for the {userId}'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(0)),
+    __param(0, common_1.PathParams('userId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "getPermissionsForUserId", null);
+__decorate([
+    common_1.Put('/permissions/:userId/:permission'),
+    swagger_1.Summary('Give a permission to the {userId}'),
+    common_1.Use(Auth_1.YesAuth, auth_1.csrf, middleware.staff.validate(model.staff.Permission.ManageStaff)),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Required()),
+    __param(1, common_1.PathParams('userId', Number)),
+    __param(2, common_1.Required()),
+    __param(2, common_1.PathParams('permission', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "setPermissionForUserId", null);
+__decorate([
+    common_1.Delete('/permissions/:userId/:permission'),
+    swagger_1.Summary('Remove a permission from the {userId}'),
+    common_1.Use(Auth_1.YesAuth, auth_1.csrf, middleware.staff.validate(model.staff.Permission.ManageStaff)),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Required()),
+    __param(1, common_1.PathParams('userId', Number)),
+    __param(2, common_1.Required()),
+    __param(2, common_1.PathParams('permission', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "deletePermissionForUserId", null);
+__decorate([
     common_1.Get('/user/:userId/transactions'),
     swagger_1.Summary('Get transaction history for the {userId}'),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation)),
     swagger_1.ReturnsArray(200, { type: model.economy.userTransactions }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.QueryParams('offset', Number)),
@@ -723,10 +790,9 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "getTransactions", null);
 __decorate([
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
     common_1.Post('/user/:userId/ban'),
     swagger_1.Summary('Ban a user'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.BanUser)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __param(2, common_1.BodyParams('reason', String)),
@@ -740,10 +806,9 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "ban", null);
 __decorate([
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
     common_1.Post('/user/:userId/unban'),
     swagger_1.Summary('Unban a user'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.UnbanUser)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
@@ -751,9 +816,9 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "unban", null);
 __decorate([
-    common_1.UseBefore(Auth_1.YesAuth),
     common_1.Get('/user/:userId/associated-accounts'),
     swagger_1.Summary('Get potentially associated accounts in respect to the provided userId. Can return duplicate results. Results should be taken with a grain of salt'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
@@ -761,9 +826,9 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "getAssociatedAccounts", null);
 __decorate([
-    common_1.UseBefore(Auth_1.YesAuth),
     common_1.Get('/user/:userId/comments'),
     swagger_1.Summary('Get staff comments posted to a userId'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __param(2, common_1.QueryParams('offset', Number)),
@@ -774,9 +839,8 @@ __decorate([
 ], StaffController.prototype, "getUserComments", null);
 __decorate([
     common_1.Post('/user/:userId/comment'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
     swagger_1.Summary('Post a comment to a user profile'),
+    common_1.Use(Auth_1.YesAuth, auth_1.csrf, middleware.staff.validate(model.staff.Permission.ReviewUserInformation)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __param(2, common_1.BodyParams('comment', String)),
@@ -785,10 +849,9 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "createUserComment", null);
 __decorate([
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
     common_1.Post('/user/:userId/resetpassword'),
     swagger_1.Summary('Reset a users password. Returns a link for the staff member to give to the user'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ResetPassword)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
@@ -798,8 +861,7 @@ __decorate([
 __decorate([
     common_1.Post('/user/:userId/give/:catalogId'),
     swagger_1.Summary('Give an item to a user'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.GiveItemToUser)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __param(2, common_1.PathParams('catalogId', Number)),
@@ -809,8 +871,7 @@ __decorate([
 ], StaffController.prototype, "give", null);
 __decorate([
     common_1.Put('/user/:userId/currency'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.GiveCurrencyToUser)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __param(2, common_1.BodyParams('amount', Number)),
@@ -820,17 +881,17 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "giveCurrency", null);
 __decorate([
-    common_1.UseBefore(Auth_1.YesAuth),
     common_1.Get('/catalog/pending'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ReviewPendingItems)),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [model.user.UserInfo]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "getPendingModerationCatalogItems", null);
 __decorate([
-    common_1.UseBefore(Auth_1.YesAuth),
     common_1.Get('/catalog/thumbnails'),
     swagger_1.Summary('Multi-get thumbnails, ignoring moderation state'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ReviewPendingItems)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.QueryParams('ids', String)),
     __metadata("design:type", Function),
@@ -842,6 +903,7 @@ __decorate([
     swagger_1.Summary('Multi-get thumbnails by CSV of gameIds, ignoring moderation'),
     swagger_1.Description('Invalid IDs will be filtered out'),
     swagger_1.ReturnsArray(200, { type: model.game.GameThumbnail }),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ReviewPendingItems)),
     __param(0, common_1.Required()),
     __param(0, common_1.QueryParams('ids', String)),
     __metadata("design:type", Function),
@@ -851,7 +913,7 @@ __decorate([
 __decorate([
     common_1.Patch('/ad/:adId/'),
     swagger_1.Summary('Update ad item state'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManageAssets)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('adId', Number)),
     __param(2, common_1.BodyParams('state', Number)),
@@ -862,7 +924,7 @@ __decorate([
 __decorate([
     common_1.Patch('/game-thumbnail/:gameThumbnailId/'),
     swagger_1.Summary('Update a game thumbnail item state'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ReviewPendingItems)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('gameThumbnailId', Number)),
     __param(2, common_1.BodyParams('state', Number)),
@@ -873,8 +935,7 @@ __decorate([
 __decorate([
     common_1.Patch('/catalog/:catalogId'),
     swagger_1.Summary('Update items moderation state'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ReviewPendingItems)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('catalogId', Number)),
     __param(2, common_1.BodyParams('state', Number)),
@@ -885,8 +946,7 @@ __decorate([
 __decorate([
     common_1.Post('/user/:userId/avatar'),
     swagger_1.Summary('Force a users avatar to be [re]generated'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.RegenerateThumbnails)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __param(2, common_1.QueryParams('allowHashes', Boolean)),
@@ -897,8 +957,7 @@ __decorate([
 __decorate([
     common_1.Patch('/banner'),
     swagger_1.Summary('Update site-wide banner text'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManageBanner)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.BodyParams('enabled', Number)),
     __param(2, common_1.BodyParams('text', String)),
@@ -909,8 +968,7 @@ __decorate([
 __decorate([
     common_1.Delete('/user/:userId/blurb'),
     swagger_1.Summary('Delete a users blurb'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
@@ -920,8 +978,7 @@ __decorate([
 __decorate([
     common_1.Delete('/user/:userId/status'),
     swagger_1.Summary('Delete a users status'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
@@ -931,8 +988,7 @@ __decorate([
 __decorate([
     common_1.Delete('/user/:userId/forum/signature'),
     swagger_1.Summary('Delete a users forum signature'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
@@ -942,8 +998,7 @@ __decorate([
 __decorate([
     common_1.Delete('/user/:userId/two-factor'),
     swagger_1.Summary('Disable an accounts two-factor authentcation'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManagePrivateUserInfo)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __metadata("design:type", Function),
@@ -953,8 +1008,7 @@ __decorate([
 __decorate([
     common_1.Delete('/user/:userId/clear-balance/:currencyTypeId'),
     swagger_1.Summary('Clear the balance of the {currencyTypeId} for the {userId}'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.TakeCurrencyFromUser)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __param(2, common_1.PathParams('currencyTypeId', Number)),
@@ -962,6 +1016,26 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "clearBalance", null);
+__decorate([
+    common_1.Put('/user/inventory/provide-items'),
+    swagger_1.Summary('Provide items to the {userId}'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.GiveItemToUser)),
+    __param(0, common_1.Required()),
+    __param(0, common_1.BodyParams(model.staff.ProvideItemsRequest)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.staff.ProvideItemsRequest]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "provideItemToUser", null);
+__decorate([
+    common_1.Patch('/user/inventory/transfer-item'),
+    swagger_1.Summary('Transfer one or more item(s) from the {userId}'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.TakeItemFromUser)),
+    __param(0, common_1.Required()),
+    __param(0, common_1.BodyParams(model.staff.TransferItemsRequest)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.staff.TransferItemsRequest]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "transferItem", null);
 __decorate([
     common_1.Get('/search'),
     swagger_1.Summary('Search staff'),
@@ -972,7 +1046,7 @@ __decorate([
 ], StaffController.prototype, "search", null);
 __decorate([
     common_1.Get('/status/web'),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManageWeb)),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [model.user.UserInfo]),
@@ -980,8 +1054,7 @@ __decorate([
 ], StaffController.prototype, "getServerStatus", null);
 __decorate([
     common_1.Patch('/user/:userId/rank'),
-    common_1.UseBeforeEach(auth_1.csrf),
-    common_1.UseBefore(Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManageStaff)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userId', Number)),
     __param(2, common_1.BodyParams('rank', Number)),
@@ -992,7 +1065,7 @@ __decorate([
 __decorate([
     common_1.Patch('/forum/category/:categoryId'),
     swagger_1.Summary('Update a forum category'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManageForumCategories)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.PathParams('categoryId', Number)),
@@ -1009,7 +1082,7 @@ __decorate([
 __decorate([
     common_1.Put('/forum/category/'),
     swagger_1.Summary('Update a forum category'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManageForumCategories)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.BodyParams('title', String)),
@@ -1024,7 +1097,7 @@ __decorate([
 __decorate([
     common_1.Patch('/forum/sub-category/:subCategoryId'),
     swagger_1.Summary('Update a forum subCategory'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManageForumCategories)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.PathParams('subCategoryId', Number)),
@@ -1046,7 +1119,7 @@ __decorate([
 __decorate([
     common_1.Put('/forum/sub-category/'),
     swagger_1.Summary('Create a forum subCategory'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManageForumCategories)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.BodyParams('categoryId', Number)),
@@ -1066,7 +1139,7 @@ __decorate([
 __decorate([
     common_1.Get('/support/tickets-awaiting-response'),
     swagger_1.Summary('Get support tickets awaiting cs response'),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManageSupportTickets)),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [model.user.UserInfo]),
@@ -1075,7 +1148,7 @@ __decorate([
 __decorate([
     common_1.Get('/support/tickets-all'),
     swagger_1.Summary('Get all support tickets, excluding ones that are closed'),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManageSupportTickets)),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [model.user.UserInfo]),
@@ -1084,7 +1157,7 @@ __decorate([
 __decorate([
     common_1.Get('/support/ticket/:ticketId/replies'),
     swagger_1.Summary('Get replies to ticket'),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManageSupportTickets)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('ticketId', Number)),
     __metadata("design:type", Function),
@@ -1094,7 +1167,7 @@ __decorate([
 __decorate([
     common_1.Post('/support/ticket/:ticketId/reply'),
     swagger_1.Summary('Reply to a ticket'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, auth_1.csrf, middleware.staff.validate(model.staff.Permission.ManageSupportTickets)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('ticketId', Number)),
     __param(2, common_1.BodyParams('body', String)),
@@ -1113,7 +1186,7 @@ __decorate([
 __decorate([
     common_1.Patch('/support/ticket/:ticketId/status'),
     swagger_1.Summary('Update ticket_status'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, auth_1.csrf, middleware.staff.validate(model.staff.Permission.ManageSupportTickets)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('ticketId', Number)),
     __param(2, common_1.BodyParams('status', Number)),
@@ -1124,7 +1197,7 @@ __decorate([
 __decorate([
     common_1.Patch('/groups/:groupId/status'),
     swagger_1.Summary('Update a groups status'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, auth_1.csrf, middleware.staff.validate(model.staff.Permission.ManageGroup)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
     __param(2, common_1.BodyParams('status', Number)),
@@ -1135,7 +1208,7 @@ __decorate([
 __decorate([
     common_1.Get('/feed/friends/abuse-reports'),
     swagger_1.Summary('Get latest abuse reports for friend feed'),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ReviewAbuseReports)),
     swagger_1.ReturnsArray(200, { type: model.reportAbuse.ReportedStatusEntry }),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
@@ -1145,7 +1218,7 @@ __decorate([
 __decorate([
     common_1.Patch('/feed/friends/abuse-report/:reportId/'),
     swagger_1.Summary('Update a friends feed abuse-report status'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, auth_1.csrf, middleware.staff.validate(model.staff.Permission.ReviewAbuseReports)),
     swagger_1.Returns(200, { description: 'Abuse report has been updated' }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('reportId', Number)),
@@ -1159,6 +1232,7 @@ __decorate([
     common_1.Delete('/feed/friends/:userStatusId'),
     swagger_1.Summary('Delete a userStatusId'),
     common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, auth_1.csrf, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo)),
     swagger_1.Returns(200, { description: 'Status Deleted' }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('userStatusId', Number)),
@@ -1172,7 +1246,7 @@ __decorate([
     swagger_1.Description('Requestee is authenticated user, requested is the partner involved with the trade'),
     swagger_1.Returns(200, { type: model.economy.TradeItemsResponse }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidTradeId: TradeId is invalid or you do not have permission to view it\n' }),
-    common_1.UseBeforeEach(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('tradeId', Number)),
     __param(2, common_1.Required()),
@@ -1185,7 +1259,7 @@ __decorate([
 __decorate([
     common_1.Get('/economy/trades/:type'),
     swagger_1.Summary('Get user trades'),
-    common_1.Use(Auth_1.YesAuth),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo)),
     swagger_1.ReturnsArray(200, { type: model.economy.TradeInfo }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidTradeType: TradeType must be one of: inbound,outbound,completed,inactive\n' }),
     __param(0, common_1.Locals('userInfo')),
@@ -1201,7 +1275,7 @@ __decorate([
 __decorate([
     common_1.Post('/user/:userId/game-dev'),
     swagger_1.Summary('Modify is_developer state of the {userId}'),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth, middleware.user.ValidateUserId),
+    common_1.Use(Auth_1.YesAuth, auth_1.csrf, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo)),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.PathParams('userId', Number)),

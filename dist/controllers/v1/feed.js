@@ -19,12 +19,12 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
-const moment = require("moment");
 const model = require("../../models/models");
 const middleware = require("../../middleware/middleware");
 const auth_1 = require("../../dal/auth");
 const controller_1 = require("../controller");
 const Auth_1 = require("../../middleware/Auth");
+const moment = require("moment");
 let FeedController = class FeedController extends controller_1.default {
     constructor() {
         super();
@@ -63,25 +63,25 @@ let FeedController = class FeedController extends controller_1.default {
     }
     async multiGetOgTagInfo(userInfo, ids) {
         let urlsToMatch = [
-            /https:\/\/www\.youtube\.com\/watch\?v\=([a-zA-Z\d-_+]+)/g,
+            /https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z\d-_+]+)/g,
             /https:\/\/www\.roblox\.com\/([a-zA-Z\d-_+\/]+)/g,
             /https:\/\/www\.hindigamer\.club\/([a-zA-Z\d-_+\/]+)/g,
             /https:\/\/hindigamer\.club\/([a-zA-Z\d-_+\/]+)/g,
         ];
         let userAgeInfo = await this.user.getInfo(userInfo.userId, ['birthDate']);
         let userAge = moment(userAgeInfo.birthDate);
-        if (userAge.isSameOrBefore(moment().subtract(13, 'years'))) {
-            urlsToMatch.push(/https:\/\/discord\.gg\/([a-zA-Z\d-_+\/]+)/g, /https:\/\/discordapp\.com\/([a-zA-Z\d-_+\/]+)/g, /https:\/\/www\.facebook\.com\/([a-zA-Z\d-_\+\?\&\.]+)/g, /https:\/\/facebook\.com\/([a-zA-Z\d-_\+\?\&\.]+)/g);
+        if (userInfo.staff >= 1 || userAge.isSameOrBefore(moment().subtract(18, 'years'))) {
+            urlsToMatch = [
+                /(https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/g
+            ];
+        }
+        else if (userAge.isSameOrBefore(moment().subtract(13, 'years'))) {
+            urlsToMatch.push(/https:\/\/discord\.gg\/([a-zA-Z\d-_+\/]+)/g, /https:\/\/discordapp\.com\/([a-zA-Z\d-_+\/]+)/g, /https:\/\/www\.facebook\.com\/([a-zA-Z\d-_+?&.]+)/g, /https:\/\/facebook\.com\/([a-zA-Z\d-_+?&.]+)/g);
             if (userAge.isSameOrBefore(moment().subtract(18, 'years'))) {
                 urlsToMatch = [
                     /(https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/g
                 ];
             }
-        }
-        if (userInfo.staff >= 1) {
-            urlsToMatch = [
-                /(https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/g
-            ];
         }
         let idsArray = ids.split(',');
         let numberArrOfIDs = [];
@@ -129,8 +129,7 @@ let FeedController = class FeedController extends controller_1.default {
             jobsToProcess.push(processStatus(statusData));
         }
         await Promise.all(jobsToProcess);
-        let results = await this.auth.multiGetOgTagsForYoutubeLinks(urlsToGrab);
-        return results;
+        return await this.auth.multiGetOgTagsForYoutubeLinks(urlsToGrab);
     }
     async getFeedForFriends(userInfo, offset = 0, limit = 100) {
         let friends = await this.user.getFriends(userInfo.userId, 0, 200, 'asc');

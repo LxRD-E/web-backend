@@ -403,7 +403,7 @@ export default class AuthController extends controller {
             ip = req.ip;
         }
         const signedUpInPast24Hours = await this.user.checkForIpSignup(ip);
-        if (signedUpInPast24Hours) {
+        if (signedUpInPast24Hours && process.env.NODE_ENV !== 'development') {
             throw new this.BadRequest('OneAccountPerIP');
         }
         

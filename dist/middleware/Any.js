@@ -38,6 +38,7 @@ exports.getCspString = () => {
     return cspString;
 };
 exports.lbOrigin = crypto.randomBytes(8).toString('base64');
+exports.version = crypto.randomBytes(8).toString('hex');
 exports.generateCspWithNonce = async (req, res, next, randomBytesFunction = randomBytes) => {
     res.set({
         'x-lb-origin': exports.lbOrigin,
@@ -86,7 +87,9 @@ exports.generateCspWithNonce = async (req, res, next, randomBytesFunction = rand
     res.set({
         'Content-Security-Policy': headerString,
     });
-    res.locals.nonce = nonce;
+    res.locals.version =
+        res.locals.nonce = nonce;
+    res.locals.javascript = exports.getJavascript(nonce, exports.version);
     next();
 };
 exports.getIp = (req) => {
@@ -100,6 +103,16 @@ exports.getIp = (req) => {
         }
         return req.connection.remoteAddress;
     }
+};
+exports.getJavascript = (nonce, version) => {
+    return `
+        <script nonce="${nonce}" src="/js/warning.js"></script>
+        <script nonce="${nonce}" src="/js/bundle/sentry.bundle.js?v=${version}"></script>
+        <script nonce="${nonce}">
+            Sentry.init({ dsn: 'https://a5c3a9adef4a4e149a1e2d1651b9da4d@sentry.io/2505702' });
+        </script>
+        <script nonce="${nonce}" src="/js/bundle/main.bundle.js?v=${version}"></script>
+        <script nonce="${nonce}" src="/js/bundle/bootstrap.bundle.js?v=${version}"></script>`;
 };
 exports.default = async (req, res, next, UserModel = user_1.default, ModModel = moderation_1.default, setSession = auth_1.setSession, regenCsrf = auth_1.regenCsrf) => {
     if (req.query.sort) {

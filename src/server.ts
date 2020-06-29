@@ -34,10 +34,12 @@ if (process.env.NODE_ENV === 'production') {
 let multerMemStore = multer.memoryStorage();
 
 /*
-require('blocked-at')((time, stack) => {
+// @ts-ignore
+require('blocked-at')((time: any, stack: any) => {
     console.log(`Blocked for ${time}ms, operation started here:`, stack)
 })
-*/
+ */
+
 
 @ServerSettings({
     rootDir: Path.resolve(__dirname),

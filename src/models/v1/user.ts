@@ -695,14 +695,10 @@ export class CreateTradeRequest {
     @Required()
     @Description('An array of userInventoryIds that the authenticated user wishes to offer')
     @PropertyType(Number)
-    @MinItems(1)
-    @MaxItems(4)
     offerItems: number[];
     @Required()
     @Description('An array of userInventoryIds that the userId wants in return for their offer')
     @PropertyType(Number)
-    @MinItems(1)
-    @MaxItems(4)
     requestedItems: number[];
     @Description('Primary currency in addition to the items that the user wishes to offer')
     offerPrimary?: number;

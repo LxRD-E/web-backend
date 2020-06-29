@@ -257,7 +257,7 @@ let AuthController = class AuthController extends controller_1.default {
             ip = req.ip;
         }
         const signedUpInPast24Hours = await this.user.checkForIpSignup(ip);
-        if (signedUpInPast24Hours) {
+        if (signedUpInPast24Hours && process.env.NODE_ENV !== 'development') {
             throw new this.BadRequest('OneAccountPerIP');
         }
         let birthArray = body.birth;

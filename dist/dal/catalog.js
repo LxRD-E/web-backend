@@ -243,7 +243,7 @@ class CatalogDAL extends _init_1.default {
     async getCatalogItemAssets(catalogId) {
         const assets = await this.knex('catalog_assets').select('id as assetId', 'date_created as dateCreated', 'assettype as assetType', 'filename as fileName', 'filetype as fileType').where({ 'catalogid': catalogId });
         if (!assets[0]) {
-            throw new Error('This item does not contain any assets');
+            throw new Error('This item (' + catalogId + ') does not contain any assets');
         }
         return assets;
     }

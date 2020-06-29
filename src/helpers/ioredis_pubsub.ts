@@ -7,7 +7,7 @@ if (process.env.NODE_ENV !== 'test') {
     const ioRedisConfig = {
         password: config.redis.pass || '',
         host: config.redis.host,
-        connectTimeout: 10000,
+        connectTimeout: 1000,
         port: config.redis.port || 6379,
         enableOfflineQueue: true,
         sentinelPassword: config.redis.pass||'',

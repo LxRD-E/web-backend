@@ -18,6 +18,12 @@ const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 exports.RESELL_ITEM_FEE = 30;
 exports.SELL_ITEM_FEE = 30;
+exports.trade = {
+    maxItemsPerSide: 10,
+    maxRequestPrimary: 1000000,
+    maxOfferPrimary: 1000000,
+    isEnabled: true,
+};
 class FeeMetaData {
 }
 __decorate([

@@ -22,9 +22,7 @@ const moment = require("moment");
 const speakeasy = require("speakeasy");
 const qrcode = require("qrcode");
 const jwt = require("jsonwebtoken");
-const allSettled = require("promise.allsettled");
 const cheerio = require("cheerio");
-const jimp = require("jimp");
 const Crypto = require("crypto");
 const util = require("util");
 const axios_1 = require("axios");
@@ -32,6 +30,7 @@ const ts_httpexceptions_1 = require("ts-httpexceptions");
 const common_1 = require("@tsed/common");
 const config_1 = require("../helpers/config");
 const ioredis_1 = require("../helpers/ioredis");
+const imageResizer = require("../services/image-resize");
 const randomBytes = util.promisify(Crypto.randomBytes);
 exports.hashPassword = async (passwd, bcryptLib = bcrypt) => {
     const salt = await bcryptLib.genSalt(10);
@@ -352,121 +351,132 @@ exports.decodeImageProxyQuery = (imageProxyUrl) => {
         process.exit(1);
     }
     let data = jwt.verify(imageProxyUrl, config_1.default.jwt.imageProxy);
-    if (moment().isSameOrAfter(moment(data.iat * 1000).add(5, 'minutes'))) {
+    if (moment().isSameOrAfter(moment(data.iat * 1000).add(48, 'hours'))) {
         throw new Error('Request has expired');
     }
     return data['url'];
 };
 exports.fetchImageAndResize = async (imageUrl) => {
     let image = await axios_1.default.get(imageUrl, { responseType: 'arraybuffer' });
-    let loaded = await jimp.create(image.data);
-    loaded.cover(640, 360);
-    loaded.quality(25);
-    let newBuffer = await loaded.getBufferAsync(image.headers['content-type']);
+    return await imageResizer.async.resizeImage(image.data, image.headers['content-type']);
+};
+const convertResponseBodyToOgInfo = (body) => {
+    let thumbnailUrl = null;
+    let desc = null;
+    let title = null;
+    const $ = cheerio.load(body);
+    let thumb = $('meta[property="og:image"]').first().attr('content');
+    if (thumb) {
+        thumbnailUrl = thumb;
+    }
+    else {
+        let twitterThumbnail = $('meta[name="twitter:image"]').first().attr('content');
+        if (twitterThumbnail) {
+            thumbnailUrl = twitterThumbnail;
+        }
+    }
+    if (thumbnailUrl && thumbnailUrl.length > 255) {
+        thumbnailUrl = null;
+    }
+    let ogDesc = $('meta[propety="og:description"]').first().attr('content');
+    if (ogDesc) {
+        desc = ogDesc;
+    }
+    else {
+        let twitterDesc = $('meta[name="twitter:description"]').first().attr('content');
+        if (twitterDesc) {
+            desc = twitterDesc;
+        }
+    }
+    if (desc && desc.length > 255) {
+        desc = desc.slice(0, 255 - '...'.length) + '...';
+    }
+    let ogTitle = $('meta[name="og:title"]').first().attr('content');
+    if (ogTitle) {
+        title = ogTitle;
+    }
+    else {
+        let twitterTitle = $('meta[name="twitter:title"]').first().attr('content');
+        if (twitterTitle) {
+            title = twitterTitle;
+        }
+        else {
+            let generalTitle = $('title').first().html();
+            if (generalTitle) {
+                title = generalTitle;
+            }
+        }
+    }
+    if (title && title.length > 64) {
+        title = title.slice(0, 64 - '...'.length) + '...';
+    }
+    if (thumbnailUrl) {
+        if (thumbnailUrl.slice(0, 'https://'.length).toLowerCase() === 'https://') {
+            let imageUrlWithProxy = jwt.sign({ url: thumbnailUrl }, config_1.default.jwt.imageProxy);
+            thumbnailUrl = '/api/v1/feed/preview-proxy?url=' + encodeURIComponent(imageUrlWithProxy);
+        }
+        else {
+            thumbnailUrl = null;
+        }
+    }
+    else {
+        thumbnailUrl = null;
+    }
     return {
-        type: image.headers['content-type'],
-        image: newBuffer,
+        thumbnailUrl: thumbnailUrl,
+        description: desc,
+        title: title,
     };
+};
+const getOgTagsForUrl = async (originalUrl, statusId) => {
+    let url = originalUrl;
+    let responseData = '';
+    const redisKey = 'og_info_url_v1_' + url;
+    const cachedResult = await ioredis_1.default.get(redisKey);
+    if (cachedResult) {
+        const response = JSON.parse(cachedResult);
+        response.statusId = statusId;
+        response.url = originalUrl;
+        return response;
+    }
+    else {
+        let request = await axios_1.default.get(url, {
+            maxRedirects: 2,
+            headers: {
+                'user-agent': 'blockshub.net bot v1.0.0'
+            },
+            maxContentLength: 2000000,
+            validateStatus: (status) => {
+                return true;
+            },
+        });
+        if (typeof request.data === 'string') {
+            responseData = request.data;
+        }
+    }
+    const result = {
+        url: url,
+        statusId: statusId,
+        ogInfo: convertResponseBodyToOgInfo(responseData),
+    };
+    await ioredis_1.default.setex(redisKey, 86400, JSON.stringify(result));
+    return result;
 };
 exports.multiGetOgTagsForYoutubeLinks = async (data) => {
     if (data.length === 0) {
         return [];
     }
-    let allPromises = [];
-    let newDataArr = [];
+    let responseData = [];
     for (const item of data) {
         if (!item.urls) {
             continue;
         }
         item.urls = [...new Set(item.urls)];
         for (const url of item.urls) {
-            allPromises.push(axios_1.default.get(url, {
-                maxRedirects: 2,
-                headers: {
-                    'user-agent': 'blockshub.net bot v1.0.0'
-                }
-            }));
-            newDataArr.push({
-                statusId: item.statusId,
-                url: url,
-                ogInfo: {},
-            });
+            responseData.push(getOgTagsForUrl(url, item.statusId));
         }
     }
-    let results = await allSettled(allPromises);
-    let index = 0;
-    for (const item of results) {
-        if (item.status === 'fulfilled') {
-            let thumbnailUrl = null;
-            let desc = null;
-            let title = null;
-            const $ = cheerio.load(item.value.data);
-            let thumb = $('meta[property="og:image"]').first().attr('content');
-            if (thumb) {
-                thumbnailUrl = thumb;
-            }
-            else {
-                let twitterThumbnail = $('meta[name="twitter:image"]').first().attr('content');
-                if (twitterThumbnail) {
-                    thumbnailUrl = twitterThumbnail;
-                }
-            }
-            if (thumbnailUrl && thumbnailUrl.length > 255) {
-                thumbnailUrl = null;
-            }
-            let ogDesc = $('meta[propety="og:description"]').first().attr('content');
-            if (ogDesc) {
-                desc = ogDesc;
-            }
-            else {
-                let twitterDesc = $('meta[name="twitter:description"]').first().attr('content');
-                if (twitterDesc) {
-                    desc = twitterDesc;
-                }
-            }
-            if (desc && desc.length > 255) {
-                desc = desc.slice(0, 255 - '...'.length) + '...';
-            }
-            let ogTitle = $('meta[name="og:title"]').first().attr('content');
-            if (ogTitle) {
-                title = ogTitle;
-            }
-            else {
-                let twitterTitle = $('meta[name="twitter:title"]').first().attr('content');
-                if (twitterTitle) {
-                    title = twitterTitle;
-                }
-                else {
-                    let generalTitle = $('title').first().html();
-                    if (generalTitle) {
-                        title = generalTitle;
-                    }
-                }
-            }
-            if (title && title.length > 64) {
-                title = title.slice(0, 64 - '...'.length) + '...';
-            }
-            if (thumbnailUrl && typeof thumbnailUrl === 'string') {
-                if (thumbnailUrl.slice(0, 'https://'.length).toLowerCase() === 'https://') {
-                    let imageUrlWithProxy = jwt.sign({ url: thumbnailUrl }, config_1.default.jwt.imageProxy);
-                    thumbnailUrl = '/api/v1/feed/preview-proxy?url=' + encodeURIComponent(imageUrlWithProxy);
-                }
-                else {
-                    thumbnailUrl = null;
-                }
-            }
-            else {
-                thumbnailUrl = null;
-            }
-            newDataArr[index]['ogInfo'] = {
-                thumbnailUrl: thumbnailUrl,
-                description: desc,
-                title: title,
-            };
-        }
-        index++;
-    }
-    return newDataArr;
+    return await Promise.all(responseData);
 };
 exports.verifyEmail = (newEmail) => {
     const validate = (email) => {

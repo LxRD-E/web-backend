@@ -180,3 +180,104 @@ $('#is-developer').change(function(e) {
         warning(e.responseJSON.message);
     })
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$(document).on('click', '#uncheck-all-full-permissions', function(e) {
+    e.preventDefault();
+    $('.update-permissions-checkbox').each(function() {
+       $(this).attr("checked", false);
+    });
+});
+
+$(document).on('click', '#update-full-permissions', function(e) {
+   e.preventDefault();
+   var profileUserId = $('#userId').val();
+   loading();
+   request('/staff/permissions/'+profileUserId, 'GET').then(perms => {
+       const edited = [];
+       let permsProvidedByUser = [];
+       $('.update-permissions-checkbox').each(function() {
+          if ($(this).is(':checked')) {
+              permsProvidedByUser.push({
+                  name: $(this).attr('data-permission'),
+                  selected: true,
+              })
+          }else{
+              permsProvidedByUser.push({
+                  name: $(this).attr('data-permission'),
+                  selected: false,
+              })
+          }
+       });
+       let includedPerms = [];
+       for (const newPerm of permsProvidedByUser) {
+           let found = false;
+           for (const oldPerm in perms) {
+               if (includedPerms.includes(oldPerm)) {
+                   continue;
+               }
+               if (newPerm.name === oldPerm) {
+                   found = true;
+                   if (!newPerm.selected) {
+                       edited.push(newPerm);
+                       includedPerms.push(oldPerm);
+                   }
+               }
+           }
+           if (!found) {
+               edited.push(newPerm);
+               includedPerms.push(newPerm.name);
+           }
+       }
+
+       console.log('edited',edited.length,edited);
+       // bug...
+       if (edited.length >= 250) {
+           throw new Error('Over 250 perms to change...');
+       }
+
+
+       let all = [];
+       let pendingEditPerms = [];
+       for (const edit of edited) {
+           if (pendingEditPerms.includes(edit.name)) {
+               console.error('[error] pending perms includes',edit.name,'but it was tried again?');
+           }
+           pendingEditPerms.push(edit.name);
+           if (edit.selected) {
+               all.push(request('/staff/permissions/'+profileUserId+'/'+edit.name, 'PUT'));
+           }else{
+               all.push(request('/staff/permissions/'+profileUserId+'/'+edit.name, 'DELETE'));
+           }
+       }
+       Promise.all(all).then(d => {
+           success('The permissions for this user have been updated.');
+       }).catch(err => {
+           warning(err.responseJSON.message || 'An unknown error has occurred.');
+           console.error(err);
+           throw err;
+       })
+
+
+   }).catch(err => {
+       console.error(err);
+       throw err;
+   })
+});

@@ -3,6 +3,12 @@ import { Description } from "@tsed/swagger";
 
 export const RESELL_ITEM_FEE = 30;
 export const SELL_ITEM_FEE = 30;
+export const trade = {
+    maxItemsPerSide: 10,
+    maxRequestPrimary: 1000000,
+    maxOfferPrimary: 1000000,
+    isEnabled: true,
+}
 
 export class FeeMetaData {
     @Required()
