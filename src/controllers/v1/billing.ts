@@ -8,10 +8,23 @@ import Config from '../../helpers/config';
 // Autoload
 import controller from '../controller';
 // TSED
-import { Controller, Locals, QueryParams, BodyParams, PathParams, UseBefore, UseBeforeEach, Patch, Required, Post, HeaderParams, Get, Enum } from '@tsed/common';
-import { csrf } from '../../dal/auth';
-import { YesAuth } from '../../middleware/Auth';
-import { Summary, Returns, Description, ReturnsArray } from '@tsed/swagger';
+import {
+    BodyParams,
+    Controller,
+    Get,
+    HeaderParams,
+    Locals,
+    Patch,
+    PathParams,
+    Post,
+    Required, Use,
+    UseBefore,
+    UseBeforeEach
+} from '@tsed/common';
+import {csrf} from '../../dal/auth';
+import {YesAuth} from '../../middleware/Auth';
+import {Description, Returns, ReturnsArray, Summary} from '@tsed/swagger';
+
 /**
  * Billing Controller
  */
@@ -26,9 +39,8 @@ export default class BillingController extends controller {
      */
     @Get('/currency/products')
     @ReturnsArray(200, {type: model.billing.CurrencyProducts})
-    public async getCurrencyProducts(): Promise<model.billing.CurrencyProducts[]> {
-        const products = await this.billing.getCurrencyProducts();
-        return products;
+    public getCurrencyProducts(): Promise<model.billing.CurrencyProducts[]> {
+        return this.billing.getCurrencyProducts();
     }
 
     /**
@@ -38,8 +50,7 @@ export default class BillingController extends controller {
     @Summary('Update a currency product. Must be staff level 3 or higher')
     @Returns(400, {type: model.Error, description: 'PriceTooHigh: Price is above or equal to 500 USD\nInvalidCurrencyProductId: CurrencyProductId does not exist\n'})
     @Returns(401, {type: model.Error, description: 'Unauthorized: User is not authorized to perfomr this action\n'})
-    @UseBeforeEach(csrf)
-    @UseBefore(YesAuth)
+    @Use(csrf, YesAuth)
     public async updateCurrencyProduct(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('currencyProductId', Number) currencyProductId: number, 
@@ -104,57 +115,83 @@ export default class BillingController extends controller {
 
     /**
      * Call this method when a currency purchase is validated and finished
-     * @param currencyProductInfo 
+     * @param userInfo
+     * @param currencyProductInfo
      */
     public async onCurrencyPurchaseSuccess(
         userInfo: model.user.UserInfo,
         currencyProductInfo: model.billing.CurrencyProducts
     ): Promise<void> {
-        // Create In-Game Transaction
-        await this.economy.createTransaction(userInfo.userId, 1, currencyProductInfo.currencyAmount, model.economy.currencyType.primary, model.economy.transactionType.RealWorldPurchaseOfCurrency, 'Purchase of ' + currencyProductInfo.currencyAmount, model.catalog.creatorType.User, model.catalog.creatorType.User);
-        // Give Currency
-        await this.economy.addToUserBalance(userInfo.userId, currencyProductInfo.currencyAmount, model.economy.currencyType.primary);
-        // Give in-game item (if applicable)
-        let msg = `Hello\nYour currency purchase of ${currencyProductInfo.currencyAmount} currency has successfully completed. `;
-        if (currencyProductInfo.bonusCatalogId !== 0) {
-            const owned = await this.user.getUserInventoryByCatalogId(userInfo.userId, currencyProductInfo.bonusCatalogId);
-            if (owned.length === 0) {
-                await this.catalog.createItemForUserInventory(userInfo.userId, currencyProductInfo.bonusCatalogId);
-                // OK
-                const catalogPriceInfo = await this.catalog.getInfo(currencyProductInfo.bonusCatalogId, ['price','currency']);
-                await this.economy.createTransaction(userInfo.userId, 1, 0, catalogPriceInfo.currency, model.economy.transactionType.CurrencyPurchaseBonusItemRecieved, 'Bonus Item', model.catalog.creatorType.User, model.catalog.creatorType.User, currencyProductInfo.bonusCatalogId);
-            }else{
-                // Half the price
-                const catalogPriceInfo = await this.catalog.getInfo(currencyProductInfo.bonusCatalogId, ['price','currency']);
-                if (catalogPriceInfo.price !== 0) {
-                    let newAmount = catalogPriceInfo.price;
-                    newAmount = Math.abs(newAmount / 2);
-                    // Give Amount
-                    await this.economy.addToUserBalance(userInfo.userId, newAmount, catalogPriceInfo.currency);
-                    // Create Transaction
-                    await this.economy.createTransaction(userInfo.userId, 1, newAmount, catalogPriceInfo.currency, model.economy.transactionType.CurrencyPurchaseBonusItemRefund, 'Bonus Item Currency Refund', model.catalog.creatorType.User, model.catalog.creatorType.User, currencyProductInfo.bonusCatalogId);
-                    // add to msg
-                    msg += `You also recieved an additional ${newAmount} Currency since you already owned the bonus item. `;
+        const forUpdate = [
+            'users',
+            'user_inventory',
+        ]
+        await this.transaction(this, forUpdate, async function(trx) {
+            // Create In-Game Transaction
+            await trx.economy.createTransaction(userInfo.userId, 1, currencyProductInfo.currencyAmount, model.economy.currencyType.primary, model.economy.transactionType.RealWorldPurchaseOfCurrency, 'Purchase of ' + currencyProductInfo.currencyAmount, model.catalog.creatorType.User, model.catalog.creatorType.User);
+            // Give Currency
+            await trx.economy.addToUserBalanceV2(userInfo.userId, currencyProductInfo.currencyAmount, model.economy.currencyType.primary);
+            // Check if has referer
+            try {
+                const refer = await this.userReferral.getReferralUsedByUser(userInfo.userId);
+                // give 10% bonus to user
+                const amt = Math.floor(currencyProductInfo.currencyAmount * 0.1);
+                if (!Number.isInteger(amt)) {
+                    throw new Error('Referral amount is not an integer: '+amt+' '+typeof amt);
+                }
+                await trx.economy.addToUserBalanceV2(refer.userId, amt , model.economy.currencyType.primary);
+                // create transaction
+                await trx.economy.createTransaction(refer.userId, userInfo.userId, amt, model.economy.currencyType.primary, model.economy.transactionType.ReferralUserCurrencyPurchase, 'Referral Currency Purchase', model.catalog.creatorType.User, model.catalog.creatorType.User);
+            }catch(err) {
+                if (err !instanceof this.NotFound) {
+                    throw err;
                 }
             }
-        }
-        // Get Bonus Items
-        const bonusItems = await this.billing.getCurrencyProductsBelowAmount(currencyProductInfo.currencyAmount);
-        for (const item of bonusItems) {
-            if (item.bonusCatalogId !== 0) {
-                const owned = await this.user.getUserInventoryByCatalogId(userInfo.userId, item.bonusCatalogId);
+            // Give in-game item (if applicable)
+            let msg = `Hello\nYour currency purchase of ${currencyProductInfo.currencyAmount} currency has successfully completed. `;
+            let bonusRecieved = 0;
+            if (currencyProductInfo.bonusCatalogId !== 0) {
+                const owned = await trx.user.getUserInventoryByCatalogId(userInfo.userId, currencyProductInfo.bonusCatalogId);
                 if (owned.length === 0) {
-                    await this.catalog.createItemForUserInventory(userInfo.userId, item.bonusCatalogId);
+                    await trx.catalog.createItemForUserInventory(userInfo.userId, currencyProductInfo.bonusCatalogId);
                     // OK
-                    const catalogPriceInfo = await this.catalog.getInfo(item.bonusCatalogId, ['price','currency']);
-                    await this.economy.createTransaction(userInfo.userId, 1, 0, catalogPriceInfo.currency, model.economy.transactionType.CurrencyPurchaseBonusItemRecieved, 'Bonus Item', model.catalog.creatorType.User, model.catalog.creatorType.User, item.bonusCatalogId);
+                    const catalogPriceInfo = await trx.catalog.getInfo(currencyProductInfo.bonusCatalogId, ['price','currency']);
+                    await trx.economy.createTransaction(userInfo.userId, 1, 0, catalogPriceInfo.currency, model.economy.transactionType.CurrencyPurchaseBonusItemRecieved, 'Bonus Item', model.catalog.creatorType.User, model.catalog.creatorType.User, currencyProductInfo.bonusCatalogId);
+                }else{
+                    // Half the price
+                    const catalogPriceInfo = await trx.catalog.getInfo(currencyProductInfo.bonusCatalogId, ['price','currency']);
+                    if (catalogPriceInfo.price !== 0) {
+                        let newAmount = catalogPriceInfo.price;
+                        newAmount = Math.abs(newAmount / 2);
+                        // Give Amount
+                        await trx.economy.addToUserBalance(userInfo.userId, newAmount, catalogPriceInfo.currency);
+                        // Create Transaction
+                        await trx.economy.createTransaction(userInfo.userId, 1, newAmount, catalogPriceInfo.currency, model.economy.transactionType.CurrencyPurchaseBonusItemRefund, 'Bonus Item Currency Refund', model.catalog.creatorType.User, model.catalog.creatorType.User, currencyProductInfo.bonusCatalogId);
+                        bonusRecieved += newAmount;
+                    }
                 }
             }
-        }
-        // finish message
-        msg+=`This message will serve as your official recipt.\n\nThank you for your purchase,\n-BlocksHub`;
-        // create message for user
-        await this.notification.createMessage(userInfo.userId, 1, 'Currency Purchase Complete', msg);
+            // Get Bonus Items
+            const bonusItems = await trx.billing.getCurrencyProductsBelowAmount(currencyProductInfo.currencyAmount);
+            for (const item of bonusItems) {
+                if (item.bonusCatalogId !== 0) {
+                    const owned = await trx.user.getUserInventoryByCatalogId(userInfo.userId, item.bonusCatalogId);
+                    if (owned.length === 0) {
+                        await trx.catalog.createItemForUserInventory(userInfo.userId, item.bonusCatalogId);
+                        // OK
+                        const catalogPriceInfo = await trx.catalog.getInfo(item.bonusCatalogId, ['price','currency']);
+                        await trx.economy.createTransaction(userInfo.userId, 1, 0, catalogPriceInfo.currency, model.economy.transactionType.CurrencyPurchaseBonusItemRecieved, 'Bonus Item', model.catalog.creatorType.User, model.catalog.creatorType.User, item.bonusCatalogId);
+                    }
+                }
+            }
+            if (bonusRecieved > 0) {
+                msg += `You also received an additional ${bonusRecieved} Currency since you already owned the bonus item. `;
+            }
+            // finish message
+            msg+=`This message will serve as your official rreceipt\n\nThank you for your purchase,\n-BlocksHub`;
+            // create message for user
+            await trx.notification.createMessage(userInfo.userId, 1, 'Currency Purchase Complete', msg);
+        });
     }
 
     @Get('/accepted-currencies')

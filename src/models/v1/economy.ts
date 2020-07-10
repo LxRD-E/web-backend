@@ -217,6 +217,7 @@ export enum transactionType {
      * Transfer for currency exchange
      */
     'CurrencyExchangePositionClose',
+    'ReferralUserCurrencyPurchase',
 }
 export interface TradeItemObject {
     catalogId: number;

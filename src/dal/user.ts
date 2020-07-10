@@ -309,7 +309,7 @@ class UsersDAL extends _init {
 
     /**
      * Update the {user_lastonline} column of a user to the current time
-     * @param userId User's ID
+     * @param id
      */
     public async logOnlineStatus(id: number): Promise<void> {
         const time = this.moment().format('YYYY-MM-DD HH:mm:ss');
@@ -340,6 +340,7 @@ class UsersDAL extends _init {
             'is_banned': users.banned.false,
             'forum_postcount': 0,
             'user_balancedailyaward': date,
+            'id': null,
         });
         return insert[0];
     }

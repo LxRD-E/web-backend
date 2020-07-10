@@ -1,4 +1,22 @@
-import { Controller, Get, All, Next, Req, Res, Render, QueryParams, PathParams, Redirect, Response, Request, Locals, UseAfter, Required, Use } from "@tsed/common";
+import {
+    Controller,
+    Get,
+    All,
+    Next,
+    Req,
+    Res,
+    Render,
+    QueryParams,
+    PathParams,
+    Redirect,
+    Response,
+    Request,
+    Locals,
+    UseAfter,
+    Required,
+    Use,
+    Header
+} from "@tsed/common";
 import { Description, Summary } from "@tsed/swagger"; // import swagger Ts.ED module
 import { Exception, NotFound, BadRequest } from "ts-httpexceptions";
 import * as Express from 'express';
@@ -37,9 +55,38 @@ export class WWWAuthController extends controller {
     @Get('/signup')
     @Use(NoAuth)
     @Render('signup')
-    public signup() {
+    public async signup(
+        @Res() res: Res,
+        @Req() req: Req,
+        @QueryParams('r', Number) referralId?: number,
+        // @Header('referer') referer?: string,
+    ) {
+        // confirm referral is valid
+        let referral = undefined;
+        if (referralId) {
+            referral = await this.userReferral.getInfoById(referralId);
+
+            let referer = req.headers['referer'];
+            if (referer) {
+                const badReferers = [
+                    'brick-hill.com',
+                    'finobe.com',
+                ];
+                for (const bad of badReferers) {
+                    if (referer.indexOf(bad)) {
+                        res.redirect('https://www.google.com');
+                        return;
+                    }
+                }
+            }
+
+        }
+        // return
         return new WWWTemplate({
             title: "Signup",
+            page: {
+                referral,
+            }
         });
     }
 

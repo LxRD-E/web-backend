@@ -166,6 +166,20 @@
                 </div>
             </div>
             <div class="card" style="margin-top:1rem;">
+                            <div class="card-body">
+                                <form>
+                                    <div class="form-group">
+                                        <h5 class="card-title text-margin">Referral Code</h5>
+                                        <div class="row">
+                                            <div class="col-12" id="referral-information">
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+            </div>
+            <div class="card" style="margin-top:1rem;">
                 <div class="card-body">
                     <form>
                         <div class="form-group">

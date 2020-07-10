@@ -4,10 +4,12 @@ import * as staff from './v1/staff';
 import * as user from './v1/user';
 import * as group from './v1/group';
 import * as game from './v1/game';
+import * as userReferral from './v1/user-referral';
 import {Middleware, QueryParams, Req} from "@tsed/common";
 import StandardController from "../controllers/controller";
 import {filterId} from "../helpers/Filter";
-
+import {YesAuth, NoAuth} from "./Auth";
+import {csrf} from '../dal/auth';
 // generic functions
 
 /**
@@ -73,11 +75,24 @@ class ConvertIdsToCsv extends StandardController {
     }
 }
 
+import {Locals} from "@tsed/common";
+import {applyDecorators} from "@tsed/core";
+
+function UserInfo(): ParameterDecorator {
+    return applyDecorators(
+        Locals('userInfo')
+    ) as any;
+}
 
 export {
     // General Middleware
     ValidatePaging,
     ConvertIdsToCsv,
+    // Helpful
+    YesAuth,
+    NoAuth,
+    UserInfo,
+    csrf,
     // Service Middleware
     feed,
     reportAbuse,
@@ -85,4 +100,5 @@ export {
     user,
     group,
     game,
+    userReferral,
 };

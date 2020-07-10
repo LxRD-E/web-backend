@@ -176,6 +176,9 @@ export enum HttpErrors {
     BalanceTooSmall,
     InvalidPurchaseAmount,
     PositionNoLongerAvailable,
+    InvalidReferralId,
+    ReferralAlreadyExists,
+    NotFound,
 }
 import os = require('os');
 import {lbOrigin} from '../middleware/Any';

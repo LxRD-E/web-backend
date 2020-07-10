@@ -73,10 +73,10 @@ export default class AuthController extends controller {
         });
         // verify and send email in background
         try {
-            let userInfo: {userId: number; username: string};
+            let userInfo: { userId: number; username: string };
             try {
                 userInfo = await this.settings.getUserByEmail(email);
-            }catch(e) {
+            } catch (e) {
                 // no email
                 console.log('[warn] email is invalid', email, e);
                 return;
@@ -87,11 +87,11 @@ export default class AuthController extends controller {
             // insert code
             await this.user.insertPasswordReset(userInfo.userId, stringToken);
             // create url
-            let url = `https://blockshub.net/reset/password?userId=${userInfo.userId}&code=`+encodeURIComponent(stringToken);
+            let url = `https://blockshub.net/reset/password?userId=${userInfo.userId}&code=` + encodeURIComponent(stringToken);
             // send email
-            await this.settings.sendEmail(email, `Password Reset Request`, 
-            `Hello ${userInfo.username}\nYou (or someone else) requested your account's password on BlocksHub to be reset. Please copy and paste the link below into your browser to reset your password.\n\n${url}\n`,`Hello ${userInfo.username}<br>You (or someone else) requested your account's password on BlocksHub to be reset. Please click the link below to reset your password.<br><a href="${url}">${url}</a><br>Alternatively, you can copy and paste this URL into your browser<br>${url}<br>`);
-        }catch(e) {
+            await this.settings.sendEmail(email, `Password Reset Request`,
+                `Hello ${userInfo.username}\nYou (or someone else) requested your account's password on BlocksHub to be reset. Please copy and paste the link below into your browser to reset your password.\n\n${url}\n`, `Hello ${userInfo.username}<br>You (or someone else) requested your account's password on BlocksHub to be reset. Please click the link below to reset your password.<br><a href="${url}">${url}</a><br>Alternatively, you can copy and paste this URL into your browser<br>${url}<br>`);
+        } catch (e) {
             console.error(e);
         }
     }
@@ -101,8 +101,14 @@ export default class AuthController extends controller {
     @Use(csrf, NoAuth, RateLimiterMiddleware('loginAttempt'))
     @Returns(200, {type: model.auth.LoginTwoFactorResponseOK, description: 'User session cookie will be set'})
     @Returns(400, {type: model.Error, description: 'InvalidTwoFactorCode: Token is not valid\n'})
-    @Returns(409, {type: model.Error, description: 'TwoFactorNotRequired: Two factor authentication was disabled for this account. Please login normally.\nTwoFactorCodeExpired: Two-Factor JWT code has expired. Please login again.\n'})
-    @Returns(429, {type: model.Error, description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n'})
+    @Returns(409, {
+        type: model.Error,
+        description: 'TwoFactorNotRequired: Two factor authentication was disabled for this account. Please login normally.\nTwoFactorCodeExpired: Two-Factor JWT code has expired. Please login again.\n'
+    })
+    @Returns(429, {
+        type: model.Error,
+        description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n'
+    })
     public async loginWithTwoFactor(
         @BodyParams('code', String) code: string,
         @BodyParams('token', String) token: string,
@@ -114,11 +120,11 @@ export default class AuthController extends controller {
         if (!userIp) {
             userIp = '127.0.0.1';
         }
-        let decoded: {userId: number; expectedIp: string; iat: number;};
+        let decoded: { userId: number; expectedIp: string; iat: number; };
         try {
             decoded = this.auth.decodeTwoFactorJWT(code);
-        }catch(e) {
-            console.log('failed to decode: ',e);
+        } catch (e) {
+            console.log('failed to decode: ', e);
             throw new this.BadRequest('InvalidTwoFactorCode');
         }
         // Ip does not match
@@ -140,7 +146,7 @@ export default class AuthController extends controller {
         let result: boolean;
         try {
             result = await this.auth.validateTOTPSecret(twoFactorInfo.secret, token);
-        }catch(e) {
+        } catch (e) {
             throw new this.BadRequest('InvalidTwoFactorCode');
         }
         if (!result) {
@@ -161,10 +167,16 @@ export default class AuthController extends controller {
     @Post('/login')
     @Summary('Login to an account')
     @Description('Note that there is a limit of 25 attempts per hour, per IP address')
-    @Returns(200, { type: model.auth.LoginRequestOK, description: 'Session will be set, unless "isTwoFactorRequired" is true. "twoFactor" is only defined if "isTwoFactorRequired" is true. If "twoFactor" is not undefined, the user will be required to grab their TOTP token and enter it, then the "twoFactor" string and TOTP token should be POSTed to /login/two-factor to complete the login flow'})
-    @Returns(400, { description: 'InvalidUsernameOrPassword: Invalid Credentials\n', type: model.Error })
-    @Returns(409, { description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error })
-    @Returns(429, {type: model.Error, description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n'})
+    @Returns(200, {
+        type: model.auth.LoginRequestOK,
+        description: 'Session will be set, unless "isTwoFactorRequired" is true. "twoFactor" is only defined if "isTwoFactorRequired" is true. If "twoFactor" is not undefined, the user will be required to grab their TOTP token and enter it, then the "twoFactor" string and TOTP token should be POSTed to /login/two-factor to complete the login flow'
+    })
+    @Returns(400, {description: 'InvalidUsernameOrPassword: Invalid Credentials\n', type: model.Error})
+    @Returns(409, {description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error})
+    @Returns(429, {
+        type: model.Error,
+        description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n'
+    })
     @Use(csrf, NoAuth, RateLimiterMiddleware('loginAttempt'))
     public async login(
         @BodyParams('username', String) username: string,
@@ -235,7 +247,7 @@ export default class AuthController extends controller {
 
     @Post('/logout')
     @Summary('Logout from the current session')
-    @Returns(409, { description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error })
+    @Returns(409, {description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error})
     @Use(csrf, YesAuth)
     public async logout(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -269,7 +281,7 @@ export default class AuthController extends controller {
         try {
             let res = await this.auth.getCachedTotpResults(userInfo.userId);
             return JSON.parse(res);
-        }catch(e) {
+        } catch (e) {
 
         }
         let results = await this.auth.generateTOTPSecret();
@@ -293,8 +305,8 @@ export default class AuthController extends controller {
             throw new this.BadRequest('InvalidPassword');
         }
         // Check if not enabled
-        let enabled = await this.settings.is2faEnabled(userInfo.userId);
-        if (enabled.enabled === false) {
+        let twoFA = await this.settings.is2faEnabled(userInfo.userId);
+        if (!twoFA.enabled) {
             throw new this.Conflict('TwoFactorNotEnabled');
         }
         // Delete 2fa
@@ -333,7 +345,7 @@ export default class AuthController extends controller {
         let result: boolean;
         try {
             result = await this.auth.validateTOTPSecret(secret, token);
-        }catch(e) {
+        } catch (e) {
             throw new this.BadRequest('InvalidTokenOrSecret');
         }
         if (!result) {
@@ -349,10 +361,10 @@ export default class AuthController extends controller {
 
     @Post('/unlock')
     @Summary('Unlock a banned account')
-    @Returns(400, { description: 'Unauthorized: User is not authorized to perform this action\n', type: model.Error })
+    @Returns(400, {description: 'Unauthorized: User is not authorized to perform this action\n', type: model.Error})
     @Use(csrf, YesAuth)
-    @Returns(401, { type: model.Error, description: 'LoginRequired: Login Required\n' })
-    @Returns(403, { type: model.Error, description: 'Invalid CSRF Token' })
+    @Returns(401, {type: model.Error, description: 'LoginRequired: Login Required\n'})
+    @Returns(403, {type: model.Error, description: 'Invalid CSRF Token'})
     public async unlock(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ) {
@@ -380,15 +392,15 @@ export default class AuthController extends controller {
             throw new Error('Internal')
         }
         // Return success
-        return { success: true };
+        return {success: true};
     }
 
     @Post('/signup')
     @Summary('Register an account')
-    @Returns(200, { description: 'OK', type: model.auth.SignupResponseOK })
-    @Returns(409, { description: 'LogoutRequired: Login Required\nCaptchaValidationFailed: Invalid captcha token, expired, or not provided\n' })
-    @Returns(403, { description: 'CSRFValidationFailed: Invalid CSRF Token\n' })
-    @Returns(400, { description: 'InvalidBirthDate: Birth Date is invalid\nInvalidUsername: Username is taken or unavailable\nInvalidPassword: Password is too weak\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstraintTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nOneAccountPerIP: Only one account may be signed up per IP address, every 24 hours\n' })
+    @Returns(200, {description: 'OK', type: model.auth.SignupResponseOK})
+    @Returns(409, {description: 'LogoutRequired: Login Required\nCaptchaValidationFailed: Invalid captcha token, expired, or not provided\n'})
+    @Returns(403, {description: 'CSRFValidationFailed: Invalid CSRF Token\n'})
+    @Returns(400, {description: 'InvalidBirthDate: Birth Date is invalid\nInvalidUsername: Username is taken or unavailable\nInvalidPassword: Password is too weak\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstraintTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nOneAccountPerIP: Only one account may be signed up per IP address, every 24 hours\n'})
     @Use(csrf, NoAuth, RecaptchaV2)
     public async signup(
         @BodyParams(model.auth.SignupRequest) body: model.auth.SignupRequest,
@@ -406,11 +418,12 @@ export default class AuthController extends controller {
         if (signedUpInPast24Hours && process.env.NODE_ENV !== 'development') {
             throw new this.BadRequest('OneAccountPerIP');
         }
-        
+
         let birthArray = body.birth;
         let username = body.username;
         let password = body.password;
 
+        // Confirm birth date provided is valid
         const birthYear = birthArray[2];
         const birthMonth = birthArray[1];
         const birthDay = birthArray[0];
@@ -421,115 +434,110 @@ export default class AuthController extends controller {
         if (momentDate.isSameOrBefore(moment().subtract(100, "years"))) {
             throw new this.BadRequest('InvalidBirthDate');
         }
-        const birthDateString = momentDate.format('YYYY-MM-DD HH:mm:ss');
         // Username Checker
-        const usernamecheck = await this.user.isUsernameOk(username);
-        if (usernamecheck !== 'OK') {
-            throw new this.BadRequest(usernamecheck);
+        const nameCheck = this.user.isUsernameOk(username);
+        if (nameCheck !== 'OK') {
+            throw new this.BadRequest(nameCheck);
         }
-        // Make sure user doesn't already exist
-        let available = await this.user.usernameAvailableForSignup(username);
-        if (!available) {
-            throw new this.BadRequest('InvalidUsername');
-        }
-        // Username OK. Let's try password
-        if (!password || password.length < 6) {
-            throw new this.BadRequest('InvalidPassword');
-        }
-        // Seems good so far
-        let hash: string;
-        try {
-            hash = await hashPassword(password);
-        } catch (e) {
-            throw e;
-        }
-        if (!hash) {
-            throw new Error();
-        }
-        // Create User
-        let userId;
-        try {
-            userId = await this.user.createUser(username, hash, birthDateString);
-        } catch (e) {
-            if (e.code && e.code === "ER_DUP_ENTRY") {
+        // Start transaction
+        const forUpdate = [
+            'users',
+            'user_usernames',
+            'user_referral_use',
+        ]
+        return await this.transaction(this, forUpdate, async function (trx) {
+            const birthDateString = momentDate.format('YYYY-MM-DD HH:mm:ss');
+            // Make sure user doesn't already exist
+            let available = await trx.user.usernameAvailableForSignup(username);
+            if (!available) {
                 throw new this.BadRequest('InvalidUsername');
-            } else {
+            }
+            // Username OK. Let's try password
+            if (!password || password.length < 6) {
+                throw new this.BadRequest('InvalidPassword');
+            }
+            // Seems good so far
+            let hash: string;
+            try {
+                hash = await hashPassword(password);
+            } catch (e) {
                 throw e;
             }
-        }
-        // Create Avatar Colors
-        try {
-            await this.user.addAvatarColors(userId, {
+            if (!hash) {
+                throw new Error();
+            }
+            // Create User
+            let userId;
+            try {
+                userId = await trx.user.createUser(username, hash, birthDateString);
+            } catch (e) {
+                if (e.code && e.code === "ER_DUP_ENTRY") {
+                    throw new this.BadRequest('InvalidUsername');
+                } else {
+                    throw e;
+                }
+            }
+            // Create Avatar Colors
+            await trx.user.addAvatarColors(userId, {
                 "HeadRGB": [255, 255, 255],
                 "LegRGB": [255, 255, 255],
                 "TorsoRGB": [255, 255, 255],
             });
-        } catch (e) {
-            throw e;
-        }
-        // Add Thumbnail
-        try {
-            await this.user.addUserThumbnail(userId, "https://cdn.blockshub.net/thumbnails/b9db56f8457b5e64dae256e5a029541dd2820bb641d280dec9669bbab760fa1077a7106cbff4c445d950f60f6297fba5.png");
-        } catch (e) {
-            throw e;
-        }
-        // Give First-Time Transaction
-        try {
-            await this.economy.addToUserBalance(userId, 10, model.economy.currencyType.secondary);
-            await this.economy.createTransaction(userId, 1, 10, model.economy.currencyType.secondary, model.economy.transactionType.DailyStipendSecondary, "Daily Stipend", model.catalog.creatorType.User, model.catalog.creatorType.User);
-        } catch (e) {
-            throw e;
-        }
-        // Record Signup
-        try {
-            await this.user.logUserIp(userId, ip, model.user.ipAddressActions.SignUp);
-        } catch (e) {
+            // Add Thumbnail
+            await trx.user.addUserThumbnail(userId, "https://cdn.blockshub.net/thumbnails/b9db56f8457b5e64dae256e5a029541dd2820bb641d280dec9669bbab760fa1077a7106cbff4c445d950f60f6297fba5.png");
+            // Give First-Time Transaction
+            await trx.economy.addToUserBalanceV2(userId, 10, model.economy.currencyType.secondary);
+            await trx.economy.createTransaction(userId, 1, 10, model.economy.currencyType.secondary, model.economy.transactionType.DailyStipendSecondary, "Daily Stipend", model.catalog.creatorType.User, model.catalog.creatorType.User);
+            // Record Signup
+            await trx.user.logUserIp(userId, ip, model.user.ipAddressActions.SignUp);
+            // Options for dev env
+            if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' || process.env.IS_STAGING === '1') {
+                let verifiedEmail = req.headers['x-verified-email'] as string;
+                if (verifiedEmail) {
+                    // add verified email
+                    await trx.settings.insertNewEmail(userId, verifiedEmail, 'example_code');
+                    await trx.settings.markEmailAsVerified(userId);
+                }
+                let startingPrimary = req.headers['x-start-primary'] as string;
+                if (startingPrimary) {
+                    let primaryNumber = parseInt(startingPrimary, 10);
+                    // add to balance
+                    await trx.economy.addToUserBalance(userId, primaryNumber, model.economy.currencyType.primary);
+                }
+                let startingSecondary = req.headers['x-start-secondary'] as string;
+                if (startingSecondary) {
+                    let secondaryNumber = parseInt(startingSecondary, 10);
+                    // add to balance
+                    await trx.economy.addToUserBalance(userId, secondaryNumber, model.economy.currencyType.secondary);
+                }
+            }
+            // If using referral code, register it
+            if (body.referralId) {
+                // confirm is valid
+                let referralInfo = await trx.userReferral.getInfoById(body.referralId);
+                // set
+                await trx.userReferral.registerReferralCodeUseForUser(userId, body.referralId);
+            }
+            // Setup user session
+            session.userdata = {};
+            session.userdata.id = userId;
+            session.userdata.username = username;
+            session.userdata.passwordUpdated = 0;
+            // Return signup data
+            return {
+                userId: userId,
+                username: username,
+            };
+        });
 
-        }
-        console.log('Return OK');
-        /*
-        // Return Success
-        return {
-            userId: userId,
-            username: username,
-            passwordChanged: 0,
-        }
-        */
-        // Setup user session
-        session.userdata = {};
-        session.userdata.id = userId;
-        session.userdata.username = username;
-        session.userdata.passwordUpdated = 0;
-        // Options for dev env
-        if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' || process.env.IS_STAGING === '1') {
-            let verifiedEmail = req.headers['x-verified-email'] as string;
-            if (verifiedEmail) {
-                // add verified email
-                await this.settings.insertNewEmail(userId, verifiedEmail, 'example_code');
-                await this.settings.markEmailAsVerified(userId);
-            }
-            let startingPrimary = req.headers['x-start-primary'] as string;
-            if (startingPrimary) {
-                let primaryNumber = parseInt(startingPrimary, 10);
-                // add to balance
-                await this.economy.addToUserBalance(userId, primaryNumber, model.economy.currencyType.primary);
-            }
-            let startingSecondary = req.headers['x-start-secondary'] as string;
-            if (startingSecondary) {
-                let secondaryNumber = parseInt(startingSecondary, 10);
-                // add to balance
-                await this.economy.addToUserBalance(userId, secondaryNumber, model.economy.currencyType.secondary);
-            }
-        }
-        return {
-            userId: userId,
-            username: username,
-        };
     }
 
     @Patch('/reset/password')
     @Summary('Reset user password via code from email')
-    @Returns(400, { type: model.Error, description: 'InvalidCode: Code is expired or invalid\nInvalidPassword: Password is too short\n' })
+    @Returns(400, {
+        type: model.Error,
+        description: 'InvalidCode: Code is expired or invalid\nInvalidPassword: Password is too short\n'
+    })
     @Use(csrf, YesAuth)
     public async resetPassword(
         @Required()
@@ -577,7 +585,7 @@ export default class AuthController extends controller {
 
     @Get('/username/available')
     @Summary('Check if a username is available for signup')
-    @Returns(400, { description: 'InvalidUsername: Username is taken or unavailable\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\n' })
+    @Returns(400, {description: 'InvalidUsername: Username is taken or unavailable\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\n'})
     public async usernameAvailableForSignup(
         @Required()
         @QueryParams('username', String) username: string
@@ -601,7 +609,7 @@ export default class AuthController extends controller {
 
     @Get('/username/change/available')
     @Summary('Check if username is available for name change')
-    @Returns(400, { description: 'InvalidUsername: Username is taken or unavailable\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\n' })
+    @Returns(400, {description: 'InvalidUsername: Username is taken or unavailable\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\n'})
     @Use(YesAuth)
     public async usernameAvailableForNameChange(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -628,8 +636,8 @@ export default class AuthController extends controller {
     @Patch('/username/change')
     @Summary('Change authenticated user\'s username')
     @Description('User will be charged 1,000 Primary if succesful. User will not have to log in again since their session will update. The authenticated user will be logged out of all sessions other than the one that made this request')
-    @Returns(200, { description: 'OK', type: model.auth.UsernameChangedResponseOK })
-    @Returns(400, { description: 'InvalidUsername: Username is taken or unavailable\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nCooldown: You cannot change your username right now\nNotEnoughCurrency: User does not have 1,000+ Primary' })
+    @Returns(200, {description: 'OK', type: model.auth.UsernameChangedResponseOK})
+    @Returns(400, {description: 'InvalidUsername: Username is taken or unavailable\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nCooldown: You cannot change your username right now\nNotEnoughCurrency: User does not have 1,000+ Primary'})
     @Use(csrf, YesAuth)
     public async changeUsername(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -680,8 +688,14 @@ export default class AuthController extends controller {
     @Summary('Generate an auth code required to sign into a service')
     @Use(csrf, YesAuth)
     @Returns(200, {type: model.auth.GenerateAuthenticationCodeResponse})
-    @Returns(400, {type:model.Error, description: 'InvalidReturnUrl: Return URL is not valid\nAuthenticationServiceConstraintHTTPSRequired: The returnUrl must use the HTTPS protocol\n'})
-    @Returns(409, {type: model.Error, description: 'AuthenticationServiceBlacklisted: The returnUrl is blacklisted and cannot be used\n'})
+    @Returns(400, {
+        type: model.Error,
+        description: 'InvalidReturnUrl: Return URL is not valid\nAuthenticationServiceConstraintHTTPSRequired: The returnUrl must use the HTTPS protocol\n'
+    })
+    @Returns(409, {
+        type: model.Error,
+        description: 'AuthenticationServiceBlacklisted: The returnUrl is blacklisted and cannot be used\n'
+    })
     public async startAuthenticationFlowToService(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
@@ -690,7 +704,7 @@ export default class AuthController extends controller {
         // Skip HTTPs check in development to make testing stuff easier
         if (process.env.NODE_ENV === 'production') {
             // Make sure URL is using HTTPS
-            if (returnUrl.slice(0,'https://'.length) !== 'https://') {
+            if (returnUrl.slice(0, 'https://'.length) !== 'https://') {
                 throw new this.BadRequest('AuthenticationServiceConstraintHTTPSRequired');
             }
         }
@@ -700,11 +714,11 @@ export default class AuthController extends controller {
         }
         // Make sure URL is not blockshub.net
         // www.blockshub.net
-        if (returnUrl.slice(0,'https://www.blockshub.net'.length) === 'https://www.blockshub.net') {
+        if (returnUrl.slice(0, 'https://www.blockshub.net'.length) === 'https://www.blockshub.net') {
             throw new this.Conflict('AuthenticationServiceBlacklisted');
         }
         // blockshub.net
-        if (returnUrl.slice(0,'https://blockshub.net'.length) === 'https://blockshub.net') {
+        if (returnUrl.slice(0, 'https://blockshub.net'.length) === 'https://blockshub.net') {
             throw new this.Conflict('AuthenticationServiceBlacklisted');
         }
         // Ok, so now we can generate the JWT
@@ -730,7 +744,7 @@ export default class AuthController extends controller {
             if (moment().isSameOrAfter(moment(result.iat * 1000).add(5, 'minutes'))) {
                 throw new this.BadRequest('InvalidCode');
             }
-        }catch(e) {
+        } catch (e) {
             throw new this.BadRequest('InvalidCode');
         }
         return result;

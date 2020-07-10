@@ -1,3 +1,15 @@
+let _refInfo = $('#referral-data')
+const referral = {
+    userId: parseInt(_refInfo.attr('data-user-id'), 10) || undefined,
+    referralId: parseInt(_refInfo.attr('data-id'), 10) || undefined,
+}
+if (referral.referralId) {
+    $('#referral-information-box').append(`
+<h2 style="font-size:1.5rem;">Invited By <span data-userid="${referral.userId}"></span></h2>
+<p class="font-italic text-center" style="font-size:0.75rem;"><span data-userid="${referral.userId}"></span> invited you to BlocksHub! When you sign up, you'll both get an entry into our 100k Giveaway!</p>`);
+    setUserNames([referral.userId]);
+}
+
 function daysInMonth (month, year) {
     return new Date(year, month, 0).getDate();
 }
@@ -92,9 +104,22 @@ $(document).on('click', '#signUpButton', function() {
     //}
     if (username !== "" && password !== "" && username !== null && password !== null && password.length >= 6 && username.length >= 3 && confirmPassword === password && $('#birthDatePick').val() !== null) {
         $('#signUpButton').attr("disabled","disabled");
+        const signupRequest = {
+            username: username,
+            password: password,
+            birth: [
+                day,
+                month,
+                year
+            ],
+            captcha: response,
+        }
+        if (referral.referralId) {
+            signupRequest.referralId = referral.referralId;
+        }
         usernameOk(username)
             .then(function() {
-                request("/auth/signup", "POST", JSON.stringify({username:username,password:password,birth:[day,month,year],captcha:response}))
+                request("/auth/signup", "POST",signupRequest)
                     .then(function() {
                         $('#signUpButton').removeAttr("disabled");
                         window.location.reload();

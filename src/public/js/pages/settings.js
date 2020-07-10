@@ -373,3 +373,24 @@ $(document).on('click', '#send-verification-email', function (e) {
         warning(e.responseJSON.message);
     })
 });
+
+const loadReferralInfo = () => {
+    let div = $('#referral-information');
+    request('/user-referral/my/referral', 'GET').then(d => {
+        div.empty().append(`<p>You were referred by <a href="/users/${d.userId}/profile"><span data-userid="${d.userId}"></span></a>.</p>`);
+        setUserNames([d.userId]);
+
+        request('/user-referral/my/referral-contest/entry').then(stats => {
+            if (stats.hasEnteredContest && stats.hasContestEnded) {
+                div.append(`<p>The contest you were entered into has ended.</p>`);
+            }else if (stats.hasEnteredContest && !stats.hasContestEnded) {
+                div.append(`<p>You were entered into the contest. Check back soon to see if you win!</p>`);
+            }
+        }).catch(err => {
+            div.append(`<p style="margin-top:1rem;">Due to a lack of activity, you have not been entered into the current contest. Go post on the forums, customize your avatar, create comments, make games, or meet new friends in order to get entered into the contest!</p>`);
+        })
+    }).catch(err => {
+        div.empty().append(`<p>You were not referred by anybody.</p>`)
+    })
+}
+loadReferralInfo();

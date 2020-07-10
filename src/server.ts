@@ -13,7 +13,8 @@ import "@tsed/swagger"; // import swagger Ts.ED module
 import Path = require("path");
 
 // @ts-ignore
-import responseTime = require('response-time')
+import responseTime = require('response-time');
+import './events/setup';
 
 import * as cons from 'consolidate';
 import morgan = require('morgan');

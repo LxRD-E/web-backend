@@ -257,6 +257,8 @@ export class ForumController extends controller {
             }
             throw e;
         }
+        // broadcast
+        this.event.forum.submitEvent('createThread', {userId: userInfo.userId, threadId: threadId});
         // Return success
         return {
             'success': true,
@@ -322,6 +324,8 @@ export class ForumController extends controller {
             }
             throw e;
         }
+        // Broadcast
+        this.event.forum.submitEvent('createPost', {userId: userInfo.userId, postId: postId});
         // Return success
         return {
             'success': true,
