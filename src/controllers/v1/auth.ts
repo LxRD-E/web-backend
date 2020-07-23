@@ -538,7 +538,7 @@ export default class AuthController extends controller {
         type: model.Error,
         description: 'InvalidCode: Code is expired or invalid\nInvalidPassword: Password is too short\n'
     })
-    @Use(csrf, YesAuth)
+    @Use(csrf, NoAuth)
     public async resetPassword(
         @Required()
         @BodyParams('code', String) code: string,
