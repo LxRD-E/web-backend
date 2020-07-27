@@ -32,15 +32,17 @@ let store = new RedisStore({ client: redisClient })
  * App is the Express App, but the type can't actually be defined so it has to be left as "any"
  */
 export const parser = session({
-    name: 'rbxsession',
+    name: 'blockshub-session',
     secret: Config.session.secret,
     resave: false,
     store: store,
     saveUninitialized: true,
     cookie: {
         secure: Config.session.secure,
-        maxAge: 86400 * 1000 * 30 * 12,
+        // (about) 1 year
+        maxAge: (86400 * 30 * 12) * 1000,
         sameSite: 'lax',
+        domain: Config.session.domain || '.blockshub.hh',
     },
 });
 export default parser;

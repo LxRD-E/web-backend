@@ -28,6 +28,12 @@ export default class ReportAbuseController extends controller {
         super();
     }
 
+    @Get('/metadata/reasons')
+    @Summary('Get report abuse reasons')
+    public getReportAbuseReasons() {
+        return model.reportAbuse.ReportReason;
+    }
+
     @Post('/feed/friends/:userStatusId')
     @Summary('Report a userStatusId as abusive')
     @Description('Note this endpoint will always return OK, even if content could not be reported')

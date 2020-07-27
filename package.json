@@ -111,7 +111,7 @@
     "jsonwebtoken": "^8.5.1",
     "knex": "^0.20.4",
     "linkifyjs": "^2.1.9",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "method-override": "^3.0.0",
     "module-alias": "^2.2.2",
     "moment": "^2.24.0",

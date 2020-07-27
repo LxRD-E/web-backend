@@ -4,14 +4,12 @@
 import redis from '../helpers/ioredis_pubsub';
 import * as Game from '../models/v1/game';
 import * as Catalog from '../models/v1/catalog';
-import aws = require('aws-sdk');
 import config from '../helpers/config';
-import crypto = require('crypto');
-import { Redis } from 'ioredis';
-import { VM } from 'vm2';
-import CP = require('child_process');
+import {Redis} from 'ioredis';
 import _init from './_init';
-import { game } from '../models/models';
+import {game} from '../models/models';
+import aws = require('aws-sdk');
+import crypto = require('crypto');
 
 class GameDAL extends _init {
 
@@ -221,11 +219,10 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
      * @param gameId 
      */
     public async getGameScripts(gameId: number, type: Game.ScriptType): Promise<Game.Script[]> {
-        const scripts = await this.knex('game_script').select('id as scriptId', 'game_id as gameId', 'script_url as scriptUrl', 'created_at as createdAt', 'updated_at as updatedAt', 'script_type as scriptType', 'name as scriptName').where({
+        return await this.knex('game_script').select('id as scriptId', 'game_id as gameId', 'script_url as scriptUrl', 'created_at as createdAt', 'updated_at as updatedAt', 'script_type as scriptType', 'name as scriptName').where({
             'game_id': gameId,
             'script_type': type,
         });
-        return scripts;
     }
 
     /**
@@ -276,7 +273,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
     /**
      * Get a Map's Content
      */
-    public getMapContent(mapName: string): Promise<string> {
+    public getMapContent(mapName: string): Promise<Buffer> {
         return new Promise((resolve, reject): void => {
             const s3 = new aws.S3({
                 endpoint: config.aws.endpoint,
@@ -291,7 +288,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
                     console.log(err);
                     reject(err)
                 } else {
-                    resolve(data.Body as string);
+                    resolve(data.Body as Buffer);
                 }
             });
         });
@@ -300,7 +297,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
     /**
      * Get a Script's Content
      */
-    public getScriptContent(scriptName: string): Promise<string> {
+    public getScriptContent(scriptName: string): Promise<Buffer> {
         return new Promise((resolve, reject): void => {
             const s3 = new aws.S3({
                 endpoint: config.aws.endpoint,
@@ -315,7 +312,7 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
                     console.log(err);
                     reject(err)
                 } else {
-                    resolve(data.Body as string);
+                    resolve(data.Body as Buffer);
                 }
             });
         });

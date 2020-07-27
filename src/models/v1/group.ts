@@ -128,8 +128,10 @@ export class roleInfo {
 /**
  * Group Funds Object
  */
-export interface GroupFunds {
+export class GroupFunds {
+    @Required()
     Primary: number;
+    @Required()
     Secondary: number;
 }
 

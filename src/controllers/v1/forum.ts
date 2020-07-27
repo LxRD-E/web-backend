@@ -20,13 +20,15 @@ import {
     Put,
     QueryParams,
     Required,
+    Use,
     UseBefore,
     UseBeforeEach
 } from '@tsed/common';
 import controller from '../controller';
-import {Summary} from '@tsed/swagger';
+import {Returns, ReturnsArray, Summary} from '@tsed/swagger';
 import {csrf} from '../../dal/auth';
 import {YesAuth} from '../../middleware/Auth';
+import {VerifyPagingInfo} from "../../middleware/VerifyLegacyPagingInfo";
 
 /**
  * Groups Controller
@@ -88,6 +90,49 @@ export class ForumController extends controller {
         }
         return expandedSubCategories;
     }
+
+    @Get('/:subCategoryId/latest-post')
+    @Summary('Get the latest post for the {subCategoryId}')
+    @Returns(200, {type: model.forum.PostSnippet})
+    public async getLatestPost(
+        @PathParams('subCategoryId', Number) subCategoryId: number,
+    ) {
+        return await this.forum.getLatestPost(subCategoryId);
+    }
+
+    @Get('/:subCategoryId/count')
+    @Summary('Count all posts and threads for the {subCategoryId}')
+    @Returns(200, {type: model.forum.ForumThreadsAndPostsCount})
+    public async countPostsAndThreads(
+        @PathParams('subCategoryId', Number) subCategoryId: number,
+    ) {
+        const [threads, posts] = await Promise.all([this.forum.getThreadCount(subCategoryId), this.forum.getPostCount(subCategoryId)]);
+        return {
+            threads,
+            posts,
+        }
+    }
+
+    @Get('/:subCategoryId/latest-threads')
+    @Summary('Get the latest thread snippet for the {subCategoryId}')
+    @Use(VerifyPagingInfo)
+    @ReturnsArray(200, {type: model.forum.Thread})
+    public async getLatestThreads(
+        @PathParams('subCategoryId', Number) subCategoryId: number,
+        @QueryParams('limit', Number) limit: number = 5,
+    ) {
+        return await this.forum.getLatestThreads(limit);
+    }
+
+    @Get('/thread/:threadId/info')
+    @Summary('Get thread info by the {threadId}')
+    @Returns(200, {type: model.forum.Thread})
+    public async getThreadById(
+        @PathParams('threadId', Number) threadId: number,
+    ) {
+        return await this.forum.getThreadById(threadId);
+    }
+
 
     /**
      * Get a Subcategory's Threads

@@ -40,10 +40,7 @@ export class CatalogController extends controller {
     constructor() {
         super();
     }
-    /**
-     * Get a catalog item's Info
-     * @param id Catalog Item's ID
-     */
+
     @Get('/:catalogId/info')
     @Summary('Get catalog item info by catalogId')
     public async getInfo(
@@ -51,7 +48,23 @@ export class CatalogController extends controller {
         @PathParams('catalogId', Number) id: number
     ): Promise<model.catalog.CatalogInfo> {
         try {
-            return await this.catalog.getInfo(id);
+            return await this.catalog.getInfo(id, [
+                'catalogId',
+                'catalogName',
+                'description',
+                'price',
+                'averagePrice',
+                'forSale',
+                'maxSales',
+                'collectible',
+                'status',
+                'creatorId',
+                'creatorType',
+                'userId',
+                'category',
+                'dateCreated',
+                'currency',
+            ]);
         } catch (e) {
             throw new this.BadRequest('InvalidCatalogId');
         }
@@ -91,9 +104,22 @@ export class CatalogController extends controller {
         if (!id) {
             throw new this.BadRequest('InvalidCatalogId');
         }
-        const thumbnail = await this.catalog.getThumbnailById(id);
-        return thumbnail;
+        return await this.catalog.getThumbnailById(id);
     }
+
+    @Get('/:catalogId/sales/count')
+    @Summary('Count catalog item sales')
+    @Returns(200, {type: class {sales: number;}})
+    public async getCatalogItemSalesCount(
+        @Required()
+        @PathParams('catalogId', Number) id: number
+    ) {
+        const data = await this.catalog.countSales(id);
+        return {
+            sales: data,
+        }
+    }
+
 
     /**
      * Multi-Get Catalog Thumbnails at once
@@ -122,8 +148,7 @@ export class CatalogController extends controller {
         if (safeIds.length > 25 || safeIds.length < 1) {
             throw new this.BadRequest('TooManyIds');
         }
-        const thumbnails = await this.catalog.multiGetThumbnailsFromIds(safeIds);
-        return thumbnails;
+        return await this.catalog.multiGetThumbnailsFromIds(safeIds);
     }
 
     /**

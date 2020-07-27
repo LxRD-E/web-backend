@@ -32,6 +32,8 @@ import {
  * Errors
  */
 import { Unauthorized } from 'ts-httpexceptions';
+
+import config from '../helpers/config';
 /**
  * Pre-Generated CSP
  */
@@ -64,7 +66,7 @@ export const version = crypto.randomBytes(8).toString('hex');
  */
 export const generateCspWithNonce = async (req: Request, res: Response, next: NextFunction, randomBytesFunction = randomBytes): Promise<void> => {
     res.set({
-        'x-lb-origin':lbOrigin,
+        'x-lb-origin': lbOrigin,
     })
     res.locals['x-lb-origin'] = lbOrigin;
     // temp
@@ -89,23 +91,9 @@ export const generateCspWithNonce = async (req: Request, res: Response, next: Ne
         return next();
     }
     const nonceBuffer = await randomBytesFunction(48);
-    let nonce: string;
-    if (!nonceBuffer) {
-        // Backup
-        const rand = (length: number, current = ''): string => {
-            current = current ? current : '';
-            return length ? rand(--length, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz".charAt(Math.floor(Math.random() * 60)) + current) : current;
-        }
-        nonce = rand(48);
-    } else {
-        nonce = nonceBuffer.toString('base64');
-    }
-    let headerString;
-    if (req.originalUrl.match(/\/game\/(\d+)\/sandbox/g)) {
-        headerString = 'script-src \'nonce-' + nonce + '\' ' + "'unsafe-eval'; " + getCspString();
-    }else{
-        headerString = 'script-src \'nonce-' + nonce + '\'; ' + getCspString();
-    }
+    let nonce = nonceBuffer.toString('base64');
+
+    let headerString = 'script-src \'nonce-' + nonce + '\'; ' + getCspString();
     if (req.url.slice(0,'/v1/authenticate-to-service'.length) === '/v1/authenticate-to-service') {
         headerString = headerString.replace(/form-action 'self'; /g, '');
     }
@@ -114,7 +102,7 @@ export const generateCspWithNonce = async (req: Request, res: Response, next: Ne
         'Content-Security-Policy': headerString,
     });
     // Version
-    res.locals.version =
+    res.locals.version = await randomBytesFunction(8);
     // Nonce
     res.locals.nonce = nonce;
     // Setup js

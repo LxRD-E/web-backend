@@ -33,7 +33,7 @@ export class WWWCatalogController extends controller {
         @Locals('userInfo') userInfo: UserModel.SessionUserInfo,
     ) {
         let ViewData = new this.WWWTemplate({'title': ''});
-        ViewData.page.loadStaffPage = userInfo.staff >= 1 ? true : false;
+        ViewData.page.loadStaffPage = userInfo.staff >= 1;
         ViewData.title = "Create an Item";
         return ViewData;
     }
@@ -66,7 +66,7 @@ export class WWWCatalogController extends controller {
                 throw new this.BadRequest('InvalidPermissions');
             }
         }
-        ViewData.page.loadStaffPage = userInfo.staff >= 2 ? true : false;
+        ViewData.page.loadStaffPage = userInfo.staff >= 2;
 
         ViewData.page.catalogId = catalogData.catalogId;
         ViewData.page.catalogEncodedName = urlEncode(catalogData.catalogName);

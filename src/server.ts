@@ -37,12 +37,14 @@ let multerMemStore = multer.memoryStorage();
 
 
 // @ts-ignore
+/*
 require('blocked-at')((time: any, stack: any) => {
     console.log(`Blocked for ${time}ms, operation started here:`, stack)
 }, {
     trimFalsePositives: false,
     threshold: 100,
 })
+*/
 
 
 
@@ -76,7 +78,7 @@ require('blocked-at')((time: any, stack: any) => {
         logRequest: false,
         disableRoutesSummary: true,
     },
-    validationModelStrict: true,
+    validationModelStrict: false,
     multer: {
         // see multer options
         storage: multerMemStore,
@@ -114,6 +116,49 @@ export class Server extends ServerLoader {
             // We also use morgan in dev (only)
             // .use(morgan('dev'))
         }
+        const validHosts = [
+            "https://play.blockshub.net",
+            "https://www.blockshub.net",
+            "https://blockshub.net",
+            "http://localhost",
+            "http://www.blockshub.hh",
+            "http://play.blockshub.hh",
+            "http://api.blockshub.hh",
+        ]
+        this.expressApp.use((req, res, next) => {
+            let origin = req.header('origin');
+            console.log('[origin]',origin);
+            if (typeof origin === 'string') {
+                for (let host of validHosts) {
+                    let originToCheck = origin;
+                    let secondColon = origin.indexOf(':', origin.indexOf(':')+1);
+                    if (secondColon) {
+                        let originWithoutPort = origin.slice(0, secondColon);
+                        if (originWithoutPort === 'http' || originWithoutPort === 'https') {
+                            console.log('slice is http or https');
+                            continue;
+                        } else {
+                            originToCheck = originWithoutPort;
+                        }
+                    }
+                    if (originToCheck === host) {
+                        console.log('found a valid host!');
+                        const allowedHeaders = 'x-csrf-token, x-environment, x-lb-origin, content-type';
+                        res.header('Access-Control-Allow-Origin', origin);
+                        res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, PATCH, DELETE, OPTIONS');
+                        res.header('Access-Control-Allow-Credentials', 'true');
+                        res.header('Access-Control-Expose-Headers', allowedHeaders);
+                        res.header('Access-Control-Allow-Headers', allowedHeaders);
+                        break;
+                    }
+                }
+            }
+            if (req.method === 'OPTIONS') {
+                res.status(200).end();
+            }else {
+                next();
+            }
+        });
         // Setup sessions
         this.set('trust proxy', 1) // trust first proxy
         this.use((req: Request, res: Response, next: NextFunction) => {
@@ -121,7 +166,7 @@ export class Server extends ServerLoader {
                 /\/api\/v1\/game\/(\d+)\/map/g,
                 /\/api\/v1\/game\/(\d+)\/scripts/g,
                 /\/api\/v1\/game\/client.js/g,
-            ]
+            ];
             for (const skip of toSkip) {
                 if (req.url.slice(0,req.url.indexOf('?')).match(skip)) {
                     console.log('skip due to match',skip);
@@ -148,6 +193,7 @@ export class Server extends ServerLoader {
         ws();
         // Setup any() middleware
         this.use(Any);
+
         /*
         this.use(async (req: Express.Request, res: Express.Response, next: Express.NextFunction) => {
             console.time('request_'+req.id);

@@ -66,6 +66,12 @@ export default class StandardController extends TSErrorsBase {
     public xss = xss;
     public moment = moment;
     public numberWithCommas = numberWithCommas;
+    public static cError(...ers: string[]) {
+        return {
+            type: model.Error,
+            description: ers.join('\n'),
+        };
+    }
     // DALs
     public auth = auth;
     public user = new user();

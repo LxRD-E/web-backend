@@ -160,7 +160,7 @@ class ForumDAL extends _init {
     public async getThreadById(threadId: number): Promise<Forum.Thread> {
         const thread = await this.knex("forum_threads").select("id as threadId","category as categoryId","sub_category as subCategoryId","title","userid as userId","date_created as dateCreated","date_edited as dateEdited","thread_locked as threadLocked","thread_deleted as threadDeleted","thread_pinned as threadPinned").where({"id": threadId});
         if (!thread[0]) {
-            throw false;
+            throw new this.NotFound('InvalidThreadId');
         }
         return thread[0];
     }

@@ -270,6 +270,22 @@ export class GroupsController extends controller {
         }
     }
 
+    @Get('/:groupId/funds')
+    @Summary('Get group funds (User must have manage permission)')
+    @Use(middleware.group.ValidateGroupId)
+    @Returns(200, {type: model.group.GroupFunds, description: 'Group Funds'})
+    public async getFunds(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('groupId', Number) groupId: number,
+    ) {
+        const role = await this.getAuthRole(userInfo, groupId);
+        if (role.permissions.manage) {
+            return await this.group.getGroupFunds(groupId);
+        } else {
+            throw new this.BadRequest('InvalidGroupPermissions');
+        }
+    }
+
     @Put('/:groupId/wall')
     @Summary('Create a wall post')
     @Use(csrf, YesAuth, middleware.group.ValidateGroupId)

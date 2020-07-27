@@ -33,8 +33,7 @@ import * as services from '../../services';
  */
 import {Redis} from 'ioredis';
 import {wss} from '../../start/websockets';
-
-import config from '../../helpers/config';
+import moment = require("moment");
 
 const GAME_KEY = model.game.GAME_KEY;
 
@@ -70,7 +69,7 @@ const script = jsObfuse.obfuscate(`
                 // Join Game
 
                 let wsurl = "wss://"+window.location.host+"/game-sockets/websocket.aspx";
-                if (window.location.host.slice(0,9) === 'localhost') {
+                if (window.location.protocol === 'http:') {
                     wsurl = "ws://localhost:8080/game-sockets/websocket.aspx";
                 }
 
@@ -129,9 +128,10 @@ const script = jsObfuse.obfuscate(`
                 */
             
             /**
-                * Global Babylon Vars
-                */
-            BABYLON.OBJFileLoader.MATERIAL_LOADING_FAILS_SILENTLY = false;
+             * Global Babylon Vars
+             */
+            BABYLON.OBJetileLoader = BABYLON.OBJetileLoader || {}
+            BABYLON.OBJetileLoader.MATERIAL_LOADING_FAILS_SILENTLY = false;
             BABYLON.OBJFileLoader.OPTIMIZE_WITH_UV = true;
             
             // Converts from degrees to radians.
@@ -199,17 +199,18 @@ const script = jsObfuse.obfuscate(`
                     // ... 
                     // IMPORT MAP HERE
 
-                    fetch('/api/v1/game/'+gameId+'/map?authCode='+gameAuthCode, {credentials: 'omit', mode: 'cors'}).then((d) => {
+                    console.log("Base URL", window.HTTPMeta);
+                    fetch(window.HTTPMeta.baseUrl+'/api/v1/game/'+gameId+'/map?authCode='+gameAuthCode, {credentials: 'omit', mode: 'cors'}).then((d) => {
                         return d.text();
                     }).then((d) => {
                         Function(new ${simpleCryptoData.name}(\`${GAME_KEY}\`).decrypt(d))(scene);
                     });
 
-                    fetch('/api/v1/game/'+gameId+'/scripts?authCode='+gameAuthCode, {credentials: 'omit',  mode: 'cors'}).then((d) => {
+                    fetch(window.HTTPMeta.baseUrl+'/api/v1/game/'+gameId+'/scripts?authCode='+gameAuthCode, {credentials: 'omit',  mode: 'cors'}).then((d) => {
                             return d.text();
-                        }).then((d) => {
+                    }).then((d) => {
                             Function(new ${simpleCryptoData.name}(\`${GAME_KEY}\`).decrypt(d))(scene);
-                        });
+                    });
             
                     // ... 
                 
@@ -288,6 +289,15 @@ export default class GameController extends controller {
         return await this.game.getGames(offset, limit, sortMode, sortCol, genre, creatorConstraint);
     }
 
+    @Get('/:gameId/info')
+    @Summary('Get game info')
+    @Returns(200, { type: model.game.GameInfo })
+    public async getGameInfo(
+        @PathParams('gameId', Number) gameId: number,
+    ) {
+        return await this.game.getInfo(gameId);
+    }
+
     @Get('/metadata')
     @Summary('Get games metaData for current user')
     @Use(YesAuth)
@@ -337,6 +347,99 @@ export default class GameController extends controller {
         return await this.game.multiGetGameThumbnails(gameIds);
     }
 
+    @Get('/edit-mode/:gameId/map')
+    @Summary('Get un-obfuscated game map')
+    @Returns(200, {type: String})
+    @Use(middleware.YesAuth)
+    public async getOriginalMap(
+        @Locals('userInfo') userInfo: model.UserSession,
+        @PathParams('gameId', Number) gameId: number,
+    ) {
+        let gameInfo;
+        try {
+            gameInfo = await this.game.getInfo(gameId);
+        } catch (e) {
+            throw new this.BadRequest('InvalidGameId');
+        }
+        if (gameInfo.creatorType === model.catalog.creatorType.User) {
+            if (gameInfo.creatorId === userInfo.userId) {
+                const map = await this.game.getGameMap(gameId);
+                return (await this.game.getMapContent(map.scriptUrl)).toString()
+            }
+        }else if (gameInfo.creatorType === model.catalog.creatorType.Group) {
+            let groupData = await this.group.getUserRole(gameInfo.creatorId, userInfo.userId);
+            if (groupData.permissions.manage) {
+                const map = await this.game.getGameMap(gameId);
+                return (await this.game.getMapContent(map.scriptUrl)).toString()
+            }
+        }else{
+            throw new this.Conflict('NotImplemented');
+        }
+        throw new this.Conflict('InvalidPermissions');
+    }
+
+    @Get('/auth/client/decode')
+    @Summary('Decode game auth code')
+    public async decodeGameAuth(
+        @Required()
+        @QueryParams('code', String) authCode: string,
+    ) {
+        // verify auth code
+        let verifyAuthCode = await this.auth.decodeGameAuthCode(authCode);
+        if (!moment().add(15, 'seconds').isSameOrAfter(verifyAuthCode.iat * 1000)) {
+            throw new Error('InvalidAuthCode');
+        }
+        return verifyAuthCode;
+    }
+
+    @Get('/auth/client/generate')
+    @Summary('Generate game auth code')
+    @Use(middleware.YesAuth)
+    public async generateGameAuth(
+        @Locals('userInfo') userInfo: model.UserSession,
+    ) {
+        return await this.auth.generateGameAuthCode(userInfo.userId, userInfo.username);
+    }
+
+    @Get('/edit-mode/:gameId/scripts')
+    @Summary('Get un-obfuscated game scripts')
+    @ReturnsArray(200, {type: model.game.OriginalScriptData})
+    @Use(middleware.YesAuth)
+    public async getOriginalScripts(
+        @Locals('userInfo') userInfo: model.UserSession,
+        @PathParams('gameId', Number) gameId: number,
+    ) {
+        let gameInfo;
+        try {
+            gameInfo = await this.game.getInfo(gameId);
+        } catch (e) {
+            throw new this.BadRequest('InvalidGameId');
+        }
+        if (gameInfo.creatorType === model.catalog.creatorType.User) {
+            if (gameInfo.creatorId === userInfo.userId) {
+                const scripts: any[] = await this.game.getGameScripts(gameId, model.game.ScriptType.client);
+                for (const script of scripts) {
+                    script.content = await this.game.getScriptContent(script.scriptUrl);
+                    script.content = script.content.toString();
+                }
+                return scripts;
+            }
+        }else if (gameInfo.creatorType === model.catalog.creatorType.Group) {
+            let groupData = await this.group.getUserRole(gameInfo.creatorId, userInfo.userId);
+            if (groupData.permissions.manage) {
+                const scripts: any[] = await this.game.getGameScripts(gameId, model.game.ScriptType.client);
+                for (const script of scripts) {
+                    script.content = await this.game.getScriptContent(script.scriptUrl);
+                    script.content = script.content.toString();
+                }
+                return scripts;
+            }
+        }else{
+            throw new this.Conflict('NotImplemented');
+        }
+        throw new this.Conflict('InvalidPermissions');
+    }
+
     @Get('/:gameId/map')
     @Summary('Get the map of a {gameId}. Authentication required')
     @Returns(200, { type: String })
@@ -362,7 +465,7 @@ export default class GameController extends controller {
         const map = await this.game.getGameMap(gameId);
         const mapContent = await this.game.getMapContent(map.scriptUrl);
         // Return encrypted/obfuscated
-        return await services.encryptScript.async.encryptAndObfuscateScript(mapContent);
+        return await services.encryptScript.async.encryptAndObfuscateScript(mapContent.toString());
     }
 
     @Get('/:gameId/scripts')
@@ -389,7 +492,7 @@ export default class GameController extends controller {
         const scripts = await this.game.getGameScripts(gameId, model.game.ScriptType.client);
         let scriptString = '';
         for (const script of scripts) {
-            const content = await this.game.getScriptContent(script.scriptUrl);
+            const content = (await this.game.getScriptContent(script.scriptUrl)).toString();
             scriptString = scriptString + '\n' + content;
         }
         return await services.encryptScript.async.encryptAndObfuscateScript(scriptString);

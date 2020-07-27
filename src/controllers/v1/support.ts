@@ -8,7 +8,7 @@ import controller from '../controller';
 import {BodyParams, Controller, Get, Locals, PathParams, Post, Use} from '@tsed/common';
 import {csrf} from '../../dal/auth';
 import {YesAuth} from '../../middleware/Auth';
-import {Summary} from '@tsed/swagger';
+import {Returns, Summary} from '@tsed/swagger';
 import RecaptchaV2 from '../../middleware/RecaptchaV2';
 
 /**
@@ -28,6 +28,22 @@ export default class SupportController extends controller {
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ) {
         return await this.support.getTicketsByUser(userInfo.userId);
+    }
+
+    @Get('/ticket/:ticketId/info')
+    @Summary('Get ticket data for the {ticketId}')
+    @Use(YesAuth)
+    @Returns(200, {type: model.support.SupportTicket})
+    @Returns(400, controller.cError('InvalidTicketId: TicketId is invalid or does not belong to the authenticated user'))
+    public async getTicketById(
+        @Locals('userInfo') userInfo: model.UserSession,
+        @PathParams('ticketId', Number) ticketId: number
+    ) {
+        let ticketInfo = await this.support.getTicketById(ticketId);
+        if (ticketInfo.userId !== userInfo.userId) {
+            throw new this.BadRequest('InvalidTicketId');
+        }
+        return ticketInfo;
     }
 
     @Get('/ticket/:ticketId/replies')

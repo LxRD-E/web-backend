@@ -5,12 +5,22 @@ const secretEncryptionKey = process.env['SECRET_ENCRYPTION_KEY'];
 const secretEncryptionIV = process.env['SECRET_ENCRYPTION_IV'];
 
 interface IWebsiteConfiguration {
+    baseUrl: {
+        play: string;
+        www: string;
+        api: string;
+    }
     [x: string]: any;
 }
 
 let configJson: IWebsiteConfiguration = {
     encryptionKeys: {},
     coinpayments: {},
+    baseUrl: {
+        play: "https://play.blockshub.net",
+        www: "https://www.blockshub.net",
+        api: "https://api.blockshub.net"
+    }
 };
 
 const decrypt = (encryptedString: string, key: string, iv?: Buffer|string): string => {

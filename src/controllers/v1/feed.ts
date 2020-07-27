@@ -50,6 +50,7 @@ export default class FeedController extends controller {
         @Required()
         @QueryParams('url', String) url: string
     ) {
+        /*
         let refererValue: string|undefined = req.headers['referer'];
         if (!refererValue) {
             throw new Error('No Referer Specified');
@@ -73,16 +74,20 @@ export default class FeedController extends controller {
         if (!goodReferer) {
             throw new Error('Referer is not from valid origin');
         }
+         */
         // first, decode it
         let imageUrl = this.auth.decodeImageProxyQuery(url);
         // fetch the image
         let imageBuffer = await this.auth.fetchImageAndResize(imageUrl);
         // return it
+
         res.set({
             'expires': moment().add(1, 'years').format("ddd, DD MMM YYYY hh:mm:ss [GMT]"),
             'cache-control': 'public, max-age=31536000',
             'content-type': imageBuffer.type,
         });
+
+        console.log('image data',imageBuffer);
         res.send(imageBuffer.image).end();
     }
 

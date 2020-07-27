@@ -21,12 +21,15 @@ if (process.env.NODE_ENV === 'development') {
         'https://www.blockshub.net/',
         'https://www.blockshub.net',
         'https://blockshub.net',
+        'https://play.blockshub.net',
+        'https://api.blockshub.net',
     );
 }
 
 export const scriptOptions = {
     transformObjectKeys: true,
-    debugProtection: true,
+    debugProtection: false,
+    disableConsoleOutput: false,
     compact: true,
     log: false,
     sourceMap: false,
@@ -150,6 +153,13 @@ export class Script {
     scriptType: ScriptType;
     @PropertyType(String)
     scriptName: string;
+}
+
+export class OriginalScriptData {
+    scriptUrl: string;
+    scriptId: number;
+    scriptType: ScriptType;
+    content: string;
 }
 
 export class GameInfo {

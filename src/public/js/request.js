@@ -5,7 +5,7 @@ function request(url, method, body) {
             $.ajax({
                 type: method,
                 data: body,
-                url: "/api/v1" + url,
+                url: HTTPMeta.baseUrl+"/api/v1" + url,
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRF-Token": csrf,

@@ -1,6 +1,8 @@
 /**
  * Enums
  */
+import {Required} from "@tsed/common";
+
 export enum postDeleted {
     false = 0,
     true = 1,
@@ -39,10 +41,19 @@ export interface SubCategories {
     };
     weight: number;
 }
-export interface PostSnippet {
+export class PostSnippet {
+    @Required()
     threadId: number;
+    @Required()
     userId: number;
+    @Required()
     dateCreated: string;
+}
+export class ForumThreadsAndPostsCount {
+    @Required()
+    threads: number;
+    @Required()
+    posts: number;
 }
 export interface Threads {
     threadId: number;
@@ -52,16 +63,26 @@ export interface Threads {
     latestReply: string;
     postCount: number;
 }
-export interface Thread {
+export class Thread {
+    @Required()
     threadId: number;
+    @Required()
     categoryId: number;
+    @Required()
     subCategoryId: number;
+    @Required()
     title: string;
+    @Required()
     userId: number;
+    @Required()
     dateCreated: string;
+    @Required()
     dateEdited: string;
+    @Required()
     threadLocked: threadLocked;
+    @Required()
     threadDeleted: threadDeleted;
+    @Required()
     threadPinned: threadPinned;
 }
 export interface Posts {

@@ -74,6 +74,16 @@ const rateLimitTypeConfigs = {
         // @ts-ignore
         storeClient: redisClient,
     },
+    'webFrontendRateLimit': {
+        // redis: redisClient,
+        keyPrefix: 'webFrontend',
+        points: 1000, // 1000 requests
+        duration: 60, // per 1 minute by IP
+        inmemoryBlockOnConsumed: 1100,
+        inmemoryBlockDuration: 15,
+        // @ts-ignore
+        storeClient: redisClient,
+    },
 }
 let rateLimitTypes: any;
 if (process.env.NODE_ENV !== 'test') {
@@ -83,6 +93,7 @@ if (process.env.NODE_ENV !== 'test') {
         'twoFactorEnableOrDisable': new RateLimiterRedis(rateLimitTypeConfigs.twoFactorEnableOrDisable),
         'sendFriendRequest': new RateLimiterRedis(rateLimitTypeConfigs.sendFriendRequest),
         'passwordResetAttempt': new RateLimiterRedis(rateLimitTypeConfigs.passwordResetAttempt),
+        'webFrontendRateLimit': new RateLimiterRedis(rateLimitTypeConfigs.webFrontendRateLimit),
     }
 }
 
@@ -95,6 +106,10 @@ export const RateLimiterMiddleware = (typeOfRateLimit: 'default'|'loginAttempt'|
         }
 
         let rateLimiter = rateLimitTypes[typeOfRateLimit];
+        let isWebServer = req.headers['backend-authorization'];
+        if (isWebServer === config.backendAuthorization) {
+            rateLimiter = rateLimitTypes['webFrontendRateLimit'];
+        }
         rateLimiter.consume(ip)
             .then((rateLimiterRes: { remainingPoints: number; msBeforeNext: number; }) => {
                 const headers = {

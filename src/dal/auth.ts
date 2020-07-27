@@ -114,7 +114,7 @@ export class csrf {
         }
         const valid = await validateCsrf(req);
         if (!valid) {
-            res.set({'X-CSRF-Token': req.session.userdata.csrf});
+            res.set({'x-csrf-token': req.session.userdata.csrf});
             throw new Forbidden("CSRFValidationFailed");
         }else{
             return;
