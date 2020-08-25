@@ -266,3 +266,6 @@ var c=a.indexOf("*/",k+2);// 如果没有正常的备注结束，则后面的部
 if(-1===c)break;// 直接将当前位置调到备注结尾，并且初始化状态
 k=c+1,h=k+1,g=!1}else"("===m?g=!0:")"===m?g=!1:";"===m?g||e():"\n"===m&&e()}return d.trim(l)}},{"./util":10}],10:[function(a,b){b.exports={indexOf:function indexOf(a,b){var c,d;if(Array.prototype.indexOf)return a.indexOf(b);for(c=0,d=a.length;c<d;c++)if(a[c]===b)return c;return-1},forEach:function forEach(a,b,c){var d,e;if(Array.prototype.forEach)return a.forEach(b,c);for(d=0,e=a.length;d<e;d++)b.call(c,a[d],d,a)},trim:function trim(a){return String.prototype.trim?a.trim():a.replace(/(^\s*)|(\s*$)/g,"")},trimRight:function trimRight(a){return String.prototype.trimRight?a.trimRight():a.replace(/(\s*$)/g,"")}}},{}]},{},[2]);
 
+
+
+

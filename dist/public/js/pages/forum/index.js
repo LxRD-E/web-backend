@@ -58,3 +58,6 @@ request("/forum/subcategories", "GET")
             window.location.href = "/forum/search?q="+query;
         });
         */$(document).on("click","#searchForumPostClick",function(){var a=$("#searchForForumInput").val();window.location.href="/forum/search?q="+a});
+
+
+

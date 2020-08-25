@@ -1,8 +1,10 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import Crypto = require("crypto");
+/*
 const secretEncryptionKey = process.env['SECRET_ENCRYPTION_KEY'];
 const secretEncryptionIV = process.env['SECRET_ENCRYPTION_IV'];
+*/
 
 interface IWebsiteConfiguration {
     baseUrl: {
@@ -41,13 +43,15 @@ const decrypt = (encryptedString: string, key: string, iv?: Buffer | string): st
 
 console.log('process.env.node_env check');
 if (process.env.NODE_ENV !== 'test') {
+    /*
     if (!secretEncryptionKey || !secretEncryptionIV) {
         console.error('No decryption key or iv was specified in env: SECRET_ENCRYPTION_KEY, SECRET_ENCRYPTION_IV. Exiting with code 1.');
         process.exit(1);
     }
+    */
     // generate proper path to config, read file, decrypt file, json.parse file
-    const configString = JSON.parse(decrypt(readFileSync(join(__dirname, '../../config.json')).toString(), secretEncryptionKey, secretEncryptionIV));
-
+    // const configString = JSON.parse(decrypt(readFileSync(join(__dirname, '../../config.json')).toString(), secretEncryptionKey, secretEncryptionIV));
+    const configString = JSON.parse(readFileSync(join(__dirname, '../../config.json')).toString());
     // trying to connect directly to "127.0.0.1" causes timeout issues (that auto-resolve after a re-connect attempt)...
     if (configString.redis.host === '127.0.0.1') {
         configString.redis.host = 'localhost';

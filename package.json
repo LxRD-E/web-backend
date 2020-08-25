@@ -5,9 +5,7 @@
     "main": "index.js",
     "scripts": {
         "build:server": "node ./util/build.js",
-        "build": "node ./util/build.js",
-        "build:production": "node ./util/build.js && node ./util/build_production.js",
-        "push": "node ./util/build_production.js",
+        "build": "npm run build:server",
         "start:dev": "cross-env ENV_FILE=development nodemon -r ./env --ignore / --exec ts-node-dev src/server.ts",
         "start": "cross-env ENV_FILE=production node -r ./env -r module-alias/register ./dist/server.js",
         "test": "cross-env ENV_FILE=test nyc mocha dist/tests/**/*.test.js --exit",
@@ -71,6 +69,7 @@
         "@types/ws": "^7.2.1",
         "ajv": "6.10.2",
         "apexcharts": "^3.19.3",
+        "archiver": "^5.0.0",
         "aws-sdk": "^2.610.0",
         "axios": "^0.19.2",
         "axios-cached-dns-resolve": "^0.5.2",

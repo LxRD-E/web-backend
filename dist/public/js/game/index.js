@@ -10,3 +10,6 @@ var h=BABYLON.Mesh.CreateBox("BackgroundSkybox",2048,c,void 0,BABYLON.Mesh.BACKS
 // Return the created scene.
 return i.reflectionTexture=new BABYLON.CubeTexture("https://hindigamerclub-game.ewr1.vultrobjects.com/default_assets/TropicalSunnyDay",c),i.reflectionTexture.coordinatesMode=BABYLON.Texture.SKYBOX_MODE,h.material=i,fetch("/api/v1/game/"+gameId+"/map",{credentials:"include"}).then(function(a){return a.text()}).then(function(a){Function(""+a+"")(c)}),c}();// Game Engine
 b.runRenderLoop(function(){c.render()}),window.addEventListener("resize",function(){b.resize()})});
+
+
+
