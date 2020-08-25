@@ -4,3 +4,4 @@ request("/staff/economy/trades/"+a+"/items?userId="+currentUserId,"GET").then(fu
 
 
 
+

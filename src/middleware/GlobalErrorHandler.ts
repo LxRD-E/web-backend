@@ -1,4 +1,4 @@
-import { HttpErrors, ErrorTemplate } from '../helpers/HttpError';
+import { HttpErrors } from '../helpers/HttpError';
 
 import * as Sentry from '../helpers/sentry';
 
@@ -6,7 +6,7 @@ const logError = (status: number, code: string, path: string, method: string) =>
     if (process.env.NODE_ENV === 'production') {
         return;
     }
-    return console.log('['+method.toUpperCase()+'] '+path+' ['+status.toString()+'] - '+code);
+    return console.log('[' + method.toUpperCase() + '] ' + path + ' [' + status.toString() + '] - ' + code);
 }
 
 import { Err, GlobalErrorHandlerMiddleware, OverrideProvider, Req, Res } from "@tsed/common";
@@ -39,17 +39,14 @@ export class MyGEHMiddleware extends GlobalErrorHandlerMiddleware {
                 logError(400, error.message, request.originalUrl, request.method);
                 if (request.accepts('json') && !request.accepts('html')) {
                     return response.status(400).json({ success: false, error: fullErrorMessage })
-                }else{
+                } else {
                     if (process.env.NODE_ENV === 'development') {
-                        return response.status(400).set('content-type','text/plain').send(error.stack).end()
+                        return response.status(400).set('content-type', 'text/plain').send(error.stack).end()
                     }
-                    return response.status(400).send(ErrorTemplate('400: Bad Request', 'You or your browser sent an invalid request.')).end();
+                    return response.status(400).json({ success: false, error: fullErrorMessage })
                 }
             } else if (error.name === 'NOT_FOUND') {
                 logError(404, 'NOT_FOUND', request.originalUrl, request.method);
-                if (request.accepts('html')) {
-                    return response.status(404).send(ErrorTemplate('404: Not Found', 'The page you tried to view does not seem to exist.')).end();
-                }
                 if (error.message && HttpErrors[error.message]) {
                     return response.status(404).json({ success: false, error: { code: error.message } });
                 }
@@ -72,10 +69,7 @@ export class MyGEHMiddleware extends GlobalErrorHandlerMiddleware {
                         }
                     })
                 }
-                if (request.accepts('html')) {
-                    logError(401, 'LoginRequired', request.originalUrl, request.method);
-                    response.redirect('/login');
-                } else if (request.accepts('json')) {
+                if (request.accepts('json')) {
                     let fullErrorMessage = {
                         code: 'LoginRequired',
                     }
@@ -99,7 +93,7 @@ export class MyGEHMiddleware extends GlobalErrorHandlerMiddleware {
                 } else {
                     return response.status(415).json({ success: false, error: { code: HttpErrors[HttpErrors.InvalidAcceptHeader] } });
                 }
-            }else{
+            } else {
                 throw error;
             }
         } catch (e) {
@@ -113,9 +107,6 @@ export class MyGEHMiddleware extends GlobalErrorHandlerMiddleware {
         // default if internal error / something goes wrong in error handler
         if (request.accepts('json') && !request.accepts('html')) {
             return response.status(500).json({ success: false, message: 'An internal server error has occurred.', error: { code: HttpErrors[HttpErrors.InternalServerError] } });
-        }
-        if (request.accepts('html')) {
-            return response.status(500).send(ErrorTemplate('500: Internal Server Error', 'BlocksHub seems to be experiencing some issues right now. Please try again later.')).end();
         } else {
             return response.status(415).json({ success: false, error: { code: HttpErrors[HttpErrors.InvalidAcceptHeader] } });
         }

@@ -58,14 +58,11 @@ let MyGEHMiddleware = class MyGEHMiddleware extends common_1.GlobalErrorHandlerM
                     if (process.env.NODE_ENV === 'development') {
                         return response.status(400).set('content-type', 'text/plain').send(error.stack).end();
                     }
-                    return response.status(400).send(HttpError_1.ErrorTemplate('400: Bad Request', 'You or your browser sent an invalid request.')).end();
+                    return response.status(400).json({ success: false, error: fullErrorMessage });
                 }
             }
             else if (error.name === 'NOT_FOUND') {
                 logError(404, 'NOT_FOUND', request.originalUrl, request.method);
-                if (request.accepts('html')) {
-                    return response.status(404).send(HttpError_1.ErrorTemplate('404: Not Found', 'The page you tried to view does not seem to exist.')).end();
-                }
                 if (error.message && HttpError_1.HttpErrors[error.message]) {
                     return response.status(404).json({ success: false, error: { code: error.message } });
                 }
@@ -90,11 +87,7 @@ let MyGEHMiddleware = class MyGEHMiddleware extends common_1.GlobalErrorHandlerM
                         }
                     });
                 }
-                if (request.accepts('html')) {
-                    logError(401, 'LoginRequired', request.originalUrl, request.method);
-                    response.redirect('/login');
-                }
-                else if (request.accepts('json')) {
+                if (request.accepts('json')) {
                     let fullErrorMessage = {
                         code: 'LoginRequired',
                     };
@@ -134,9 +127,6 @@ let MyGEHMiddleware = class MyGEHMiddleware extends common_1.GlobalErrorHandlerM
         }
         if (request.accepts('json') && !request.accepts('html')) {
             return response.status(500).json({ success: false, message: 'An internal server error has occurred.', error: { code: HttpError_1.HttpErrors[HttpError_1.HttpErrors.InternalServerError] } });
-        }
-        if (request.accepts('html')) {
-            return response.status(500).send(HttpError_1.ErrorTemplate('500: Internal Server Error', 'BlocksHub seems to be experiencing some issues right now. Please try again later.')).end();
         }
         else {
             return response.status(415).json({ success: false, error: { code: HttpError_1.HttpErrors[HttpError_1.HttpErrors.InvalidAcceptHeader] } });
