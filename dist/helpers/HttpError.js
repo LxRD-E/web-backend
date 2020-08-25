@@ -179,6 +179,9 @@ var HttpErrors;
     HttpErrors[HttpErrors["BalanceTooSmall"] = 174] = "BalanceTooSmall";
     HttpErrors[HttpErrors["InvalidPurchaseAmount"] = 175] = "InvalidPurchaseAmount";
     HttpErrors[HttpErrors["PositionNoLongerAvailable"] = 176] = "PositionNoLongerAvailable";
+    HttpErrors[HttpErrors["InvalidReferralId"] = 177] = "InvalidReferralId";
+    HttpErrors[HttpErrors["ReferralAlreadyExists"] = 178] = "ReferralAlreadyExists";
+    HttpErrors[HttpErrors["NotFound"] = 179] = "NotFound";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 const Any_1 = require("../middleware/Any");
 exports.ErrorTemplate = (title, body) => {

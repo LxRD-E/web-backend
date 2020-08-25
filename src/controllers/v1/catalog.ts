@@ -41,6 +41,15 @@ export class CatalogController extends controller {
         super();
     }
 
+    @Get('/all-items/count')
+    @Summary('Count all catalog items that have a price above 0 and are for-sale')
+    public async countAllItems() {
+        const total = await this.catalog.countAllItemsForSale();
+        return {
+            total,
+        };
+    }
+
     @Get('/:catalogId/info')
     @Summary('Get catalog item info by catalogId')
     public async getInfo(

@@ -2,11 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const ioredis_pubsub_1 = require("../helpers/ioredis_pubsub");
 const Game = require("../models/v1/game");
-const aws = require("aws-sdk");
 const config_1 = require("../helpers/config");
-const crypto = require("crypto");
 const _init_1 = require("./_init");
 const models_1 = require("../models/models");
+const aws = require("aws-sdk");
+const crypto = require("crypto");
 class GameDAL extends _init_1.default {
     async getInfo(id, specificColumns) {
         if (!specificColumns) {
@@ -164,11 +164,10 @@ ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpo
         return mapInfo[0];
     }
     async getGameScripts(gameId, type) {
-        const scripts = await this.knex('game_script').select('id as scriptId', 'game_id as gameId', 'script_url as scriptUrl', 'created_at as createdAt', 'updated_at as updatedAt', 'script_type as scriptType', 'name as scriptName').where({
+        return await this.knex('game_script').select('id as scriptId', 'game_id as gameId', 'script_url as scriptUrl', 'created_at as createdAt', 'updated_at as updatedAt', 'script_type as scriptType', 'name as scriptName').where({
             'game_id': gameId,
             'script_type': type,
         });
-        return scripts;
     }
     async getAllGameScripts(gameId) {
         const scripts = await this.knex('game_script').select('id as scriptId', 'game_id as gameId', 'script_url as scriptUrl', 'created_at as createdAt', 'updated_at as updatedAt', 'script_type as scriptType', 'name as scriptName').where({

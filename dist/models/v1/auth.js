@@ -40,10 +40,10 @@ __decorate([
     __metadata("design:type", String)
 ], SignupRequest.prototype, "captcha", void 0);
 __decorate([
-    common_1.PropertyType(String),
-    swagger_1.Description('User referral code'),
-    __metadata("design:type", String)
-], SignupRequest.prototype, "referralCode", void 0);
+    common_1.PropertyType(Number),
+    swagger_1.Description('User referral ID'),
+    __metadata("design:type", Number)
+], SignupRequest.prototype, "referralId", void 0);
 exports.SignupRequest = SignupRequest;
 class UsernameChangedResponseOK {
 }

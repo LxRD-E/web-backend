@@ -28,15 +28,34 @@ let WWWAuthController = class WWWAuthController extends controller_1.default {
     constructor() {
         super();
     }
-    redirectIfNoLongerBanned() { }
     login() {
         return new Www_1.WWWTemplate({
             title: "Login",
         });
     }
-    signup() {
+    async signup(res, req, referralId) {
+        let referral = undefined;
+        if (referralId) {
+            referral = await this.userReferral.getInfoById(referralId);
+            let referer = req.headers['referer'];
+            if (referer) {
+                const badReferers = [
+                    'brick-hill.com',
+                    'finobe.com',
+                ];
+                for (const bad of badReferers) {
+                    if (referer.indexOf(bad)) {
+                        res.redirect('https://www.google.com');
+                        return;
+                    }
+                }
+            }
+        }
         return new Www_1.WWWTemplate({
             title: "Signup",
+            page: {
+                referral,
+            }
         });
     }
     dashboard(userInfo) {
@@ -117,13 +136,6 @@ let WWWAuthController = class WWWAuthController extends controller_1.default {
     }
 };
 __decorate([
-    common_1.Get('/membership/notapproved.aspx'),
-    common_1.Redirect('/'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], WWWAuthController.prototype, "redirectIfNoLongerBanned", null);
-__decorate([
     common_1.Get('/login'),
     common_1.Use(Auth_1.NoAuth),
     common_1.Render('login'),
@@ -135,9 +147,12 @@ __decorate([
     common_1.Get('/signup'),
     common_1.Use(Auth_1.NoAuth),
     common_1.Render('signup'),
+    __param(0, common_1.Res()),
+    __param(1, common_1.Req()),
+    __param(2, common_1.QueryParams('r', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [Object, Object, Number]),
+    __metadata("design:returntype", Promise)
 ], WWWAuthController.prototype, "signup", null);
 __decorate([
     common_1.Get('/dashboard'),

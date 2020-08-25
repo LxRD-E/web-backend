@@ -31,6 +31,13 @@ let SupportController = class SupportController extends controller_1.default {
     async getMyTickets(userInfo) {
         return await this.support.getTicketsByUser(userInfo.userId);
     }
+    async getTicketById(userInfo, ticketId) {
+        let ticketInfo = await this.support.getTicketById(ticketId);
+        if (ticketInfo.userId !== userInfo.userId) {
+            throw new this.BadRequest('InvalidTicketId');
+        }
+        return ticketInfo;
+    }
     async getTicketReplies(userInfo, ticketId) {
         let ticketInfo = await this.support.getTicketById(ticketId);
         if (ticketInfo.userId !== userInfo.userId) {
@@ -87,6 +94,18 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo]),
     __metadata("design:returntype", Promise)
 ], SupportController.prototype, "getMyTickets", null);
+__decorate([
+    common_1.Get('/ticket/:ticketId/info'),
+    swagger_1.Summary('Get ticket data for the {ticketId}'),
+    common_1.Use(Auth_1.YesAuth),
+    swagger_1.Returns(200, { type: model.support.SupportTicket }),
+    swagger_1.Returns(400, controller_1.default.cError('InvalidTicketId: TicketId is invalid or does not belong to the authenticated user')),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('ticketId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.UserSession, Number]),
+    __metadata("design:returntype", Promise)
+], SupportController.prototype, "getTicketById", null);
 __decorate([
     common_1.Get('/ticket/:ticketId/replies'),
     swagger_1.Summary('Get replies to ticket'),

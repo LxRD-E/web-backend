@@ -178,6 +178,7 @@ var transactionType;
     transactionType[transactionType["CurrencyExchangeTransactionPurchase"] = 18] = "CurrencyExchangeTransactionPurchase";
     transactionType[transactionType["CurrencyExchangeTransactionSale"] = 19] = "CurrencyExchangeTransactionSale";
     transactionType[transactionType["CurrencyExchangePositionClose"] = 20] = "CurrencyExchangePositionClose";
+    transactionType[transactionType["ReferralUserCurrencyPurchase"] = 21] = "ReferralUserCurrencyPurchase";
 })(transactionType = exports.transactionType || (exports.transactionType = {}));
 var membershipType;
 (function (membershipType) {

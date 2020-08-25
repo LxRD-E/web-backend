@@ -21,15 +21,16 @@ redisClient.on('error', (e) => {
 });
 let store = new RedisStore({ client: redisClient });
 exports.parser = session({
-    name: 'rbxsession',
+    name: 'blockshub-session',
     secret: config_1.default.session.secret,
     resave: false,
     store: store,
     saveUninitialized: true,
     cookie: {
         secure: config_1.default.session.secure,
-        maxAge: 86400 * 1000 * 30 * 12,
+        maxAge: (86400 * 30 * 12) * 1000,
         sameSite: 'lax',
+        domain: config_1.default.session.domain || '.blockshub.hh',
     },
 });
 exports.default = exports.parser;

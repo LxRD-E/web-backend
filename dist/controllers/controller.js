@@ -19,12 +19,15 @@ const support_1 = require("../dal/support");
 const report_abuse_1 = require("../dal/report-abuse");
 const currency_exchange_1 = require("../dal/currency-exchange");
 const data_persistence_1 = require("../dal/data-persistence");
+const user_referral_1 = require("../dal/user-referral");
 const Www_1 = require("../models/v2/Www");
 const Filter_1 = require("../helpers/Filter");
+const event = require("../events/events");
 const knex_1 = require("../helpers/knex");
 const Errors_1 = require("../helpers/Errors");
 const xss = require("xss");
 const moment = require("moment");
+const model = require("../models/models");
 class StandardController extends Errors_1.default {
     constructor(knexOverload) {
         super();
@@ -51,6 +54,8 @@ class StandardController extends Errors_1.default {
         this.reportAbuse = new report_abuse_1.default();
         this.currencyExchange = new currency_exchange_1.default();
         this.dataPersistence = new data_persistence_1.default();
+        this.userReferral = new user_referral_1.default();
+        this.event = event;
         if (knexOverload) {
             console.log('overloading knex');
             this.user.knex = knexOverload;
@@ -70,7 +75,14 @@ class StandardController extends Errors_1.default {
             this.support.knex = knexOverload;
             this.reportAbuse.knex = knexOverload;
             this.currencyExchange.knex = knexOverload;
+            this.userReferral.knex = knexOverload;
         }
+    }
+    static cError(...ers) {
+        return {
+            type: model.Error,
+            description: ers.join('\n'),
+        };
     }
     transaction(thisParam, forUpdate, callback) {
         if (process.env.NODE_ENV === 'development') {
@@ -110,4 +122,11 @@ class StandardController extends Errors_1.default {
 exports.default = StandardController;
 class IStandardControllerTRX extends StandardController {
 }
+exports.cError = (...msg) => {
+    return {
+        type: model.Error,
+        description: msg.join('\n'),
+    };
+};
+exports.paging = ['InvalidOffset: Offset is invalid', 'InvalidLimit: limit is invalid'];
 

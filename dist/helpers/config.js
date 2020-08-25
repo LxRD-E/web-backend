@@ -8,6 +8,11 @@ const secretEncryptionIV = process.env['SECRET_ENCRYPTION_IV'];
 let configJson = {
     encryptionKeys: {},
     coinpayments: {},
+    baseUrl: {
+        play: "https://play.blockshub.net",
+        www: "https://www.blockshub.net",
+        api: "https://api.blockshub.net"
+    }
 };
 const decrypt = (encryptedString, key, iv) => {
     if (typeof iv !== 'string' && typeof iv !== 'object') {

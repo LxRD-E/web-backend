@@ -176,6 +176,15 @@ let GroupsController = class GroupsController extends controller_1.default {
             throw new this.BadRequest('InvalidGroupPermissions');
         }
     }
+    async getFunds(userInfo, groupId) {
+        const role = await this.getAuthRole(userInfo, groupId);
+        if (role.permissions.manage) {
+            return await this.group.getGroupFunds(groupId);
+        }
+        else {
+            throw new this.BadRequest('InvalidGroupPermissions');
+        }
+    }
     async createWallPost(userInfo, groupId, wallPostContent) {
         if (wallPostContent.length > 255 || wallPostContent.length < 3) {
             throw new this.BadRequest('InvalidWallPost');
@@ -880,6 +889,17 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number, Number, Number, Object]),
     __metadata("design:returntype", Promise)
 ], GroupsController.prototype, "getWall", null);
+__decorate([
+    common_1.Get('/:groupId/funds'),
+    swagger_1.Summary('Get group funds (User must have manage permission)'),
+    common_1.Use(middleware.group.ValidateGroupId),
+    swagger_1.Returns(200, { type: model.group.GroupFunds, description: 'Group Funds' }),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('groupId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number]),
+    __metadata("design:returntype", Promise)
+], GroupsController.prototype, "getFunds", null);
 __decorate([
     common_1.Put('/:groupId/wall'),
     swagger_1.Summary('Create a wall post'),

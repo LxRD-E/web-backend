@@ -64,6 +64,14 @@ export class MyGEHMiddleware extends GlobalErrorHandlerMiddleware {
                 logError(409, fullErrorMessage.code, request.originalUrl, request.method);
                 return response.status(409).json({ success: false, error: fullErrorMessage })
             } else if (error.name === 'UNAUTHORIZED') {
+                if (error.message === 'AccountBanned') {
+                    return response.status(401).json({
+                        success: false,
+                        error: {
+                            code: 'AccountBanned',
+                        }
+                    })
+                }
                 if (request.accepts('html')) {
                     logError(401, 'LoginRequired', request.originalUrl, request.method);
                     response.redirect('/login');

@@ -33,7 +33,7 @@ let WWWCatalogController = class WWWCatalogController extends controller_1.defau
     }
     async catalogItemCreate(userInfo) {
         let ViewData = new this.WWWTemplate({ 'title': '' });
-        ViewData.page.loadStaffPage = userInfo.staff >= 1 ? true : false;
+        ViewData.page.loadStaffPage = userInfo.staff >= 1;
         ViewData.title = "Create an Item";
         return ViewData;
     }
@@ -61,7 +61,7 @@ let WWWCatalogController = class WWWCatalogController extends controller_1.defau
                 throw new this.BadRequest('InvalidPermissions');
             }
         }
-        ViewData.page.loadStaffPage = userInfo.staff >= 2 ? true : false;
+        ViewData.page.loadStaffPage = userInfo.staff >= 2;
         ViewData.page.catalogId = catalogData.catalogId;
         ViewData.page.catalogEncodedName = Filter_1.urlEncode(catalogData.catalogName);
         ViewData.page.catalogName = catalogData.catalogName;

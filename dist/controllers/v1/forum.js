@@ -24,6 +24,7 @@ const controller_1 = require("../controller");
 const swagger_1 = require("@tsed/swagger");
 const auth_1 = require("../../dal/auth");
 const Auth_1 = require("../../middleware/Auth");
+const VerifyLegacyPagingInfo_1 = require("../../middleware/VerifyLegacyPagingInfo");
 let ForumController = class ForumController extends controller_1.default {
     constructor() {
         super();
@@ -54,6 +55,22 @@ let ForumController = class ForumController extends controller_1.default {
             });
         }
         return expandedSubCategories;
+    }
+    async getLatestPost(subCategoryId) {
+        return await this.forum.getLatestPost(subCategoryId);
+    }
+    async countPostsAndThreads(subCategoryId) {
+        const [threads, posts] = await Promise.all([this.forum.getThreadCount(subCategoryId), this.forum.getPostCount(subCategoryId)]);
+        return {
+            threads,
+            posts,
+        };
+    }
+    async getLatestThreads(subCategoryId, limit = 5) {
+        return await this.forum.getLatestThreads(limit);
+    }
+    async getThreadById(threadId) {
+        return await this.forum.getThreadById(threadId);
     }
     async getThreads(subCategoryId, offset, limit, sort, userInfo) {
         const numericOffset = Filter_1.filterOffset(offset);
@@ -177,6 +194,7 @@ let ForumController = class ForumController extends controller_1.default {
             }
             throw e;
         }
+        this.event.forum.submitEvent('createThread', { userId: userInfo.userId, threadId: threadId });
         return {
             'success': true,
             'threadId': threadId,
@@ -230,6 +248,7 @@ let ForumController = class ForumController extends controller_1.default {
             }
             throw e;
         }
+        this.event.forum.submitEvent('createPost', { userId: userInfo.userId, postId: postId });
         return {
             'success': true,
             'postId': postId,
@@ -434,6 +453,44 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo]),
     __metadata("design:returntype", Promise)
 ], ForumController.prototype, "getSubCategories", null);
+__decorate([
+    common_1.Get('/:subCategoryId/latest-post'),
+    swagger_1.Summary('Get the latest post for the {subCategoryId}'),
+    swagger_1.Returns(200, { type: model.forum.PostSnippet }),
+    __param(0, common_1.PathParams('subCategoryId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ForumController.prototype, "getLatestPost", null);
+__decorate([
+    common_1.Get('/:subCategoryId/count'),
+    swagger_1.Summary('Count all posts and threads for the {subCategoryId}'),
+    swagger_1.Returns(200, { type: model.forum.ForumThreadsAndPostsCount }),
+    __param(0, common_1.PathParams('subCategoryId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ForumController.prototype, "countPostsAndThreads", null);
+__decorate([
+    common_1.Get('/:subCategoryId/latest-threads'),
+    swagger_1.Summary('Get the latest thread snippet for the {subCategoryId}'),
+    common_1.Use(VerifyLegacyPagingInfo_1.VerifyPagingInfo),
+    swagger_1.ReturnsArray(200, { type: model.forum.Thread }),
+    __param(0, common_1.PathParams('subCategoryId', Number)),
+    __param(1, common_1.QueryParams('limit', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], ForumController.prototype, "getLatestThreads", null);
+__decorate([
+    common_1.Get('/thread/:threadId/info'),
+    swagger_1.Summary('Get thread info by the {threadId}'),
+    swagger_1.Returns(200, { type: model.forum.Thread }),
+    __param(0, common_1.PathParams('threadId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ForumController.prototype, "getThreadById", null);
 __decorate([
     common_1.Get('/:subCategoryId/threads'),
     swagger_1.Summary('Get forum threads by subCategoryId'),

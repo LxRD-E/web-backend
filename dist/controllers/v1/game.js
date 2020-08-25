@@ -17,7 +17,6 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const jsObfuse = require("javascript-obfuscator");
 const model = require("../../models/models");
 const middleware = require("../../middleware/middleware");
 const controller_1 = require("../controller");
@@ -27,7 +26,7 @@ const Auth_1 = require("../../middleware/Auth");
 const auth_1 = require("../../dal/auth");
 const services = require("../../services");
 const websockets_1 = require("../../start/websockets");
-const GAME_KEY = model.game.GAME_KEY;
+const moment = require("moment");
 const COPYRIGHT_DISCLAIMER = `/**
  * Copyright (c) BlocksHub - All Rights Reserved
  * Unauthorized copying of this file, via any medium, is strictly prohibited.
@@ -35,186 +34,6 @@ const COPYRIGHT_DISCLAIMER = `/**
  * This software includes various open-source libraries which have licenses provided where relevant and required.
  * View our full terms of service here: https://blockshub.net/terms
  */`;
-let simpleCryptoData = model.game.getSimpleCrypto();
-const script = jsObfuse.obfuscate(`
-        (function() {
-            ${simpleCryptoData.lib}
-
-            const gameAuthCode = $('#gamedata').attr('data-authcode');
-
-            /**
-            * Game Data
-            */
-            const gamedata = document.getElementById('gamedata');
-            if (!gamedata) {
-                window.location.href = "/game/error";
-            }
-            const gameId = parseInt(gamedata.getAttribute('data-gameid'), 10);
-            if (!gameId || isNaN(gameId)) {
-                window.location.href = "/game/error";
-            }
-            let gameServerId = 0;
-
-                // Join Game
-
-                let wsurl = "wss://"+window.location.host+"/game-sockets/websocket.aspx";
-                if (window.location.host.slice(0,9) === 'localhost') {
-                    wsurl = "ws://localhost:8080/game-sockets/websocket.aspx";
-                }
-
-
-                var isTrying = false;
-                function attemptRetry(closeEvent) {
-                    if (!isTrying) {
-                        isTrying = true;
-                        setTimeout(function() {
-                            setupListen();
-                            isTrying = false;
-                        }, 1500);
-                    }
-                }
-
-                function handleWsMessage(event) {
-
-                }
-
-                function setupListen() {
-                        var sock = new WebSocket(wsurl+'?gameAuth='+gameAuthCode);
-                        sock.onmessage = function (event) {
-                            handleWsMessage(event)
-                        }
-                        sock.onopen = function(event) {
-                            handleWsMessage(event)
-                            // Connect to game
-                            sock.send(JSON.stringify({
-                                cmd: 'join',
-                                gameId: gameId,
-                            }));
-                        }
-                        sock.onclose = function(event) {
-                            alert('Connection to the Game Server has been lost.');
-                            window.location.reload();
-                        }
-                        sock.onerror = function(event) {
-                            alert('Connection to the Game Server has been lost.');
-                            window.location.reload();
-                        }
-                        window.onbeforeunload = function () {
-                            sock.close();
-                        }
-                }
-                setupListen()
-
-                /*
-            request('/game/'+gameId+'/join?authCode='+gameAuthCode, 'POST', JSON.stringify({}))
-                .then((d) => {
-                    gameServerId = d.serverId;
-                    // Setup WSS here
-                }).catch((e) => {
-                    alert(e.responseJSON.message);
-                    window.location.href = "/";
-                });
-                */
-            
-            /**
-                * Global Babylon Vars
-                */
-            BABYLON.OBJFileLoader.MATERIAL_LOADING_FAILS_SILENTLY = false;
-            BABYLON.OBJFileLoader.OPTIMIZE_WITH_UV = true;
-            
-            // Converts from degrees to radians.
-            Math.radians = function(degrees) {
-                return degrees * Math.PI / 180;
-            };
-            
-            // Converts from radians to degrees.
-            Math.degrees = function(radians) {
-                return radians * 180 / Math.PI;
-            };
-            
-            function rotateVector(vect, quat) {
-                var matr = new BABYLON.Matrix();
-                quat.toRotationMatrix(matr);
-                var rotatedvect = BABYLON.Vector3.TransformCoordinates(vect, matr);
-                return rotatedvect;
-            }
-            
-            window.addEventListener('DOMContentLoaded', function() {
-                // Canvas
-                var canvas = document.getElementById('renderCanvas');
-                // Game Engine
-                var engine = new BABYLON.Engine(canvas, true);
-                // Create Scene
-                var createScene = function () {
-                    var scene = new BABYLON.Scene(engine);
-                    // Use Right Handed (since I believe it's what blender uses)
-                    scene.useRightHandedSystem = true;
-            
-                    var gravityVector = new BABYLON.Vector3(0, -9.81, 0);
-                    var physicsPlugin = new BABYLON.CannonJSPlugin();
-                    scene.enablePhysics(gravityVector, physicsPlugin);
-                    // Setup Player Camera
-                    var camera = new BABYLON.ArcRotateCamera("Camera", Math.PI / 4, Math.PI / 6, 45, new BABYLON.Vector3(0, 10, -10), scene);
-                    camera.maxZ = 100000;
-                    camera.angularSensibilityX = 2500;
-                    camera.angularSensibilityY = 2500;
-                    camera.panningSensibility = 2500;
-                    camera.checkCollisions = true;
-                    camera.wheelPrecision = 10;
-                    camera.useInputToRestoreState = true;
-            
-                    camera.allowUpsideDown = false;
-                    // Attach the camera to the canvas.
-                    camera.attachControl(canvas, false);
-                    camera.useBouncingBehavior = false;
-                    camera.useAutoRotationBehavior = false;
-                    camera.useFramingBehavior = false;
-                
-                    // Create a basic light, aiming 0,1,0 - meaning, to the sky.
-                    var light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0, 1, 0), scene);
-                    light.intensity = 1;
-            
-                    // Skybox
-                    var skybox = BABYLON.Mesh.CreateBox("BackgroundSkybox", 2048, scene, undefined, BABYLON.Mesh.BACKSIDE);
-                
-                    // Create and tweak the background material.
-                    var backgroundMaterial = new BABYLON.BackgroundMaterial("backgroundMaterial", scene);
-                    backgroundMaterial.reflectionTexture = new BABYLON.CubeTexture("https://cdn.blockshub.net/game/default_assets/TropicalSunnyDay", scene);
-                    backgroundMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
-                    skybox.material = backgroundMaterial;
-                
-                    
-                    // ... 
-                    // IMPORT MAP HERE
-
-                    fetch('/api/v1/game/'+gameId+'/map?authCode='+gameAuthCode, {credentials: 'omit', mode: 'cors'}).then((d) => {
-                        return d.text();
-                    }).then((d) => {
-                        Function(new ${simpleCryptoData.name}(\`${GAME_KEY}\`).decrypt(d))(scene);
-                    });
-
-                    fetch('/api/v1/game/'+gameId+'/scripts?authCode='+gameAuthCode, {credentials: 'omit',  mode: 'cors'}).then((d) => {
-                            return d.text();
-                        }).then((d) => {
-                            Function(new ${simpleCryptoData.name}(\`${GAME_KEY}\`).decrypt(d))(scene);
-                        });
-            
-                    // ... 
-                
-                    // Return the created scene.
-                    return scene;
-                };
-                var scene = createScene();
-                engine.runRenderLoop(function() {
-                    scene.render();
-                });
-                window.addEventListener('resize', function() {
-                    engine.resize();
-                });
-            });
-        })()
-    `, model.game.scriptOptions);
-let code = COPYRIGHT_DISCLAIMER + '\n' + script.getObfuscatedCode();
 let GameController = class GameController extends controller_1.default {
     async getGames(offset = 0, limit = 25, sortBy = 1, genre = 1, creatorId, creatorType) {
         if (!model.game.GameSortOptions[sortBy]) {
@@ -248,6 +67,9 @@ let GameController = class GameController extends controller_1.default {
         }
         return await this.game.getGames(offset, limit, sortMode, sortCol, genre, creatorConstraint);
     }
+    async getGameInfo(gameId) {
+        return await this.game.getInfo(gameId);
+    }
     async getMetaData(userInfo) {
         let canPlayGames = true;
         let canCreateGames = true;
@@ -262,8 +84,79 @@ let GameController = class GameController extends controller_1.default {
     async multiGetGameThumbnails(gameIds) {
         return await this.game.multiGetGameThumbnails(gameIds);
     }
-    async getMap(userInfo, gameId, res) {
-        res.set('access-control-allow-origin', 'null');
+    async getOriginalMap(userInfo, gameId) {
+        let gameInfo;
+        try {
+            gameInfo = await this.game.getInfo(gameId);
+        }
+        catch (e) {
+            throw new this.BadRequest('InvalidGameId');
+        }
+        if (gameInfo.creatorType === model.catalog.creatorType.User) {
+            if (gameInfo.creatorId === userInfo.userId) {
+                const map = await this.game.getGameMap(gameId);
+                return (await this.game.getMapContent(map.scriptUrl)).toString();
+            }
+        }
+        else if (gameInfo.creatorType === model.catalog.creatorType.Group) {
+            let groupData = await this.group.getUserRole(gameInfo.creatorId, userInfo.userId);
+            if (groupData.permissions.manage) {
+                const map = await this.game.getGameMap(gameId);
+                return (await this.game.getMapContent(map.scriptUrl)).toString();
+            }
+        }
+        else {
+            throw new this.Conflict('NotImplemented');
+        }
+        throw new this.Conflict('InvalidPermissions');
+    }
+    async decodeGameAuth(authCode) {
+        let verifyAuthCode = await this.auth.decodeGameAuthCode(authCode);
+        if (!moment().add(15, 'seconds').isSameOrAfter(verifyAuthCode.iat * 1000)) {
+            throw new Error('InvalidAuthCode');
+        }
+        return verifyAuthCode;
+    }
+    async generateGameAuth(userInfo) {
+        return await this.auth.generateGameAuthCode(userInfo.userId, userInfo.username);
+    }
+    async getOriginalScripts(userInfo, gameId) {
+        let gameInfo;
+        try {
+            gameInfo = await this.game.getInfo(gameId);
+        }
+        catch (e) {
+            throw new this.BadRequest('InvalidGameId');
+        }
+        if (gameInfo.creatorType === model.catalog.creatorType.User) {
+            if (gameInfo.creatorId === userInfo.userId) {
+                const scripts = await this.game.getGameScripts(gameId, model.game.ScriptType.client);
+                for (const script of scripts) {
+                    script.content = await this.game.getScriptContent(script.scriptUrl);
+                    script.content = script.content.toString();
+                }
+                return scripts;
+            }
+        }
+        else if (gameInfo.creatorType === model.catalog.creatorType.Group) {
+            let groupData = await this.group.getUserRole(gameInfo.creatorId, userInfo.userId);
+            if (groupData.permissions.manage) {
+                const scripts = await this.game.getGameScripts(gameId, model.game.ScriptType.client);
+                for (const script of scripts) {
+                    script.content = await this.game.getScriptContent(script.scriptUrl);
+                    script.content = script.content.toString();
+                }
+                return scripts;
+            }
+        }
+        else {
+            throw new this.Conflict('NotImplemented');
+        }
+        throw new this.Conflict('InvalidPermissions');
+    }
+    async getMap(userInfo, gameId, res, req) {
+        let origin = req.header('origin');
+        res.set('access-control-allow-origin', origin);
         res.set('access-control-allow-credentials', 'false');
         let gameInfo;
         try {
@@ -277,10 +170,11 @@ let GameController = class GameController extends controller_1.default {
         }
         const map = await this.game.getGameMap(gameId);
         const mapContent = await this.game.getMapContent(map.scriptUrl);
-        return await services.encryptScript.async.encryptAndObfuscateScript(mapContent);
+        return await services.encryptScript.async.encryptAndObfuscateScript(mapContent.toString());
     }
-    async getClientScripts(gameId, res) {
-        res.set('access-control-allow-origin', 'null');
+    async getClientScripts(gameId, res, req) {
+        let origin = req.header('origin');
+        res.set('access-control-allow-origin', origin);
         res.set('access-control-allow-credentials', 'false');
         let gameInfo;
         try {
@@ -296,15 +190,10 @@ let GameController = class GameController extends controller_1.default {
         const scripts = await this.game.getGameScripts(gameId, model.game.ScriptType.client);
         let scriptString = '';
         for (const script of scripts) {
-            const content = await this.game.getScriptContent(script.scriptUrl);
+            const content = (await this.game.getScriptContent(script.scriptUrl)).toString();
             scriptString = scriptString + '\n' + content;
         }
         return await services.encryptScript.async.encryptAndObfuscateScript(scriptString);
-    }
-    async getClientScript(userInfo, res) {
-        res.set({ 'content-type': 'application/javascript' });
-        res.set({ 'content-length': code.length });
-        res.send(code);
     }
     async createGame(userInfo, gameName, gameDescription) {
         const games = await this.game.countGames(userInfo.userId, model.catalog.creatorType.User);
@@ -454,6 +343,15 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "getGames", null);
 __decorate([
+    common_1.Get('/:gameId/info'),
+    swagger_1.Summary('Get game info'),
+    swagger_1.Returns(200, { type: model.game.GameInfo }),
+    __param(0, common_1.PathParams('gameId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "getGameInfo", null);
+__decorate([
     common_1.Get('/metadata'),
     swagger_1.Summary('Get games metaData for current user'),
     common_1.Use(Auth_1.YesAuth),
@@ -485,6 +383,46 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "multiGetGameThumbnails", null);
 __decorate([
+    common_1.Get('/edit-mode/:gameId/map'),
+    swagger_1.Summary('Get un-obfuscated game map'),
+    swagger_1.Returns(200, { type: String }),
+    common_1.Use(middleware.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('gameId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.UserSession, Number]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "getOriginalMap", null);
+__decorate([
+    common_1.Get('/auth/client/decode'),
+    swagger_1.Summary('Decode game auth code'),
+    __param(0, common_1.Required()),
+    __param(0, common_1.QueryParams('code', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "decodeGameAuth", null);
+__decorate([
+    common_1.Get('/auth/client/generate'),
+    swagger_1.Summary('Generate game auth code'),
+    common_1.Use(middleware.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.UserSession]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "generateGameAuth", null);
+__decorate([
+    common_1.Get('/edit-mode/:gameId/scripts'),
+    swagger_1.Summary('Get un-obfuscated game scripts'),
+    swagger_1.ReturnsArray(200, { type: model.game.OriginalScriptData }),
+    common_1.Use(middleware.YesAuth),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('gameId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.UserSession, Number]),
+    __metadata("design:returntype", Promise)
+], GameController.prototype, "getOriginalScripts", null);
+__decorate([
     common_1.Get('/:gameId/map'),
     swagger_1.Summary('Get the map of a {gameId}. Authentication required'),
     swagger_1.Returns(200, { type: String }),
@@ -492,8 +430,9 @@ __decorate([
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('gameId', Number)),
     __param(2, common_1.Res()),
+    __param(3, common_1.Req()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.UserSession, Number, Object]),
+    __metadata("design:paramtypes", [model.UserSession, Number, Object, Object]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "getMap", null);
 __decorate([
@@ -502,20 +441,11 @@ __decorate([
     common_1.Use(Auth_1.GameAuth),
     __param(0, common_1.PathParams('gameId', Number)),
     __param(1, common_1.Res()),
+    __param(2, common_1.Req()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:paramtypes", [Number, Object, Object]),
     __metadata("design:returntype", Promise)
 ], GameController.prototype, "getClientScripts", null);
-__decorate([
-    common_1.Get('/client.js'),
-    swagger_1.Summary('Get the primary game client.js'),
-    common_1.Use(Auth_1.NoAuth),
-    __param(0, common_1.Locals('userInfo')),
-    __param(1, common_1.Res()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.UserSession, Object]),
-    __metadata("design:returntype", Promise)
-], GameController.prototype, "getClientScript", null);
 __decorate([
     common_1.Post('/create'),
     swagger_1.Summary('Create a game'),

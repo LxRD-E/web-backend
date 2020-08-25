@@ -28,6 +28,9 @@ let ReportAbuseController = class ReportAbuseController extends controller_1.def
     constructor() {
         super();
     }
+    getReportAbuseReasons() {
+        return model.reportAbuse.ReportReason;
+    }
     async reportUserStatus(userInfo, userStatusId, reason, res) {
         res.status(200).send({
             success: true,
@@ -40,6 +43,13 @@ let ReportAbuseController = class ReportAbuseController extends controller_1.def
         }
     }
 };
+__decorate([
+    common_1.Get('/metadata/reasons'),
+    swagger_1.Summary('Get report abuse reasons'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], ReportAbuseController.prototype, "getReportAbuseReasons", null);
 __decorate([
     common_1.Post('/feed/friends/:userStatusId'),
     swagger_1.Summary('Report a userStatusId as abusive'),

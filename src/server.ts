@@ -18,15 +18,15 @@ import './events/setup';
 
 import * as cons from 'consolidate';
 import morgan = require('morgan');
-import {NotFoundMiddleware} from "./middleware/NotFound";
+import { NotFoundMiddleware } from "./middleware/NotFound";
 import logger from './helpers/Logger';
 import removeSwaggerBranding from './helpers/remove-swagger-branding';
 // start middleware
 import session from './start/session';
 import ws from './start/websockets';
-import Any, {generateCspWithNonce} from './middleware/Any';
+import Any, { generateCspWithNonce } from './middleware/Any';
 import multer = require('multer');
-import {NextFunction} from "express";
+import { NextFunction } from "express";
 removeSwaggerBranding();
 // If production
 if (process.env.NODE_ENV === 'production') {
@@ -46,8 +46,6 @@ require('blocked-at')((time: any, stack: any) => {
 })
 */
 
-
-
 @ServerSettings({
     rootDir: Path.resolve(__dirname),
     viewsDir: "${rootDir}/views",
@@ -55,7 +53,6 @@ require('blocked-at')((time: any, stack: any) => {
     mount: {
         "/api/v2/": "${rootDir}/controllers/v2/*.ts",
         "/api/v1/": "${rootDir}/controllers/v1/*.ts",
-        "/": "${rootDir}/controllers/web/*.ts",
     },
     port: process.env.PORT || 3000,
     componentsScan: [
@@ -84,6 +81,7 @@ require('blocked-at')((time: any, stack: any) => {
         storage: multerMemStore,
         files: 10,
     },
+    httpsPort: false,
 })
 export class Server extends ServerLoader {
     public $onInit(): void {
@@ -127,22 +125,19 @@ export class Server extends ServerLoader {
         ]
         this.expressApp.use((req, res, next) => {
             let origin = req.header('origin');
-            console.log('[origin]',origin);
             if (typeof origin === 'string') {
                 for (let host of validHosts) {
                     let originToCheck = origin;
-                    let secondColon = origin.indexOf(':', origin.indexOf(':')+1);
+                    let secondColon = origin.indexOf(':', origin.indexOf(':') + 1);
                     if (secondColon) {
                         let originWithoutPort = origin.slice(0, secondColon);
                         if (originWithoutPort === 'http' || originWithoutPort === 'https') {
-                            console.log('slice is http or https');
                             continue;
                         } else {
                             originToCheck = originWithoutPort;
                         }
                     }
                     if (originToCheck === host) {
-                        console.log('found a valid host!');
                         const allowedHeaders = 'x-csrf-token, x-environment, x-lb-origin, content-type';
                         res.header('Access-Control-Allow-Origin', origin);
                         res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, PATCH, DELETE, OPTIONS');
@@ -155,7 +150,7 @@ export class Server extends ServerLoader {
             }
             if (req.method === 'OPTIONS') {
                 res.status(200).end();
-            }else {
+            } else {
                 next();
             }
         });
@@ -168,8 +163,8 @@ export class Server extends ServerLoader {
                 /\/api\/v1\/game\/client.js/g,
             ];
             for (const skip of toSkip) {
-                if (req.url.slice(0,req.url.indexOf('?')).match(skip)) {
-                    console.log('skip due to match',skip);
+                if (req.url.slice(0, req.url.indexOf('?')).match(skip)) {
+                    console.log('skip due to match', skip);
                     return next();
                 }
             }
@@ -194,6 +189,7 @@ export class Server extends ServerLoader {
         // Setup any() middleware
         this.use(Any);
 
+
         /*
         this.use(async (req: Express.Request, res: Express.Response, next: Express.NextFunction) => {
             console.time('request_'+req.id);
@@ -212,7 +208,7 @@ export class Server extends ServerLoader {
             .use(bodyParser.json())
             .use(bodyParser.urlencoded({
                 extended: true
-            }));
+            }))
     }
 
     public $afterRoutesInit() {

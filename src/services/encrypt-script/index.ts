@@ -11,7 +11,7 @@ const sync = {
         let scriptGameKey = this.workerData.GAME_KEY;
         const jsObfuse = require('javascript-obfuscator');
         const SimpleCrypto = require('simple-crypto-js').default;
-        const obfuscated = jsObfuse.obfuscate(`
+        let src = `
             (function(scene){
                 // Script Goes Here
 
@@ -19,7 +19,11 @@ const sync = {
 
                 // End Script
             })();
-            `, scriptSystemOptions);
+            `;
+        if (process.env.NODE_ENV === 'development') {
+            // return new SimpleCrypto(scriptGameKey).encrypt(src);
+        }
+        const obfuscated = jsObfuse.obfuscate(src, scriptSystemOptions);
         return new SimpleCrypto(scriptGameKey).encrypt(obfuscated.getObfuscatedCode());
     },
 }

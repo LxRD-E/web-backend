@@ -239,6 +239,7 @@ class UsersDAL extends _init_1.default {
             'is_banned': users.banned.false,
             'forum_postcount': 0,
             'user_balancedailyaward': date,
+            'id': null,
         });
         return insert[0];
     }

@@ -1,5 +1,5 @@
-import {readFileSync} from 'fs';
-import {join} from 'path';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import Crypto = require("crypto");
 const secretEncryptionKey = process.env['SECRET_ENCRYPTION_KEY'];
 const secretEncryptionIV = process.env['SECRET_ENCRYPTION_IV'];
@@ -23,7 +23,7 @@ let configJson: IWebsiteConfiguration = {
     }
 };
 
-const decrypt = (encryptedString: string, key: string, iv?: Buffer|string): string => {
+const decrypt = (encryptedString: string, key: string, iv?: Buffer | string): string => {
     // for legacy purposes
     // todo: remove
     if (typeof iv !== 'string' && typeof iv !== 'object') {
@@ -54,7 +54,7 @@ if (process.env.NODE_ENV !== 'test') {
     }
     // duplicate original object
     configJson = Object.freeze(configString);
-}else{
+} else {
     console.warn('[warning] empty config ')
 }
 // export default duplicated object

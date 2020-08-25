@@ -34,6 +34,24 @@ let AuthController = class AuthController extends controller_1.default {
     getCurrentUser(userInfo) {
         return userInfo;
     }
+    async pingEvent(userInfo, url) {
+        await this.user.logOnlineStatus(userInfo.userId);
+        if (moment().isSameOrAfter(moment(userInfo.dailyAward).add(24, 'hours'))) {
+            const forUpdate = [
+                'users',
+                'transactions',
+            ];
+            await this.transaction(this, forUpdate, async function (trx) {
+                await trx.economy.createTransaction(userInfo.userId, 1, 10, model.economy.currencyType.secondary, model.economy.transactionType.DailyStipendSecondary, 'Daily Stipend', model.catalog.creatorType.User, model.catalog.creatorType.User);
+                await trx.economy.addToUserBalance(userInfo.userId, 10, model.economy.currencyType.secondary);
+                await trx.user.updateDailyAward(userInfo.userId);
+            });
+        }
+        return {};
+    }
+    async getBanData(userInfo) {
+        return this.mod.getBanDataFromUserId(userInfo.userId);
+    }
     async requestPasswordReset(res, emailProvided) {
         let email = this.auth.verifyEmail(emailProvided);
         if (!email) {
@@ -113,6 +131,7 @@ let AuthController = class AuthController extends controller_1.default {
         if (userInfo) {
             throw new this.Conflict('LogoutRequired');
         }
+        console.log('start username to id');
         let userId;
         try {
             userId = await this.user.userNameToId(username);
@@ -120,6 +139,7 @@ let AuthController = class AuthController extends controller_1.default {
         catch (e) {
             throw new this.BadRequest('InvalidUsernameOrPassword');
         }
+        console.log('end username to id. start get info');
         let userData;
         try {
             userData = await this.user.getInfo(userId, ['username', 'passwordChanged']);
@@ -194,8 +214,8 @@ let AuthController = class AuthController extends controller_1.default {
         if (!valid) {
             throw new this.BadRequest('InvalidPassword');
         }
-        let enabled = await this.settings.is2faEnabled(userInfo.userId);
-        if (enabled.enabled === false) {
+        let twoFA = await this.settings.is2faEnabled(userInfo.userId);
+        if (!twoFA.enabled) {
             throw new this.Conflict('TwoFactorNotEnabled');
         }
         await this.settings.disable2fa(userInfo.userId);
@@ -273,94 +293,85 @@ let AuthController = class AuthController extends controller_1.default {
         if (momentDate.isSameOrBefore(moment().subtract(100, "years"))) {
             throw new this.BadRequest('InvalidBirthDate');
         }
-        const birthDateString = momentDate.format('YYYY-MM-DD HH:mm:ss');
-        const usernamecheck = await this.user.isUsernameOk(username);
-        if (usernamecheck !== 'OK') {
-            throw new this.BadRequest(usernamecheck);
+        const nameCheck = this.user.isUsernameOk(username);
+        if (nameCheck !== 'OK') {
+            throw new this.BadRequest(nameCheck);
         }
-        let available = await this.user.usernameAvailableForSignup(username);
-        if (!available) {
-            throw new this.BadRequest('InvalidUsername');
-        }
-        if (!password || password.length < 6) {
-            throw new this.BadRequest('InvalidPassword');
-        }
-        let hash;
-        try {
-            hash = await auth_1.hashPassword(password);
-        }
-        catch (e) {
-            throw e;
-        }
-        if (!hash) {
-            throw new Error();
-        }
-        let userId;
-        try {
-            userId = await this.user.createUser(username, hash, birthDateString);
-        }
-        catch (e) {
-            if (e.code && e.code === "ER_DUP_ENTRY") {
+        const forUpdate = [
+            'users',
+            'user_usernames',
+            'user_referral_use',
+        ];
+        return await this.transaction(this, forUpdate, async function (trx) {
+            const birthDateString = momentDate.format('YYYY-MM-DD HH:mm:ss');
+            let available = await trx.user.usernameAvailableForSignup(username);
+            if (!available) {
                 throw new this.BadRequest('InvalidUsername');
             }
-            else {
+            if (!password || password.length < 6) {
+                throw new this.BadRequest('InvalidPassword');
+            }
+            let hash;
+            try {
+                hash = await auth_1.hashPassword(password);
+            }
+            catch (e) {
                 throw e;
             }
-        }
-        try {
-            await this.user.addAvatarColors(userId, {
+            if (!hash) {
+                throw new Error();
+            }
+            let userId;
+            try {
+                userId = await trx.user.createUser(username, hash, birthDateString);
+            }
+            catch (e) {
+                if (e.code && e.code === "ER_DUP_ENTRY") {
+                    throw new this.BadRequest('InvalidUsername');
+                }
+                else {
+                    throw e;
+                }
+            }
+            await trx.user.addAvatarColors(userId, {
                 "HeadRGB": [255, 255, 255],
                 "LegRGB": [255, 255, 255],
                 "TorsoRGB": [255, 255, 255],
             });
-        }
-        catch (e) {
-            throw e;
-        }
-        try {
-            await this.user.addUserThumbnail(userId, "https://cdn.blockshub.net/thumbnails/b9db56f8457b5e64dae256e5a029541dd2820bb641d280dec9669bbab760fa1077a7106cbff4c445d950f60f6297fba5.png");
-        }
-        catch (e) {
-            throw e;
-        }
-        try {
-            await this.economy.addToUserBalance(userId, 10, model.economy.currencyType.secondary);
-            await this.economy.createTransaction(userId, 1, 10, model.economy.currencyType.secondary, model.economy.transactionType.DailyStipendSecondary, "Daily Stipend", model.catalog.creatorType.User, model.catalog.creatorType.User);
-        }
-        catch (e) {
-            throw e;
-        }
-        try {
-            await this.user.logUserIp(userId, ip, model.user.ipAddressActions.SignUp);
-        }
-        catch (e) {
-        }
-        console.log('Return OK');
-        session.userdata = {};
-        session.userdata.id = userId;
-        session.userdata.username = username;
-        session.userdata.passwordUpdated = 0;
-        if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' || process.env.IS_STAGING === '1') {
-            let verifiedEmail = req.headers['x-verified-email'];
-            if (verifiedEmail) {
-                await this.settings.insertNewEmail(userId, verifiedEmail, 'example_code');
-                await this.settings.markEmailAsVerified(userId);
+            await trx.user.addUserThumbnail(userId, "https://cdn.blockshub.net/thumbnails/b9db56f8457b5e64dae256e5a029541dd2820bb641d280dec9669bbab760fa1077a7106cbff4c445d950f60f6297fba5.png");
+            await trx.economy.addToUserBalanceV2(userId, 10, model.economy.currencyType.secondary);
+            await trx.economy.createTransaction(userId, 1, 10, model.economy.currencyType.secondary, model.economy.transactionType.DailyStipendSecondary, "Daily Stipend", model.catalog.creatorType.User, model.catalog.creatorType.User);
+            await trx.user.logUserIp(userId, ip, model.user.ipAddressActions.SignUp);
+            if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' || process.env.IS_STAGING === '1') {
+                let verifiedEmail = req.headers['x-verified-email'];
+                if (verifiedEmail) {
+                    await trx.settings.insertNewEmail(userId, verifiedEmail, 'example_code');
+                    await trx.settings.markEmailAsVerified(userId);
+                }
+                let startingPrimary = req.headers['x-start-primary'];
+                if (startingPrimary) {
+                    let primaryNumber = parseInt(startingPrimary, 10);
+                    await trx.economy.addToUserBalance(userId, primaryNumber, model.economy.currencyType.primary);
+                }
+                let startingSecondary = req.headers['x-start-secondary'];
+                if (startingSecondary) {
+                    let secondaryNumber = parseInt(startingSecondary, 10);
+                    await trx.economy.addToUserBalance(userId, secondaryNumber, model.economy.currencyType.secondary);
+                }
             }
-            let startingPrimary = req.headers['x-start-primary'];
-            if (startingPrimary) {
-                let primaryNumber = parseInt(startingPrimary, 10);
-                await this.economy.addToUserBalance(userId, primaryNumber, model.economy.currencyType.primary);
+            if (body.referralId) {
+                let referralInfo = await trx.userReferral.getInfoById(body.referralId);
+                await trx.userReferral.registerReferralCodeUseForUser(userId, body.referralId);
             }
-            let startingSecondary = req.headers['x-start-secondary'];
-            if (startingSecondary) {
-                let secondaryNumber = parseInt(startingSecondary, 10);
-                await this.economy.addToUserBalance(userId, secondaryNumber, model.economy.currencyType.secondary);
-            }
-        }
-        return {
-            userId: userId,
-            username: username,
-        };
+            session.userdata = {};
+            session.userdata.id = userId;
+            session.userdata.username = username;
+            session.userdata.passwordUpdated = 0;
+            return {
+                userId: userId,
+                username: username,
+            };
+        });
     }
     async resetPassword(code, numericUserId, newPassword) {
         let info;
@@ -503,6 +514,28 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "getCurrentUser", null);
 __decorate([
+    common_1.Post('/ping'),
+    swagger_1.Summary('Send ping event'),
+    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    swagger_1.Returns(200, { description: 'OK' }),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.BodyParams('url', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "pingEvent", null);
+__decorate([
+    common_1.Get('/ban'),
+    swagger_1.Summary('Authenticated user ban information'),
+    common_1.Use(Auth_1.YesAuth),
+    swagger_1.Returns(200, { type: model.mod.ModerationAction }),
+    swagger_1.Returns(404, controller_1.default.cError('NoBanAvailable: User is not banned\n')),
+    __param(0, common_1.Locals('userInfo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "getBanData", null);
+__decorate([
     common_1.Put('/request/password-reset'),
     swagger_1.Summary('Request a password reset'),
     swagger_1.Description('Limited to 5 attempts per hour. Uses RecaptchaV2'),
@@ -519,8 +552,14 @@ __decorate([
     common_1.Use(auth_1.csrf, Auth_1.NoAuth, RateLimit_1.RateLimiterMiddleware('loginAttempt')),
     swagger_1.Returns(200, { type: model.auth.LoginTwoFactorResponseOK, description: 'User session cookie will be set' }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidTwoFactorCode: Token is not valid\n' }),
-    swagger_1.Returns(409, { type: model.Error, description: 'TwoFactorNotRequired: Two factor authentication was disabled for this account. Please login normally.\nTwoFactorCodeExpired: Two-Factor JWT code has expired. Please login again.\n' }),
-    swagger_1.Returns(429, { type: model.Error, description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n' }),
+    swagger_1.Returns(409, {
+        type: model.Error,
+        description: 'TwoFactorNotRequired: Two factor authentication was disabled for this account. Please login normally.\nTwoFactorCodeExpired: Two-Factor JWT code has expired. Please login again.\n'
+    }),
+    swagger_1.Returns(429, {
+        type: model.Error,
+        description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n'
+    }),
     __param(0, common_1.BodyParams('code', String)),
     __param(1, common_1.BodyParams('token', String)),
     __param(2, common_1.HeaderParams('cf-connecting-ip')),
@@ -534,10 +573,16 @@ __decorate([
     common_1.Post('/login'),
     swagger_1.Summary('Login to an account'),
     swagger_1.Description('Note that there is a limit of 25 attempts per hour, per IP address'),
-    swagger_1.Returns(200, { type: model.auth.LoginRequestOK, description: 'Session will be set, unless "isTwoFactorRequired" is true. "twoFactor" is only defined if "isTwoFactorRequired" is true. If "twoFactor" is not undefined, the user will be required to grab their TOTP token and enter it, then the "twoFactor" string and TOTP token should be POSTed to /login/two-factor to complete the login flow' }),
+    swagger_1.Returns(200, {
+        type: model.auth.LoginRequestOK,
+        description: 'Session will be set, unless "isTwoFactorRequired" is true. "twoFactor" is only defined if "isTwoFactorRequired" is true. If "twoFactor" is not undefined, the user will be required to grab their TOTP token and enter it, then the "twoFactor" string and TOTP token should be POSTed to /login/two-factor to complete the login flow'
+    }),
     swagger_1.Returns(400, { description: 'InvalidUsernameOrPassword: Invalid Credentials\n', type: model.Error }),
     swagger_1.Returns(409, { description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error }),
-    swagger_1.Returns(429, { type: model.Error, description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n' }),
+    swagger_1.Returns(429, {
+        type: model.Error,
+        description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n'
+    }),
     common_1.Use(auth_1.csrf, Auth_1.NoAuth, RateLimit_1.RateLimiterMiddleware('loginAttempt')),
     __param(0, common_1.BodyParams('username', String)),
     __param(1, common_1.BodyParams('password', String)),
@@ -627,8 +672,11 @@ __decorate([
 __decorate([
     common_1.Patch('/reset/password'),
     swagger_1.Summary('Reset user password via code from email'),
-    swagger_1.Returns(400, { type: model.Error, description: 'InvalidCode: Code is expired or invalid\nInvalidPassword: Password is too short\n' }),
-    common_1.Use(auth_1.csrf, Auth_1.YesAuth),
+    swagger_1.Returns(400, {
+        type: model.Error,
+        description: 'InvalidCode: Code is expired or invalid\nInvalidPassword: Password is too short\n'
+    }),
+    common_1.Use(auth_1.csrf, Auth_1.NoAuth),
     __param(0, common_1.Required()),
     __param(0, common_1.BodyParams('code', String)),
     __param(1, common_1.Required()),
@@ -680,8 +728,14 @@ __decorate([
     swagger_1.Summary('Generate an auth code required to sign into a service'),
     common_1.Use(auth_1.csrf, Auth_1.YesAuth),
     swagger_1.Returns(200, { type: model.auth.GenerateAuthenticationCodeResponse }),
-    swagger_1.Returns(400, { type: model.Error, description: 'InvalidReturnUrl: Return URL is not valid\nAuthenticationServiceConstraintHTTPSRequired: The returnUrl must use the HTTPS protocol\n' }),
-    swagger_1.Returns(409, { type: model.Error, description: 'AuthenticationServiceBlacklisted: The returnUrl is blacklisted and cannot be used\n' }),
+    swagger_1.Returns(400, {
+        type: model.Error,
+        description: 'InvalidReturnUrl: Return URL is not valid\nAuthenticationServiceConstraintHTTPSRequired: The returnUrl must use the HTTPS protocol\n'
+    }),
+    swagger_1.Returns(409, {
+        type: model.Error,
+        description: 'AuthenticationServiceBlacklisted: The returnUrl is blacklisted and cannot be used\n'
+    }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.Required()),
     __param(1, common_1.BodyParams('returnUrl', String)),

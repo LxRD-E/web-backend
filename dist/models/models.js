@@ -58,6 +58,8 @@ const currencyExchange = require("./v1/currency-exchange");
 exports.currencyExchange = currencyExchange;
 const dataPersistence = require("./v1/data-persistence");
 exports.dataPersistence = dataPersistence;
+const userReferral = require("./v1/user-referral");
+exports.userReferral = userReferral;
 const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 class _errorData {

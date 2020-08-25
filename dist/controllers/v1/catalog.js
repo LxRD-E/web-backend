@@ -80,9 +80,31 @@ let CatalogController = class CatalogController extends controller_1.default {
     }
     `;
     }
+    async countAllItems() {
+        const total = await this.catalog.countAllItemsForSale();
+        return {
+            total,
+        };
+    }
     async getInfo(id) {
         try {
-            return await this.catalog.getInfo(id);
+            return await this.catalog.getInfo(id, [
+                'catalogId',
+                'catalogName',
+                'description',
+                'price',
+                'averagePrice',
+                'forSale',
+                'maxSales',
+                'collectible',
+                'status',
+                'creatorId',
+                'creatorType',
+                'userId',
+                'category',
+                'dateCreated',
+                'currency',
+            ]);
         }
         catch (e) {
             throw new this.BadRequest('InvalidCatalogId');
@@ -105,8 +127,13 @@ let CatalogController = class CatalogController extends controller_1.default {
         if (!id) {
             throw new this.BadRequest('InvalidCatalogId');
         }
-        const thumbnail = await this.catalog.getThumbnailById(id);
-        return thumbnail;
+        return await this.catalog.getThumbnailById(id);
+    }
+    async getCatalogItemSalesCount(id) {
+        const data = await this.catalog.countSales(id);
+        return {
+            sales: data,
+        };
     }
     async multiGetThumbnails(ids) {
         const idsArray = ids.split(',');
@@ -124,8 +151,7 @@ let CatalogController = class CatalogController extends controller_1.default {
         if (safeIds.length > 25 || safeIds.length < 1) {
             throw new this.BadRequest('TooManyIds');
         }
-        const thumbnails = await this.catalog.multiGetThumbnailsFromIds(safeIds);
-        return thumbnails;
+        return await this.catalog.multiGetThumbnailsFromIds(safeIds);
     }
     async MultiGetNames(ids) {
         const idsArray = ids.split(',');
@@ -658,6 +684,13 @@ let CatalogController = class CatalogController extends controller_1.default {
     }
 };
 __decorate([
+    common_1.Get('/all-items/count'),
+    swagger_1.Summary('Count all catalog items that have a price above 0 and are for-sale'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "countAllItems", null);
+__decorate([
     common_1.Get('/:catalogId/info'),
     swagger_1.Summary('Get catalog item info by catalogId'),
     __param(0, common_1.Required()),
@@ -692,6 +725,17 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "getSoloThumbnail", null);
+__decorate([
+    common_1.Get('/:catalogId/sales/count'),
+    swagger_1.Summary('Count catalog item sales'),
+    swagger_1.Returns(200, { type: class {
+        } }),
+    __param(0, common_1.Required()),
+    __param(0, common_1.PathParams('catalogId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "getCatalogItemSalesCount", null);
 __decorate([
     common_1.Get('/thumbnails'),
     swagger_1.Summary('Multi-get thumbnails by catalogId'),

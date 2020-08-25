@@ -21,15 +21,15 @@ import {
     UseBefore,
     UseBeforeEach
 } from "@tsed/common";
-import {Description, Returns, ReturnsArray, Summary} from "@tsed/swagger"; // import swagger Ts.ED module
-import {RateLimiterMiddleware} from '../../middleware/RateLimit';
+import { Description, Returns, ReturnsArray, Summary } from "@tsed/swagger"; // import swagger Ts.ED module
+import { RateLimiterMiddleware } from '../../middleware/RateLimit';
 // Models
 import * as model from '../../models/models';
 // Auth stuff
-import {csrf, hashPassword, verifyPassword} from '../../dal/auth';
+import { csrf, hashPassword, verifyPassword } from '../../dal/auth';
 // Autoload
 import controller from '../controller';
-import {NoAuth, YesAuth} from "../../middleware/Auth";
+import { NoAuth, YesAuth } from "../../middleware/Auth";
 import RecaptchaV2 from '../../middleware/RecaptchaV2';
 import moment = require('moment');
 import crypto = require('crypto');
@@ -48,11 +48,49 @@ export default class AuthController extends controller {
     @Get('/current-user')
     @Summary('Get the current authenticated user')
     @Use(YesAuth)
-    @Returns(200, {type: model.UserSession})
+    @Returns(200, { type: model.UserSession })
     public getCurrentUser(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ) {
         return userInfo;
+    }
+
+    @Post('/ping')
+    @Summary('Send ping event')
+    @Use(csrf, YesAuth)
+    @Returns(200, { description: 'OK' })
+    public async pingEvent(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @BodyParams('url', String) url: string,
+    ) {
+        await this.user.logOnlineStatus(userInfo.userId);
+        // If over 24 hours since user got award for currency,
+        if (moment().isSameOrAfter(moment(userInfo.dailyAward).add(24, 'hours'))) {
+            const forUpdate = [
+                'users',
+                'transactions',
+            ]
+            await this.transaction(this, forUpdate, async function (trx) {
+                // Create transaction
+                await trx.economy.createTransaction(userInfo.userId, 1, 10, model.economy.currencyType.secondary, model.economy.transactionType.DailyStipendSecondary, 'Daily Stipend', model.catalog.creatorType.User, model.catalog.creatorType.User);
+                // Give money
+                await trx.economy.addToUserBalance(userInfo.userId, 10, model.economy.currencyType.secondary);
+                // Log user as awarded (aka update the dailyAward date)
+                await trx.user.updateDailyAward(userInfo.userId);
+            });
+        }
+        return {}
+    }
+
+    @Get('/ban')
+    @Summary('Authenticated user ban information')
+    @Use(YesAuth)
+    @Returns(200, { type: model.mod.ModerationAction })
+    @Returns(404, controller.cError('NoBanAvailable: User is not banned\n'))
+    public async getBanData(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+    ) {
+        return this.mod.getBanDataFromUserId(userInfo.userId);
     }
 
     @Put('/request/password-reset')
@@ -99,8 +137,8 @@ export default class AuthController extends controller {
     @Post('/login/two-factor')
     @Summary('Login to an account using the two-factor JWT generated from /auth/login')
     @Use(csrf, NoAuth, RateLimiterMiddleware('loginAttempt'))
-    @Returns(200, {type: model.auth.LoginTwoFactorResponseOK, description: 'User session cookie will be set'})
-    @Returns(400, {type: model.Error, description: 'InvalidTwoFactorCode: Token is not valid\n'})
+    @Returns(200, { type: model.auth.LoginTwoFactorResponseOK, description: 'User session cookie will be set' })
+    @Returns(400, { type: model.Error, description: 'InvalidTwoFactorCode: Token is not valid\n' })
     @Returns(409, {
         type: model.Error,
         description: 'TwoFactorNotRequired: Two factor authentication was disabled for this account. Please login normally.\nTwoFactorCodeExpired: Two-Factor JWT code has expired. Please login again.\n'
@@ -171,8 +209,8 @@ export default class AuthController extends controller {
         type: model.auth.LoginRequestOK,
         description: 'Session will be set, unless "isTwoFactorRequired" is true. "twoFactor" is only defined if "isTwoFactorRequired" is true. If "twoFactor" is not undefined, the user will be required to grab their TOTP token and enter it, then the "twoFactor" string and TOTP token should be POSTed to /login/two-factor to complete the login flow'
     })
-    @Returns(400, {description: 'InvalidUsernameOrPassword: Invalid Credentials\n', type: model.Error})
-    @Returns(409, {description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error})
+    @Returns(400, { description: 'InvalidUsernameOrPassword: Invalid Credentials\n', type: model.Error })
+    @Returns(409, { description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error })
     @Returns(429, {
         type: model.Error,
         description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n'
@@ -249,7 +287,7 @@ export default class AuthController extends controller {
 
     @Post('/logout')
     @Summary('Logout from the current session')
-    @Returns(409, {description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error})
+    @Returns(409, { description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error })
     @Use(csrf, YesAuth)
     public async logout(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -363,10 +401,10 @@ export default class AuthController extends controller {
 
     @Post('/unlock')
     @Summary('Unlock a banned account')
-    @Returns(400, {description: 'Unauthorized: User is not authorized to perform this action\n', type: model.Error})
+    @Returns(400, { description: 'Unauthorized: User is not authorized to perform this action\n', type: model.Error })
     @Use(csrf, YesAuth)
-    @Returns(401, {type: model.Error, description: 'LoginRequired: Login Required\n'})
-    @Returns(403, {type: model.Error, description: 'Invalid CSRF Token'})
+    @Returns(401, { type: model.Error, description: 'LoginRequired: Login Required\n' })
+    @Returns(403, { type: model.Error, description: 'Invalid CSRF Token' })
     public async unlock(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ) {
@@ -394,15 +432,15 @@ export default class AuthController extends controller {
             throw new Error('Internal')
         }
         // Return success
-        return {success: true};
+        return { success: true };
     }
 
     @Post('/signup')
     @Summary('Register an account')
-    @Returns(200, {description: 'OK', type: model.auth.SignupResponseOK})
-    @Returns(409, {description: 'LogoutRequired: Login Required\nCaptchaValidationFailed: Invalid captcha token, expired, or not provided\n'})
-    @Returns(403, {description: 'CSRFValidationFailed: Invalid CSRF Token\n'})
-    @Returns(400, {description: 'InvalidBirthDate: Birth Date is invalid\nInvalidUsername: Username is taken or unavailable\nInvalidPassword: Password is too weak\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstraintTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nOneAccountPerIP: Only one account may be signed up per IP address, every 24 hours\n'})
+    @Returns(200, { description: 'OK', type: model.auth.SignupResponseOK })
+    @Returns(409, { description: 'LogoutRequired: Login Required\nCaptchaValidationFailed: Invalid captcha token, expired, or not provided\n' })
+    @Returns(403, { description: 'CSRFValidationFailed: Invalid CSRF Token\n' })
+    @Returns(400, { description: 'InvalidBirthDate: Birth Date is invalid\nInvalidUsername: Username is taken or unavailable\nInvalidPassword: Password is too weak\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstraintTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nOneAccountPerIP: Only one account may be signed up per IP address, every 24 hours\n' })
     @Use(csrf, NoAuth, RecaptchaV2)
     public async signup(
         @BodyParams(model.auth.SignupRequest) body: model.auth.SignupRequest,
@@ -587,7 +625,7 @@ export default class AuthController extends controller {
 
     @Get('/username/available')
     @Summary('Check if a username is available for signup')
-    @Returns(400, {description: 'InvalidUsername: Username is taken or unavailable\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\n'})
+    @Returns(400, { description: 'InvalidUsername: Username is taken or unavailable\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\n' })
     public async usernameAvailableForSignup(
         @Required()
         @QueryParams('username', String) username: string
@@ -611,7 +649,7 @@ export default class AuthController extends controller {
 
     @Get('/username/change/available')
     @Summary('Check if username is available for name change')
-    @Returns(400, {description: 'InvalidUsername: Username is taken or unavailable\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\n'})
+    @Returns(400, { description: 'InvalidUsername: Username is taken or unavailable\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\n' })
     @Use(YesAuth)
     public async usernameAvailableForNameChange(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -638,8 +676,8 @@ export default class AuthController extends controller {
     @Patch('/username/change')
     @Summary('Change authenticated user\'s username')
     @Description('User will be charged 1,000 Primary if succesful. User will not have to log in again since their session will update. The authenticated user will be logged out of all sessions other than the one that made this request')
-    @Returns(200, {description: 'OK', type: model.auth.UsernameChangedResponseOK})
-    @Returns(400, {description: 'InvalidUsername: Username is taken or unavailable\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nCooldown: You cannot change your username right now\nNotEnoughCurrency: User does not have 1,000+ Primary'})
+    @Returns(200, { description: 'OK', type: model.auth.UsernameChangedResponseOK })
+    @Returns(400, { description: 'InvalidUsername: Username is taken or unavailable\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstriantTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nCooldown: You cannot change your username right now\nNotEnoughCurrency: User does not have 1,000+ Primary' })
     @Use(csrf, YesAuth)
     public async changeUsername(
         @Locals('userInfo') userInfo: model.user.UserInfo,
@@ -689,7 +727,7 @@ export default class AuthController extends controller {
     @Post('/authenticate-to-service')
     @Summary('Generate an auth code required to sign into a service')
     @Use(csrf, YesAuth)
-    @Returns(200, {type: model.auth.GenerateAuthenticationCodeResponse})
+    @Returns(200, { type: model.auth.GenerateAuthenticationCodeResponse })
     @Returns(400, {
         type: model.Error,
         description: 'InvalidReturnUrl: Return URL is not valid\nAuthenticationServiceConstraintHTTPSRequired: The returnUrl must use the HTTPS protocol\n'
@@ -733,8 +771,8 @@ export default class AuthController extends controller {
     @Post('/validate-authentication-code')
     @Summary('Validate an authentication code generated from /api/v1/auth/authenticate-to-service')
     @Description('No CSRF validation or authentication requirement as this is meant for external services. Note that codes can be redeemed multiple times, by multiple parties. Codes expire after 5 minutes, so you are advised to save the results to a session or something depending on what you are using the code for.\n\nNote: You should always validate the code through this endpoint instead of manually decoding the JWT yourself. If you do not verify it here, the code can very easily be spoofed. View a full tutorial here: https://blockshub.net/forum/thread/244?page=1')
-    @Returns(200, {type: model.auth.ValidateAuthenticationCodeResponse})
-    @Returns(400, {type: model.Error, description: 'InvalidCode: The code is invalid or has expired\n'})
+    @Returns(200, { type: model.auth.ValidateAuthenticationCodeResponse })
+    @Returns(400, { type: model.Error, description: 'InvalidCode: The code is invalid or has expired\n' })
     public async validateAuthenticationCode(
         @Required()
         @BodyParams('code', String) code: string,
@@ -755,7 +793,7 @@ export default class AuthController extends controller {
     @Get('/moderation/history')
     @Summary('Get a page of moderationHistory for the authenticated user')
     @Use(YesAuth)
-    @ReturnsArray(200, {type: model.user.UserModerationAction})
+    @ReturnsArray(200, { type: model.user.UserModerationAction })
     public async getModerationHistory(
         @Locals('userInfo') userInfo: model.UserSession,
     ) {

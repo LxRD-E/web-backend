@@ -5,10 +5,6 @@ import controller, {cError, paging} from "../controller";
 
 import * as middleware from '../../middleware/middleware';
 import * as model from '../../models/models';
-import * as service from '../../services';
-import {mapParamsOptions} from "@tsed/common/lib/mvc/decorators/params/utils/mapParamsOptions";
-import {applyDecorators} from "@tsed/core";
-import {YesAuth} from "../../middleware/middleware";
 
 /**
  * User Referral Controller
@@ -25,11 +21,11 @@ export class UserReferralController extends controller {
     @Returns(200, {
         type: model.userReferral.UserReferralInfo,
     })
-    @Returns(404, {
-        type: model.Error,
-        description: 'InvalidReferralId: referralId is invalid or does not exist\n',
-    })
-    @Use(middleware.YesAuth)
+    @Returns(404,
+        controller.cError(
+            'InvalidReferralId: referralId is invalid or does not exist',
+        )
+    )
     public async getReferralCodeInfo(
         @PathParams('referralId', Number) referralId: number,
     ) {
@@ -41,7 +37,7 @@ export class UserReferralController extends controller {
     @Returns(200, {
         type: model.userReferral.UserReferralInfo,
     })
-    @Returns(404, cError(
+    @Returns(404, controller.cError(
         'NotFound: User was not referred or referral code was deleted'
     ))
     @Use(middleware.YesAuth)

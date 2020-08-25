@@ -10,12 +10,10 @@ randomBytes(64).then(() => {
     console.error(err);
 });
 const Users = require("../models/v1/user");
-const Moderation = require("../models/v1/moderation");
 const ts_httpexceptions_1 = require("ts-httpexceptions");
 const user_1 = require("../dal/user");
 const moderation_1 = require("../dal/moderation");
 const economy_1 = require("../dal/economy");
-const model = require("../models/models");
 const auth_1 = require("../dal/auth");
 const ts_httpexceptions_2 = require("ts-httpexceptions");
 exports.csp = {
@@ -63,32 +61,16 @@ exports.generateCspWithNonce = async (req, res, next, randomBytesFunction = rand
         return next();
     }
     const nonceBuffer = await randomBytesFunction(48);
-    let nonce;
-    if (!nonceBuffer) {
-        const rand = (length, current = '') => {
-            current = current ? current : '';
-            return length ? rand(--length, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz".charAt(Math.floor(Math.random() * 60)) + current) : current;
-        };
-        nonce = rand(48);
-    }
-    else {
-        nonce = nonceBuffer.toString('base64');
-    }
-    let headerString;
-    if (req.originalUrl.match(/\/game\/(\d+)\/sandbox/g)) {
-        headerString = 'script-src \'nonce-' + nonce + '\' ' + "'unsafe-eval'; " + exports.getCspString();
-    }
-    else {
-        headerString = 'script-src \'nonce-' + nonce + '\'; ' + exports.getCspString();
-    }
+    let nonce = nonceBuffer.toString('base64');
+    let headerString = 'script-src \'nonce-' + nonce + '\'; ' + exports.getCspString();
     if (req.url.slice(0, '/v1/authenticate-to-service'.length) === '/v1/authenticate-to-service') {
         headerString = headerString.replace(/form-action 'self'; /g, '');
     }
     res.set({
         'Content-Security-Policy': headerString,
     });
-    res.locals.version =
-        res.locals.nonce = nonce;
+    res.locals.version = await randomBytesFunction(8);
+    res.locals.nonce = nonce;
     res.locals.javascript = exports.getJavascript(nonce, exports.version);
     next();
 };
@@ -114,6 +96,7 @@ exports.getJavascript = (nonce, version) => {
         <script nonce="${nonce}" src="/js/bundle/main.bundle.js?v=${version}"></script>
         <script nonce="${nonce}" src="/js/bundle/bootstrap.bundle.js?v=${version}"></script>`;
 };
+const internalEconomyDal = new economy_1.default();
 exports.default = async (req, res, next, UserModel = user_1.default, ModModel = moderation_1.default, setSession = auth_1.setSession, regenCsrf = auth_1.regenCsrf) => {
     if (req.query.sort) {
         if (req.query.sort !== 'asc' && req.query.sort !== 'desc') {
@@ -170,61 +153,20 @@ exports.default = async (req, res, next, UserModel = user_1.default, ModModel = 
             if (userData) {
                 res.locals.csrf = userData.csrf;
             }
-            if (req.url.slice(0, 5) !== '/api/' && userInfo) {
-                let dal = new UserModel();
-                if (!isImpersonating) {
-                    await dal.logOnlineStatus(userInfo.userId);
-                    if (moment().isSameOrAfter(moment(userInfo.dailyAward).add(24, 'hours'))) {
-                        await new economy_1.default().createTransaction(userInfo.userId, 1, 10, model.economy.currencyType.secondary, model.economy.transactionType.DailyStipendSecondary, 'Daily Stipend', model.catalog.creatorType.User, model.catalog.creatorType.User);
-                        await new economy_1.default().addToUserBalance(userInfo.userId, 10, model.economy.currencyType.secondary);
-                        await dal.updateDailyAward(userInfo.userId);
-                    }
-                }
-            }
             if (!isImpersonating && userInfo && userInfo.banned === Users.banned.true) {
-                if (req.url === "/Membership/NotApproved.aspx?ID=" + userData.id) {
-                    let banData;
-                    try {
-                        banData = await new ModModel().getBanDataFromUserId(userData.id);
-                        banData.date = moment(banData.date).format();
+                if (req.method === 'GET') {
+                    if (req.url === '/api/v1/auth/ban' || req.url === '/api/v1/auth/current-user') {
+                        return next();
                     }
-                    catch (e) {
-                        banData = {
-                            id: 0,
-                            userId: userData.id,
-                            reason: "The reason for your account's termination is not specified.",
-                            date: moment().format(),
-                            untilUnbanned: new Date(),
-                            terminated: Moderation.terminated.true,
-                            unlock: false,
-                            isEligibleForAppeal: false,
-                        };
-                    }
-                    res.render("banned", {
-                        csrf: userData.csrf,
-                        ban: banData,
-                        title: "Account Banned",
-                        domain: "blockshub.net",
-                        userid: userData.id,
-                        username: userData.username,
-                        theme: userInfo.theme,
-                        primaryBalance: userInfo.primaryBalance,
-                        secondaryBalance: userInfo.secondaryBalance,
-                    });
-                    return;
                 }
-                else if (req.url.substr(0, "/api/v1/auth/unlock".length) === "/api/v1/auth/unlock" ||
+                if (req.url.substr(0, "/api/v1/auth/unlock".length) === "/api/v1/auth/unlock" ||
                     req.url.substr(0, "/api/v1/auth/logout".length) === "/api/v1/auth/logout" ||
                     req.url.toLowerCase().slice(0, '/support'.length) === '/support' ||
                     req.url.toLowerCase().slice(0, '/api/v1/support'.length) === '/api/v1/support' ||
                     req.url.toLowerCase() === '/terms') {
                 }
-                else if (req.url.substr(0, 5) === "/api/") {
-                    return next(new ts_httpexceptions_2.Unauthorized('Unauthorized'));
-                }
                 else {
-                    res.redirect("/Membership/NotApproved.aspx?ID=" + userData.id);
-                    return;
+                    return next(new ts_httpexceptions_2.Unauthorized('AccountBanned'));
                 }
             }
             next();

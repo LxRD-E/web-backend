@@ -92,7 +92,7 @@ let WWWSupportController = class WWWSupportController extends controller_1.defau
         return new Www_1.WWWTemplate({
             title: 'Help Playing Games',
             page: {
-                article: `<h1>General Game Help</h1><br><p>We're really sorry for the inconvience you may be experiencing right now. Our game engine is still in the very early stages, so unfortunately, there will be many bugs.<br><br>You should read through this article and try any of the troubleshooting steps provided. If nothing matches your problem, or nothing fixes your problem, you can <a href="/support">create a support ticket here</a>.</p>
+                article: `<h1>General Game Help</h1><br><p>We're really sorry for the inconvenience you may be experiencing right now. Our game engine is still in the very early stages, so unfortunately, there will be many bugs.<br><br>You should read through this article and try any of the troubleshooting steps provided. If nothing matches your problem, or nothing fixes your problem, you can <a href="/support">create a support ticket here</a>.</p>
 
                 <div style="margin-top:1rem;"></div>
 

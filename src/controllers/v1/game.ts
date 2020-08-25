@@ -18,7 +18,7 @@ import {
     Patch,
     PathParams,
     Post,
-    QueryParams,
+    QueryParams, Req,
     Required,
     Res,
     Use
@@ -35,8 +35,6 @@ import {Redis} from 'ioredis';
 import {wss} from '../../start/websockets';
 import moment = require("moment");
 
-const GAME_KEY = model.game.GAME_KEY;
-
 const COPYRIGHT_DISCLAIMER = `/**
  * Copyright (c) BlocksHub - All Rights Reserved
  * Unauthorized copying of this file, via any medium, is strictly prohibited.
@@ -44,190 +42,6 @@ const COPYRIGHT_DISCLAIMER = `/**
  * This software includes various open-source libraries which have licenses provided where relevant and required.
  * View our full terms of service here: https://blockshub.net/terms
  */`;
-let simpleCryptoData = model.game.getSimpleCrypto();
-
-// todo: move this to an aws bucket or something...
-const script = jsObfuse.obfuscate(`
-        (function() {
-            ${simpleCryptoData.lib}
-
-            const gameAuthCode = $('#gamedata').attr('data-authcode');
-
-            /**
-            * Game Data
-            */
-            const gamedata = document.getElementById('gamedata');
-            if (!gamedata) {
-                window.location.href = "/game/error";
-            }
-            const gameId = parseInt(gamedata.getAttribute('data-gameid'), 10);
-            if (!gameId || isNaN(gameId)) {
-                window.location.href = "/game/error";
-            }
-            let gameServerId = 0;
-
-                // Join Game
-
-                let wsurl = "wss://"+window.location.host+"/game-sockets/websocket.aspx";
-                if (window.location.protocol === 'http:') {
-                    wsurl = "ws://localhost:8080/game-sockets/websocket.aspx";
-                }
-
-
-                var isTrying = false;
-                function attemptRetry(closeEvent) {
-                    if (!isTrying) {
-                        isTrying = true;
-                        setTimeout(function() {
-                            setupListen();
-                            isTrying = false;
-                        }, 1500);
-                    }
-                }
-
-                function handleWsMessage(event) {
-
-                }
-
-                function setupListen() {
-                        var sock = new WebSocket(wsurl+'?gameAuth='+gameAuthCode);
-                        sock.onmessage = function (event) {
-                            handleWsMessage(event)
-                        }
-                        sock.onopen = function(event) {
-                            handleWsMessage(event)
-                            // Connect to game
-                            sock.send(JSON.stringify({
-                                cmd: 'join',
-                                gameId: gameId,
-                            }));
-                        }
-                        sock.onclose = function(event) {
-                            alert('Connection to the Game Server has been lost.');
-                            window.location.reload();
-                        }
-                        sock.onerror = function(event) {
-                            alert('Connection to the Game Server has been lost.');
-                            window.location.reload();
-                        }
-                        window.onbeforeunload = function () {
-                            sock.close();
-                        }
-                }
-                setupListen()
-
-                /*
-            request('/game/'+gameId+'/join?authCode='+gameAuthCode, 'POST', JSON.stringify({}))
-                .then((d) => {
-                    gameServerId = d.serverId;
-                    // Setup WSS here
-                }).catch((e) => {
-                    alert(e.responseJSON.message);
-                    window.location.href = "/";
-                });
-                */
-            
-            /**
-             * Global Babylon Vars
-             */
-            BABYLON.OBJetileLoader = BABYLON.OBJetileLoader || {}
-            BABYLON.OBJetileLoader.MATERIAL_LOADING_FAILS_SILENTLY = false;
-            BABYLON.OBJFileLoader.OPTIMIZE_WITH_UV = true;
-            
-            // Converts from degrees to radians.
-            Math.radians = function(degrees) {
-                return degrees * Math.PI / 180;
-            };
-            
-            // Converts from radians to degrees.
-            Math.degrees = function(radians) {
-                return radians * 180 / Math.PI;
-            };
-            
-            function rotateVector(vect, quat) {
-                var matr = new BABYLON.Matrix();
-                quat.toRotationMatrix(matr);
-                var rotatedvect = BABYLON.Vector3.TransformCoordinates(vect, matr);
-                return rotatedvect;
-            }
-            
-            window.addEventListener('DOMContentLoaded', function() {
-                // Canvas
-                var canvas = document.getElementById('renderCanvas');
-                // Game Engine
-                var engine = new BABYLON.Engine(canvas, true);
-                // Create Scene
-                var createScene = function () {
-                    var scene = new BABYLON.Scene(engine);
-                    // Use Right Handed (since I believe it's what blender uses)
-                    scene.useRightHandedSystem = true;
-            
-                    var gravityVector = new BABYLON.Vector3(0, -9.81, 0);
-                    var physicsPlugin = new BABYLON.CannonJSPlugin();
-                    scene.enablePhysics(gravityVector, physicsPlugin);
-                    // Setup Player Camera
-                    var camera = new BABYLON.ArcRotateCamera("Camera", Math.PI / 4, Math.PI / 6, 45, new BABYLON.Vector3(0, 10, -10), scene);
-                    camera.maxZ = 100000;
-                    camera.angularSensibilityX = 2500;
-                    camera.angularSensibilityY = 2500;
-                    camera.panningSensibility = 2500;
-                    camera.checkCollisions = true;
-                    camera.wheelPrecision = 10;
-                    camera.useInputToRestoreState = true;
-            
-                    camera.allowUpsideDown = false;
-                    // Attach the camera to the canvas.
-                    camera.attachControl(canvas, false);
-                    camera.useBouncingBehavior = false;
-                    camera.useAutoRotationBehavior = false;
-                    camera.useFramingBehavior = false;
-                
-                    // Create a basic light, aiming 0,1,0 - meaning, to the sky.
-                    var light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0, 1, 0), scene);
-                    light.intensity = 1;
-            
-                    // Skybox
-                    var skybox = BABYLON.Mesh.CreateBox("BackgroundSkybox", 2048, scene, undefined, BABYLON.Mesh.BACKSIDE);
-                
-                    // Create and tweak the background material.
-                    var backgroundMaterial = new BABYLON.BackgroundMaterial("backgroundMaterial", scene);
-                    backgroundMaterial.reflectionTexture = new BABYLON.CubeTexture("https://cdn.blockshub.net/game/default_assets/TropicalSunnyDay", scene);
-                    backgroundMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
-                    skybox.material = backgroundMaterial;
-                
-                    
-                    // ... 
-                    // IMPORT MAP HERE
-
-                    console.log("Base URL", window.HTTPMeta);
-                    fetch(window.HTTPMeta.baseUrl+'/api/v1/game/'+gameId+'/map?authCode='+gameAuthCode, {credentials: 'omit', mode: 'cors'}).then((d) => {
-                        return d.text();
-                    }).then((d) => {
-                        Function(new ${simpleCryptoData.name}(\`${GAME_KEY}\`).decrypt(d))(scene);
-                    });
-
-                    fetch(window.HTTPMeta.baseUrl+'/api/v1/game/'+gameId+'/scripts?authCode='+gameAuthCode, {credentials: 'omit',  mode: 'cors'}).then((d) => {
-                            return d.text();
-                    }).then((d) => {
-                            Function(new ${simpleCryptoData.name}(\`${GAME_KEY}\`).decrypt(d))(scene);
-                    });
-            
-                    // ... 
-                
-                    // Return the created scene.
-                    return scene;
-                };
-                var scene = createScene();
-                engine.runRenderLoop(function() {
-                    scene.render();
-                });
-                window.addEventListener('resize', function() {
-                    engine.resize();
-                });
-            });
-        })()
-    `, model.game.scriptOptions);
-let code = COPYRIGHT_DISCLAIMER + '\n' + script.getObfuscatedCode();
 
 /**
  * Game Controller
@@ -448,8 +262,10 @@ export default class GameController extends controller {
         @Locals('userInfo') userInfo: model.UserSession,
         @PathParams('gameId', Number) gameId: number,
         @Res() res: Res,
+        @Req() req: Req,
     ) {
-        res.set('access-control-allow-origin', 'null');
+        let origin = req.header('origin');
+        res.set('access-control-allow-origin', origin);
         res.set('access-control-allow-credentials', 'false');
         // Confirm Exists
         let gameInfo;
@@ -474,8 +290,10 @@ export default class GameController extends controller {
     public async getClientScripts(
         @PathParams('gameId', Number) gameId: number,
         @Res() res: Res,
+        @Req() req: Req,
     ): Promise<string> {
-        res.set('access-control-allow-origin', 'null');
+        let origin = req.header('origin');
+        res.set('access-control-allow-origin', origin);
         res.set('access-control-allow-credentials', 'false');
         // Confirm Exists
         let gameInfo;
@@ -496,21 +314,6 @@ export default class GameController extends controller {
             scriptString = scriptString + '\n' + content;
         }
         return await services.encryptScript.async.encryptAndObfuscateScript(scriptString);
-    }
-
-    /**
-     * Get Primary Client Script
-     */
-    @Get('/client.js')
-    @Summary('Get the primary game client.js')
-    @Use(NoAuth)
-    public async getClientScript(
-        @Locals('userInfo') userInfo: model.UserSession,
-        @Res() res: Res,
-    ) {
-        res.set({ 'content-type': 'application/javascript' });
-        res.set({ 'content-length': code.length });
-        res.send(code);
     }
 
     /**

@@ -1,4 +1,4 @@
-import {Request, Response, NextFunction} from 'express';
+import { Request, Response, NextFunction } from 'express';
 import crypto = require('crypto');
 import os = require('os');
 import util = require('util');
@@ -70,7 +70,7 @@ export const generateCspWithNonce = async (req: Request, res: Response, next: Ne
     })
     res.locals['x-lb-origin'] = lbOrigin;
     // temp
-    if (process.env.NODE_ENV === 'development'  && !req.headers['cf-connecting-ip']) {
+    if (process.env.NODE_ENV === 'development' && !req.headers['cf-connecting-ip']) {
         req.headers['cf-connecting-ip'] = '127.0.0.1';
     }
     if (req.url === '/docs' || req.url === '/docs/') {
@@ -87,14 +87,14 @@ export const generateCspWithNonce = async (req: Request, res: Response, next: Ne
         // 'X-HostName': hostName,
         'X-Permitted-Cross-Domain-Policies': 'none',
     });
-    if (req.url.slice(0,'/api/'.length) === '/api/') {
+    if (req.url.slice(0, '/api/'.length) === '/api/') {
         return next();
     }
     const nonceBuffer = await randomBytesFunction(48);
     let nonce = nonceBuffer.toString('base64');
 
     let headerString = 'script-src \'nonce-' + nonce + '\'; ' + getCspString();
-    if (req.url.slice(0,'/v1/authenticate-to-service'.length) === '/v1/authenticate-to-service') {
+    if (req.url.slice(0, '/v1/authenticate-to-service'.length) === '/v1/authenticate-to-service') {
         headerString = headerString.replace(/form-action 'self'; /g, '');
     }
     res.set({
@@ -115,7 +115,7 @@ export const getIp = (req: Request): string => {
     const cloudflareIP = req.get('cf-connecting-ip');
     if (cloudflareIP) {
         return cloudflareIP;
-    }else{
+    } else {
         if (!req.connection.remoteAddress) {
             return '127.0.0.1';
         }
@@ -133,14 +133,14 @@ export const getJavascript = (nonce: string, version: string): string => {
         <script nonce="${nonce}" src="/js/bundle/main.bundle.js?v=${version}"></script>
         <script nonce="${nonce}" src="/js/bundle/bootstrap.bundle.js?v=${version}"></script>`;
 }
-
+const internalEconomyDal = new EconomyDAL();
 export default async (req: Request, res: Response, next: NextFunction, UserModel = UserDAL, ModModel = ModDAL, setSession = setSessionNormal, regenCsrf = regenCsrfNormal): Promise<void> => {
     if (req.query.sort) {
         if (req.query.sort !== 'asc' && req.query.sort !== 'desc') {
             return next(new BadRequest('InvalidSort'));
         }
     }
-    if (req.url.slice(0,4) === '/js/' || req.url.slice(0,5) === '/css/') {
+    if (req.url.slice(0, 4) === '/js/' || req.url.slice(0, 5) === '/css/') {
         return next();
     }
     // Setup IP
@@ -149,12 +149,12 @@ export default async (req: Request, res: Response, next: NextFunction, UserModel
     if (req.session) {
         const userData: SessionUserData = Object.assign({}, req.session.userdata);
         // If impersonating
-        let impersonateUserId: number|undefined = req.session.impersonateUserId;
+        let impersonateUserId: number | undefined = req.session.impersonateUserId;
         let isImpersonating = typeof impersonateUserId === 'number';
         if (impersonateUserId) {
             userData.id = impersonateUserId;
 
-            const impersonateUserInfo = await new UserModel().getInfo(impersonateUserId, ['passwordChanged','username']);
+            const impersonateUserInfo = await new UserModel().getInfo(impersonateUserId, ['passwordChanged', 'username']);
             userData.passwordUpdated = impersonateUserInfo.passwordChanged;
             userData.username = impersonateUserInfo.username;
 
@@ -178,7 +178,7 @@ export default async (req: Request, res: Response, next: NextFunction, UserModel
             }
             // Grab Data if Authenticated
             try {
-                userInfo = await new UserModel().getInfo(userData.id, ['userId','username', 'passwordChanged', 'banned', 'theme', 'primaryBalance', 'secondaryBalance', 'staff', 'dailyAward']);
+                userInfo = await new UserModel().getInfo(userData.id, ['userId', 'username', 'passwordChanged', 'banned', 'theme', 'primaryBalance', 'secondaryBalance', 'staff', 'dailyAward']);
             } catch (e) {
                 // Log out to be safe
                 delete req.session.userdata;
@@ -208,77 +208,29 @@ export default async (req: Request, res: Response, next: NextFunction, UserModel
             if (userData) {
                 res.locals.csrf = userData.csrf;
             }
-            // If not api request
-            if (req.url.slice(0,5) !== '/api/' && userInfo) {
-                let dal = new UserModel();
-                // Update last online
-                if (!isImpersonating) {
-                    await dal.logOnlineStatus(userInfo.userId)
-
-                    // Give currency for being online (if applicable)
-
-                    // If over 24 hours since user got award for currency,
-                    if (moment().isSameOrAfter(moment(userInfo.dailyAward).add(24, 'hours'))) {
-                        // Create transaction
-                        await new EconomyDAL().createTransaction(userInfo.userId, 1, 10, model.economy.currencyType.secondary, model.economy.transactionType.DailyStipendSecondary, 'Daily Stipend', model.catalog.creatorType.User, model.catalog.creatorType.User);
-                        // Give money
-                        await new EconomyDAL().addToUserBalance(userInfo.userId, 10, model.economy.currencyType.secondary);
-                        // Log user as awarded (aka update the dailyAward date)
-                        await dal.updateDailyAward(userInfo.userId);
-                    }
-                }
-            }
             // If banned
             if (!isImpersonating && userInfo && userInfo.banned === Users.banned.true) {
-                if (req.url === "/Membership/NotApproved.aspx?ID="+userData.id) {
-                    let banData: Moderation.ModerationAction;
-                    try {
-                        banData = await new ModModel().getBanDataFromUserId(userData.id);
-                        banData.date = moment(banData.date).format();
-                    }catch(e) {
-                        banData = {
-                            id: 0,
-                            userId: userData.id,
-                            reason: "The reason for your account's termination is not specified.",
-                            date: moment().format(),
-                            untilUnbanned: new Date(),
-                            terminated: Moderation.terminated.true,
-                            unlock: false,
-                            isEligibleForAppeal: false,
-                        } as Moderation.ModerationAction;
+                if (req.method === 'GET') {
+                    if (req.url === '/api/v1/auth/ban' || req.url === '/api/v1/auth/current-user') {
+                        return next();
                     }
-                    // Return ban page
-                    res.render("banned", {
-                        csrf: userData.csrf,
-                        ban: banData,
-                        title: "Account Banned",
-                        domain: "blockshub.net",
-                        userid: userData.id,
-                        username: userData.username,
-                        theme: userInfo.theme,
-                        primaryBalance: userInfo.primaryBalance,
-                        secondaryBalance: userInfo.secondaryBalance,
-                    });
-                    return;
-                }else if (
+                }
+                if (
                     // Allow access to unlock
-                    req.url.substr(0, "/api/v1/auth/unlock".length) === "/api/v1/auth/unlock" || 
+                    req.url.substr(0, "/api/v1/auth/unlock".length) === "/api/v1/auth/unlock" ||
                     // Logout
-                    req.url.substr(0, "/api/v1/auth/logout".length) === "/api/v1/auth/logout" || 
+                    req.url.substr(0, "/api/v1/auth/logout".length) === "/api/v1/auth/logout" ||
                     // Support pages
-                    req.url.toLowerCase().slice(0,'/support'.length) === '/support' || 
+                    req.url.toLowerCase().slice(0, '/support'.length) === '/support' ||
                     // Support pages
-                    req.url.toLowerCase().slice(0,'/api/v1/support'.length) === '/api/v1/support' || 
+                    req.url.toLowerCase().slice(0, '/api/v1/support'.length) === '/api/v1/support' ||
                     // & Terms of Service
                     req.url.toLowerCase() === '/terms'
                 ) {
-                }else if (req.url.substr(0, 5) === "/api/") {
-                    // Otherwise if api route, return auth error
-                    return next(new Unauthorized('Unauthorized'));
-                }else{
-                    // Redirect all other requests to ban page
-                    res.redirect("/Membership/NotApproved.aspx?ID="+userData.id);
-                    return;
+                    // next();
+                } else {
+                    // Otherwise, return auth error
+                    return next(new Unauthorized('AccountBanned'));
                 }
             }
             // Next

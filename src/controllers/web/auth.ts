@@ -36,11 +36,6 @@ export class WWWAuthController extends controller {
         super();
     }
 
-    // Ban Redirect
-    @Get('/membership/notapproved.aspx')
-    @Redirect('/')
-    public redirectIfNoLongerBanned() { }
-
     // Login
     @Get('/login')
     @Use(NoAuth)

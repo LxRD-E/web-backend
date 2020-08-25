@@ -14,6 +14,9 @@ if (process.env.NODE_ENV === 'development') {
         'http://localhost:3000/',
         'http://localhost',
         'http://localhost:3000',
+        'http://play.blockshub.hh',
+        'http://www.blockshub.hh',
+        'http://api.blockshub.hh'
     );
 } else {
     allowedDomains.push(

@@ -21,6 +21,7 @@ require("@tsed/ajv");
 require("@tsed/swagger");
 const Path = require("path");
 const responseTime = require("response-time");
+require("./events/setup");
 const cons = require("consolidate");
 const NotFound_1 = require("./middleware/NotFound");
 const Logger_1 = require("./helpers/Logger");
@@ -34,12 +35,6 @@ if (process.env.NODE_ENV === 'production') {
     Logger_1.default();
 }
 let multerMemStore = multer.memoryStorage();
-require('blocked-at')((time, stack) => {
-    console.log(`Blocked for ${time}ms, operation started here:`, stack);
-}, {
-    trimFalsePositives: false,
-    threshold: 100,
-});
 let Server = class Server extends common_1.ServerLoader {
     $onInit() {
         this.set("views", this.settings.get("viewsDir"));
@@ -56,6 +51,48 @@ let Server = class Server extends common_1.ServerLoader {
             this
                 .use(Express.static(Path.join(__dirname, './public/')));
         }
+        const validHosts = [
+            "https://play.blockshub.net",
+            "https://www.blockshub.net",
+            "https://blockshub.net",
+            "http://localhost",
+            "http://www.blockshub.hh",
+            "http://play.blockshub.hh",
+            "http://api.blockshub.hh",
+        ];
+        this.expressApp.use((req, res, next) => {
+            let origin = req.header('origin');
+            if (typeof origin === 'string') {
+                for (let host of validHosts) {
+                    let originToCheck = origin;
+                    let secondColon = origin.indexOf(':', origin.indexOf(':') + 1);
+                    if (secondColon) {
+                        let originWithoutPort = origin.slice(0, secondColon);
+                        if (originWithoutPort === 'http' || originWithoutPort === 'https') {
+                            continue;
+                        }
+                        else {
+                            originToCheck = originWithoutPort;
+                        }
+                    }
+                    if (originToCheck === host) {
+                        const allowedHeaders = 'x-csrf-token, x-environment, x-lb-origin, content-type';
+                        res.header('Access-Control-Allow-Origin', origin);
+                        res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, PATCH, DELETE, OPTIONS');
+                        res.header('Access-Control-Allow-Credentials', 'true');
+                        res.header('Access-Control-Expose-Headers', allowedHeaders);
+                        res.header('Access-Control-Allow-Headers', allowedHeaders);
+                        break;
+                    }
+                }
+            }
+            if (req.method === 'OPTIONS') {
+                res.status(200).end();
+            }
+            else {
+                next();
+            }
+        });
         this.set('trust proxy', 1);
         this.use((req, res, next) => {
             let toSkip = [
@@ -101,7 +138,6 @@ Server = __decorate([
         mount: {
             "/api/v2/": "${rootDir}/controllers/v2/*.ts",
             "/api/v1/": "${rootDir}/controllers/v1/*.ts",
-            "/": "${rootDir}/controllers/web/*.ts",
         },
         port: process.env.PORT || 3000,
         componentsScan: [
@@ -124,11 +160,12 @@ Server = __decorate([
             logRequest: false,
             disableRoutesSummary: true,
         },
-        validationModelStrict: true,
+        validationModelStrict: false,
         multer: {
             storage: multerMemStore,
             files: 10,
         },
+        httpsPort: false,
     })
 ], Server);
 exports.Server = Server;

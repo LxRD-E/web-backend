@@ -22,14 +22,15 @@ const config_1 = require("../../helpers/config");
 exports.GAME_KEY = config_1.default.encryptionKeys.game;
 const allowedDomains = [];
 if (process.env.NODE_ENV === 'development') {
-    allowedDomains.push('http://localhost/', 'http://localhost:3000/', 'http://localhost', 'http://localhost:3000');
+    allowedDomains.push('http://localhost/', 'http://localhost:3000/', 'http://localhost', 'http://localhost:3000', 'http://play.blockshub.hh', 'http://www.blockshub.hh', 'http://api.blockshub.hh');
 }
 else {
-    allowedDomains.push('https://blockshub.net/', 'https://www.blockshub.net/', 'https://www.blockshub.net', 'https://blockshub.net');
+    allowedDomains.push('https://blockshub.net/', 'https://www.blockshub.net/', 'https://www.blockshub.net', 'https://blockshub.net', 'https://play.blockshub.net', 'https://api.blockshub.net');
 }
 exports.scriptOptions = {
     transformObjectKeys: true,
-    debugProtection: true,
+    debugProtection: false,
+    disableConsoleOutput: false,
     compact: true,
     log: false,
     sourceMap: false,
@@ -176,6 +177,9 @@ __decorate([
     __metadata("design:type", String)
 ], Script.prototype, "scriptName", void 0);
 exports.Script = Script;
+class OriginalScriptData {
+}
+exports.OriginalScriptData = OriginalScriptData;
 class GameInfo {
 }
 __decorate([

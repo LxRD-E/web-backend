@@ -18,16 +18,16 @@ import {
     Use,
     UseBeforeEach
 } from "@tsed/common";
-import {Description, Returns, ReturnsArray, Summary} from "@tsed/swagger"; // import swagger Ts.ED module
+import { Description, Returns, ReturnsArray, Summary } from "@tsed/swagger"; // import swagger Ts.ED module
 // Models
 import * as model from '../../models/models';
 // Middleware
 import * as middleware from '../../middleware/middleware';
 // Auth stuff
-import {csrf} from '../../dal/auth';
+import { csrf } from '../../dal/auth';
 // Autoload
 import controller from '../controller';
-import {YesAuth} from "../../middleware/Auth";
+import { YesAuth } from "../../middleware/Auth";
 import moment = require('moment');
 
 /**
@@ -86,8 +86,6 @@ export default class FeedController extends controller {
             'cache-control': 'public, max-age=31536000',
             'content-type': imageBuffer.type,
         });
-
-        console.log('image data',imageBuffer);
         res.send(imageBuffer.image).end();
     }
 
@@ -95,7 +93,7 @@ export default class FeedController extends controller {
     @Summary('Multi-get og-tag info (thumbnails, titles, descriptions, videos, etc) for the specified {userStatusId}s')
     @Description('Currently only checks the first URL in the post, although it may be expanded to check for multiple URLs in the future')
     @Use(YesAuth)
-    @ReturnsArray(200, {type: model.feed.MultiGetOgInfoResponse})
+    @ReturnsArray(200, { type: model.feed.MultiGetOgInfoResponse })
     public async multiGetOgTagInfo(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
@@ -115,7 +113,7 @@ export default class FeedController extends controller {
             urlsToMatch = [
                 /(https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/g
             ];
-        }else if (userAge.isSameOrBefore(moment().subtract(13, 'years'))) {
+        } else if (userAge.isSameOrBefore(moment().subtract(13, 'years'))) {
             // urls to match for users 13+
             urlsToMatch.push(
                 /https:\/\/discord\.gg\/([a-zA-Z\d-_+\/]+)/g,
@@ -147,7 +145,7 @@ export default class FeedController extends controller {
             throw new this.BadRequest('TooManyIds');
         }
         // verify user has permission to view each id
-        let urlsToGrab: {statusId: number; urls: string[]}[] = [];
+        let urlsToGrab: { statusId: number; urls: string[] }[] = [];
         // multi grab status info
         let multiGetStatuses = await this.user.multiGetStatusById([...new Set(numberArrOfIDs)]);
 
@@ -162,8 +160,8 @@ export default class FeedController extends controller {
                         throw new this.BadRequest('InvalidStatusId'); // id invalid
                     }
                 }
-                
-                let urls: string[]|undefined = undefined;
+
+                let urls: string[] | undefined = undefined;
                 for (const matchItem of urlsToMatch) {
                     if (!statusData.status) {
                         continue;
@@ -174,7 +172,7 @@ export default class FeedController extends controller {
                         break;
                     }
                 }
-                
+
                 // let url = statusData.status.match(/(https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/g);
                 if (urls) {
                     urlsToGrab.push({
@@ -264,7 +262,7 @@ export default class FeedController extends controller {
 
     @Get('/friends/:userStatusId/comments')
     @Summary('Get comments to the {userStatusId}')
-    @ReturnsArray(200, {type: model.user.UserStatusComment})
+    @ReturnsArray(200, { type: model.user.UserStatusComment })
     @Use(YesAuth, middleware.feed.ConfirmPermissionForStatus)
     public async getCommentsForStatus(
         @PathParams('userStatusId', Number) statusId: number,
@@ -310,7 +308,7 @@ export default class FeedController extends controller {
         // make sure comment exists
         try {
             await this.user.getUserStatusCommentById(commentId, statusId);
-        }catch(e) {
+        } catch (e) {
             throw new this.BadRequest('InvalidCommentId');
         }
         // post
@@ -332,7 +330,7 @@ export default class FeedController extends controller {
     ) {
         if (reactionType !== 'heart') {
             throw new this.BadRequest('InvalidReactionType');
-        } 
+        }
         // Check if already reacted
         if (await this.user.checkIfAlreadyReacted(statusId, userInfo.userId, '❤️')) {
             throw new this.Conflict('AlreadyReactedToStatus');
@@ -399,7 +397,7 @@ export default class FeedController extends controller {
 
     @Patch('/status')
     @Summary('Update the authenticated user\'s status')
-    @Returns(200, {type: model.user.UserStatusUpdatedResponse})
+    @Returns(200, { type: model.user.UserStatusUpdatedResponse })
     @Returns(400, { type: model.Error, description: 'InvalidStatus: Status is too long or too short\nCooldown: You cannot change your status right now\n' })
     @Use(csrf, YesAuth)
     public async updateStatus(

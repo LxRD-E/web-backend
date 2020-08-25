@@ -30,29 +30,6 @@ let FeedController = class FeedController extends controller_1.default {
         super();
     }
     async imageProxyGrabber(req, res, url) {
-        let refererValue = req.headers['referer'];
-        if (!refererValue) {
-            throw new Error('No Referer Specified');
-        }
-        let goodReferers = [
-            'https://blockshub.net',
-            'http://blockshub.net',
-            'https://www.blockshub.net',
-            'http://www.blockshub.net',
-            'http://localhost:3000',
-            'http://localhost.:3000',
-        ];
-        refererValue = refererValue.toLowerCase();
-        let goodReferer = false;
-        for (const referer of goodReferers) {
-            if (refererValue.slice(0, referer.length) === referer) {
-                goodReferer = true;
-                break;
-            }
-        }
-        if (!goodReferer) {
-            throw new Error('Referer is not from valid origin');
-        }
         let imageUrl = this.auth.decodeImageProxyQuery(url);
         let imageBuffer = await this.auth.fetchImageAndResize(imageUrl);
         res.set({

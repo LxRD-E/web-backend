@@ -141,6 +141,17 @@ __decorate([
     __metadata("design:type", groupPermissions)
 ], roleInfo.prototype, "permissions", void 0);
 exports.roleInfo = roleInfo;
+class GroupFunds {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GroupFunds.prototype, "Primary", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GroupFunds.prototype, "Secondary", void 0);
+exports.GroupFunds = GroupFunds;
 class groupShout {
 }
 __decorate([
