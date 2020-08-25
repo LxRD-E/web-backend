@@ -6,3 +6,4 @@ var a=new FormData;"undefined"!=typeof $("#objFile")[0].files[0]&&a.append("obj"
 
 
 
+

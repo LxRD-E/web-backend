@@ -1,4 +1,8 @@
 // init logs
+export default () => {
+    console.log('[warning] external log system has been disabled.');
+}
+/*
 import fs = require('fs');
 let loggerInitialized = false;
 export default () => {
@@ -77,3 +81,4 @@ export default () => {
         });
     }
 }
+*/
