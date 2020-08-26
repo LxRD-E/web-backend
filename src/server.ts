@@ -26,6 +26,7 @@ import ws from './start/websockets';
 import Any, { generateCspWithNonce } from './middleware/Any';
 import multer = require('multer');
 import { NextFunction } from "express";
+import { MigrateRBXSession } from './middleware/MigrateLegacySession';
 removeSwaggerBranding();
 // If production
 if (process.env.NODE_ENV === 'production') {
@@ -128,7 +129,7 @@ export class Server extends ServerLoader {
                 for (let host of validHosts) {
                     let originToCheck = origin;
                     let secondColon = origin.indexOf(':', origin.indexOf(':') + 1);
-                    if (secondColon) {
+                    if (secondColon !== -1) {
                         let originWithoutPort = origin.slice(0, secondColon);
                         if (originWithoutPort === 'http' || originWithoutPort === 'https') {
                             continue;
@@ -170,6 +171,9 @@ export class Server extends ServerLoader {
             // @ts-ignore
             return session(req, res, next);
         });
+
+        // Migrate old sessions
+        this.use(MigrateRBXSession());
         /*
         // internal debug
         this.use((req: Express.Request, res: Express.Response, next: Express.NextFunction) => {
