@@ -19,15 +19,9 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@tsed/common");
 const Express = require("express");
-const HttpError_1 = require("../helpers/HttpError");
 let NotFoundMiddleware = class NotFoundMiddleware {
     use(request, response) {
-        if (request.accepts('html')) {
-            response.status(404).send(HttpError_1.ErrorTemplate('404: Page Not Found', 'The page you tried to visit does not exist. Please go back and try again.')).end();
-        }
-        else {
-            response.status(404).json({ success: false, error: { code: 'NotFound' } });
-        }
+        response.status(404).json({ success: false, error: { code: 'NotFound' } });
     }
 };
 __decorate([
