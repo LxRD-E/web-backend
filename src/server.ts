@@ -26,7 +26,6 @@ import ws from './start/websockets';
 import Any, { generateCspWithNonce } from './middleware/Any';
 import multer = require('multer');
 import { NextFunction } from "express";
-import { MigrateRBXSession } from './middleware/MigrateLegacySession';
 removeSwaggerBranding();
 // If production
 if (process.env.NODE_ENV === 'production') {
@@ -172,8 +171,6 @@ export class Server extends ServerLoader {
             return session(req, res, next);
         });
 
-        // Migrate old sessions
-        this.use(MigrateRBXSession());
         /*
         // internal debug
         this.use((req: Express.Request, res: Express.Response, next: Express.NextFunction) => {
