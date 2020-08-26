@@ -30,7 +30,6 @@ const session_1 = require("./start/session");
 const websockets_1 = require("./start/websockets");
 const Any_1 = require("./middleware/Any");
 const multer = require("multer");
-const MigrateLegacySession_1 = require("./middleware/MigrateLegacySession");
 remove_swagger_branding_1.default();
 if (process.env.NODE_ENV === 'production') {
     Logger_1.default();
@@ -109,7 +108,6 @@ let Server = class Server extends common_1.ServerLoader {
             }
             return session_1.default(req, res, next);
         });
-        this.use(MigrateLegacySession_1.MigrateRBXSession());
         websockets_1.default();
         this.use(Any_1.default);
         this.use(Any_1.generateCspWithNonce);

@@ -26,6 +26,7 @@ const swagger_1 = require("@tsed/swagger");
 const multipartfiles_1 = require("@tsed/multipartfiles");
 const jimp = require("jimp");
 const crypto = require("crypto");
+const config_1 = require("../../helpers/config");
 let AdController = class AdController extends controller_1.default {
     constructor() {
         super();
@@ -68,7 +69,7 @@ let AdController = class AdController extends controller_1.default {
             throw new this.BadRequest('InvalidAdId');
         }
         await this.ad.incrementAdClickCount(adId);
-        res.redirect(url);
+        res.redirect(config_1.default.baseUrl.www + url);
     }
     async createAdvertisement(userInfo, uploadedFiles, title = '', adType, adRedirectId, adDisplayType) {
         if (!model.ad.AdDisplayType[adDisplayType]) {
