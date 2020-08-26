@@ -17,7 +17,6 @@ import responseTime = require('response-time');
 import './events/setup';
 
 import * as cons from 'consolidate';
-import morgan = require('morgan');
 import { NotFoundMiddleware } from "./middleware/NotFound";
 import logger from './helpers/Logger';
 import removeSwaggerBranding from './helpers/remove-swagger-branding';
