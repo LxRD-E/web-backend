@@ -4,7 +4,7 @@
 // Interfaces
 import * as model from '../../models/models';
 // Misc Models
-import {filterId} from '../../helpers/Filter';
+import { filterId } from '../../helpers/Filter';
 // Autoload
 import {
     BodyParams,
@@ -24,13 +24,13 @@ import {
     Status,
     Use
 } from '@tsed/common';
-import {Description, Returns, ReturnsArray, Summary} from '@tsed/swagger';
+import { Description, Returns, ReturnsArray, Summary } from '@tsed/swagger';
 import controller from '../controller';
 // Middleware
-import {YesAuth} from '../../middleware/Auth';
+import { YesAuth } from '../../middleware/Auth';
 import * as middleware from '../../middleware/middleware';
-import {csrf} from '../../dal/auth';
-import {RateLimiterMiddleware} from '../../middleware/RateLimit';
+import { csrf } from '../../dal/auth';
+import { RateLimiterMiddleware } from '../../middleware/RateLimit';
 import TwoStepMiddleware from '../../middleware/TwoStepCheck';
 
 /**
@@ -48,16 +48,25 @@ export class UsersController extends controller {
     @Returns(200, { type: model.user.UserInfoResponse, description: 'OK' })
     @Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is deleted or invalid\n' })
     public async getInfo(
-        @PathParams('userId', Number) id: number
+        @PathParams('userId', Number) id: number,
+        @Locals('userInfo') info?: model.UserSession,
+        @QueryParams('columns', String) cols?: string,
     ) {
         let userInfo;
         try {
-            userInfo = await this.user.getInfo(id);
+            let columns: any = undefined;
+            if (info && info.staff >= 1 && typeof cols === 'string') {
+                columns = cols.split(',').filter(val => { return typeof val === 'string' && val !== 'password' });
+            }
+            console.log('columns', columns);
+            userInfo = await this.user.getInfo(id, columns);
         } catch (e) {
             throw new this.BadRequest('InvalidUserId');
         }
         if (userInfo.accountStatus === model.user.accountStatus.deleted) {
-            throw new this.BadRequest('InvalidUserId');
+            if (!info || info && info.staff === 0) {
+                throw new this.BadRequest('InvalidUserId');
+            }
         }
         return userInfo;
     }

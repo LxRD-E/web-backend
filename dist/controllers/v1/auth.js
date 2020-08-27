@@ -31,8 +31,14 @@ let AuthController = class AuthController extends controller_1.default {
     constructor() {
         super();
     }
-    getCurrentUser(userInfo) {
-        return userInfo;
+    getCurrentUser(userInfo, session) {
+        let d = userInfo;
+        if (typeof session.impersonateUserId === 'number') {
+            d.trueUserId = session.userdata.id;
+            d.isImpersonating = true;
+            d.banned = 0;
+        }
+        return d;
     }
     async pingEvent(userInfo, url) {
         await this.user.logOnlineStatus(userInfo.userId);
@@ -507,10 +513,11 @@ __decorate([
     common_1.Get('/current-user'),
     swagger_1.Summary('Get the current authenticated user'),
     common_1.Use(Auth_1.YesAuth),
-    swagger_1.Returns(200, { type: model.UserSession }),
+    swagger_1.Returns(200, { description: 'OK' }),
     __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.Session()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo]),
+    __metadata("design:paramtypes", [model.UserSession, Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "getCurrentUser", null);
 __decorate([

@@ -30,16 +30,23 @@ let UsersController = class UsersController extends controller_1.default {
     constructor() {
         super();
     }
-    async getInfo(id) {
+    async getInfo(id, info, cols) {
         let userInfo;
         try {
-            userInfo = await this.user.getInfo(id);
+            let columns = undefined;
+            if (info && info.staff >= 1 && typeof cols === 'string') {
+                columns = cols.split(',').filter(val => { return typeof val === 'string' && val !== 'password'; });
+            }
+            console.log('columns', columns);
+            userInfo = await this.user.getInfo(id, columns);
         }
         catch (e) {
             throw new this.BadRequest('InvalidUserId');
         }
         if (userInfo.accountStatus === model.user.accountStatus.deleted) {
-            throw new this.BadRequest('InvalidUserId');
+            if (!info || info && info.staff === 0) {
+                throw new this.BadRequest('InvalidUserId');
+            }
         }
         return userInfo;
     }
@@ -260,8 +267,10 @@ __decorate([
     swagger_1.Returns(200, { type: model.user.UserInfoResponse, description: 'OK' }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidUserId: UserId is deleted or invalid\n' }),
     __param(0, common_1.PathParams('userId', Number)),
+    __param(1, common_1.Locals('userInfo')),
+    __param(2, common_1.QueryParams('columns', String)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Number, model.UserSession, String]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getInfo", null);
 __decorate([

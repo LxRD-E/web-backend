@@ -750,6 +750,15 @@ let StaffController = class StaffController extends controller_1.default {
         }
         return {};
     }
+    getModerationHistory(userId) {
+        return this.staff.getModerationHistory(userId);
+    }
+    async getUserEmail(userId) {
+        return this.settings.getUserEmail(userId) || {};
+    }
+    async getUserEmails(userId) {
+        return this.settings.getUserEmails(userId);
+    }
 };
 __decorate([
     common_1.Get('/permissions'),
@@ -1322,6 +1331,36 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Object, Number]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "createImpersonation", null);
+__decorate([
+    common_1.Get('/user/moderation-history'),
+    swagger_1.Summary('Get user moderation history'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation)),
+    __param(0, common_1.Required()),
+    __param(0, common_1.QueryParams('userId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], StaffController.prototype, "getModerationHistory", null);
+__decorate([
+    common_1.Get('/user/email'),
+    swagger_1.Summary('Get user email address'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation)),
+    __param(0, common_1.Required()),
+    __param(0, common_1.QueryParams('userId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "getUserEmail", null);
+__decorate([
+    common_1.Get('/user/emails'),
+    swagger_1.Summary('Get user emails'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation)),
+    __param(0, common_1.Required()),
+    __param(0, common_1.QueryParams('userId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "getUserEmails", null);
 StaffController = __decorate([
     common_1.Controller('/staff'),
     __metadata("design:paramtypes", [])

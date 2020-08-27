@@ -60,4 +60,4 @@ export class UserSession {
 }
 
 
-export {any, auth, avatar, billing, catalog, chat, economy, forum, game, group, mod, notification, settings, staff, thumbnails, user, ad, support, feed, reportAbuse, currencyExchange, dataPersistence, userReferral}
+export { any, auth, avatar, billing, catalog, chat, economy, forum, game, group, mod, notification, settings, staff, thumbnails, user, ad, support, feed, reportAbuse, currencyExchange, dataPersistence, userReferral }

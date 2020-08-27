@@ -7,7 +7,7 @@ import crypto = require('crypto');
 // Interfaces
 import * as model from '../../models/models';
 // Misc Models
-import {filterId, filterOffset} from '../../helpers/Filter';
+import { filterId, filterOffset } from '../../helpers/Filter';
 // middleware
 import * as middleware from '../../middleware/middleware';
 // Autoload
@@ -27,9 +27,9 @@ import {
     Use,
     UseBeforeEach
 } from '@tsed/common';
-import {Description, Returns, ReturnsArray, Summary} from '@tsed/swagger';
-import {YesAuth} from '../../middleware/Auth';
-import {csrf} from '../../dal/auth';
+import { Description, Returns, ReturnsArray, Summary } from '@tsed/swagger';
+import { YesAuth } from '../../middleware/Auth';
+import { csrf } from '../../dal/auth';
 
 /**
  * Staff Controller
@@ -75,7 +75,7 @@ export class StaffController extends controller {
             let isOk = await this.staff.getPermissions(userId);
             if (isOk.includes(model.staff.Permission.ManageSelf) || userInfo.staff >= 100) {
                 // Ok
-            }else{
+            } else {
                 // Bad
                 throw new this.Conflict('InvalidPermissions');
             }
@@ -103,7 +103,7 @@ export class StaffController extends controller {
             let isOk = await this.staff.getPermissions(userId);
             if (isOk.includes(model.staff.Permission.ManageSelf) || userInfo.staff >= 100) {
                 // Ok
-            }else{
+            } else {
                 // Bad
                 throw new this.Conflict('InvalidPermissions');
             }
@@ -113,7 +113,7 @@ export class StaffController extends controller {
         if (!permissionId) {
             throw new this.BadRequest('InvalidPermissionId');
         }
-        console.log('deleted',permissionId);
+        console.log('deleted', permissionId);
         await this.staff.deletePermissions(userId, permissionId);
         return {};
     }
@@ -121,7 +121,7 @@ export class StaffController extends controller {
     @Get('/user/:userId/transactions')
     @Summary('Get transaction history for the {userId}')
     @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation))
-    @ReturnsArray(200, {type: model.economy.userTransactions})
+    @ReturnsArray(200, { type: model.economy.userTransactions })
     public async getTransactions(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @QueryParams('offset', Number) offset: number = 0,
@@ -516,7 +516,7 @@ export class StaffController extends controller {
     @Get('/thumbnails')
     @Summary('Multi-get thumbnails by CSV of gameIds, ignoring moderation')
     @Description('Invalid IDs will be filtered out')
-    @ReturnsArray(200, {type: model.game.GameThumbnail})
+    @ReturnsArray(200, { type: model.game.GameThumbnail })
     @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewPendingItems))
     public async multiGetGameThumbnails(
         @Required()
@@ -660,10 +660,10 @@ export class StaffController extends controller {
                     let _internalUrl = await this.avatar.getThumbnailHashUrl(avatarObject);
                     if (_internalUrl) {
                         url = _internalUrl;
-                    }else{
+                    } else {
                         url = await this.avatar.renderAvatar('avatar', avatarObject);
                     }
-                }else{
+                } else {
                     url = await this.avatar.renderAvatar('avatar', avatarObject);
                 }
                 if (setUserUrl) {
@@ -682,7 +682,7 @@ export class StaffController extends controller {
                 success: true,
                 url: url,
             }
-        }else{
+        } else {
             renderAvatar().then(d => {
                 // do nothing for now
             }).catch(err => {
@@ -805,7 +805,7 @@ export class StaffController extends controller {
         if (currencyTypeId !== 1 && currencyTypeId !== 2) {
             throw new this.BadRequest('InvalidCurrencyType');
         }
-        let balToGrab: 'primaryBalance'|'secondaryBalance' = 'primaryBalance';
+        let balToGrab: 'primaryBalance' | 'secondaryBalance' = 'primaryBalance';
         if (currencyTypeId === 2) {
             balToGrab = 'secondaryBalance';
         }
@@ -828,14 +828,14 @@ export class StaffController extends controller {
             'users',
             'user_inventory',
         ];
-        await this.transaction(this, forUpdate, async function(trx) {
+        await this.transaction(this, forUpdate, async function (trx) {
             for (const item of body.catalogIds) {
                 let badDecisions = await trx.user.getUserInventoryByCatalogId(50, item.catalogId);
                 if (badDecisions.length >= 1 && body.userIdTo !== 50) {
                     // Steal from BadDecisions and give to user
                     let item = badDecisions[0];
                     await trx.catalog.updateUserInventoryIdOwner(item.userInventoryId, body.userIdTo);
-                }else{
+                } else {
                     // Create a new item
                     await trx.catalog.createItemForUserInventory(body.userIdTo, item.catalogId);
                 }
@@ -855,7 +855,7 @@ export class StaffController extends controller {
             'users',
             'user_inventory',
         ];
-        await this.transaction(this, forUpdate, async function(trx) {
+        await this.transaction(this, forUpdate, async function (trx) {
             for (const item of body.userInventoryIds) {
                 let itemData = await trx.user.getItemByInventoryId(item);
                 if (itemData.userId !== body.userIdFrom) {
@@ -1110,7 +1110,7 @@ export class StaffController extends controller {
     @Get('/feed/friends/abuse-reports')
     @Summary('Get latest abuse reports for friend feed')
     @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewAbuseReports))
-    @ReturnsArray(200, {type: model.reportAbuse.ReportedStatusEntry})
+    @ReturnsArray(200, { type: model.reportAbuse.ReportedStatusEntry })
     public async latestAbuseReports(
         @Locals('userInfo') userInfo: model.user.UserInfo,
     ) {
@@ -1120,7 +1120,7 @@ export class StaffController extends controller {
     @Patch('/feed/friends/abuse-report/:reportId/')
     @Summary('Update a friends feed abuse-report status')
     @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ReviewAbuseReports))
-    @Returns(200, {description: 'Abuse report has been updated'})
+    @Returns(200, { description: 'Abuse report has been updated' })
     public async updateAbuseReportStatus(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('reportId', Number) reportId: number,
@@ -1141,7 +1141,7 @@ export class StaffController extends controller {
     @Summary('Delete a userStatusId')
     @Use(csrf, YesAuth)
     @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo))
-    @Returns(200, {description: 'Status Deleted'})
+    @Returns(200, { description: 'Status Deleted' })
     public async deleteUserStatusId(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('userStatusId', Number) userStatusId: number,
@@ -1260,5 +1260,35 @@ export class StaffController extends controller {
             req.session.impersonateUserId = userId;
         }
         return {};
+    }
+
+    @Get('/user/moderation-history')
+    @Summary('Get user moderation history')
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation))
+    public getModerationHistory(
+        @Required()
+        @QueryParams('userId', Number) userId: number,
+    ) {
+        return this.staff.getModerationHistory(userId);
+    }
+
+    @Get('/user/email')
+    @Summary('Get user email address')
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation))
+    public async getUserEmail(
+        @Required()
+        @QueryParams('userId', Number) userId: number,
+    ) {
+        return this.settings.getUserEmail(userId) || {};
+    }
+
+    @Get('/user/emails')
+    @Summary('Get user emails')
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation))
+    public async getUserEmails(
+        @Required()
+        @QueryParams('userId', Number) userId: number,
+    ) {
+        return this.settings.getUserEmails(userId);
     }
 }

@@ -48,11 +48,21 @@ export default class AuthController extends controller {
     @Get('/current-user')
     @Summary('Get the current authenticated user')
     @Use(YesAuth)
-    @Returns(200, { type: model.UserSession })
+    @Returns(200, { description: 'OK' })
     public getCurrentUser(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Locals('userInfo') userInfo: model.UserSession,
+        @Session() session: any,
     ) {
-        return userInfo;
+        let d = userInfo;
+        if (typeof session.impersonateUserId === 'number') {
+            // @ts-ignore
+            d.trueUserId = session.userdata.id;
+            // @ts-ignore
+            d.isImpersonating = true;
+            // @ts-ignore
+            d.banned = 0;
+        }
+        return d;
     }
 
     @Post('/ping')
