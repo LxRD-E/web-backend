@@ -11,13 +11,11 @@ const error = {
     status: 409,
 };
 exports.default = (req, res, next) => {
-    if (process.env.NODE_ENV === 'development') {
+    const response = req.body.captcha || req.body.v2Token;
+    console.log('resp', response);
+    if (process.env.NODE_ENV === 'development' || process.env.IS_STAGING === '1') {
         return next();
     }
-    if (process.env.IS_STAGING === '1') {
-        return next();
-    }
-    const response = req.body.captcha;
     if (!response) {
         res.status(409).json(error.data);
         return;

@@ -32,3 +32,5 @@ request("/currency-exchange/positions/create","POST",{balance:parseInt(b.val(),1
 
 
 
+
+

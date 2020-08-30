@@ -35,7 +35,11 @@ let UsersController = class UsersController extends controller_1.default {
         try {
             let columns = undefined;
             if (info && info.staff >= 1 && typeof cols === 'string') {
-                columns = cols.split(',').filter(val => { return typeof val === 'string' && val !== 'password'; });
+                columns = cols.split(',').filter(val => { return typeof val === 'string' && val !== 'password' && !!val; });
+                console.log('len', columns.length);
+                if (columns.length === 0) {
+                    columns = undefined;
+                }
             }
             console.log('columns', columns);
             userInfo = await this.user.getInfo(id, columns);

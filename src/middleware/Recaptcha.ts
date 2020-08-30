@@ -23,30 +23,25 @@ export const verifyTokenV2 = async (token: string, ip?: string) => {
         'error-codes'?: any[];
     }>;
     try {
-        check = await axios.post('https://www.google.com/recaptcha/api/siteverify', 'secret='+privateKeyV2+'&response='+token+'&remoteip='+ip, {
+        check = await axios.post('https://www.google.com/recaptcha/api/siteverify', 'secret=' + privateKeyV2 + '&response=' + token + '&remoteip=' + ip, {
             headers: {
                 'content-type': 'application/x-www-form-urlencoded'
             }
         });
-    }catch(e) {
+    } catch (e) {
         console.log(e);
         throw new BadRequest('InvalidCaptchaToken');
     }
     if (check.data.success) {
         console.log('v2 check success');
         return;
-    }else{
+    } else {
         console.log('v2 check failed');
         throw new BadRequest('InvalidCaptchaToken');
     }
 }
 
 export const RecaptchaV2 = async (req: Request, res: Response, next: NextFunction) => {
-    /*
-    if (process.env.NODE_ENV === 'development') {
-        return next();
-    }
-    */
     let token = req.body.v2Token;
     if (!token) {
         return res.status(409).json({
@@ -63,12 +58,12 @@ export const RecaptchaV2 = async (req: Request, res: Response, next: NextFunctio
         'error-codes'?: any[];
     }>;
     try {
-        check = await axios.post('https://www.google.com/recaptcha/api/siteverify', 'secret='+privateKeyV2+'&response='+token+'&remoteip='+req.ip, {
+        check = await axios.post('https://www.google.com/recaptcha/api/siteverify', 'secret=' + privateKeyV2 + '&response=' + token + '&remoteip=' + req.ip, {
             headers: {
                 'content-type': 'application/x-www-form-urlencoded'
             }
         });
-    }catch(e) {
+    } catch (e) {
         console.log(e);
         return res.status(409).json({
             success: false,
@@ -80,7 +75,7 @@ export const RecaptchaV2 = async (req: Request, res: Response, next: NextFunctio
     if (check.data.success) {
         console.log('v2 check success');
         return next();
-    }else{
+    } else {
         console.log('v2 check failed');
         return res.status(409).json({
             success: false,
@@ -114,12 +109,12 @@ export const RecaptchaV3 = (expectedMode: string, strictLevel = 1) => {
             'error-codes'?: any[];
         }>;
         try {
-            check = await axios.post('https://www.google.com/recaptcha/api/siteverify', 'secret='+privateKeyV3+'&response='+token+'&remoteip='+req.ip, {
+            check = await axios.post('https://www.google.com/recaptcha/api/siteverify', 'secret=' + privateKeyV3 + '&response=' + token + '&remoteip=' + req.ip, {
                 headers: {
                     'content-type': 'application/x-www-form-urlencoded'
                 }
             });
-        }catch(e) {
+        } catch (e) {
             console.log(e);
             return res.status(409).json({
                 success: false,
@@ -151,7 +146,7 @@ export const RecaptchaV3 = (expectedMode: string, strictLevel = 1) => {
         }
         if (check.data.success) {
             return next();
-        }else{
+        } else {
             return res.status(409).json({
                 success: false,
                 error: {
