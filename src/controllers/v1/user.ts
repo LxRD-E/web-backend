@@ -57,13 +57,10 @@ export class UsersController extends controller {
             let columns: any = undefined;
             if (info && info.staff >= 1 && typeof cols === 'string') {
                 columns = cols.split(',').filter(val => { return typeof val === 'string' && val !== 'password' && !!val });
-
-                console.log('len', columns.length)
                 if (columns.length === 0) {
                     columns = undefined;
                 }
             }
-            console.log('columns', columns);
             userInfo = await this.user.getInfo(id, columns);
         } catch (e) {
             throw new this.BadRequest('InvalidUserId');
@@ -479,7 +476,7 @@ export class UsersController extends controller {
     @ReturnsArray(200, { type: model.user.SearchResult })
     @Returns(400, { type: model.Error, description: 'InvalidQuery: Query is too long (over 32 characters)\n' })
     @Use(middleware.ValidatePaging)
-    public async search(
+    public search(
         @QueryParams('offset', Number) offset: number = 0,
         @QueryParams('limit', Number) limit: number = 100,
         @QueryParams('sort', String) sort: any = 'asc',
@@ -496,6 +493,6 @@ export class UsersController extends controller {
             // Query too large
             throw new this.BadRequest('InvalidQuery');
         }
-        return await this.user.search(offset, limit, sort, goodSortBy, query);
+        return this.user.search(offset, limit, sort, goodSortBy, query);
     }
 }

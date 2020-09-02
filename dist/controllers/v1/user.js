@@ -36,12 +36,10 @@ let UsersController = class UsersController extends controller_1.default {
             let columns = undefined;
             if (info && info.staff >= 1 && typeof cols === 'string') {
                 columns = cols.split(',').filter(val => { return typeof val === 'string' && val !== 'password' && !!val; });
-                console.log('len', columns.length);
                 if (columns.length === 0) {
                     columns = undefined;
                 }
             }
-            console.log('columns', columns);
             userInfo = await this.user.getInfo(id, columns);
         }
         catch (e) {
@@ -251,7 +249,7 @@ let UsersController = class UsersController extends controller_1.default {
     async getRoleInGroup(userId, groupId) {
         return await this.group.getUserRole(groupId, userId);
     }
-    async search(offset = 0, limit = 100, sort = 'asc', sortBy = 'id', query) {
+    search(offset = 0, limit = 100, sort = 'asc', sortBy = 'id', query) {
         let goodSortBy;
         if (sortBy === "id") {
             goodSortBy = "id";
@@ -262,7 +260,7 @@ let UsersController = class UsersController extends controller_1.default {
         if (query && query.length > 32) {
             throw new this.BadRequest('InvalidQuery');
         }
-        return await this.user.search(offset, limit, sort, goodSortBy, query);
+        return this.user.search(offset, limit, sort, goodSortBy, query);
     }
 };
 __decorate([
@@ -546,7 +544,7 @@ __decorate([
     __param(4, common_1.QueryParams('username', String)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number, Number, Object, String, String]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], UsersController.prototype, "search", null);
 UsersController = __decorate([
     common_1.Controller('/user'),

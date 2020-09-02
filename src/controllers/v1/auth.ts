@@ -33,6 +33,7 @@ import { NoAuth, YesAuth } from "../../middleware/Auth";
 import RecaptchaV2 from '../../middleware/RecaptchaV2';
 import moment = require('moment');
 import crypto = require('crypto');
+import * as IpQualityScore from "../../middleware/IpQualityScore";
 
 /**
  * Auth Controller
@@ -220,7 +221,9 @@ export default class AuthController extends controller {
         description: 'Session will be set, unless "isTwoFactorRequired" is true. "twoFactor" is only defined if "isTwoFactorRequired" is true. If "twoFactor" is not undefined, the user will be required to grab their TOTP token and enter it, then the "twoFactor" string and TOTP token should be POSTed to /login/two-factor to complete the login flow'
     })
     @Returns(400, { description: 'InvalidUsernameOrPassword: Invalid Credentials\n', type: model.Error })
-    @Returns(409, { description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error })
+    @Returns(409, controller.cError(
+        'LogoutRequired: You must be signed out to perform this action',
+    ))
     @Returns(429, {
         type: model.Error,
         description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n'
@@ -241,14 +244,12 @@ export default class AuthController extends controller {
         if (userInfo) {
             throw new this.Conflict('LogoutRequired');
         }
-        console.log('start username to id');
         let userId: number;
         try {
             userId = await this.user.userNameToId(username);
         } catch (e) {
             throw new this.BadRequest('InvalidUsernameOrPassword');
         }
-        console.log('end username to id. start get info');
         let userData;
         try {
             userData = await this.user.getInfo(userId, ['username', 'passwordChanged']);
@@ -448,10 +449,26 @@ export default class AuthController extends controller {
     @Post('/signup')
     @Summary('Register an account')
     @Returns(200, { description: 'OK', type: model.auth.SignupResponseOK })
-    @Returns(409, { description: 'LogoutRequired: Login Required\nCaptchaValidationFailed: Invalid captcha token, expired, or not provided\n' })
-    @Returns(403, { description: 'CSRFValidationFailed: Invalid CSRF Token\n' })
-    @Returns(400, { description: 'InvalidBirthDate: Birth Date is invalid\nInvalidUsername: Username is taken or unavailable\nInvalidPassword: Password is too weak\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstraintTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nOneAccountPerIP: Only one account may be signed up per IP address, every 24 hours\n' })
-    @Use(csrf, NoAuth, RecaptchaV2)
+    @Returns(409, controller.cError(
+        'LogoutRequired: Login Required',
+        'CaptchaValidationFailed: Invalid captcha token, expired, or not provided',
+        'RequestDisallowed: This request is not allowed',
+    ))
+    @Returns(400, controller.cError(
+        'InvalidBirthDate: Birth Date is invalid',
+        'InvalidUsername: Username is taken or unavailable',
+        'InvalidPassword: Password is too weak',
+        'UsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore',
+        'UsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space',
+        'UsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter',
+        'UsernameConstraintTooLong: Username cannot be over 18 characters',
+        'UsernameConstrintTooShort: Username must be over 3 characters long',
+        'OneAccountPerIP: Only one account may be signed up per IP address, every 24 hours',
+    ))
+    @Use(csrf, NoAuth, RecaptchaV2, IpQualityScore.check({
+        maxScore: IpQualityScore.IpMaxScores.Signup,
+        strictness: IpQualityScore.IpStrictness.Signup,
+    }))
     public async signup(
         @BodyParams(model.auth.SignupRequest) body: model.auth.SignupRequest,
         @Session() session: Express.Session,
@@ -460,10 +477,7 @@ export default class AuthController extends controller {
         /**
          * Check if signed up recently
          */
-        let ip = req.headers['cf-connecting-ip'] as string;
-        if (!ip) {
-            ip = req.ip;
-        }
+        let ip = req.ip as string;
         const signedUpInPast24Hours = await this.user.checkForIpSignup(ip);
         if (signedUpInPast24Hours && process.env.NODE_ENV !== 'development') {
             throw new this.BadRequest('OneAccountPerIP');

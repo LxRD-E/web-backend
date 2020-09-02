@@ -27,6 +27,7 @@ const Auth_1 = require("../../middleware/Auth");
 const RecaptchaV2_1 = require("../../middleware/RecaptchaV2");
 const moment = require("moment");
 const crypto = require("crypto");
+const IpQualityScore = require("../../middleware/IpQualityScore");
 let AuthController = class AuthController extends controller_1.default {
     constructor() {
         super();
@@ -137,7 +138,6 @@ let AuthController = class AuthController extends controller_1.default {
         if (userInfo) {
             throw new this.Conflict('LogoutRequired');
         }
-        console.log('start username to id');
         let userId;
         try {
             userId = await this.user.userNameToId(username);
@@ -145,7 +145,6 @@ let AuthController = class AuthController extends controller_1.default {
         catch (e) {
             throw new this.BadRequest('InvalidUsernameOrPassword');
         }
-        console.log('end username to id. start get info');
         let userData;
         try {
             userData = await this.user.getInfo(userId, ['username', 'passwordChanged']);
@@ -278,10 +277,7 @@ let AuthController = class AuthController extends controller_1.default {
         return { success: true };
     }
     async signup(body, session, req) {
-        let ip = req.headers['cf-connecting-ip'];
-        if (!ip) {
-            ip = req.ip;
-        }
+        let ip = req.ip;
         const signedUpInPast24Hours = await this.user.checkForIpSignup(ip);
         if (signedUpInPast24Hours && process.env.NODE_ENV !== 'development') {
             throw new this.BadRequest('OneAccountPerIP');
@@ -585,7 +581,7 @@ __decorate([
         description: 'Session will be set, unless "isTwoFactorRequired" is true. "twoFactor" is only defined if "isTwoFactorRequired" is true. If "twoFactor" is not undefined, the user will be required to grab their TOTP token and enter it, then the "twoFactor" string and TOTP token should be POSTed to /login/two-factor to complete the login flow'
     }),
     swagger_1.Returns(400, { description: 'InvalidUsernameOrPassword: Invalid Credentials\n', type: model.Error }),
-    swagger_1.Returns(409, { description: 'LogoutRequired: You must be signed out to perform this action\n', type: model.Error }),
+    swagger_1.Returns(409, controller_1.default.cError('LogoutRequired: You must be signed out to perform this action')),
     swagger_1.Returns(429, {
         type: model.Error,
         description: 'TooManyRequests: Try again later (see x-ratelimit-reset header for exact timestamp when you can retry)\n'
@@ -665,10 +661,12 @@ __decorate([
     common_1.Post('/signup'),
     swagger_1.Summary('Register an account'),
     swagger_1.Returns(200, { description: 'OK', type: model.auth.SignupResponseOK }),
-    swagger_1.Returns(409, { description: 'LogoutRequired: Login Required\nCaptchaValidationFailed: Invalid captcha token, expired, or not provided\n' }),
-    swagger_1.Returns(403, { description: 'CSRFValidationFailed: Invalid CSRF Token\n' }),
-    swagger_1.Returns(400, { description: 'InvalidBirthDate: Birth Date is invalid\nInvalidUsername: Username is taken or unavailable\nInvalidPassword: Password is too weak\nUsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore\nUsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space\nUsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter\nUsernameConstraintTooLong: Username cannot be over 18 characters\nUsernameConstrintTooShort: Username must be over 3 characters long\nOneAccountPerIP: Only one account may be signed up per IP address, every 24 hours\n' }),
-    common_1.Use(auth_1.csrf, Auth_1.NoAuth, RecaptchaV2_1.default),
+    swagger_1.Returns(409, controller_1.default.cError('LogoutRequired: Login Required', 'CaptchaValidationFailed: Invalid captcha token, expired, or not provided', 'RequestDisallowed: This request is not allowed')),
+    swagger_1.Returns(400, controller_1.default.cError('InvalidBirthDate: Birth Date is invalid', 'InvalidUsername: Username is taken or unavailable', 'InvalidPassword: Password is too weak', 'UsernameConstraint1Space1Period1Underscore: Username can only contain 1 space, 1 period, and 1 underscore', 'UsernameConstriantCannotEndOrStartWithSpace: Username cannot begin or end with a space', 'UsernameConstraintInvalidCharacters: Username can only contain a space, a period, a underscore, a number, or an english letter', 'UsernameConstraintTooLong: Username cannot be over 18 characters', 'UsernameConstrintTooShort: Username must be over 3 characters long', 'OneAccountPerIP: Only one account may be signed up per IP address, every 24 hours')),
+    common_1.Use(auth_1.csrf, Auth_1.NoAuth, RecaptchaV2_1.default, IpQualityScore.check({
+        maxScore: IpQualityScore.IpMaxScores.Signup,
+        strictness: IpQualityScore.IpStrictness.Signup,
+    })),
     __param(0, common_1.BodyParams(model.auth.SignupRequest)),
     __param(1, common_1.Session()),
     __param(2, common_1.Req()),
