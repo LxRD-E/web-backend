@@ -1006,22 +1006,19 @@ export class StaffController extends controller {
         };
     }
 
-    @Get('/support/tickets-awaiting-response')
+    @Get('/support/tickets')
     @Summary('Get support tickets awaiting cs response')
     @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ManageSupportTickets))
     public async getTickets(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @QueryParams('status') status: string,
     ) {
-        return this.support.getTicketsAwaitingSupportResponse();
-    }
-
-    @Get('/support/tickets-all')
-    @Summary('Get all support tickets, excluding ones that are closed')
-    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ManageSupportTickets))
-    public async getAllTickets(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-    ) {
-        return this.support.getTicketsNotClosed();
+        let intStatus: number | undefined = undefined;
+        let providedStatusInt = parseInt(status, 10);
+        let decodedStatus = model.support.TicketStatus[providedStatusInt];
+        if (typeof decodedStatus === 'string' && !isNaN(providedStatusInt)) {
+            intStatus = providedStatusInt
+        }
+        return this.support.getTickets(intStatus);
     }
 
     @Get('/support/ticket/:ticketId/replies')

@@ -623,11 +623,14 @@ let StaffController = class StaffController extends controller_1.default {
             success: true,
         };
     }
-    async getTickets(userInfo) {
-        return this.support.getTicketsAwaitingSupportResponse();
-    }
-    async getAllTickets(userInfo) {
-        return this.support.getTicketsNotClosed();
+    async getTickets(status) {
+        let intStatus = undefined;
+        let providedStatusInt = parseInt(status, 10);
+        let decodedStatus = model.support.TicketStatus[providedStatusInt];
+        if (typeof decodedStatus === 'string' && !isNaN(providedStatusInt)) {
+            intStatus = providedStatusInt;
+        }
+        return this.support.getTickets(intStatus);
     }
     async getRepliesToTicket(userInfo, ticketId) {
         return await this.support.getTicketRepliesAll(ticketId);
@@ -1162,23 +1165,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "createForumSubCategory", null);
 __decorate([
-    common_1.Get('/support/tickets-awaiting-response'),
+    common_1.Get('/support/tickets'),
     swagger_1.Summary('Get support tickets awaiting cs response'),
     common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManageSupportTickets)),
-    __param(0, common_1.Locals('userInfo')),
+    __param(0, common_1.QueryParams('status')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo]),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "getTickets", null);
-__decorate([
-    common_1.Get('/support/tickets-all'),
-    swagger_1.Summary('Get all support tickets, excluding ones that are closed'),
-    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManageSupportTickets)),
-    __param(0, common_1.Locals('userInfo')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo]),
-    __metadata("design:returntype", Promise)
-], StaffController.prototype, "getAllTickets", null);
 __decorate([
     common_1.Get('/support/ticket/:ticketId/replies'),
     swagger_1.Summary('Get replies to ticket'),

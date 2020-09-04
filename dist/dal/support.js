@@ -6,8 +6,12 @@ class SupportDAL extends _init_1.default {
     async getTicketsByUser(userId) {
         return this.knex('support_tickets').select('id as ticketId', 'ticket_status as ticketStatus', 'user_id as userId', 'created_at as createdAt', 'updated_at as updatedAt', 'ticket_title as ticketTitle', 'ticket_body as ticketBody').where({ 'user_id': userId }).orderBy('id', 'desc');
     }
-    async getTicketsAwaitingSupportResponse() {
-        return this.knex('support_tickets').select('id as ticketId', 'ticket_status as ticketStatus', 'user_id as userId', 'created_at as createdAt', 'updated_at as updatedAt', 'ticket_title as ticketTitle', 'ticket_body as ticketBody').where({ 'ticket_status': model.support.TicketStatus.PendingSupportResponse }).orderBy('id', 'asc');
+    async getTickets(status) {
+        let query = this.knex('support_tickets').select('id as ticketId', 'ticket_status as ticketStatus', 'user_id as userId', 'created_at as createdAt', 'updated_at as updatedAt', 'ticket_title as ticketTitle', 'ticket_body as ticketBody').orderBy('id', 'asc');
+        if (typeof status !== 'undefined') {
+            query = query.where({ 'ticket_status': status });
+        }
+        return query;
     }
     async getTicketsNotClosed() {
         return this.knex('support_tickets').select('id as ticketId', 'ticket_status as ticketStatus', 'user_id as userId', 'created_at as createdAt', 'updated_at as updatedAt', 'ticket_title as ticketTitle', 'ticket_body as ticketBody').where('ticket_status', '!=', model.support.TicketStatus.Closed).orderBy('id', 'asc');
