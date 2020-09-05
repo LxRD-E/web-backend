@@ -33,3 +33,4 @@ type:"line",dataPoints:a}],axisY:{prefix:"P $"}});b.render()}$(document).on("cli
 
 
 
+

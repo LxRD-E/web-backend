@@ -19,3 +19,4 @@ request("/staff/user/"+$("#userId").val()+"/forum/signature","DELETE").then(func
 
 
 
+
