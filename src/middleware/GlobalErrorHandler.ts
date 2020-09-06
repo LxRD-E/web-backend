@@ -69,30 +69,22 @@ export class MyGEHMiddleware extends GlobalErrorHandlerMiddleware {
                         }
                     })
                 }
-                if (request.accepts('json')) {
-                    let fullErrorMessage = {
-                        code: 'LoginRequired',
-                    }
-                    if (error.message && HttpErrors[error.message]) {
-                        fullErrorMessage.code = error.message;
-                    }
-                    logError(401, fullErrorMessage.code, request.originalUrl, request.method);
-                    return response.status(401).json({ success: false, error: fullErrorMessage })
-                } else {
-                    return response.status(415).json({ success: false, error: { code: HttpErrors[HttpErrors.InvalidAcceptHeader] } });
+                let fullErrorMessage = {
+                    code: 'LoginRequired',
                 }
+                if (error.message && HttpErrors[error.message]) {
+                    fullErrorMessage.code = error.message;
+                }
+                logError(401, fullErrorMessage.code, request.originalUrl, request.method);
+                return response.status(401).json({ success: false, error: fullErrorMessage })
             } else if (error.name === 'FORBIDDEN') {
-                if (request.accepts('json')) {
-                    let fullErrorMessage = {
-                        code: 'CsrfValidationFailed',
-                    }
-                    if (error.message && HttpErrors[error.message]) {
-                        fullErrorMessage.code = error.message;
-                    }
-                    return response.status(403).json({ success: false, error: fullErrorMessage })
-                } else {
-                    return response.status(415).json({ success: false, error: { code: HttpErrors[HttpErrors.InvalidAcceptHeader] } });
+                let fullErrorMessage = {
+                    code: 'CsrfValidationFailed',
                 }
+                if (error.message && HttpErrors[error.message]) {
+                    fullErrorMessage.code = error.message;
+                }
+                return response.status(403).json({ success: false, error: fullErrorMessage })
             } else {
                 throw error;
             }
@@ -105,11 +97,7 @@ export class MyGEHMiddleware extends GlobalErrorHandlerMiddleware {
         }
 
         // default if internal error / something goes wrong in error handler
-        if (request.accepts('json') && !request.accepts('html')) {
-            return response.status(500).json({ success: false, message: 'An internal server error has occurred.', error: { code: HttpErrors[HttpErrors.InternalServerError] } });
-        } else {
-            return response.status(415).json({ success: false, error: { code: HttpErrors[HttpErrors.InvalidAcceptHeader] } });
-        }
+        return response.status(500).json({ success: false, message: 'An internal server error has occurred.', error: { code: HttpErrors[HttpErrors.InternalServerError] } });
         // this exposes stack trace, so do not uncomment
         // return super.use(error, request, response);
     }

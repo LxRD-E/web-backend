@@ -1154,63 +1154,6 @@ export class StaffController extends controller {
         };
     }
 
-    @Get('/economy/trades/:tradeId/items')
-    @Summary('Get the items involved in a specific tradeId')
-    @Description('Requestee is authenticated user, requested is the partner involved with the trade')
-    @Returns(200, { type: model.economy.TradeItemsResponse })
-    @Returns(400, { type: model.Error, description: 'InvalidTradeId: TradeId is invalid or you do not have permission to view it\n' })
-    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo))
-    public async getTradeItems(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('tradeId', Number) numericTradeId: number,
-        @Required()
-        @Description('userId to impersonate')
-        @QueryParams('userId', Number) userId: number,
-    ) {
-        let tradeInfo: model.economy.ExtendedTradeInfo;
-        try {
-            tradeInfo = await this.economy.getTradeById(numericTradeId);
-        } catch (e) {
-            throw new this.BadRequest('InvalidTradeId');
-        }
-        if (tradeInfo.userIdOne === userId) {
-            const requestedTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requested, numericTradeId);
-            const requesteeTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requester, numericTradeId);
-            return { 'requested': requestedTradeItems, 'offer': requesteeTradeItems };
-        } else if (tradeInfo.userIdTwo === userId) {
-            const requestedTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requester, numericTradeId);
-            const requesteeTradeItems = await this.economy.getTradeItems(model.economy.tradeSides.Requested, numericTradeId);
-            return { 'requested': requestedTradeItems, 'offer': requesteeTradeItems };
-        } else {
-            throw new this.BadRequest('InvalidTradeId');
-        }
-    }
-
-    @Get('/economy/trades/:type')
-    @Summary('Get user trades')
-    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo))
-    @ReturnsArray(200, { type: model.economy.TradeInfo })
-    @Returns(400, { type: model.Error, description: 'InvalidTradeType: TradeType must be one of: inbound,outbound,completed,inactive\n' })
-    public async getTrades(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
-        @PathParams('type', String) tradeType: string,
-        @Required()
-        @Description('userId to impersonate')
-        @QueryParams('userId', Number) userId: number,
-        @QueryParams('offset', Number) offset: number = 0
-    ) {
-        if (!(userInfo.staff >= 2)) {
-            throw new this.BadRequest('InvalidPermissions');
-        }
-        let tradeValue;
-        if (tradeType !== 'inbound' && tradeType !== 'outbound' && tradeType !== 'completed' && tradeType !== 'inactive') {
-            throw new this.BadRequest('InvalidTradeType');
-        } else {
-            tradeValue = tradeType;
-        }
-        return await this.economy.getTrades(userId, tradeValue, offset);
-    }
-
     @Post('/user/:userId/game-dev')
     @Summary('Modify is_developer state of the {userId}')
     @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo))

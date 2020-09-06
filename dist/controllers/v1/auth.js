@@ -41,7 +41,10 @@ let AuthController = class AuthController extends controller_1.default {
         }
         return d;
     }
-    async pingEvent(userInfo, url) {
+    async pingEvent(userInfo, url, impersonateUserId) {
+        if (typeof impersonateUserId === 'undefined') {
+            return {};
+        }
         await this.user.logOnlineStatus(userInfo.userId);
         if (moment().isSameOrAfter(moment(userInfo.dailyAward).add(24, 'hours'))) {
             const forUpdate = [
@@ -523,8 +526,9 @@ __decorate([
     swagger_1.Returns(200, { description: 'OK' }),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.BodyParams('url', String)),
+    __param(2, common_1.Locals('impersonateUserId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, String]),
+    __metadata("design:paramtypes", [model.user.UserInfo, String, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "pingEvent", null);
 __decorate([

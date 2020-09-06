@@ -73,7 +73,12 @@ export default class AuthController extends controller {
     public async pingEvent(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @BodyParams('url', String) url: string,
+        @Locals('impersonateUserId') impersonateUserId: number | undefined,
     ) {
+        // If requester is staff impersonating, do not give currency/log online status
+        if (typeof impersonateUserId === 'undefined') {
+            return {};
+        }
         await this.user.logOnlineStatus(userInfo.userId);
         // If over 24 hours since user got award for currency,
         if (moment().isSameOrAfter(moment(userInfo.dailyAward).add(24, 'hours'))) {

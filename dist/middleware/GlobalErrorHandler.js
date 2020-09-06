@@ -87,33 +87,23 @@ let MyGEHMiddleware = class MyGEHMiddleware extends common_1.GlobalErrorHandlerM
                         }
                     });
                 }
-                if (request.accepts('json')) {
-                    let fullErrorMessage = {
-                        code: 'LoginRequired',
-                    };
-                    if (error.message && HttpError_1.HttpErrors[error.message]) {
-                        fullErrorMessage.code = error.message;
-                    }
-                    logError(401, fullErrorMessage.code, request.originalUrl, request.method);
-                    return response.status(401).json({ success: false, error: fullErrorMessage });
+                let fullErrorMessage = {
+                    code: 'LoginRequired',
+                };
+                if (error.message && HttpError_1.HttpErrors[error.message]) {
+                    fullErrorMessage.code = error.message;
                 }
-                else {
-                    return response.status(415).json({ success: false, error: { code: HttpError_1.HttpErrors[HttpError_1.HttpErrors.InvalidAcceptHeader] } });
-                }
+                logError(401, fullErrorMessage.code, request.originalUrl, request.method);
+                return response.status(401).json({ success: false, error: fullErrorMessage });
             }
             else if (error.name === 'FORBIDDEN') {
-                if (request.accepts('json')) {
-                    let fullErrorMessage = {
-                        code: 'CsrfValidationFailed',
-                    };
-                    if (error.message && HttpError_1.HttpErrors[error.message]) {
-                        fullErrorMessage.code = error.message;
-                    }
-                    return response.status(403).json({ success: false, error: fullErrorMessage });
+                let fullErrorMessage = {
+                    code: 'CsrfValidationFailed',
+                };
+                if (error.message && HttpError_1.HttpErrors[error.message]) {
+                    fullErrorMessage.code = error.message;
                 }
-                else {
-                    return response.status(415).json({ success: false, error: { code: HttpError_1.HttpErrors[HttpError_1.HttpErrors.InvalidAcceptHeader] } });
-                }
+                return response.status(403).json({ success: false, error: fullErrorMessage });
             }
             else {
                 throw error;
@@ -125,12 +115,7 @@ let MyGEHMiddleware = class MyGEHMiddleware extends common_1.GlobalErrorHandlerM
                 Sentry.Sentry.captureException(e);
             }
         }
-        if (request.accepts('json') && !request.accepts('html')) {
-            return response.status(500).json({ success: false, message: 'An internal server error has occurred.', error: { code: HttpError_1.HttpErrors[HttpError_1.HttpErrors.InternalServerError] } });
-        }
-        else {
-            return response.status(415).json({ success: false, error: { code: HttpError_1.HttpErrors[HttpError_1.HttpErrors.InvalidAcceptHeader] } });
-        }
+        return response.status(500).json({ success: false, message: 'An internal server error has occurred.', error: { code: HttpError_1.HttpErrors[HttpError_1.HttpErrors.InternalServerError] } });
     }
 };
 __decorate([
