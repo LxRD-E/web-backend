@@ -42,7 +42,7 @@ let AuthController = class AuthController extends controller_1.default {
         return d;
     }
     async pingEvent(userInfo, url, impersonateUserId) {
-        if (typeof impersonateUserId === 'undefined') {
+        if (typeof impersonateUserId !== 'undefined') {
             return {};
         }
         await this.user.logOnlineStatus(userInfo.userId);

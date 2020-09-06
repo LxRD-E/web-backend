@@ -76,7 +76,7 @@ export default class AuthController extends controller {
         @Locals('impersonateUserId') impersonateUserId: number | undefined,
     ) {
         // If requester is staff impersonating, do not give currency/log online status
-        if (typeof impersonateUserId === 'undefined') {
+        if (typeof impersonateUserId !== 'undefined') {
             return {};
         }
         await this.user.logOnlineStatus(userInfo.userId);
