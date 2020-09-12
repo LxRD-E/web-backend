@@ -202,4 +202,14 @@ export const UserLeadboardSortOptions = [
     "PrimaryCurrencyDesc",
     "SecondaryCurrencyDesc",
     "UserIdAsc",
+    'LastOnlineAsc',
+    'LastOnlineDesc',
+]
+
+export const UserLeaderboardAccountStatus = [
+    'all',
+    'ok',
+    'banned',
+    'terminated',
+    'deleted',
 ]

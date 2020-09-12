@@ -1239,12 +1239,18 @@ export class StaffController extends controller {
     public async userLeaderboard(
         @QueryParams('limit', Number) limit: number = 100,
         @QueryParams('offset', Number) offset: number = 0,
+        @Description('Valid Values: PrimaryCurrencyDesc, SecondaryCurrencyDesc, UserIdAsc, LastOnlineAsc, LastOnlineDesc')
         @QueryParams('sortBy', String) sortBy: string = 'PrimaryCurrencyDesc',
+        @Description('Valid Values: all, ok, banned, terminted, deleted')
+        @QueryParams('accountStatus', String) accountStatus: string = 'all',
     ) {
         if (!model.staff.UserLeadboardSortOptions.includes(sortBy)) {
             sortBy = model.staff.UserLeadboardSortOptions[0];
         }
-        return await this.user.getLeaderboardSorted(sortBy, limit, offset);
+        if (!model.staff.UserLeaderboardAccountStatus.includes(accountStatus)) {
+            accountStatus = model.staff.UserLeaderboardAccountStatus[0];
+        }
+        return await this.user.getLeaderboardSorted(sortBy, accountStatus, limit, offset);
     }
 
     @Get('/user/search')
