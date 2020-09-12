@@ -109,4 +109,9 @@ __decorate([
     __metadata("design:type", Number)
 ], SearchUsersResponse.prototype, "userId", void 0);
 exports.SearchUsersResponse = SearchUsersResponse;
+exports.UserLeadboardSortOptions = [
+    "PrimaryCurrencyDesc",
+    "SecondaryCurrencyDesc",
+    "UserIdAsc",
+];
 

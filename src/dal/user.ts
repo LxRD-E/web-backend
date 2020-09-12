@@ -9,7 +9,7 @@ import * as Thumbnails from '../models/v1/thumnails';
 // Libs
 import Config from '../helpers/config';
 // AUTH-Stuff
-import {decryptPasswordHash, encrypt, encryptPasswordHash} from './auth'
+import { decryptPasswordHash, encrypt, encryptPasswordHash } from './auth'
 // Init
 import _init from './_init';
 import * as model from '../models/models';
@@ -33,49 +33,49 @@ class UsersDAL extends _init {
         specificColumns.forEach((element: string, index: number, array: Array<string>): void => {
             if (element === 'userId') {
                 array[index] = 'id as userId';
-            }else if (element === 'primaryBalance') {
+            } else if (element === 'primaryBalance') {
                 array[index] = 'user_balance1 as primaryBalance';
-            }else if (element === 'secondaryBalance') {
+            } else if (element === 'secondaryBalance') {
                 array[index] = 'user_balance2 as secondaryBalance';
-            }else if (element === 'dailyAward') {
+            } else if (element === 'dailyAward') {
                 array[index] = 'user_balancedailyaward as dailyAward';
-            }else if (element === 'passwordChanged') {
+            } else if (element === 'passwordChanged') {
                 array[index] = 'password_changed as passwordChanged';
-            }else if (element === 'forumSignature') {
+            } else if (element === 'forumSignature') {
                 array[index] = 'forum_signature as forumSignature';
-            }else if (element === 'forumPostCount') {
+            } else if (element === 'forumPostCount') {
                 array[index] = 'forum_postcount as forumPostCount';
-            }else if (element === 'lastOnline') {
+            } else if (element === 'lastOnline') {
                 array[index] = 'user_lastonline as lastOnline';
-            }else if (element === 'banned') {
+            } else if (element === 'banned') {
                 array[index] = 'is_banned as banned';
-            }else if (element === 'banned') {
+            } else if (element === 'banned') {
                 array[index] = 'is_banned as banned';
-            }else if (element === 'birthDate') {
+            } else if (element === 'birthDate') {
                 array[index] = 'user_birthdate as birthDate';
-            }else if (element === 'joinDate') {
+            } else if (element === 'joinDate') {
                 array[index] = 'user_joindate as joinDate';
-            }else if (element === 'blurb') {
+            } else if (element === 'blurb') {
                 array[index] = 'user_blurb as blurb';
-            }else if (element === 'staff') {
+            } else if (element === 'staff') {
                 array[index] = 'user_staff as staff';
-            }else if (element === 'status') {
+            } else if (element === 'status') {
                 array[index] = 'user_status as status';
-            }else if (element === 'tradingEnabled') {
+            } else if (element === 'tradingEnabled') {
                 array[index] = 'user_tradingenabled as tradingEnabled';
-            }else if (element === 'theme') {
+            } else if (element === 'theme') {
                 array[index] = 'user_theme as theme';
-            }else if (element === 'staff') {
+            } else if (element === 'staff') {
                 array[index] = 'user_staff as staff';
-            }else if (element === 'accountStatus') {
+            } else if (element === 'accountStatus') {
                 array[index] = 'account_status as accountStatus';
-            }else if (element === '2faEnabled') {
+            } else if (element === '2faEnabled') {
                 array[index] = '2fa_enabled as 2faEnabled';
-            }else if (element === 'isDeveloper') {
+            } else if (element === 'isDeveloper') {
                 array[index] = 'is_developer as isDeveloper';
             }
         });
-        let query = this.knex('users').select(specificColumns).where({'users.id': id });
+        let query = this.knex('users').select(specificColumns).where({ 'users.id': id });
         const userInfoSelect = await query;
         const userInfoData = userInfoSelect[0] as users.UserInfo;
         if (userInfoData === undefined) {
@@ -89,14 +89,14 @@ class UsersDAL extends _init {
      */
     public async updateDailyAward(userId: number): Promise<void> {
         const time = this.moment().format('YYYY-MM-DD HH:mm:ss');
-        await this.knex('users').update({'user_balancedailyaward':time}).where({'id': userId}).limit(1);
+        await this.knex('users').update({ 'user_balancedailyaward': time }).where({ 'id': userId }).limit(1);
     }
 
     /**
      * Update a user's staff rank
      */
     public async updateStaffRank(userId: number, newStaffRank: number): Promise<void> {
-        await this.knex('users').update({'user_staff':newStaffRank}).where({'id': userId}).limit(1);
+        await this.knex('users').update({ 'user_staff': newStaffRank }).where({ 'id': userId }).limit(1);
     }
 
     /**
@@ -109,7 +109,7 @@ class UsersDAL extends _init {
             'username',
             'userid as userId',
             'date_created as dateCreated',
-        ).where({'userid': userId}).orderBy('id', 'desc');
+        ).where({ 'userid': userId }).orderBy('id', 'desc');
         return usernames;
     }
 
@@ -123,7 +123,7 @@ class UsersDAL extends _init {
             'username',
             'userid as userId',
             'date_created as dateCreated',
-        ).where({'userid': userId}).orderBy('id', 'desc').limit(1);
+        ).where({ 'userid': userId }).orderBy('id', 'desc').limit(1);
         return username[0];
     }
 
@@ -131,7 +131,7 @@ class UsersDAL extends _init {
      * Check if a Username is ok for signup, name changes, etc. Returned string corrosponds with HTTPErrors code, or "OK" if username is good.
      */
     public isUsernameOk(username: string): string {
-        const onlyOneCharacterAllowedOf =  [
+        const onlyOneCharacterAllowedOf = [
             / /g,
             /\./g,
             /_/g,
@@ -143,7 +143,7 @@ class UsersDAL extends _init {
             }
         }
         // So far looks good to go... Let's make sure the beginning and end don't have a space (to prevent stuff like impersonating)
-        if (username.charAt(0) === " " || username.charAt(username.length-1) === " ") {
+        if (username.charAt(0) === " " || username.charAt(username.length - 1) === " ") {
             return 'UsernameConstriantCannotEndOrStartWithSpace';
         }
         // Filter out special characters with this regex string
@@ -176,7 +176,7 @@ class UsersDAL extends _init {
             'username',
             'userid as userId',
             'date_created as dateCreated',
-        ).where({'username': username}).orderBy('id', 'desc').limit(1);
+        ).where({ 'username': username }).orderBy('id', 'desc').limit(1);
         if (!nameInfo[0]) {
             throw false;
         }
@@ -195,14 +195,14 @@ class UsersDAL extends _init {
             if (result !== contextUserId) {
                 return false;
             }
-        }catch(e) {
+        } catch (e) {
             // Doesn't Exist
         }
         // Check if exists in past username
         try {
             const pastUsernameInfo = await this.getPastUsernameByName(username);
             return pastUsernameInfo.userId === contextUserId;
-        }catch(e) {
+        } catch (e) {
             // Doesn't Exist
         }
         return true;
@@ -230,7 +230,7 @@ class UsersDAL extends _init {
     public async changeUserName(userId: number, userName: string): Promise<void> {
         await this.knex('users').update({
             'username': userName,
-        }).where({'users.id':userId}).limit(1);
+        }).where({ 'users.id': userId }).limit(1);
     }
 
     /**
@@ -242,14 +242,14 @@ class UsersDAL extends _init {
         try {
             await this.userNameToId(username);
             return false;
-        }catch(e) {
+        } catch (e) {
             // Doesn't Exist
         }
         // Check if exists in past username
         try {
             await this.getPastUsernameByName(username);
             return false;
-        }catch(e) {
+        } catch (e) {
             // Doesn't Exist
         }
         return true;
@@ -260,7 +260,7 @@ class UsersDAL extends _init {
      * @param userId 
      */
     public async getPassword(userId: number): Promise<string> {
-        const password = await this.knex('users').select('password').where({'users.id': userId });
+        const password = await this.knex('users').select('password').where({ 'users.id': userId });
         if (!password[0]) {
             // User doesn't exist
             throw new Error('InvalidUserId');
@@ -274,9 +274,9 @@ class UsersDAL extends _init {
      * @param username Username String
      */
     public async userNameToId(username: string): Promise<number> {
-        const select = await this.knex('users').select('users.id as userId').where({'users.username':username});
+        const select = await this.knex('users').select('users.id as userId').where({ 'users.username': username });
         if (!select[0]) {
-            let oldUsernames = await this.knex('users_usernames').select('userid as userId').where({'username': username}).limit(1);
+            let oldUsernames = await this.knex('users_usernames').select('userid as userId').where({ 'username': username }).limit(1);
             if (oldUsernames[0]) {
                 return oldUsernames[0]['userId'];
             }
@@ -292,18 +292,18 @@ class UsersDAL extends _init {
      * @param id User ID
      * @param specificColumns Specific Email Columns
      */
-    async getUserEmail(id: number, specificColumns?: Array<'id'|'userId'|'verificationCode'|'status'|'date'>): Promise<users.EmailModel> {
+    async getUserEmail(id: number, specificColumns?: Array<'id' | 'userId' | 'verificationCode' | 'status' | 'date'>): Promise<users.EmailModel> {
         if (!specificColumns) {
             specificColumns = ['status'];
         }
         specificColumns.forEach((element: string, index: number, array: Array<string>): void => {
             if (element === 'userId') {
                 array[index] = 'userid as userId';
-            }else if (element === 'verificationCode') {
+            } else if (element === 'verificationCode') {
                 array[index] = 'verification_code as verificationCode';
             }
         });
-        const select = await this.knex('user_emails').select(specificColumns).where({'userid':id}).limit(1).orderBy('id', 'desc');
+        const select = await this.knex('user_emails').select(specificColumns).where({ 'userid': id }).limit(1).orderBy('id', 'desc');
         return select[0];
     }
 
@@ -313,7 +313,7 @@ class UsersDAL extends _init {
      */
     public async logOnlineStatus(id: number): Promise<void> {
         const time = this.moment().format('YYYY-MM-DD HH:mm:ss');
-        await this.knex("users").update({"user_lastonline":time}).where({"users.id":id}).limit(1);
+        await this.knex("users").update({ "user_lastonline": time }).where({ "users.id": id }).limit(1);
     }
 
     /**
@@ -405,7 +405,7 @@ class UsersDAL extends _init {
      */
     public async checkForIpSignup(ipAddress: string): Promise<boolean> {
         const encryptedIP = await this.encryptIpAddress(ipAddress);
-        const results = await this.knex("user_ip").select("date",'id').where({'ip_address': encryptedIP,'action': model.user.ipAddressActions.SignUp}).limit(1).orderBy("id","desc");
+        const results = await this.knex("user_ip").select("date", 'id').where({ 'ip_address': encryptedIP, 'action': model.user.ipAddressActions.SignUp }).limit(1).orderBy("id", "desc");
         if (!results[0]) {
             return false;
         }
@@ -421,7 +421,7 @@ class UsersDAL extends _init {
      * @param url Thumbnail URL
      */
     async addUserThumbnail(id: number, url: string): Promise<void> {
-        await this.knex('thumbnails').del().where({'reference_id':id,'type':Thumbnails.Type.UserThumb});
+        await this.knex('thumbnails').del().where({ 'reference_id': id, 'type': Thumbnails.Type.UserThumb });
         await this.knex('thumbnails').insert({
             'reference_id': id,
             'type': Thumbnails.Type.UserThumb,
@@ -434,7 +434,7 @@ class UsersDAL extends _init {
      * @param id User's ID
      */
     public async getAvatar(id: number): Promise<users.UserAvatarItem[]> {
-        const userAvatar = await this.knex('user_avatar').select('user_avatar.catalog_id as catalogId','userid as userId','type','date').where({userid: id});
+        const userAvatar = await this.knex('user_avatar').select('user_avatar.catalog_id as catalogId', 'userid as userId', 'type', 'date').where({ userid: id });
         return userAvatar as users.UserAvatarItem[];
     }
 
@@ -444,7 +444,7 @@ class UsersDAL extends _init {
      * @param catalogId 
      */
     public async wearingItem(userId: number, catalogId: number): Promise<boolean> {
-        const userAvatar = await this.knex('user_avatar').select('user_avatar.id').where({userid: userId,'catalog_id':catalogId});
+        const userAvatar = await this.knex('user_avatar').select('user_avatar.id').where({ userid: userId, 'catalog_id': catalogId });
         if (userAvatar.length >= 1) {
             return true;
         }
@@ -456,7 +456,7 @@ class UsersDAL extends _init {
      * @param id User's ID
      */
     public async getAvatarColors(id: number): Promise<users.UserAvatarColor[]> {
-        const userAvatarColors = await this.knex('user_avatarcolor').select('user_avatarcolor.*').where({userid: id});
+        const userAvatarColors = await this.knex('user_avatarcolor').select('user_avatarcolor.*').where({ userid: id });
         return userAvatarColors as users.UserAvatarColor[];
     }
 
@@ -466,7 +466,7 @@ class UsersDAL extends _init {
      * @param colorRequest 
      */
     public async addAvatarColors(id: number, colorRequest: users.UserColorRequest): Promise<void> {
-        await this.knex('user_avatarcolor').del().where({'userid':id});
+        await this.knex('user_avatarcolor').del().where({ 'userid': id });
         const insertRequest = {
             'userid': id,
             'headr': colorRequest["HeadRGB"][0],
@@ -487,7 +487,7 @@ class UsersDAL extends _init {
      * @param id User's ID
      */
     public async modifyUserBanStatus(id: number, type: users.banned): Promise<boolean> {
-        await this.knex('users').update({'is_banned':type}).where({'users.id':id});
+        await this.knex('users').update({ 'is_banned': type }).where({ 'users.id': id });
         return true;
     }
 
@@ -497,22 +497,22 @@ class UsersDAL extends _init {
      * @param type New status
      */
     public async modifyAccountStatus(userId: number, type: users.accountStatus): Promise<void> {
-        await this.knex('users').update({'account_status':type}).where({'id':userId});
+        await this.knex('users').update({ 'account_status': type }).where({ 'id': userId });
     }
 
     /**
      * Delete a user's account
      */
     public async deleteAccount(id: number): Promise<void> {
-        await this.knex('users').update({'is_deleted':1}).where({'users.id':id});
+        await this.knex('users').update({ 'is_deleted': 1 }).where({ 'users.id': id });
     }
 
     /**
      * Get an array of a user's friends
      * @param id User ID
      */
-    public async getFriends(id: number, offset: number, limit: number, sortOrder: 'asc'|'desc'): Promise<Array<users.Friendship>> {
-        const friends = await this.knex('friendships').select('friendships.userid_two as userId','friendships.date','users.user_status as UserStatus').where({'userid_one':id}).offset(offset).limit(limit).innerJoin('users', 'users.id', 'friendships.userid_two').orderBy('friendships.id', sortOrder);
+    public async getFriends(id: number, offset: number, limit: number, sortOrder: 'asc' | 'desc'): Promise<Array<users.Friendship>> {
+        const friends = await this.knex('friendships').select('friendships.userid_two as userId', 'friendships.date', 'users.user_status as UserStatus').where({ 'userid_one': id }).offset(offset).limit(limit).innerJoin('users', 'users.id', 'friendships.userid_two').orderBy('friendships.id', sortOrder);
         return friends as Array<users.Friendship>;
     }
 
@@ -520,7 +520,7 @@ class UsersDAL extends _init {
      * Get a user's total count of friends
      */
     public async countFriends(id: number): Promise<number> {
-        const friendCount = await this.knex('friendships').select('id','userid_two as userId','date').where({'userid_one':id});
+        const friendCount = await this.knex('friendships').select('id', 'userid_two as userId', 'date').where({ 'userid_one': id });
         return friendCount.length;
     }
 
@@ -530,7 +530,7 @@ class UsersDAL extends _init {
      * @param offset 
      */
     public async getFriendRequests(userId: number, offset: number): Promise<users.FriendshipRequest[]> {
-        const awaitAccepting = await this.knex('friend_request').select('userid_requester as userId').where({'userid_requestee':userId}).limit(25).offset(offset);
+        const awaitAccepting = await this.knex('friend_request').select('userid_requester as userId').where({ 'userid_requestee': userId }).limit(25).offset(offset);
         return awaitAccepting;
     }
 
@@ -539,15 +539,16 @@ class UsersDAL extends _init {
      * @param ids Array of IDs
      */
     public async MultiGetNamesFromIds(ids: Array<number>): Promise<Array<users.MultiGetUsernames>> {
-        const query = this.knex('users').select('id as userId','username','users.account_status as accountStatus');
+        const query = this.knex('users').select('id as userId', 'username', 'users.account_status as accountStatus');
         ids.forEach((id) => {
-            query.orWhere({'users.id':id});
+            query.orWhere({ 'users.id': id });
         });
         const usernames = await query;
         usernames.forEach((user: users.UserInfo) => {
             if (user.accountStatus === users.accountStatus.deleted) {
-                user.username = "[Deleted"+user.userId+"]";
+                user.username = "[Deleted" + user.userId + "]";
             }
+            // @ts-ignore
             delete user.accountStatus;
         });
         return usernames as Array<users.MultiGetUsernames>;
@@ -558,7 +559,7 @@ class UsersDAL extends _init {
      * @param id User ID
      */
     public async getThumbnailByUserId(id: number): Promise<users.ThumbnailResponse> {
-        const thumbnail = await this.knex('thumbnails').select('thumbnails.url','reference_id as userId').where({'reference_id':id,'type':Thumbnails.Type.UserThumb});
+        const thumbnail = await this.knex('thumbnails').select('thumbnails.url', 'reference_id as userId').where({ 'reference_id': id, 'type': Thumbnails.Type.UserThumb });
         return thumbnail[0] as users.ThumbnailResponse;
     }
 
@@ -567,9 +568,9 @@ class UsersDAL extends _init {
      * @param ids Array of User IDs
      */
     public async multiGetThumbnailsFromIds(ids: Array<number>): Promise<Array<users.ThumbnailResponse>> {
-        const query = this.knex('thumbnails').select('thumbnails.url','reference_id as userId');
+        const query = this.knex('thumbnails').select('thumbnails.url', 'reference_id as userId');
         ids.forEach((id) => {
-            query.orWhere({'reference_id':id,'type':Thumbnails.Type.UserThumb});
+            query.orWhere({ 'reference_id': id, 'type': Thumbnails.Type.UserThumb });
         });
         const thumbnails = await query;
         return thumbnails as Array<users.ThumbnailResponse>;
@@ -579,9 +580,9 @@ class UsersDAL extends _init {
      * Retrieve Multiple Statuses from UserIds at once
      */
     public async multiGetStatus(ids: Array<number>, offset: number, limit: number): Promise<Array<users.UserStatus>> {
-        const query = this.knex('user_status').select('user_status.id as statusId','user_status.userid as userId','user_status.status', 'user_status.date', 'reaction_count_heart as heartReactionCount', 'comment_count as commentCount').limit(limit).offset(offset).orderBy('user_status.id', 'desc');
+        const query = this.knex('user_status').select('user_status.id as statusId', 'user_status.userid as userId', 'user_status.status', 'user_status.date', 'reaction_count_heart as heartReactionCount', 'comment_count as commentCount').limit(limit).offset(offset).orderBy('user_status.id', 'desc');
         ids.forEach((id) => {
-            query.orWhere({'user_status.userid':id,});
+            query.orWhere({ 'user_status.userid': id, });
         });
         const UserStatuses = await query;
         return UserStatuses as Array<users.UserStatus>;
@@ -590,21 +591,21 @@ class UsersDAL extends _init {
     public async canUserPostCommentToStatus(userId: number): Promise<boolean> {
         let timeToCheck = this.knexTime(this.moment().subtract(1, 'hour'));
         let latestComments = await this.knex('user_status_comment')
-        .select('id')
-        .where('created_at', '>', timeToCheck)
-        .andWhere({
-            'user_id': userId,
-        });
+            .select('id')
+            .where('created_at', '>', timeToCheck)
+            .andWhere({
+                'user_id': userId,
+            });
         if (latestComments.length >= 25) {
             return false;
         }
         // now check replies
         let latestCommentReplies = await this.knex('user_status_comment_reply')
-        .select('id')
-        .where('created_at', '>', timeToCheck)
-        .andWhere({
-            'user_id': userId,
-        })
+            .select('id')
+            .where('created_at', '>', timeToCheck)
+            .andWhere({
+                'user_id': userId,
+            })
         if (latestCommentReplies.length >= 25) {
             return false;
         }
@@ -615,7 +616,7 @@ class UsersDAL extends _init {
      * Mutli-get the heart status for statusIds in respect to the {userId}
      */
     public async multiGetReactionStatusForUser(userId: number, statusIds: number[], reactionType: string): Promise<model.user.UserReactionInformation[]> {
-        let query = this.knex('user_status_reactions').select('id','status_id');
+        let query = this.knex('user_status_reactions').select('id', 'status_id');
         for (const status of statusIds) {
             query = query.orWhere({
                 'user_id': userId,
@@ -643,7 +644,7 @@ class UsersDAL extends _init {
     }
 
     public async getStatusById(statusId: number): Promise<users.UserStatus> {
-        const query = this.knex('user_status').select('user_status.id as statusId','user_status.userid as userId','user_status.status', 'user_status.date', 'reaction_count_heart as heartReactionCount', 'comment_count as commentCount').limit(1).where('id','=',statusId);
+        const query = this.knex('user_status').select('user_status.id as statusId', 'user_status.userid as userId', 'user_status.status', 'user_status.date', 'reaction_count_heart as heartReactionCount', 'comment_count as commentCount').limit(1).where('id', '=', statusId);
         const UserStatuses = await query;
         if (!UserStatuses[0]) {
             throw new Error('InvalidStatusId');
@@ -657,13 +658,13 @@ class UsersDAL extends _init {
      * @param newStatus 
      */
     public async updateStatusByid(statusId: number, newStatus: string): Promise<void> {
-        await this.knex('user_status').update({'status': newStatus}).where({'id': statusId}).limit(1);
+        await this.knex('user_status').update({ 'status': newStatus }).where({ 'id': statusId }).limit(1);
     }
 
     public async multiGetStatusById(statusIds: number[]): Promise<users.UserStatus[]> {
-        let query = this.knex('user_status').select('user_status.id as statusId','user_status.userid as userId','user_status.status', 'user_status.date', 'reaction_count_heart as heartReactionCount', 'comment_count as commentCount');
+        let query = this.knex('user_status').select('user_status.id as statusId', 'user_status.userid as userId', 'user_status.status', 'user_status.date', 'reaction_count_heart as heartReactionCount', 'comment_count as commentCount');
         for (const id of statusIds) {
-            query = query.orWhere('id','=',id);
+            query = query.orWhere('id', '=', id);
         }
         const UserStatuses = await query;
         return UserStatuses;
@@ -684,7 +685,7 @@ class UsersDAL extends _init {
         return false;
     }
 
-    public async getUsersWhoReactedToStatus(statusId: number, reactionType: string): Promise<{userId: number}[]> {
+    public async getUsersWhoReactedToStatus(statusId: number, reactionType: string): Promise<{ userId: number }[]> {
         if (reactionType !== '❤️') {
             throw new Error('Reaction type is not supported by this method. UsersDAL.checkIfAlreadyReacted()');
         }
@@ -702,11 +703,11 @@ class UsersDAL extends _init {
                 'status_id': statusId,
                 'user_id': userId,
                 'comment': comment,
-            }).forUpdate('user_status','user_status_comment');
+            }).forUpdate('user_status', 'user_status_comment');
             // Increment reaction count
             await trx('user_status').increment('comment_count').where({
                 'id': statusId,
-            }).forUpdate('user_status','user_status_comment');
+            }).forUpdate('user_status', 'user_status_comment');
             // Commit
             await trx.commit();
             // Ok
@@ -720,11 +721,11 @@ class UsersDAL extends _init {
                 'userstatuscomment_id': commentId,
                 'user_id': userId,
                 'comment': reply,
-            }).forUpdate('user_status_comment_reply','user_status_comment');
+            }).forUpdate('user_status_comment_reply', 'user_status_comment');
             // Increment reply count
             await trx('user_status_comment').increment('reply_count').where({
                 'id': commentId,
-            }).forUpdate('user_status_comment_reply','user_status_comment');
+            }).forUpdate('user_status_comment_reply', 'user_status_comment');
             // Commit
             await trx.commit();
             // Ok
@@ -732,7 +733,7 @@ class UsersDAL extends _init {
     }
 
     public async getUserStatusCommentById(commentId: number, statusId: number): Promise<model.user.UserStatusComment> {
-        let comments = await this.knex('user_status_comment').select('id as userStatusCommentId','user_id as userId','status_id as statusId','comment','created_at as createdAt','updated_at as updatedAt','reply_count as replyCount').limit(1).orderBy('id','asc').where({'id': commentId,'status_id': statusId});
+        let comments = await this.knex('user_status_comment').select('id as userStatusCommentId', 'user_id as userId', 'status_id as statusId', 'comment', 'created_at as createdAt', 'updated_at as updatedAt', 'reply_count as replyCount').limit(1).orderBy('id', 'asc').where({ 'id': commentId, 'status_id': statusId });
         if (comments[0]) {
             return comments[0];
         }
@@ -740,12 +741,12 @@ class UsersDAL extends _init {
     }
 
     public async getCommentsToStatus(statusId: number, offset: number, limit: number): Promise<model.user.UserStatusComment[]> {
-        let comments = await this.knex('user_status_comment').select('id as userStatusCommentId','user_id as userId','status_id as statusId','comment','created_at as createdAt','updated_at as updatedAt','reply_count as replyCount').limit(limit).offset(offset).orderBy('id','asc').where({'status_id': statusId});
+        let comments = await this.knex('user_status_comment').select('id as userStatusCommentId', 'user_id as userId', 'status_id as statusId', 'comment', 'created_at as createdAt', 'updated_at as updatedAt', 'reply_count as replyCount').limit(limit).offset(offset).orderBy('id', 'asc').where({ 'status_id': statusId });
         return comments;
     }
 
     public async getRepliesToStatusComment(commentId: number, offset: number, limit: number): Promise<model.user.UserStatusCommentReply[]> {
-        let comments = await this.knex('user_status_comment_reply').select('id as commentReplyId','user_id as userId','comment','created_at as createdAt','updated_at as updatedAt').limit(limit).offset(offset).where({'userstatuscomment_id': commentId});
+        let comments = await this.knex('user_status_comment_reply').select('id as commentReplyId', 'user_id as userId', 'comment', 'created_at as createdAt', 'updated_at as updatedAt').limit(limit).offset(offset).where({ 'userstatuscomment_id': commentId });
         return comments;
     }
 
@@ -767,13 +768,13 @@ class UsersDAL extends _init {
                 'status_id': statusId,
                 'user_id': userId,
                 'reaction': reactionType,
-            }).forUpdate('user_status','user_status_reactions');
+            }).forUpdate('user_status', 'user_status_reactions');
             // Increment reaction count
             if (reactionType === '❤️') {
                 await trx('user_status').increment('reaction_count_heart').where({
                     'id': statusId,
-                }).forUpdate('user_status','user_status_reactions');
-            }else{
+                }).forUpdate('user_status', 'user_status_reactions');
+            } else {
                 throw new Error('Cannot increment reaction count for invalid reactionType');
             }
             // Commit
@@ -800,13 +801,13 @@ class UsersDAL extends _init {
                 'status_id': statusId,
                 'user_id': userId,
                 'reaction': reactionType,
-            }).forUpdate('user_status','user_status_reactions');
+            }).forUpdate('user_status', 'user_status_reactions');
             // Increment reaction count
             if (reactionType === '❤️') {
                 await trx('user_status').decrement('reaction_count_heart').where({
                     'id': statusId,
-                }).forUpdate('user_status','user_status_reactions');
-            }else{
+                }).forUpdate('user_status', 'user_status_reactions');
+            } else {
                 throw new Error('Cannot decrement reaction count for invalid reactionType');
             }
             // Commit
@@ -821,7 +822,7 @@ class UsersDAL extends _init {
      * @param secondUserId Second User ID
      */
     public async areUsersFriends(firstUserId: number, secondUserId: number): Promise<boolean> {
-        const query = await this.knex("friendships").select("id").where({"userid_one":firstUserId,"userid_two":secondUserId});
+        const query = await this.knex("friendships").select("id").where({ "userid_one": firstUserId, "userid_two": secondUserId });
         if (query[0] !== undefined) {
             return true;
         }
@@ -852,7 +853,7 @@ class UsersDAL extends _init {
             } as users.FriendshipStatus;
         }
         // Check if second user sent request
-        const canAccept = await this.knex("friend_request").select("id").where({"userid_requester":secondUserId,"userid_requestee":firstUserId});
+        const canAccept = await this.knex("friend_request").select("id").where({ "userid_requester": secondUserId, "userid_requestee": firstUserId });
         if (canAccept[0]) {
             return {
                 areFriends: false,
@@ -862,7 +863,7 @@ class UsersDAL extends _init {
             } as users.FriendshipStatus;
         }
         // Check if first user sent request
-        const request = await this.knex("friend_request").select("id").where({"userid_requestee":secondUserId,"userid_requester":firstUserId});
+        const request = await this.knex("friend_request").select("id").where({ "userid_requestee": secondUserId, "userid_requester": firstUserId });
         if (request[0]) {
             return {
                 areFriends: false,
@@ -894,7 +895,7 @@ class UsersDAL extends _init {
             if (firstUserAlreadyRequested[0]) {
                 throw new Error('userIdOne has already created this request.');
             }
-            
+
             let secondUserAlreadyRequested = await trx('friend_request').select('id').where({
                 'userid_requestee': userIdOne,
                 'userid_requester': userIdTwo,
@@ -902,7 +903,7 @@ class UsersDAL extends _init {
             if (secondUserAlreadyRequested[0]) {
                 throw new Error('userIdTwo has already created this request.');
             }
-            await trx('friend_request').insert({"userid_requester": userIdOne,"userid_requestee":userIdTwo}).forUpdate('friend_request');
+            await trx('friend_request').insert({ "userid_requester": userIdOne, "userid_requestee": userIdTwo }).forUpdate('friend_request');
         });
     }
 
@@ -913,10 +914,10 @@ class UsersDAL extends _init {
      */
     public async createFriendship(userIdOne: number, userIdTwo: number): Promise<void> {
         const date = this.moment().format('YYYY-MM-DD HH:mm:ss');
-        await this.knex("friend_request").where({"userid_requester": userIdOne,"userid_requestee":userIdTwo}).del();
-        await this.knex("friend_request").where({"userid_requestee": userIdOne,"userid_requester":userIdTwo}).del();
-        await this.knex("friendships").insert({"userid_one": userIdOne,"userid_two":userIdTwo,"date":date});
-        await this.knex("friendships").insert({"userid_two": userIdOne,"userid_one":userIdTwo,"date":date});
+        await this.knex("friend_request").where({ "userid_requester": userIdOne, "userid_requestee": userIdTwo }).del();
+        await this.knex("friend_request").where({ "userid_requestee": userIdOne, "userid_requester": userIdTwo }).del();
+        await this.knex("friendships").insert({ "userid_one": userIdOne, "userid_two": userIdTwo, "date": date });
+        await this.knex("friendships").insert({ "userid_two": userIdOne, "userid_one": userIdTwo, "date": date });
     }
     /**
      * Delete an established friendship
@@ -925,8 +926,8 @@ class UsersDAL extends _init {
      */
     public async deleteFriendship(userIdOne: number, userIdTwo: number): Promise<void> {
         // Delete Requests
-        await this.knex("friend_request").where({"userid_requester": userIdOne,"userid_requestee":userIdTwo}).del();
-        await this.knex("friend_request").where({"userid_requestee": userIdOne,"userid_requester":userIdTwo}).del();
+        await this.knex("friend_request").where({ "userid_requester": userIdOne, "userid_requestee": userIdTwo }).del();
+        await this.knex("friend_request").where({ "userid_requestee": userIdOne, "userid_requester": userIdTwo }).del();
         // Delete Friendship
         await this.knex('friendships').delete().where({
             'userid_one': userIdOne,
@@ -944,8 +945,8 @@ class UsersDAL extends _init {
      * @param category Category Enum
      * @param offset Offset
      */
-    public async getInventory(id: number, category: Catalog.category, offset: number, limit: number, orderBy: 'asc'|'desc'): Promise<Array<users.UserInventory>> {
-        const inventory = await this.knex('user_inventory').where({ 'user_inventory.user_id': id, 'catalog.category': category }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId','user_inventory.catalog_id as catalogId','user_inventory.price as price','catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial').orderBy('user_inventory.id', orderBy).limit(limit).offset(offset);
+    public async getInventory(id: number, category: Catalog.category, offset: number, limit: number, orderBy: 'asc' | 'desc'): Promise<Array<users.UserInventory>> {
+        const inventory = await this.knex('user_inventory').where({ 'user_inventory.user_id': id, 'catalog.category': category }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial').orderBy('user_inventory.id', orderBy).limit(limit).offset(offset);
         return inventory as users.UserInventory[];
     }
 
@@ -969,41 +970,41 @@ class UsersDAL extends _init {
      * @param offset Offset
      */
     public async getCollectibleInventory(
-        id: number, 
-        offset: number, 
-        limit: number, 
-        orderBy: 'asc'|'desc'
+        id: number,
+        offset: number,
+        limit: number,
+        orderBy: 'asc' | 'desc'
     ): Promise<users.UserCollectibleInventoryResponse> {
         // grab inventory with limit+1
         const inventory = await this.knex('user_inventory')
-        .where({ 
-            'user_inventory.user_id': id,
-            'catalog.is_collectible': Catalog.collectible.true 
-        }).innerJoin(
-            'catalog', 
-            'catalog.id', 
-            '=', 
-            'user_inventory.catalog_id'
-        ).select(
-            'user_inventory.id as userInventoryId',
-            'user_inventory.catalog_id as catalogId',
-            'user_inventory.price as price',
-            'catalog.name as catalogName',
-            'catalog.is_collectible as collectible', 
-            'catalog.category', 
-            'user_inventory.serial',
-            'catalog.average_price as averagePrice'
-        ).orderBy(
-            'user_inventory.id', 
-            orderBy
-        ).limit(limit+1).offset(offset);
+            .where({
+                'user_inventory.user_id': id,
+                'catalog.is_collectible': Catalog.collectible.true
+            }).innerJoin(
+                'catalog',
+                'catalog.id',
+                '=',
+                'user_inventory.catalog_id'
+            ).select(
+                'user_inventory.id as userInventoryId',
+                'user_inventory.catalog_id as catalogId',
+                'user_inventory.price as price',
+                'catalog.name as catalogName',
+                'catalog.is_collectible as collectible',
+                'catalog.category',
+                'user_inventory.serial',
+                'catalog.average_price as averagePrice'
+            ).orderBy(
+                'user_inventory.id',
+                orderBy
+            ).limit(limit + 1).offset(offset);
         // if more than limit returned, more are available
         if (inventory.length > limit) {
             return {
                 areMoreAvailable: true,
-                items: inventory.slice(0,limit),
+                items: inventory.slice(0, limit),
             }
-        }else{
+        } else {
             // less than limit returned, so no more available
             return {
                 areMoreAvailable: false,
@@ -1017,45 +1018,45 @@ class UsersDAL extends _init {
      * @param id User ID
      */
     public async searchCollectibleInventory(
-        id: number, 
-        query: string, 
-        offset: number, 
+        id: number,
+        query: string,
+        offset: number,
         limit: number
     ): Promise<users.UserCollectibleInventoryResponse> {
         // temporary until we find a better solution...
-        query = query.replace('%','\%');
+        query = query.replace('%', '\%');
         // grab inventory with limit+1
         const inventory = await this.knex('user_inventory')
-        .where({ 
-            'user_inventory.user_id': id,
-            'catalog.is_collectible': Catalog.collectible.true 
-        }).innerJoin(
-            'catalog', 
-            'catalog.id', 
-            '=', 
-            'user_inventory.catalog_id'
-        ).select(
-            'user_inventory.id as userInventoryId',
-            'user_inventory.catalog_id as catalogId',
-            'user_inventory.price as price',
-            'catalog.name as catalogName', 
-            'catalog.is_collectible as collectible', 
-            'catalog.category', 
-            'user_inventory.serial',
-            'catalog.average_price as averagePrice'
-        ).limit(limit+1).offset(offset)
-        .where(
-            'catalog.name',
-            'like',
-            '%'+query+'%'
-        );
+            .where({
+                'user_inventory.user_id': id,
+                'catalog.is_collectible': Catalog.collectible.true
+            }).innerJoin(
+                'catalog',
+                'catalog.id',
+                '=',
+                'user_inventory.catalog_id'
+            ).select(
+                'user_inventory.id as userInventoryId',
+                'user_inventory.catalog_id as catalogId',
+                'user_inventory.price as price',
+                'catalog.name as catalogName',
+                'catalog.is_collectible as collectible',
+                'catalog.category',
+                'user_inventory.serial',
+                'catalog.average_price as averagePrice'
+            ).limit(limit + 1).offset(offset)
+            .where(
+                'catalog.name',
+                'like',
+                '%' + query + '%'
+            );
         // if more than limit returned, more are available
         if (inventory.length > limit) {
             return {
                 areMoreAvailable: true,
-                items: inventory.slice(0,limit),
+                items: inventory.slice(0, limit),
             }
-        }else{
+        } else {
             // less than limit returned, so no more available
             return {
                 areMoreAvailable: false,
@@ -1070,7 +1071,7 @@ class UsersDAL extends _init {
      * @param category Category to search for
      */
     public async countCollectibleInventory(id: number): Promise<number> {
-        const count = await this.knex('user_inventory').where({ 'user_inventory.user_id': id,'catalog.is_collectible': Catalog.collectible.true }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').count("user_inventory.id as Total");
+        const count = await this.knex('user_inventory').where({ 'user_inventory.user_id': id, 'catalog.is_collectible': Catalog.collectible.true }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').count("user_inventory.id as Total");
         if (!count || !count[0] || !count[0]["Total"]) {
             return 0;
         }
@@ -1083,7 +1084,7 @@ class UsersDAL extends _init {
      * @param catalogId Catalog Item's ID
      */
     public async getUserInventoryByCatalogId(userId: number, catalogId: number): Promise<Array<users.UserInventory>> {
-        let query = this.knex('user_inventory').where({ 'user_inventory.user_id': userId, 'user_inventory.catalog_id': catalogId }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId','user_inventory.catalog_id as catalogId','user_inventory.price as price','catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial').orderBy('user_inventory.id', "desc");
+        let query = this.knex('user_inventory').where({ 'user_inventory.user_id': userId, 'user_inventory.catalog_id': catalogId }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial').orderBy('user_inventory.id', "desc");
         const inventory = await query;
         return inventory as users.UserInventory[];
     }
@@ -1093,7 +1094,7 @@ class UsersDAL extends _init {
      * @param userInventoryId Inventory ID
      */
     public async getItemByInventoryId(userInventoryId: number): Promise<users.FullUserInventory> {
-        const inventory = await this.knex('user_inventory').where({ 'user_inventory.id': userInventoryId}).select('user_inventory.id as userInventoryId','user_inventory.catalog_id as catalogId','user_inventory.price as price','user_inventory.user_id as userId').orderBy('user_inventory.id', "desc");
+        const inventory = await this.knex('user_inventory').where({ 'user_inventory.id': userInventoryId }).select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'user_inventory.user_id as userId').orderBy('user_inventory.id', "desc");
         return inventory[0] as users.FullUserInventory;
     }
 
@@ -1103,14 +1104,14 @@ class UsersDAL extends _init {
      * @param newPrice The new price
      */
     public async editItemPrice(userInventoryId: number, newPrice: number): Promise<void> {
-        await this.knex("user_inventory").update({"price":newPrice}).where({"id":userInventoryId});
+        await this.knex("user_inventory").update({ "price": newPrice }).where({ "id": userInventoryId });
     }
 
     /**
      * Take all the userid's items offsale. This is useful, for instance, if the player is about to be banned.
      */
     public async takeAllItemsOffSale(userId: number): Promise<void> {
-        await this.knex("user_inventory").update({"price":0}).where({'user_id':userId});
+        await this.knex("user_inventory").update({ "price": 0 }).where({ 'user_id': userId });
     }
 
     /**
@@ -1118,7 +1119,7 @@ class UsersDAL extends _init {
      * @param userId User's ID
      */
     public async getGroups(userId: number): Promise<users.UserGroups[]> {
-        const groups = await this.knex("group_members").select("groups.id as groupId","groups.name as groupName","groups.description as groupDescription", "groups.owner_userid as groupOwnerUserId", "groups.thumbnail_catalogid as groupIconCatalogId", "groups.membercount as groupMemberCount", "group_members.userid as userId","group_members.roleid as userRolesetId","group_roles.name as userRolesetName","group_roles.rank as userRolsetRank").where({"group_members.userid":userId,"groups.status":Groups.groupStatus.ok}).innerJoin("groups", "groups.id", "group_members.groupid").innerJoin("group_roles", "group_roles.id", "group_members.roleid").orderBy("group_roles.rank", "desc");
+        const groups = await this.knex("group_members").select("groups.id as groupId", "groups.name as groupName", "groups.description as groupDescription", "groups.owner_userid as groupOwnerUserId", "groups.thumbnail_catalogid as groupIconCatalogId", "groups.membercount as groupMemberCount", "group_members.userid as userId", "group_members.roleid as userRolesetId", "group_roles.name as userRolesetName", "group_roles.rank as userRolsetRank").where({ "group_members.userid": userId, "groups.status": Groups.groupStatus.ok }).innerJoin("groups", "groups.id", "group_members.groupid").innerJoin("group_roles", "group_roles.id", "group_members.roleid").orderBy("group_roles.rank", "desc");
         return groups as users.UserGroups[];
     }
 
@@ -1127,7 +1128,7 @@ class UsersDAL extends _init {
      * @param userId User's ID
      */
     public async countGroups(userId: number): Promise<number> {
-        const count = await this.knex("group_members").count("id as Total").where({"userid":userId});
+        const count = await this.knex("group_members").count("id as Total").where({ "userid": userId });
         if (!count[0]["Total"]) {
             return 0;
         }
@@ -1138,7 +1139,7 @@ class UsersDAL extends _init {
      * Get User's Latest Status (including date)
      */
     public async getUserLatestStatus(userId: number): Promise<users.UserStatus> {
-        const result = await this.knex("user_status").select("userid as userId","status","date").where({"userid":userId}).limit(1).orderBy("id", "desc");
+        const result = await this.knex("user_status").select("userid as userId", "status", "date").where({ "userid": userId }).limit(1).orderBy("id", "desc");
         return result[0] as users.UserStatus;
     }
 
@@ -1148,7 +1149,7 @@ class UsersDAL extends _init {
      * @param newStatus 
      */
     public async updateStatus(userId: number, newStatus: string): Promise<number> {
-        await this.knex("users").update({"user_status":newStatus}).where({"users.id":userId});
+        await this.knex("users").update({ "user_status": newStatus }).where({ "users.id": userId });
         let idOfStatus = await this.knex("user_status").insert({
             "userid": userId,
             "status": newStatus,
@@ -1163,7 +1164,7 @@ class UsersDAL extends _init {
      * @param newStatus 
      */
     public async updateStatusWithoutInsert(userId: number, newStatus: string): Promise<void> {
-        await this.knex("users").update({"user_status":newStatus}).where({"users.id":userId});
+        await this.knex("users").update({ "user_status": newStatus }).where({ "users.id": userId });
     }
 
     /**
@@ -1173,13 +1174,13 @@ class UsersDAL extends _init {
      * @param sort 
      * @param query 
      */
-    public async search(offset: number, limit: number, sort: 'asc'|'desc', sortBy: 'id'|'user_lastonline', query?: string): Promise<users.SearchResult[]> {
-        
+    public async search(offset: number, limit: number, sort: 'asc' | 'desc', sortBy: 'id' | 'user_lastonline', query?: string): Promise<users.SearchResult[]> {
+
         const search = this.knex("users").select(['id as userId', 'username', 'user_status as status', 'user_joindate as joinDate', 'user_lastonline as lastOnline', 'user_staff as staff']).limit(limit).offset(offset).orderBy(sortBy, sort);
         if (query) {
-            search.where('users.username', 'like', '%'+query+'%');
+            search.where('users.username', 'like', '%' + query + '%');
         }
-        search.where({'users.account_status': users.accountStatus.ok});
+        search.where({ 'users.account_status': users.accountStatus.ok });
         const results = await search;
         return results;
     }
@@ -1189,7 +1190,7 @@ class UsersDAL extends _init {
      * @param userIds 
      */
     public async multiGetForumInfo(userIds: number[]): Promise<users.ForumInfo[]> {
-        const query = this.knex('users').select("id as userId","forum_postcount as postCount","user_staff as permissionLevel","forum_signature as signature").limit(25);
+        const query = this.knex('users').select("id as userId", "forum_postcount as postCount", "user_staff as permissionLevel", "forum_signature as signature").limit(25);
         userIds.forEach((k) => {
             query.orWhere({ "id": k })
         });
@@ -1202,7 +1203,7 @@ class UsersDAL extends _init {
      * @deprecated Use transactions instead
      */
     public async incrementPostCount(userId: number): Promise<void> {
-        await this.knex("users").where({'id': userId}).increment('forum_postcount');
+        await this.knex("users").where({ 'id': userId }).increment('forum_postcount');
     }
 
     /**
@@ -1214,7 +1215,7 @@ class UsersDAL extends _init {
         const encryptedPasswordHash = encryptPasswordHash(newPasswordHash);
         await this.knex('users').update({
             'password': encryptedPasswordHash,
-        }).where({'id': userId});
+        }).where({ 'id': userId });
     }
 
     /**
@@ -1227,7 +1228,7 @@ class UsersDAL extends _init {
             "userid as userId",
             "code",
             "date_created as dateCreated",
-        ).where({'code': code});
+        ).where({ 'code': code });
         if (!info[0]) {
             throw new Error('InvalidCode');
         }
@@ -1238,7 +1239,7 @@ class UsersDAL extends _init {
      * Delete a Password Reset Request
      */
     public async deletePasswordResetRequest(code: string): Promise<void> {
-        await this.knex("password_resets").delete().where({'code': code});
+        await this.knex("password_resets").delete().where({ 'code': code });
     }
 
     /**
@@ -1257,27 +1258,27 @@ class UsersDAL extends _init {
      * @param userId 
      * @param actionsToCheckFor 
      */
-    public async checkIfIpIsNew(userId: number, ipAddress: string, actionsToCheckFor: model.user.ipAddressActions[]|model.user.ipAddressActions): Promise<boolean> {
+    public async checkIfIpIsNew(userId: number, ipAddress: string, actionsToCheckFor: model.user.ipAddressActions[] | model.user.ipAddressActions): Promise<boolean> {
         const time = this.moment().subtract(30, 'days').format('YYYY-MM-DD HH:mm:ss');
         const encryptedIP = await this.encryptIpAddress(ipAddress);
         if (typeof actionsToCheckFor === 'object') {
             // Array
-            let query = this.knex("user_ip").select("date").limit(1).orderBy("id","desc");
+            let query = this.knex("user_ip").select("date").limit(1).orderBy("id", "desc");
             for (const item of actionsToCheckFor) {
-                query = query.orWhere({'ip_address': encryptedIP,'action': item, 'userid': userId}).andWhere('date','>',time);
+                query = query.orWhere({ 'ip_address': encryptedIP, 'action': item, 'userid': userId }).andWhere('date', '>', time);
             }
             let results = await query;
             if (!results[0]) {
                 return true;
-            }else{
+            } else {
                 return false;
             }
-        }else{
+        } else {
             // Single action
-            let results = await this.knex("user_ip").select("date").where({'ip_address': encryptedIP,'action': actionsToCheckFor,'userid': userId}).andWhere('date','>',time).limit(1).orderBy("id","desc");
+            let results = await this.knex("user_ip").select("date").where({ 'ip_address': encryptedIP, 'action': actionsToCheckFor, 'userid': userId }).andWhere('date', '>', time).limit(1).orderBy("id", "desc");
             if (!results[0]) {
                 return true;
-            }else{
+            } else {
                 return false;
             }
         }
@@ -1299,9 +1300,31 @@ class UsersDAL extends _init {
      * @param isDeveloper
      */
     public async updateIsDeveloper(userId: number, isDeveloper: boolean): Promise<void> {
-        await this.knex('users').update({'is_developer': isDeveloper}).where({
+        await this.knex('users').update({ 'is_developer': isDeveloper }).where({
             'id': userId,
         }).limit(1);
+    }
+
+    /**
+     * Get leaderboards sorted by option
+     * @param sort 
+     * @param limit 
+     * @param offset 
+     */
+    public async getLeaderboardSorted(sort: string, limit: number, offset: number): Promise<model.user.UserLeaderboardSortedEntry[]> {
+        if (!model.staff.UserLeadboardSortOptions.includes(sort)) {
+            sort = model.staff.UserLeadboardSortOptions[0];
+        }
+
+        let query = this.knex('users').select('id as userId', 'username', 'user_balance1 as primaryBalance', 'user_balance2 as secondaryBalance', 'user_lastonline as lastOnline', 'account_status as accountStatus').limit(limit).offset(offset);
+        if (sort === 'PrimaryCurrencyDesc') {
+            query = query.orderBy('user_balance1', 'desc');
+        } else if (sort === 'SecondaryCurrencyDesc') {
+            query = query.orderBy('user_balance2', 'desc');
+        } else if (sort === 'UserIdAsc') {
+            query = query.orderBy('id', 'asc');
+        }
+        return await query;
     }
 }
 

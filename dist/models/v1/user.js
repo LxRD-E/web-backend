@@ -732,4 +732,31 @@ __decorate([
     __metadata("design:type", Number)
 ], CreateTradeRequest.prototype, "requestPrimary", void 0);
 exports.CreateTradeRequest = CreateTradeRequest;
+class UserLeaderboardSortedEntry {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserLeaderboardSortedEntry.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], UserLeaderboardSortedEntry.prototype, "username", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserLeaderboardSortedEntry.prototype, "primaryBalance", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserLeaderboardSortedEntry.prototype, "secondaryBalance", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], UserLeaderboardSortedEntry.prototype, "lastOnline", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], UserLeaderboardSortedEntry.prototype, "accountStatus", void 0);
+exports.UserLeaderboardSortedEntry = UserLeaderboardSortedEntry;
 

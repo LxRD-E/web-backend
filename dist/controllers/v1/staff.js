@@ -727,6 +727,12 @@ let StaffController = class StaffController extends controller_1.default {
     async getUserEmails(userId) {
         return this.settings.getUserEmails(userId);
     }
+    async userLeaderboard(limit = 100, offset = 0, sortBy = 'PrimaryCurrencyDesc') {
+        if (!model.staff.UserLeadboardSortOptions.includes(sortBy)) {
+            sortBy = model.staff.UserLeadboardSortOptions[0];
+        }
+        return await this.user.getLeaderboardSorted(sortBy, limit, offset);
+    }
     async searchUsers(email, username, userId) {
         let query;
         let column;
@@ -1347,6 +1353,18 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "getUserEmails", null);
+__decorate([
+    common_1.Get('/user/leaderboard'),
+    swagger_1.Summary('Get all users'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo)),
+    swagger_1.ReturnsArray(200, { type: model.user.UserLeaderboardSortedEntry }),
+    __param(0, common_1.QueryParams('limit', Number)),
+    __param(1, common_1.QueryParams('offset', Number)),
+    __param(2, common_1.QueryParams('sortBy', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, String]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "userLeaderboard", null);
 __decorate([
     common_1.Get('/user/search'),
     swagger_1.Summary('Search for users by username, email, or userId'),

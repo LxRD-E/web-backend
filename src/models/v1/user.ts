@@ -1,6 +1,6 @@
 import * as Catalog from './catalog';
 import * as Groups from './group';
-import {Required, PropertyType, MinItems, MaxItems, Enum} from '@tsed/common';
+import { Required, PropertyType, MinItems, MaxItems, Enum } from '@tsed/common';
 import { Example, Description } from '@tsed/swagger';
 
 export const MAX_FRIENDS = 100;
@@ -122,13 +122,13 @@ export class UserInfo {
      * Is 2fa enabled?
      */
     @PropertyType(Number)
-    '2faEnabled': 0|1;
+    '2faEnabled': 0 | 1;
     /**
      * Is the current user a developer?
      */
     @PropertyType(Number)
-    @Enum(0,1)
-    isDeveloper: 0|1;
+    @Enum(0, 1)
+    isDeveloper: 0 | 1;
 }
 
 export class PastUsernames {
@@ -246,7 +246,7 @@ export class Friendship {
      * The status of the userId
      */
     @PropertyType(String)
-    UserStatus?: string|null;
+    UserStatus?: string | null;
 }
 export interface FriendshipRequest {
     /**
@@ -260,7 +260,7 @@ export class ForumInfo {
     @Required()
     permissionLevel: number;
     @PropertyType(String)
-    signature: string|null;
+    signature: string | null;
 }
 /**
  * Response from a username from it's id
@@ -302,7 +302,7 @@ export class UserStatus {
     @Required()
     userId: number;
     @Required()
-    status: string|null;
+    status: string | null;
     @Required()
     date: string;
     @Required()
@@ -324,7 +324,7 @@ export class UserStatusForAuthenticated {
     @Required()
     userId: number;
     @Required()
-    status: string|null;
+    status: string | null;
     @Required()
     date: string;
     @Required()
@@ -512,7 +512,7 @@ export enum ipAddressActions {
     'TradeSent',
     'TradeCompleted',
     'PutItemForSale',
-    'TradeFailedDueToTwoStep', 
+    'TradeFailedDueToTwoStep',
 }
 /**
  * Is a user banned?
@@ -578,11 +578,11 @@ export class UserInfoResponse {
     @Required()
     username: string;
     @PropertyType(String)
-    status?: string|null;
+    status?: string | null;
     @Required()
     joinDate: string;
     @PropertyType(String)
-    blurb?: string|null;
+    blurb?: string | null;
     @Required()
     lastOnline: string;
     @Required()
@@ -622,20 +622,20 @@ export class SoloThumbnailResponse {
     url: string;
 }
 
-export class UserInventoryResponse { 
+export class UserInventoryResponse {
     @Required()
-    total: number; 
+    total: number;
     @Required()
     @PropertyType(UserInventory)
-    items: UserInventory[] 
+    items: UserInventory[]
 }
 
-export class UserCollectibleInventoryResponse { 
+export class UserCollectibleInventoryResponse {
     @Required()
     areMoreAvailable: boolean;
     @Required()
     @PropertyType(UserCollectibleInventory)
-    items: UserCollectibleInventory[] 
+    items: UserCollectibleInventory[]
 }
 
 export class UserGroupsResponse {
@@ -652,7 +652,7 @@ export class SearchResult {
     @Required()
     username: string;
     @PropertyType(String)
-    status: string|null;
+    status: string | null;
     @Required()
     joinDate: string;
     @Required()
@@ -683,7 +683,7 @@ export class UserModerationAction {
     until: string;
     @Required()
     @Description('Whether or not the account was terminated')
-    terminated: 0|1;
+    terminated: 0 | 1;
 }
 
 export class GenericCount {
@@ -704,4 +704,19 @@ export class CreateTradeRequest {
     offerPrimary?: number;
     @Description('Primary currency the authenticated user wishes to obtain')
     requestPrimary?: number;
+}
+
+export class UserLeaderboardSortedEntry {
+    @Required()
+    userId: number;
+    @Required()
+    username: string;
+    @Required()
+    primaryBalance: number;
+    @Required()
+    secondaryBalance: number;
+    @Required()
+    lastOnline: string;
+    @Required()
+    accountStatus: accountStatus;
 }

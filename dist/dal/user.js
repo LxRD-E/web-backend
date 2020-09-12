@@ -838,6 +838,22 @@ class UsersDAL extends _init_1.default {
             'id': userId,
         }).limit(1);
     }
+    async getLeaderboardSorted(sort, limit, offset) {
+        if (!model.staff.UserLeadboardSortOptions.includes(sort)) {
+            sort = model.staff.UserLeadboardSortOptions[0];
+        }
+        let query = this.knex('users').select('id as userId', 'username', 'user_balance1 as primaryBalance', 'user_balance2 as secondaryBalance', 'user_lastonline as lastOnline', 'account_status as accountStatus').limit(limit).offset(offset);
+        if (sort === 'PrimaryCurrencyDesc') {
+            query = query.orderBy('user_balance1', 'desc');
+        }
+        else if (sort === 'SecondaryCurrencyDesc') {
+            query = query.orderBy('user_balance2', 'desc');
+        }
+        else if (sort === 'UserIdAsc') {
+            query = query.orderBy('id', 'asc');
+        }
+        return await query;
+    }
 }
 exports.default = UsersDAL;
 

@@ -197,3 +197,9 @@ export class SearchUsersResponse {
     @Required()
     userId: number;
 }
+
+export const UserLeadboardSortOptions = [
+    "PrimaryCurrencyDesc",
+    "SecondaryCurrencyDesc",
+    "UserIdAsc",
+]

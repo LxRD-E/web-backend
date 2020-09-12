@@ -266,7 +266,7 @@ export class StaffController extends controller {
         // Verify User Exists
         try {
             await this.user.getInfo(userId, ['userId']);
-        } catch{
+        } catch {
             throw new this.BadRequest('InvalidUserId');
         }
         // Setup Array
@@ -331,7 +331,7 @@ export class StaffController extends controller {
         // verify user exists
         try {
             await this.user.getInfo(userId, ['userId']);
-        } catch{
+        } catch {
             throw new this.BadRequest('InvalidUserId');
         }
         await this.staff.createComment(userId, userInfo.userId, comment);
@@ -1230,6 +1230,21 @@ export class StaffController extends controller {
         @QueryParams('userId', Number) userId: number,
     ) {
         return this.settings.getUserEmails(userId);
+    }
+
+    @Get('/user/leaderboard')
+    @Summary('Get all users')
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ManagePublicUserInfo))
+    @ReturnsArray(200, { type: model.user.UserLeaderboardSortedEntry })
+    public async userLeaderboard(
+        @QueryParams('limit', Number) limit: number = 100,
+        @QueryParams('offset', Number) offset: number = 0,
+        @QueryParams('sortBy', String) sortBy: string = 'PrimaryCurrencyDesc',
+    ) {
+        if (!model.staff.UserLeadboardSortOptions.includes(sortBy)) {
+            sortBy = model.staff.UserLeadboardSortOptions[0];
+        }
+        return await this.user.getLeaderboardSorted(sortBy, limit, offset);
     }
 
     @Get('/user/search')
