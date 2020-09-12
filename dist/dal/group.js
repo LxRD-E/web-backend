@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const groups = require("../models/v1/group");
 const catalog = require("../models/v1/catalog");
 const _init_1 = require("./_init");
+const models_1 = require("../models/models");
 const gifwrap_1 = require("gifwrap");
 const jimp = require("jimp");
 class GroupsDAL extends _init_1.default {
@@ -109,8 +110,13 @@ class GroupsDAL extends _init_1.default {
         });
     }
     async search(offset, limit, query) {
-        const groupResults = this.knex("groups").select("groups.id as groupId", "groups.name as groupName", "groups.description as groupDescription", "groups.owner_userid as groupOwnerUserId", "groups.membercount as groupMemberCount", "groups.thumbnail_catalogid as groupIconCatalogId", "groups.status as groupStatus").limit(limit).orderBy("membercount", "desc").offset(offset);
-        const results = await groupResults;
+        let searchQuery = this.knex("groups").select("groups.id as groupId", "groups.name as groupName", "groups.description as groupDescription", "groups.owner_userid as groupOwnerUserId", "groups.membercount as groupMemberCount", "groups.thumbnail_catalogid as groupIconCatalogId", "groups.status as groupStatus").where({
+            'groups.status': models_1.group.groupStatus.ok
+        }).limit(limit).orderBy("membercount", "desc").offset(offset);
+        if (query && typeof query === 'string' && query.indexOf('%') === -1 && query.length >= 1 && query.length <= 30) {
+            searchQuery = searchQuery.andWhere('groups.name', 'like', query);
+        }
+        const results = await searchQuery;
         return results;
     }
     async getRoleForNewMembers(groupId) {

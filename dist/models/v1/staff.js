@@ -98,4 +98,15 @@ __decorate([
     __metadata("design:type", Array)
 ], ProvideItemsRequest.prototype, "catalogIds", void 0);
 exports.ProvideItemsRequest = ProvideItemsRequest;
+class SearchUsersResponse {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], SearchUsersResponse.prototype, "username", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], SearchUsersResponse.prototype, "userId", void 0);
+exports.SearchUsersResponse = SearchUsersResponse;
 

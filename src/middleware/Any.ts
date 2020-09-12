@@ -3,6 +3,7 @@ import crypto = require('crypto');
 import os = require('os');
 import util = require('util');
 import moment = require('moment');
+import * as prom from '../helpers/prometheus';
 const randomBytes = util.promisify(crypto.randomBytes);
 // pre-fetch to prevent request slowdowns
 randomBytes(64).then(() => {
@@ -11,7 +12,6 @@ randomBytes(64).then(() => {
     console.error(err);
 })
 import * as Users from '../models/v1/user'
-import * as Moderation from '../models/v1/moderation';
 import { BadRequest } from 'ts-httpexceptions';
 // User model
 import UserDAL from '../dal/user';
@@ -20,7 +20,6 @@ import EconomyDAL from '../dal/economy';
 import {
     SessionUserData,
 } from '../models/v1/any';
-import * as model from '../models/models';
 /**
  * CSRF and Sessions
  */
@@ -133,8 +132,10 @@ export const getJavascript = (nonce: string, version: string): string => {
         <script nonce="${nonce}" src="/js/bundle/main.bundle.js?v=${version}"></script>
         <script nonce="${nonce}" src="/js/bundle/bootstrap.bundle.js?v=${version}"></script>`;
 }
-const internalEconomyDal = new EconomyDAL();
 export default async (req: Request, res: Response, next: NextFunction, UserModel = UserDAL, ModModel = ModDAL, setSession = setSessionNormal, regenCsrf = regenCsrfNormal): Promise<void> => {
+    let p = prom.get('middleware_any', 'middleware for all API requests');
+    p.counter.inc();
+    let start = new Date().getTime();
     if (req.query.sort) {
         if (req.query.sort !== 'asc' && req.query.sort !== 'desc') {
             return next(new BadRequest('InvalidSort'));
@@ -168,6 +169,7 @@ export default async (req: Request, res: Response, next: NextFunction, UserModel
                 if (!userData.csrf) {
                     await setSession(req);
                 }
+                p.historGram.observe((start - new Date().getTime()) / 1000);
                 next();
                 return;
             }
@@ -212,6 +214,7 @@ export default async (req: Request, res: Response, next: NextFunction, UserModel
             if (!isImpersonating && userInfo && userInfo.banned === Users.banned.true) {
                 if (req.method === 'GET') {
                     if (req.url === '/api/v1/auth/ban' || req.url === '/api/v1/auth/current-user') {
+                        p.historGram.observe((start - new Date().getTime()) / 1000);
                         return next();
                     }
                 }
@@ -233,16 +236,19 @@ export default async (req: Request, res: Response, next: NextFunction, UserModel
                     return next(new Unauthorized('AccountBanned'));
                 }
             }
+            p.historGram.observe((start - new Date().getTime()) / 1000);
             // Next
             next();
         } else {
             // Not logged in & no session data, so set one
             await setSession(req);
             await regenCsrf(req);
+            p.historGram.observe((start - new Date().getTime()) / 1000);
             next();
         }
     } else {
         console.warn('[warning] sessions appear to be down');
+        p.historGram.observe((start - new Date().getTime()) / 1000);
         // Sessions are down/unavailable
         next();
     }

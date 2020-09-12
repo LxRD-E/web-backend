@@ -138,6 +138,7 @@ Server = __decorate([
         mount: {
             "/api/v2/": "${rootDir}/controllers/v2/*.ts",
             "/api/v1/": "${rootDir}/controllers/v1/*.ts",
+            '/': '${rootDir}/controllers/default.ts',
         },
         port: process.env.PORT || 3000,
         componentsScan: [

@@ -11,17 +11,24 @@ interface IWebsiteConfiguration {
         play: string;
         www: string;
         api: string;
-    }
+        /**
+         * Perf tracker base URL
+         */
+        tracker: string;
+    };
+    trackerAuthorization: string;
     [x: string]: any;
 }
 
 let configJson: IWebsiteConfiguration = {
     encryptionKeys: {},
     coinpayments: {},
+    trackerAuthorization: "",
     baseUrl: {
         play: "https://play.blockshub.net",
         www: "https://www.blockshub.net",
-        api: "https://api.blockshub.net"
+        api: "https://api.blockshub.net",
+        tracker: "https://perftrack.bhmanager.club",
     }
 };
 

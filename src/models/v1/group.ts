@@ -1,18 +1,46 @@
-import {AllowTypes, Enum, Property, PropertyType, Required} from "@tsed/common";
+import { AllowTypes, Enum, Property, PropertyType, Required } from "@tsed/common";
 import { Description } from "@tsed/swagger";
 
 // meta stuff
+
+/**
+ * Maximum amount of groups a user can be in at once
+ */
 export const MAX_GROUPS = 100;
-export const MAX_GROUP_ROLES = 22;
+/**
+ * Maximum amount of roles a group can have
+ */
+export const MAX_GROUP_ROLES = 32;
+/**
+ * The maximum rank value for a group roleset's rank
+ */
 export const MAX_RANK_VALUE = 255;
+/**
+ * The minimum rank value for a group roleset's rank
+ */
 export const MIN_RANK_VALUE = 1;
 
+/**
+ * The maximum length of the name of a group roleset
+ */
 export const ROLE_NAME_MAX_LENGTH = 32;
+/**
+ * The minimum length of the name of a group roleset
+ */
 export const ROLE_NAME_MIN_LENGTH = 1;
 
+/**
+ * The maximum length of the description of a group roleset
+ */
 export const ROLE_DESCRIPTION_MAX_LENGTH = 255;
+/**
+ * The minimum length of the description of a group roleset
+ */
 export const ROLE_DESCRIPTION_MIN_LENGTH = 0;
 
+/**
+ * The cost to create a group, in primary
+ */
 export const GROUP_CREATION_COST = 50;
 
 export class GroupCreationFee {
@@ -25,15 +53,15 @@ export class GroupCreationFee {
  */
 export class groupPermissions {
     @Required()
-    getWall: 1|0;
+    getWall: 1 | 0;
     @Required()
-    postWall: 1|0;
+    postWall: 1 | 0;
     @Required()
-    getShout: 1|0;
+    getShout: 1 | 0;
     @Required()
-    postShout: 1|0;
+    postShout: 1 | 0;
     @Required()
-    manage: 1|0;
+    manage: 1 | 0;
 }
 
 export enum GroupMemberApprovalStatus {

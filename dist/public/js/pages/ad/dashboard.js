@@ -19,3 +19,5 @@ console.log(a),loading(),request("/ad/"+b+"/bid","POST",{amount:a}).then(functio
 
 
 
+
+

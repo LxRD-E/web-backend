@@ -1,5 +1,5 @@
-import {Default, MaxItems, MinItems, PropertyType, Required} from "@tsed/common";
-import {Description, Summary} from "@tsed/swagger";
+import { Default, MaxItems, MinItems, PropertyType, Required } from "@tsed/common";
+import { Description, Summary } from "@tsed/swagger";
 
 export enum Permission {
     /**
@@ -115,7 +115,7 @@ export interface UserModerationHistory {
     reason: string;
     date: string;
     untilUnbanned: string;
-    isTerminated: 0|1;
+    isTerminated: 0 | 1;
     privateReason: string;
     actorUserId: number;
 }
@@ -189,4 +189,11 @@ export class ProvideItemsRequest {
     @MinItems(1)
     @MaxItems(1000)
     catalogIds: ProvideItemsEntry[]
+}
+
+export class SearchUsersResponse {
+    @Required()
+    username: string;
+    @Required()
+    userId: number;
 }

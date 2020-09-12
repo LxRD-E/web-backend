@@ -727,6 +727,65 @@ let StaffController = class StaffController extends controller_1.default {
     async getUserEmails(userId) {
         return this.settings.getUserEmails(userId);
     }
+    async searchUsers(email, username, userId) {
+        let query;
+        let column;
+        let req = {
+            query: {
+                email,
+                username,
+                userId,
+            }
+        };
+        if (req.query.email) {
+            query = req.query.email;
+            column = 'email';
+        }
+        if (req.query.username) {
+            query = req.query.username;
+            column = 'username';
+        }
+        if (req.query.userId) {
+            query = req.query.userId.toString();
+            column = 'userId';
+        }
+        if (!column || !query) {
+            throw new this.BadRequest('SchemaValidationFailed');
+        }
+        let results = [];
+        if (column === 'email') {
+            try {
+                let result = await this.settings.getUserByEmail(query);
+                results.push(result);
+            }
+            catch (e) {
+            }
+        }
+        else if (column === 'username') {
+            try {
+                let result = await this.user.userNameToId(query);
+                results.push({
+                    userId: result,
+                    username: query,
+                });
+            }
+            catch (e) {
+            }
+        }
+        else if (column === 'userId') {
+            try {
+                let result = await this.user.getInfo(parseInt(query, 10), ['userId', 'username']);
+                results.push({
+                    userId: result.userId,
+                    username: result.username,
+                });
+            }
+            catch (e) {
+                console.error(e);
+            }
+        }
+        return results;
+    }
 };
 __decorate([
     common_1.Get('/permissions'),
@@ -1288,6 +1347,18 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "getUserEmails", null);
+__decorate([
+    common_1.Get('/user/search'),
+    swagger_1.Summary('Search for users by username, email, or userId'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation)),
+    swagger_1.ReturnsArray(200, { type: model.staff.SearchUsersResponse }),
+    __param(0, common_1.QueryParams('email', String)),
+    __param(1, common_1.QueryParams('username', String)),
+    __param(2, common_1.QueryParams('userId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "searchUsers", null);
 StaffController = __decorate([
     common_1.Controller('/staff'),
     __metadata("design:paramtypes", [])

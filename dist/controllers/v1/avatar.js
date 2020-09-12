@@ -277,7 +277,6 @@ let AvatarController = class AvatarController extends controller_1.default {
         const insertArray = [];
         for (const catalogId of filteredHats) {
             if (typeof catalogId !== 'number') {
-                console.log('catalogId is of invalid type: ' + catalogId);
                 throw new this.BadRequest('InvalidCatalogIds');
             }
             let owns = await this.user.getUserInventoryByCatalogId(userInfo.userId, catalogId);
@@ -493,6 +492,7 @@ __decorate([
 __decorate([
     common_1.Get('/outfits'),
     swagger_1.Summary('Get the authenticated users outfits'),
+    common_1.Use(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.QueryParams('offset', Number)),
     __param(2, common_1.QueryParams('limit', Number)),
@@ -527,9 +527,10 @@ __decorate([
     common_1.Get('/poll'),
     swagger_1.Summary("Poll for avatar changes. Timeout is set to 20 seconds, but it may be increased in the future. A 200 does not indiciate the avatar was changed; this endpoint will now give 200 even if no changes were detected (incase changes happened before a connection was setup)"),
     swagger_1.Returns(200, { type: model.avatar.AvatarPollResponseOK, description: 'See URL for avatar URL\n' }),
+    common_1.Use(Auth_1.YesAuth),
     __param(0, common_1.Locals('userInfo')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo]),
+    __metadata("design:paramtypes", [model.UserSession]),
     __metadata("design:returntype", Promise)
 ], AvatarController.prototype, "pollForChanges", null);
 AvatarController = __decorate([

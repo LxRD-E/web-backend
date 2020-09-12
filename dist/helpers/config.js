@@ -6,10 +6,12 @@ const Crypto = require("crypto");
 let configJson = {
     encryptionKeys: {},
     coinpayments: {},
+    trackerAuthorization: "",
     baseUrl: {
         play: "https://play.blockshub.net",
         www: "https://www.blockshub.net",
-        api: "https://api.blockshub.net"
+        api: "https://api.blockshub.net",
+        tracker: "https://perftrack.bhmanager.club",
     }
 };
 const decrypt = (encryptedString, key, iv) => {

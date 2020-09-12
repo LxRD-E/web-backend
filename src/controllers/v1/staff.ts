@@ -1231,4 +1231,69 @@ export class StaffController extends controller {
     ) {
         return this.settings.getUserEmails(userId);
     }
+
+    @Get('/user/search')
+    @Summary('Search for users by username, email, or userId')
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation))
+    @ReturnsArray(200, { type: model.staff.SearchUsersResponse })
+    public async searchUsers(
+        @QueryParams('email', String) email?: string,
+        @QueryParams('username', String) username?: string,
+        @QueryParams('userId', Number) userId?: number,
+    ) {
+        let query: string | undefined;
+        let column: string | undefined;
+        let req = {
+            query: {
+                email,
+                username,
+                userId,
+            }
+        }
+        if (req.query.email) {
+            query = req.query.email;
+            column = 'email';
+        }
+        if (req.query.username) {
+            query = req.query.username;
+            column = 'username';
+        }
+        if (req.query.userId) {
+            query = req.query.userId.toString();
+            column = 'userId';
+        }
+        if (!column || !query) {
+            throw new this.BadRequest('SchemaValidationFailed');
+        }
+        let results: { userId: number; username: string }[] = [];
+        if (column === 'email') {
+            try {
+                let result = await this.settings.getUserByEmail(query)
+                results.push(result);
+            } catch (e) {
+
+            }
+        } else if (column === 'username') {
+            try {
+                let result = await this.user.userNameToId(query);
+                results.push({
+                    userId: result,
+                    username: query,
+                });
+            } catch (e) {
+
+            }
+        } else if (column === 'userId') {
+            try {
+                let result = await this.user.getInfo(parseInt(query, 10), ['userId', 'username']);
+                results.push({
+                    userId: result.userId,
+                    username: result.username,
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        return results;
+    }
 }

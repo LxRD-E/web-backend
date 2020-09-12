@@ -319,7 +319,6 @@ export default class AvatarController extends controller {
         for (const catalogId of filteredHats) {
             // Check if owns
             if (typeof catalogId !== 'number') {
-                console.log('catalogId is of invalid type: ' + catalogId);
                 throw new this.BadRequest('InvalidCatalogIds');
             }
             let owns = await this.user.getUserInventoryByCatalogId(userInfo.userId, catalogId);
@@ -449,7 +448,7 @@ export default class AvatarController extends controller {
     @Get('/outfit/:outfitId')
     @Summary('Get an outfit by the {outfitId}')
     @Use(YesAuth)
-    @Returns(400, {type: model.Error, description: 'InvalidOutfitId: OutfitId is invalid or not owned by current user\n'})
+    @Returns(400, { type: model.Error, description: 'InvalidOutfitId: OutfitId is invalid or not owned by current user\n' })
     public async getOutfitById(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('outfitId', Number) outfitId: number,
@@ -468,6 +467,7 @@ export default class AvatarController extends controller {
 
     @Get('/outfits')
     @Summary('Get the authenticated users outfits')
+    @Use(YesAuth)
     public async getUserOutfits(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @QueryParams('offset', Number) offset: number,
@@ -527,8 +527,9 @@ export default class AvatarController extends controller {
     @Get('/poll')
     @Summary("Poll for avatar changes. Timeout is set to 20 seconds, but it may be increased in the future. A 200 does not indiciate the avatar was changed; this endpoint will now give 200 even if no changes were detected (incase changes happened before a connection was setup)")
     @Returns(200, { type: model.avatar.AvatarPollResponseOK, description: 'See URL for avatar URL\n' })
+    @Use(YesAuth)
     public async pollForChanges(
-        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @Locals('userInfo') userInfo: model.UserSession,
     ) {
         let result = await this.avatar.setupAvatarUpdateListener(userInfo.userId);
         if (result) {

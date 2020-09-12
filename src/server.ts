@@ -1,6 +1,4 @@
-/**
- * Sentry Error Logging
- */
+// Sentry Error Logging
 import * as Sentry from './helpers/sentry';
 if (process.env.NODE_ENV === 'production') {
     Sentry.init();
@@ -34,7 +32,6 @@ if (process.env.NODE_ENV === 'production') {
 }
 let multerMemStore = multer.memoryStorage();
 
-
 // @ts-ignore
 /*
 require('blocked-at')((time: any, stack: any) => {
@@ -52,6 +49,7 @@ require('blocked-at')((time: any, stack: any) => {
     mount: {
         "/api/v2/": "${rootDir}/controllers/v2/*.ts",
         "/api/v1/": "${rootDir}/controllers/v1/*.ts",
+        '/': '${rootDir}/controllers/default.ts',
     },
     port: process.env.PORT || 3000,
     componentsScan: [
