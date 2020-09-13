@@ -576,11 +576,20 @@ class CatalogDAL extends _init_1.default {
             TShirt: false,
             Shirt: false,
             Pants: false,
+            Character: {},
         };
         for (const hat of catalogIds) {
             const catalogInfo = await this.getInfo(hat, ['category']);
             if (catalogInfo.category === model.catalog.category.Gear) {
                 object.Gear = true;
+            }
+            if (!object.Character) {
+                object.Character = {};
+            }
+            if (catalogInfo.category === model.catalog.category.Head) {
+                if (object.Character.Head) {
+                    continue;
+                }
             }
             if (catalogInfo.category === model.catalog.category.TShirt) {
                 const assets = await this.getCatalogItemAssets(hat);
@@ -628,36 +637,6 @@ class CatalogDAL extends _init_1.default {
                         case model.catalog.assetType.Texture: {
                             object.Pants = { Texture: [] };
                             object.Pants.Texture.push(asset.fileName + '.' + asset.fileType);
-                            break;
-                        }
-                    }
-                }
-            }
-            else if (catalogInfo.category === model.catalog.category.Head) {
-                if (!object.Character) {
-                    object.Character = {};
-                }
-                if (!object.Character.Head) {
-                    object.Character.Head = {
-                        Texture: [],
-                        OBJ: [],
-                        MTL: [],
-                    };
-                }
-                const arr = object.Character.Head;
-                const assets = await this.getCatalogItemAssets(hat);
-                for (const asset of assets) {
-                    switch (asset.assetType) {
-                        case model.catalog.assetType.MTL: {
-                            arr.MTL.push(asset.fileName + '.' + asset.fileType);
-                            break;
-                        }
-                        case model.catalog.assetType.OBJ: {
-                            arr.OBJ.push(asset.fileName + '.' + asset.fileType);
-                            break;
-                        }
-                        case model.catalog.assetType.Texture: {
-                            arr.Texture.push(asset.fileName + '.' + asset.fileType);
                             break;
                         }
                     }

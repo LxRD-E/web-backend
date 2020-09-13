@@ -838,11 +838,14 @@ class UsersDAL extends _init_1.default {
             'id': userId,
         }).limit(1);
     }
-    async getLeaderboardSorted(sort, limit, offset) {
+    async getLeaderboardSorted(sort, accountStatus, limit, offset) {
         if (!model.staff.UserLeadboardSortOptions.includes(sort)) {
             sort = model.staff.UserLeadboardSortOptions[0];
         }
-        let query = this.knex('users').select('id as userId', 'username', 'user_balance1 as primaryBalance', 'user_balance2 as secondaryBalance', 'user_lastonline as lastOnline', 'account_status as accountStatus').limit(limit).offset(offset);
+        if (!model.staff.UserLeaderboardAccountStatus.includes(accountStatus)) {
+            accountStatus = model.staff.UserLeaderboardAccountStatus[0];
+        }
+        let query = this.knex('users').select('id as userId', 'username', 'user_balance1 as primaryBalance', 'user_balance2 as secondaryBalance', 'user_lastonline as lastOnline', 'account_status as accountStatus', 'user_staff as staff').limit(limit).offset(offset);
         if (sort === 'PrimaryCurrencyDesc') {
             query = query.orderBy('user_balance1', 'desc');
         }
@@ -851,6 +854,32 @@ class UsersDAL extends _init_1.default {
         }
         else if (sort === 'UserIdAsc') {
             query = query.orderBy('id', 'asc');
+        }
+        else if (sort === 'LastOnlineAsc') {
+            query = query.orderBy('user_lastonline', 'asc');
+        }
+        else if (sort === 'LastOnlineDesc') {
+            query = query.orderBy('user_lastonline', 'desc');
+        }
+        if (accountStatus === 'ok') {
+            query = query.andWhere({
+                'account_status': model.user.accountStatus.ok,
+            });
+        }
+        else if (accountStatus === 'banned') {
+            query = query.andWhere({
+                'account_status': model.user.accountStatus.banned,
+            });
+        }
+        else if (accountStatus === 'terminated') {
+            query = query.andWhere({
+                'account_status': model.user.accountStatus.terminated,
+            });
+        }
+        else if (accountStatus === 'deleted') {
+            query = query.andWhere({
+                'account_status': model.user.accountStatus.deleted,
+            });
         }
         return await query;
     }

@@ -37,6 +37,9 @@ let AvatarController = class AvatarController extends controller_1.default {
         let TShirt = body.TShirt;
         let Shirt = body.Shirt;
         let Pants = body.Pants;
+        let Character = {
+            head: body.characterHead,
+        };
         let canEdit = await this.avatar.canUserModifyAvatar(userInfo.userId);
         if (!canEdit && process.env.NODE_ENV === 'production') {
             throw new this.BadRequest('AvatarCooldown');
@@ -62,6 +65,7 @@ let AvatarController = class AvatarController extends controller_1.default {
             "TShirt": false,
             "Shirt": false,
             "Pants": false,
+            Character: {},
         };
         const filteredHats = Array.from(new Set(Hats));
         if (typeof Face === "number" && Face !== 0) {
@@ -75,6 +79,9 @@ let AvatarController = class AvatarController extends controller_1.default {
         }
         if (typeof Pants === "number" && Pants !== 0) {
             filteredHats.push(Pants);
+        }
+        if (typeof Character.head === 'number') {
+            filteredHats.push(Character.head);
         }
         const insertArray = [];
         for (const catalogId of filteredHats) {
@@ -92,6 +99,11 @@ let AvatarController = class AvatarController extends controller_1.default {
                     continue;
                 }
                 const assets = await this.catalog.getCatalogItemAssets(owns[0].catalogId);
+                if (owns[0].category === model.catalog.category.Head) {
+                    if (jsonArray.Character && jsonArray.Character.Head) {
+                        continue;
+                    }
+                }
                 if (owns[0].category === model.catalog.category.Hat || owns[0].category === model.catalog.category.Gear) {
                     for (const asset of assets) {
                         switch (asset.assetType) {
@@ -112,6 +124,32 @@ let AvatarController = class AvatarController extends controller_1.default {
                 }
                 if (owns[0].category === model.catalog.category.Gear) {
                     jsonArray.Gear = true;
+                }
+                else if (owns[0].category === model.catalog.category.Head) {
+                    if (!jsonArray.Character) {
+                        jsonArray.Character = {};
+                    }
+                    jsonArray.Character.Head = {
+                        OBJ: [],
+                        MTL: [],
+                        Texture: [],
+                    };
+                    for (const asset of assets) {
+                        switch (asset.assetType) {
+                            case model.catalog.assetType.MTL: {
+                                jsonArray.Character.Head.MTL.push(asset.fileName + '.' + asset.fileType);
+                                break;
+                            }
+                            case model.catalog.assetType.OBJ: {
+                                jsonArray.Character.Head.OBJ.push(asset.fileName + '.' + asset.fileType);
+                                break;
+                            }
+                            case model.catalog.assetType.Texture: {
+                                jsonArray.Character.Head.Texture.push(asset.fileName + '.' + asset.fileType);
+                                break;
+                            }
+                        }
+                    }
                 }
                 else if (owns[0].category === model.catalog.category.Faces) {
                     for (const asset of assets) {
@@ -152,35 +190,6 @@ let AvatarController = class AvatarController extends controller_1.default {
                             case model.catalog.assetType.Texture: {
                                 jsonArray.Pants = { Texture: [] };
                                 jsonArray.Pants.Texture.push(asset.fileName + '.' + asset.fileType);
-                                break;
-                            }
-                        }
-                    }
-                }
-                else if (owns[0].category === model.catalog.category.Head) {
-                    if (!jsonArray.Character) {
-                        jsonArray.Character = {};
-                    }
-                    if (!jsonArray.Character.Head) {
-                        jsonArray.Character.Head = {
-                            Texture: [],
-                            OBJ: [],
-                            MTL: [],
-                        };
-                    }
-                    const arr = jsonArray.Character.Head;
-                    for (const asset of assets) {
-                        switch (asset.assetType) {
-                            case model.catalog.assetType.MTL: {
-                                arr.MTL.push(asset.fileName + '.' + asset.fileType);
-                                break;
-                            }
-                            case model.catalog.assetType.OBJ: {
-                                arr.OBJ.push(asset.fileName + '.' + asset.fileType);
-                                break;
-                            }
-                            case model.catalog.assetType.Texture: {
-                                arr.Texture.push(asset.fileName + '.' + asset.fileType);
                                 break;
                             }
                         }
@@ -260,6 +269,7 @@ let AvatarController = class AvatarController extends controller_1.default {
             "TShirt": false,
             "Shirt": false,
             "Pants": false,
+            Character: {},
         };
         const filteredHats = Array.from(new Set(Hats));
         if (typeof Face === "number" && Face !== 0) {
@@ -289,6 +299,14 @@ let AvatarController = class AvatarController extends controller_1.default {
                     continue;
                 }
                 const assets = await this.catalog.getCatalogItemAssets(owns[0].catalogId);
+                if (owns[0].category === model.catalog.category.Head) {
+                    if (!jsonArray.Character) {
+                        jsonArray.Character = {};
+                    }
+                    if (jsonArray.Character.Head) {
+                        continue;
+                    }
+                }
                 if (owns[0].category === model.catalog.category.Hat || owns[0].category === model.catalog.category.Gear) {
                     for (const asset of assets) {
                         switch (asset.assetType) {
@@ -309,6 +327,32 @@ let AvatarController = class AvatarController extends controller_1.default {
                 }
                 if (owns[0].category === model.catalog.category.Gear) {
                     jsonArray.Gear = true;
+                }
+                else if (owns[0].category === model.catalog.category.Head) {
+                    if (!jsonArray.Character) {
+                        jsonArray.Character = {};
+                    }
+                    jsonArray.Character.Head = {
+                        OBJ: [],
+                        MTL: [],
+                        Texture: [],
+                    };
+                    for (const asset of assets) {
+                        switch (asset.assetType) {
+                            case model.catalog.assetType.MTL: {
+                                jsonArray.Character.Head.MTL.push(asset.fileName + '.' + asset.fileType);
+                                break;
+                            }
+                            case model.catalog.assetType.OBJ: {
+                                jsonArray.Character.Head.OBJ.push(asset.fileName + '.' + asset.fileType);
+                                break;
+                            }
+                            case model.catalog.assetType.Texture: {
+                                jsonArray.Character.Head.Texture.push(asset.fileName + '.' + asset.fileType);
+                                break;
+                            }
+                        }
+                    }
                 }
                 else if (owns[0].category === model.catalog.category.Faces) {
                     for (const asset of assets) {
@@ -349,35 +393,6 @@ let AvatarController = class AvatarController extends controller_1.default {
                             case model.catalog.assetType.Texture: {
                                 jsonArray.Pants = { Texture: [] };
                                 jsonArray.Pants.Texture.push(asset.fileName + '.' + asset.fileType);
-                                break;
-                            }
-                        }
-                    }
-                }
-                else if (owns[0].category === model.catalog.category.Head) {
-                    if (!jsonArray.Character) {
-                        jsonArray.Character = {};
-                    }
-                    if (!jsonArray.Character.Head) {
-                        jsonArray.Character.Head = {
-                            Texture: [],
-                            OBJ: [],
-                            MTL: [],
-                        };
-                    }
-                    const arr = jsonArray.Character.Head;
-                    for (const asset of assets) {
-                        switch (asset.assetType) {
-                            case model.catalog.assetType.MTL: {
-                                arr.MTL.push(asset.fileName + '.' + asset.fileType);
-                                break;
-                            }
-                            case model.catalog.assetType.OBJ: {
-                                arr.OBJ.push(asset.fileName + '.' + asset.fileType);
-                                break;
-                            }
-                            case model.catalog.assetType.Texture: {
-                                arr.Texture.push(asset.fileName + '.' + asset.fileType);
                                 break;
                             }
                         }

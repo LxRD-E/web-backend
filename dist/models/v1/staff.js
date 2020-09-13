@@ -113,5 +113,14 @@ exports.UserLeadboardSortOptions = [
     "PrimaryCurrencyDesc",
     "SecondaryCurrencyDesc",
     "UserIdAsc",
+    'LastOnlineAsc',
+    'LastOnlineDesc',
+];
+exports.UserLeaderboardAccountStatus = [
+    'all',
+    'ok',
+    'banned',
+    'terminated',
+    'deleted',
 ];
 

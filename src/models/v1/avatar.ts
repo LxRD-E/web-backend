@@ -47,11 +47,7 @@ export interface JsonArrayInterfaceWithAssets {
 }
 
 interface CharacterOverwrides {
-    Head?: {
-        Texture: string[];
-        OBJ: string[];
-        MTL: string[];
-    };
+    Head?: JsonAvatarFileTypes;
 }
 
 interface JsonAvatarImageFileTypes {
@@ -87,6 +83,8 @@ export class UpdateAvatarPayload {
     Shirt: number | boolean;
     @PropertyType(Number)
     Pants: number | boolean;
+    @PropertyType(Number)
+    characterHead: number | undefined;
 }
 
 export class AvatarPollResponseOK {

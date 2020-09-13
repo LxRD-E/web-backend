@@ -86,7 +86,7 @@ class CatalogDAL extends _init {
                 array[index] = 'creator_type as creatorType';
             }
         });
-        let query = this.knex('catalog').select(specificColumns).where({'catalog.id': id});
+        let query = this.knex('catalog').select(specificColumns).where({ 'catalog.id': id });
         if (forUpdate) {
             query = query.forUpdate(forUpdate);
         }
@@ -102,7 +102,7 @@ class CatalogDAL extends _init {
      * @param id Catalog ID
      */
     public async countSales(id: number): Promise<number> {
-        const data = await this.knex("user_inventory").count("id as Total").where({"catalog_id": id});
+        const data = await this.knex("user_inventory").count("id as Total").where({ "catalog_id": id });
         return data[0]["Total"] as number;
     }
 
@@ -130,7 +130,7 @@ class CatalogDAL extends _init {
     public async MultiGetNamesFromIds(ids: Array<number>): Promise<Array<model.catalog.MultiGetNames>> {
         const query = this.knex('catalog').select('name as catalogName', 'id as catalogId');
         ids.forEach((id) => {
-            query.orWhere({'catalog.id': id});
+            query.orWhere({ 'catalog.id': id });
         });
         const usernames = await query;
         return usernames as Array<model.catalog.MultiGetNames>;
@@ -154,7 +154,7 @@ class CatalogDAL extends _init {
      */
     public async countAllItemsForSale(): Promise<number> {
         // Filter Sort
-        const count = await this.knex("catalog").count('id as Total').where({'catalog.is_for_sale': model.catalog.isForSale.true}).andWhere('catalog.price', '>', 0);
+        const count = await this.knex("catalog").count('id as Total').where({ 'catalog.is_for_sale': model.catalog.isForSale.true }).andWhere('catalog.price', '>', 0);
         return count[0]['Total'] as number;
     }
 
@@ -223,7 +223,7 @@ class CatalogDAL extends _init {
             if (good) {
                 continue;
             } else {
-                queryCompleted.push({catalogId: catalogId, price: null});
+                queryCompleted.push({ catalogId: catalogId, price: null });
             }
         }
         return queryCompleted;
@@ -244,7 +244,7 @@ class CatalogDAL extends _init {
             "is_for_sale": isForSale,
             "is_pending": moderation,
             'category': newCategory,
-        }).where({"id": catalogId}).limit(1);
+        }).where({ "id": catalogId }).limit(1);
     }
 
     /**
@@ -252,7 +252,7 @@ class CatalogDAL extends _init {
      * @param catalogId Catalog ID
      */
     public async getOwners(catalogId: number, offset: number, limit: number, orderBy: 'asc' | 'desc'): Promise<model.user.FullUserInventory[]> {
-        const owners = await this.knex('user_inventory').where({'user_inventory.catalog_id': catalogId}).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial', 'user_inventory.user_id as userId').orderBy('user_inventory.id', orderBy).limit(limit).offset(offset);
+        const owners = await this.knex('user_inventory').where({ 'user_inventory.catalog_id': catalogId }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial', 'user_inventory.user_id as userId').orderBy('user_inventory.id', orderBy).limit(limit).offset(offset);
         return owners as model.user.FullUserInventory[];
     }
 
@@ -343,7 +343,7 @@ class CatalogDAL extends _init {
     public async setAveragePrice(catalogId: number, value: number): Promise<void> {
         await this.knex('catalog').update({
             'average_price': value,
-        }).where({'id': catalogId});
+        }).where({ 'id': catalogId });
     }
 
     /**
@@ -352,7 +352,7 @@ class CatalogDAL extends _init {
      * @param offset Offset
      */
     public async getSellers(catalogId: number, offset: number): Promise<model.user.FullUserInventory[]> {
-        const items = await this.knex('user_inventory').where({'user_inventory.catalog_id': catalogId}).andWhere('user_inventory.price', ">", 0).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial', 'user_inventory.user_id as userId').orderBy('user_inventory.price', 'asc').limit(25).offset(offset);
+        const items = await this.knex('user_inventory').where({ 'user_inventory.catalog_id': catalogId }).andWhere('user_inventory.price', ">", 0).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial', 'user_inventory.user_id as userId').orderBy('user_inventory.price', 'asc').limit(25).offset(offset);
         return items as model.user.FullUserInventory[];
     }
 
@@ -361,7 +361,7 @@ class CatalogDAL extends _init {
      * @param catalogId Catalog ID
      */
     public async countSellers(catalogId: number): Promise<number> {
-        const items = await this.knex('user_inventory').where({'user_inventory.catalog_id': catalogId}).andWhere('user_inventory.price', ">", 0).count('id as Total').orderBy('user_inventory.price', 'asc');
+        const items = await this.knex('user_inventory').where({ 'user_inventory.catalog_id': catalogId }).andWhere('user_inventory.price', ">", 0).count('id as Total').orderBy('user_inventory.price', 'asc');
         if (!items || !items[0]) {
             return 0;
         }
@@ -404,9 +404,9 @@ class CatalogDAL extends _init {
      * @param catalogId
      */
     public async getCatalogItemAssets(catalogId: number): Promise<model.catalog.CatalogAssetItem[]> {
-        const assets = await this.knex('catalog_assets').select('id as assetId', 'date_created as dateCreated', 'assettype as assetType', 'filename as fileName', 'filetype as fileType').where({'catalogid': catalogId});
+        const assets = await this.knex('catalog_assets').select('id as assetId', 'date_created as dateCreated', 'assettype as assetType', 'filename as fileName', 'filetype as fileType').where({ 'catalogid': catalogId });
         if (!assets[0]) {
-            throw new Error('This item ('+catalogId+') does not contain any assets');
+            throw new Error('This item (' + catalogId + ') does not contain any assets');
         }
         return assets;
     }
@@ -416,7 +416,7 @@ class CatalogDAL extends _init {
      * @param assetId
      */
     public async deleteAsset(assetId: number): Promise<void> {
-        await this.knex('catalog_assets').delete().where({'id': assetId}).limit(1);
+        await this.knex('catalog_assets').delete().where({ 'id': assetId }).limit(1);
     }
 
     /**
@@ -654,7 +654,7 @@ class CatalogDAL extends _init {
     public async updateIsForSale(catalogId: number, newValue: model.catalog.isForSale): Promise<void> {
         await this.knex("catalog").update({
             "catalog.is_for_sale": newValue,
-        }).where({"id": catalogId}).limit(1);
+        }).where({ "id": catalogId }).limit(1);
     }
 
     /**
@@ -665,7 +665,7 @@ class CatalogDAL extends _init {
     public async updateModerationStatus(catalogId: number, newValue: model.catalog.moderatorStatus): Promise<void> {
         await this.knex("catalog").update({
             "catalog.is_pending": newValue,
-        }).where({"id": catalogId}).limit(1);
+        }).where({ "id": catalogId }).limit(1);
     }
 
     /**
@@ -683,7 +683,7 @@ class CatalogDAL extends _init {
      * @param userInventoryId Item ID
      */
     public async getItemByUserInventoryId(userInventoryId: number, forUpdate?: string[]): Promise<model.user.FullUserInventory> {
-        let query = this.knex('user_inventory').where({'user_inventory.id': userInventoryId}).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial', 'user_inventory.user_id as userId').orderBy('user_inventory.price', 'asc').limit(1);
+        let query = this.knex('user_inventory').where({ 'user_inventory.id': userInventoryId }).innerJoin('catalog', 'catalog.id', '=', 'user_inventory.catalog_id').select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'catalog.name as catalogName', 'catalog.is_collectible as collectible', 'catalog.category', 'user_inventory.serial', 'user_inventory.user_id as userId').orderBy('user_inventory.price', 'asc').limit(1);
         if (forUpdate) {
             query = query.forUpdate(forUpdate);
         }
@@ -700,7 +700,7 @@ class CatalogDAL extends _init {
      * @param userId
      */
     public async updateUserInventoryIdOwner(userInventoryId: number, userId: number): Promise<void> {
-        await this.knex('user_inventory').update({'user_id': userId}).where({'id': userInventoryId});
+        await this.knex('user_inventory').update({ 'user_id': userId }).where({ 'id': userInventoryId });
     }
 
     /**
@@ -968,11 +968,20 @@ class CatalogDAL extends _init {
             TShirt: false,
             Shirt: false,
             Pants: false,
+            Character: {},
         };
         for (const hat of catalogIds) {
             const catalogInfo = await this.getInfo(hat, ['category']);
             if (catalogInfo.category === model.catalog.category.Gear) {
                 object.Gear = true;
+            }
+            if (!object.Character) {
+                object.Character = {}
+            }
+            if (catalogInfo.category === model.catalog.category.Head) {
+                if (object.Character.Head) {
+                    continue;
+                }
             }
 
             if (catalogInfo.category === model.catalog.category.TShirt) {
@@ -980,7 +989,7 @@ class CatalogDAL extends _init {
                 for (const asset of assets) {
                     switch (asset.assetType) {
                         case model.catalog.assetType.Texture: {
-                            object.TShirt = {Texture: []};
+                            object.TShirt = { Texture: [] };
                             object.TShirt.Texture.push(asset.fileName + '.' + asset.fileType);
                             break;
                         }
@@ -991,7 +1000,7 @@ class CatalogDAL extends _init {
                 for (const asset of assets) {
                     switch (asset.assetType) {
                         case model.catalog.assetType.Texture: {
-                            object.Shirt = {Texture: []};
+                            object.Shirt = { Texture: [] };
                             object.Shirt.Texture.push(asset.fileName + '.' + asset.fileType);
                             break;
                         }
@@ -1005,7 +1014,7 @@ class CatalogDAL extends _init {
                             if (asset.fileType === 'jpg') {
                                 break;
                             }
-                            object.Face = {Texture: []};
+                            object.Face = { Texture: [] };
                             object.Face.Texture.push(asset.fileName + '.' + asset.fileType);
                             break;
                         }
@@ -1016,37 +1025,8 @@ class CatalogDAL extends _init {
                 for (const asset of assets) {
                     switch (asset.assetType) {
                         case model.catalog.assetType.Texture: {
-                            object.Pants = {Texture: []};
+                            object.Pants = { Texture: [] };
                             object.Pants.Texture.push(asset.fileName + '.' + asset.fileType);
-                            break;
-                        }
-                    }
-                }
-            } else if (catalogInfo.category === model.catalog.category.Head) {
-                if (!object.Character) {
-                    object.Character = {};
-                }
-                if (!object.Character.Head) {
-                    object.Character.Head = {
-                        Texture: [],
-                        OBJ: [],
-                        MTL: [],
-                    }
-                }
-                const arr = object.Character.Head;
-                const assets = await this.getCatalogItemAssets(hat);
-                for (const asset of assets) {
-                    switch (asset.assetType) {
-                        case model.catalog.assetType.MTL: {
-                            arr.MTL.push(asset.fileName + '.' + asset.fileType);
-                            break;
-                        }
-                        case model.catalog.assetType.OBJ: {
-                            arr.OBJ.push(asset.fileName + '.' + asset.fileType);
-                            break;
-                        }
-                        case model.catalog.assetType.Texture: {
-                            arr.Texture.push(asset.fileName + '.' + asset.fileType);
                             break;
                         }
                     }

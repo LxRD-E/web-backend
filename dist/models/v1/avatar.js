@@ -49,6 +49,10 @@ __decorate([
     common_1.PropertyType(Number),
     __metadata("design:type", Object)
 ], UpdateAvatarPayload.prototype, "Pants", void 0);
+__decorate([
+    common_1.PropertyType(Number),
+    __metadata("design:type", Object)
+], UpdateAvatarPayload.prototype, "characterHead", void 0);
 exports.UpdateAvatarPayload = UpdateAvatarPayload;
 class AvatarPollResponseOK {
 }
