@@ -5,12 +5,12 @@ const ioredis_1 = require("../helpers/ioredis");
 const model = require("../models/models");
 const _init_1 = require("./_init");
 class StaffDAL extends _init_1.default {
-    async insertBan(userId, reason, privateReason, unbanDate, isTerminated, actorUserId) {
+    async insertBan(userId, reason, privateReason, unbanDate, createdAt, isTerminated, actorUserId) {
         await this.knex('user_moderation').insert({
             'userid': userId,
             'reason': reason,
-            'date': this.moment().format('YYYY-MM-DD HH:mm:ss'),
-            'until_unbanned': this.moment(unbanDate).format('YYYY-MM-DD HH:mm:ss'),
+            'date': createdAt,
+            'until_unbanned': unbanDate,
             'is_terminated': isTerminated,
             'private_reason': privateReason,
             'actor_userid': actorUserId,
@@ -45,6 +45,13 @@ class StaffDAL extends _init_1.default {
             'user_id': userId,
             'staff_userid': staffUserId,
             'comment': comment,
+        });
+    }
+    async deleteComment(userId, staffUserId, commentId) {
+        await this.knex('user_staff_comments').delete().where({
+            'user_id': userId,
+            'staff_userid': staffUserId,
+            'id': commentId,
         });
     }
     async getServerStatus() {

@@ -33,3 +33,5 @@ var d=window.thumbArraygame,e=window.pendingThumbArraygame,f=_toConsumableArray(
 
 
 
+
+

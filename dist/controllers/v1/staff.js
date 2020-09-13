@@ -106,7 +106,11 @@ let StaffController = class StaffController extends controller_1.default {
         if (lengthType !== "hours" && lengthType !== "days" && lengthType !== "months" && lengthType !== "weeks") {
             throw new this.BadRequest('InvalidLengthType');
         }
-        const whenWillUserBeUnBanned = moment().add(numericLength, lengthType).format();
+        let createdAt = this.moment().format('YYYY-MM-DD HH:mm:ss');
+        let whenWillUserBeUnBanned = moment().add(numericLength, lengthType).format('YYYY-MM-DD HH:mm:ss');
+        if (numericLength === 0) {
+            whenWillUserBeUnBanned = createdAt;
+        }
         let numericTerminated = Filter_1.filterId(terminated);
         if (!numericTerminated) {
             numericTerminated = 0;
@@ -128,7 +132,7 @@ let StaffController = class StaffController extends controller_1.default {
             throw new this.BadRequest('ConstraintIfDeletedUserMustAlsoBeTerminated');
         }
         await this.user.modifyUserBanStatus(numericId, model.user.banned.true);
-        await this.staff.insertBan(numericId, reason, privateReason, whenWillUserBeUnBanned, numericTerminated, userInfo.userId);
+        await this.staff.insertBan(numericId, reason, privateReason, whenWillUserBeUnBanned, createdAt, numericTerminated, userInfo.userId);
         if (numericDeleted) {
             await this.user.modifyAccountStatus(numericId, model.user.accountStatus.deleted);
         }
@@ -198,6 +202,19 @@ let StaffController = class StaffController extends controller_1.default {
             accounts: arrayOfAssociatedAccounts,
         };
     }
+    async sendMessage(userInfo, userId, subject, message) {
+        if (subject.length < 5 || message.length < 5 || subject.length > 128 || message.length > 1024) {
+            throw new this.BadRequest('InvalidMessage');
+        }
+        try {
+            await this.user.getInfo(userId, ['userId']);
+        }
+        catch {
+            throw new this.BadRequest('InvalidUserId');
+        }
+        await this.notification.createMessage(userId, 1, subject, message);
+        return {};
+    }
     async getUserComments(userInfo, userId, offset = 0, limit = 100) {
         const comments = await this.staff.getUserComments(userId, offset, limit);
         return {
@@ -215,6 +232,12 @@ let StaffController = class StaffController extends controller_1.default {
             throw new this.BadRequest('InvalidUserId');
         }
         await this.staff.createComment(userId, userInfo.userId, comment);
+        return {
+            success: true,
+        };
+    }
+    async deleteUserComment(userInfo, userId, commentId) {
+        await this.staff.deleteComment(userId, userInfo.userId, commentId);
         return {
             success: true,
         };
@@ -887,6 +910,19 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "getAssociatedAccounts", null);
 __decorate([
+    common_1.Post('/user/:userId/message'),
+    swagger_1.Summary('Send a message to the {userId}'),
+    swagger_1.Description('The from userId will always be System, aka "1"'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation)),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('userId', Number)),
+    __param(2, common_1.BodyParams('subject', String)),
+    __param(3, common_1.BodyParams('message', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String, String]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "sendMessage", null);
+__decorate([
     common_1.Get('/user/:userId/comments'),
     swagger_1.Summary('Get staff comments posted to a userId'),
     common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation)),
@@ -909,6 +945,17 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number, String]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "createUserComment", null);
+__decorate([
+    common_1.Delete('/user/:userId/comments/:commentId'),
+    swagger_1.Summary('Delete a comment posted on to the {userId} by the current user'),
+    common_1.Use(Auth_1.YesAuth, auth_1.csrf, middleware.staff.validate(model.staff.Permission.ReviewUserInformation)),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('userId', Number)),
+    __param(2, common_1.PathParams('commentId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.UserSession, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "deleteUserComment", null);
 __decorate([
     common_1.Post('/user/:userId/resetpassword'),
     swagger_1.Summary('Reset a users password. Returns a link for the staff member to give to the user'),

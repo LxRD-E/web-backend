@@ -172,7 +172,11 @@ export class StaffController extends controller {
             throw new this.BadRequest('InvalidLengthType');
         }
         // Add unban time
-        const whenWillUserBeUnBanned = moment().add(numericLength, lengthType).format();
+        let createdAt = this.moment().format('YYYY-MM-DD HH:mm:ss');
+        let whenWillUserBeUnBanned = moment().add(numericLength, lengthType).format('YYYY-MM-DD HH:mm:ss');
+        if (numericLength === 0) {
+            whenWillUserBeUnBanned = createdAt;
+        }
         // Is user going to be terminated?
         let numericTerminated = filterId(terminated) as number;
         if (!numericTerminated) {
@@ -198,7 +202,7 @@ export class StaffController extends controller {
         // Ban User
         await this.user.modifyUserBanStatus(numericId, model.user.banned.true);
         // Add Ban Message
-        await this.staff.insertBan(numericId, reason, privateReason, whenWillUserBeUnBanned, numericTerminated, userInfo.userId);
+        await this.staff.insertBan(numericId, reason, privateReason, whenWillUserBeUnBanned, createdAt, numericTerminated, userInfo.userId);
         // If account should be deleted...
         if (numericDeleted) {
             // Delete Account
@@ -302,6 +306,28 @@ export class StaffController extends controller {
         };
     }
 
+    @Post('/user/:userId/message')
+    @Summary('Send a message to the {userId}')
+    @Description('The from userId will always be System, aka "1"')
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation))
+    public async sendMessage(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('userId', Number) userId: number,
+        @BodyParams('subject', String) subject: string,
+        @BodyParams('message', String) message: string,
+    ) {
+        if (subject.length < 5 || message.length < 5 || subject.length > 128 || message.length > 1024) {
+            throw new this.BadRequest('InvalidMessage');
+        }
+        try {
+            await this.user.getInfo(userId, ['userId']);
+        } catch {
+            throw new this.BadRequest('InvalidUserId');
+        }
+        await this.notification.createMessage(userId, 1, subject, message);
+        return {};
+    }
+
     @Get('/user/:userId/comments')
     @Summary('Get staff comments posted to a userId')
     @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation))
@@ -335,6 +361,22 @@ export class StaffController extends controller {
             throw new this.BadRequest('InvalidUserId');
         }
         await this.staff.createComment(userId, userInfo.userId, comment);
+        return {
+            success: true,
+        };
+    }
+
+    @Delete('/user/:userId/comments/:commentId')
+    @Summary('Delete a comment posted on to the {userId} by the current user')
+    @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ReviewUserInformation))
+    public async deleteUserComment(
+        @Locals('userInfo') userInfo: model.UserSession,
+        @PathParams('userId', Number) userId: number,
+        @PathParams('commentId', Number) commentId: number,
+    ): Promise<{ success: true }> {
+        // delete
+        await this.staff.deleteComment(userId, userInfo.userId, commentId);
+        // return ok
         return {
             success: true,
         };
