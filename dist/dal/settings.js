@@ -5,13 +5,13 @@ const config_1 = require("../helpers/config");
 const auth_1 = require("./auth");
 const emailEncryptionKey = config_1.default.encryptionKeys.email;
 const passwordEncryptionKey = config_1.default.encryptionKeys.password;
+const mailjet = require('node-mailjet').connect(config_1.default.mailJet.public, config_1.default.mailJet.private);
 const _init_1 = require("./_init");
 class SettingsDAL extends _init_1.default {
     async sendEmail(recipient, subject, bodyText, bodyHTML) {
         if (!bodyHTML) {
             bodyHTML = bodyText;
         }
-        const mailjet = require('node-mailjet').connect(config_1.default.mailJet.public, config_1.default.mailJet.private);
         const request = await mailjet.post("send", { 'version': 'v3.1' }).request({
             "Messages": [
                 {
@@ -66,15 +66,20 @@ class SettingsDAL extends _init_1.default {
             email: encryptedEmail,
         });
     }
+    async deleteEmailById(emailId) {
+        await this.knex('user_emails').delete().where({
+            'id': emailId,
+        }).limit(1);
+    }
     async getUserEmail(userId) {
-        const info = await this.knex("user_emails").select("userid as userId", "verification_code as verificationCode", "status", "date", 'email').where({ "userid": userId }).orderBy("id", "desc").limit(1);
+        const info = await this.knex("user_emails").select('user_emails.id as emailId', "userid as userId", "verification_code as verificationCode", "status", "date", 'email').where({ "userid": userId }).orderBy("id", "desc").limit(1);
         if (info[0] && info[0]["email"]) {
             info[0]["email"] = await auth_1.decrypt(info[0]["email"], emailEncryptionKey);
         }
         return info[0];
     }
     async getUserEmails(userId) {
-        const info = await this.knex("user_emails").select("userid as userId", "verification_code as verificationCode", "status", "date", 'email').where({ "userid": userId }).orderBy("id", "desc");
+        const info = await this.knex("user_emails").select('user_emails.id as emailId', "userid as userId", "verification_code as verificationCode", "status", "date", 'email').where({ "userid": userId }).orderBy("id", "desc");
         for (const email of info) {
             if (email['email']) {
                 email['email'] = await auth_1.decrypt(email['email'], emailEncryptionKey);

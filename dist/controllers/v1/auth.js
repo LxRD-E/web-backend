@@ -197,6 +197,9 @@ let AuthController = class AuthController extends controller_1.default {
         catch {
         }
         session.userdata = {};
+        if (session.impersonateUserId) {
+            delete session.impersonateUserId;
+        }
         return {
             success: true
         };

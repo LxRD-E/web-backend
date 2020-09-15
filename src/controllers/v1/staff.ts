@@ -1214,7 +1214,7 @@ export class StaffController extends controller {
     }
 
     @Delete('/user/session-impersonation')
-    @Summary('Disable impersonation')
+    @Summary('Stop impersonating')
     @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ImpersonateUser))
     public async deleteImpersonation(
         @Req() req: Req,
@@ -1257,11 +1257,20 @@ export class StaffController extends controller {
     @Get('/user/email')
     @Summary('Get user email address')
     @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ReviewUserInformation))
-    public async getUserEmail(
+    public getUserEmail(
         @Required()
         @QueryParams('userId', Number) userId: number,
     ) {
         return this.settings.getUserEmail(userId) || {};
+    }
+
+    @Delete('/user/email/:emailId')
+    @Summary('Delete the {emailId}')
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ManagePrivateUserInfo))
+    public deleteUserEmail(
+        @PathParams('emailId', Number) emailId: number
+    ) {
+        return this.settings.deleteEmailById(emailId);
     }
 
     @Get('/user/emails')

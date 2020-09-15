@@ -1,7 +1,7 @@
-import {Locals, Res} from "@tsed/common";
+import { Locals, Res } from "@tsed/common";
 import controller from '../../controllers/controller';
 import * as model from '../../models/models';
-import {NextFunction, Request, Response} from "express";
+import { NextFunction, Request, Response } from "express";
 
 export class StaffValidateLevelOne extends controller {
     public async use(
@@ -16,7 +16,7 @@ export class StaffValidateLevelOne extends controller {
 
 const dal = new controller();
 
-export const AddPermissionsToLocals = async (req: Request, res: Response, next:  NextFunction) => {
+export const AddPermissionsToLocals = async (req: Request, res: Response, next: NextFunction) => {
     try {
         let userInfo = res.locals.userInfo;
         if (!userInfo || userInfo.staff === 0) {
@@ -28,7 +28,7 @@ export const AddPermissionsToLocals = async (req: Request, res: Response, next: 
             return userInfo.staff >= 100 || userInfo.staffPermissions.includes(model.staff.Permission[permission as any]);
         }
         next();
-    }catch(err) {
+    } catch (err) {
         return next(err);
     }
 }
@@ -44,7 +44,9 @@ export const validate = (level: model.staff.Permission, ...extraLevels: model.st
             }
             if (session && session.userdata) {
                 if (session.impersonateUserId) {
-                    const _newRequest = await dal.user.getInfo(session.userdata.id, ['userId','username','staff']);
+                    console.log('[info] current session data', session.userdata);
+                    let trueUserId = session.userdata.id || session.userdata.userId || session.userdata.userid;
+                    const _newRequest = await dal.user.getInfo(trueUserId, ['userId', 'username', 'staff']);
                     userInfo.userId = _newRequest.userId;
                     userInfo.username = _newRequest.username;
                     userInfo.staff = _newRequest.staff;
@@ -66,7 +68,7 @@ export const validate = (level: model.staff.Permission, ...extraLevels: model.st
             }
 
             throw new dal.Conflict('InvalidPermissions');
-        }catch(err) {
+        } catch (err) {
             return next(err);
         }
     };

@@ -61,7 +61,9 @@ exports.validate = (level, ...extraLevels) => {
             }
             if (session && session.userdata) {
                 if (session.impersonateUserId) {
-                    const _newRequest = await dal.user.getInfo(session.userdata.id, ['userId', 'username', 'staff']);
+                    console.log('[info] current session data', session.userdata);
+                    let trueUserId = session.userdata.id || session.userdata.userId || session.userdata.userid;
+                    const _newRequest = await dal.user.getInfo(trueUserId, ['userId', 'username', 'staff']);
                     userInfo.userId = _newRequest.userId;
                     userInfo.username = _newRequest.username;
                     userInfo.staff = _newRequest.staff;

@@ -4,9 +4,9 @@ import { Property, PropertyType, Required } from '@tsed/common';
  * User Email Model
  */
 export interface EmailModel {
-    id: number;
+    emailId: number;
     userId: number;
-    email: string|null;
+    email: string | null;
     verificationCode: string;
     status: Users.emailVerificationType;
     date: Record<string, any>;
@@ -14,24 +14,24 @@ export interface EmailModel {
 
 export class EmailModelForSettings {
     @PropertyType(String)
-    email: null|string;
+    email: null | string;
     @Required()
     status: number;
 }
 
 export class UserSettings {
     @PropertyType(String)
-    blurb: string|null;
+    blurb: string | null;
     @Required()
     tradingEnabled: number;
     @Required()
     theme: number;
     @Required()
-    forumSignature: string|null;
+    forumSignature: string | null;
     @Required()
     email: EmailModelForSettings;
     @Required()
-    '2faEnabled': 0|1;
+    '2faEnabled': 0 | 1;
     @Required()
     birthDate: string;
 }

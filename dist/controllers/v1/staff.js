@@ -744,8 +744,11 @@ let StaffController = class StaffController extends controller_1.default {
     getModerationHistory(userId) {
         return this.staff.getModerationHistory(userId);
     }
-    async getUserEmail(userId) {
+    getUserEmail(userId) {
         return this.settings.getUserEmail(userId) || {};
+    }
+    deleteUserEmail(emailId) {
+        return this.settings.deleteEmailById(emailId);
     }
     async getUserEmails(userId) {
         return this.settings.getUserEmails(userId);
@@ -1354,7 +1357,7 @@ __decorate([
 ], StaffController.prototype, "updateIsGameDevPermission", null);
 __decorate([
     common_1.Delete('/user/session-impersonation'),
-    swagger_1.Summary('Disable impersonation'),
+    swagger_1.Summary('Stop impersonating'),
     common_1.Use(Auth_1.YesAuth, auth_1.csrf, middleware.staff.validate(model.staff.Permission.ImpersonateUser)),
     __param(0, common_1.Req()),
     __metadata("design:type", Function),
@@ -1391,8 +1394,17 @@ __decorate([
     __param(0, common_1.QueryParams('userId', Number)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], StaffController.prototype, "getUserEmail", null);
+__decorate([
+    common_1.Delete('/user/email/:emailId'),
+    swagger_1.Summary('Delete the {emailId}'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManagePrivateUserInfo)),
+    __param(0, common_1.PathParams('emailId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], StaffController.prototype, "deleteUserEmail", null);
 __decorate([
     common_1.Get('/user/emails'),
     swagger_1.Summary('Get user emails'),

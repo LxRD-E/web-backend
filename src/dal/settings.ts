@@ -12,6 +12,8 @@ import { encrypt, decrypt, encryptPasswordHash, decryptPasswordHash } from './au
 const emailEncryptionKey = Config.encryptionKeys.email;
 const passwordEncryptionKey = Config.encryptionKeys.password;
 
+const mailjet = require('node-mailjet').connect(Config.mailJet.public, Config.mailJet.private)
+
 import _init from './_init';
 class SettingsDAL extends _init {
     /**
@@ -25,7 +27,6 @@ class SettingsDAL extends _init {
         if (!bodyHTML) {
             bodyHTML = bodyText;
         }
-        const mailjet = require('node-mailjet').connect(Config.mailJet.public, Config.mailJet.private)
         const request = await mailjet.post("send", { 'version': 'v3.1' }).request({
             "Messages": [
                 {
@@ -65,7 +66,7 @@ class SettingsDAL extends _init {
 
     public async isEmailInUse(email: string): Promise<boolean> {
         let encryptedEmail = await encrypt(email, emailEncryptionKey);
-        let results = await this.knex('user_emails').select('id').where({'email': encryptedEmail}).limit(1).orderBy('id','desc');
+        let results = await this.knex('user_emails').select('id').where({ 'email': encryptedEmail }).limit(1).orderBy('id', 'desc');
         if (results[0]) {
             return true;
         }
@@ -83,12 +84,12 @@ class SettingsDAL extends _init {
     }> {
         let encryptedEmail = await encrypt(email, emailEncryptionKey);
         let results = await this.knex('user_emails')
-        .select('id','userid')
-        .where({'email': encryptedEmail,'status': model.user.emailVerificationType.true})
-        .limit(1)
-        .orderBy('id','desc');
+            .select('id', 'userid')
+            .where({ 'email': encryptedEmail, 'status': model.user.emailVerificationType.true })
+            .limit(1)
+            .orderBy('id', 'desc');
         if (results[0]) {
-            let infoForUser = await this.knex('users').select('id as userId','username').where({'id': results[0]['userid']});
+            let infoForUser = await this.knex('users').select('id as userId', 'username').where({ 'id': results[0]['userid'] });
             if (!infoForUser || !infoForUser[0]) {
                 throw new Error('InvalidEmailAddress');
             }
@@ -115,11 +116,22 @@ class SettingsDAL extends _init {
     }
 
     /**
+     * Delete an email by the {emailId}
+     * @param emailId 
+     */
+    public async deleteEmailById(emailId: number): Promise<void> {
+        await this.knex('user_emails').delete().where({
+            'id': emailId,
+        }).limit(1);
+    }
+
+    /**
      * Get a user's email info
      * @param userId 
      */
-    public async getUserEmail(userId: number): Promise<model.settings.EmailModel|undefined> {
+    public async getUserEmail(userId: number): Promise<model.settings.EmailModel | undefined> {
         const info = await this.knex("user_emails").select(
+            'user_emails.id as emailId',
             "userid as userId",
             "verification_code as verificationCode",
             "status",
@@ -138,6 +150,7 @@ class SettingsDAL extends _init {
      */
     public async getUserEmails(userId: number): Promise<model.settings.EmailModel[]> {
         const info = await this.knex("user_emails").select(
+            'user_emails.id as emailId',
             "userid as userId",
             "verification_code as verificationCode",
             "status",

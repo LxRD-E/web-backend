@@ -318,6 +318,9 @@ export default class AuthController extends controller {
         }
         // Delete userdata
         session.userdata = {};
+        if (session.impersonateUserId) {
+            delete session.impersonateUserId;
+        }
         // Return success
         return {
             success: true
