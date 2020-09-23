@@ -11,7 +11,7 @@ export class SignupRequest {
     @MaxItems(3)
     @PropertyType(Number)
     @Description('Format: Day, Month, Year')
-    @Example([1,12,2000])
+    @Example([1, 12, 2000])
     birth: number[];
     @PropertyType(String)
     captcha: string;
@@ -70,4 +70,10 @@ export class ValidateAuthenticationCodeResponse {
     @Required()
     @Description('The timestamp of when the code was created at')
     iat: number;
+}
+
+export class CookieConsentInformation {
+    @Required()
+    @Description('Signifies consent to googleAnalytics')
+    public googleAnalytics: boolean;
 }

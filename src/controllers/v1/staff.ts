@@ -30,6 +30,7 @@ import {
 import { Description, Returns, ReturnsArray, Summary } from '@tsed/swagger';
 import { YesAuth } from '../../middleware/Auth';
 import { csrf } from '../../dal/auth';
+import _ = require('lodash');
 
 /**
  * Staff Controller
@@ -1302,6 +1303,74 @@ export class StaffController extends controller {
             accountStatus = model.staff.UserLeaderboardAccountStatus[0];
         }
         return await this.user.getLeaderboardSorted(sortBy, accountStatus, limit, offset);
+    }
+
+
+    @Get('/user/:userId/sent-currency')
+    @Summary('Get currency sent to somebody by the {userId}')
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.GiveCurrencyToUser))
+    @ReturnsArray({ type: model.staff.ModerationCurrencyEntry })
+    public async getSentCurrency(
+        @Required()
+        @PathParams('userId', Number) userId: number,
+        @QueryParams('offset', Number) offset: number = 0,
+        @QueryParams('limit', Number) limit: number = 100,
+    ) {
+        if (limit < 1 || limit > 100) {
+            limit = 100;
+        }
+        return this.staff.getCurrencySentByUser(userId, limit, offset);
+    }
+
+    @Get('/user/:userId/received-currency')
+    @Summary('Get currency sent to the {userId} from staff')
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.TakeCurrencyFromUser))
+    @ReturnsArray({ type: model.staff.ModerationCurrencyEntry })
+    public async getRecievedCurrency(
+        @Required()
+        @PathParams('userId', Number) userId: number,
+        @QueryParams('offset', Number) offset: number = 0,
+        @QueryParams('limit', Number) limit: number = 100,
+    ) {
+        if (limit < 1 || limit > 100) {
+            limit = 100;
+        }
+        return this.staff.getCurrencyGivenToUser(userId, limit, offset);
+    }
+
+    @Get('/user/:userId/country')
+    @Summary('Estimate the country of the {userId}')
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ManagePrivateUserInfo))
+    public async estimateUserCountry(
+        @PathParams('userId', Number) userId: number
+    ) {
+        let result = {
+            countryCode: 'US',
+            country: 'United States of America',
+            didLookupSucceed: false,
+        }
+        let allUserIps = await this.user.getKnownUniqueIps(userId, 150);
+        if (allUserIps.length === 0) {
+            return result;
+        }
+        let countriesArray: string[] = [];
+        let allData = [];
+        for (const ip of allUserIps) {
+            let data = await this.user.getCountryDataFromIp(ip);
+            if (data) {
+                allData.push(data);
+                countriesArray.push(data.countryCode);
+            }
+        }
+        let mostLikelyCountry = _.head(_(countriesArray).countBy().entries().maxBy(_.last));
+        if (typeof mostLikelyCountry === 'string') {
+            result.didLookupSucceed = true;
+            result.countryCode = mostLikelyCountry;
+            result.country = allData.filter(val => {
+                return val.countryCode === mostLikelyCountry;
+            })[0].country;
+        }
+        return result;
     }
 
     @Get('/user/search')

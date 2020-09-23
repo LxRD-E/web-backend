@@ -29,7 +29,7 @@ const axios_1 = require("axios");
 const ts_httpexceptions_1 = require("ts-httpexceptions");
 const common_1 = require("@tsed/common");
 const config_1 = require("../helpers/config");
-const ioredis_1 = require("../helpers/ioredis");
+const redis = require("../helpers/ioredis");
 const imageResizer = require("../services/image-resize");
 const randomBytes = util.promisify(Crypto.randomBytes);
 exports.hashPassword = async (passwd, bcryptLib = bcrypt) => {
@@ -215,14 +215,14 @@ exports.decryptPasswordHash = (passwordHash) => {
     return exports.decrypt(passString, PASSWORD_ENCRYPTION_KEY, passIv);
 };
 exports.getCachedTotpResults = async (userId) => {
-    let result = await ioredis_1.default.get('cached_totp_results_' + userId.toString());
+    let result = await redis.get().get('cached_totp_results_' + userId.toString());
     if (result) {
         return result;
     }
     throw new Error('No code generated');
 };
 exports.setCachedTotpResults = async (userId, val) => {
-    await ioredis_1.default.setex('cached_totp_results_' + userId.toString(), 2500, val);
+    await redis.get().setex('cached_totp_results_' + userId.toString(), 2500, val);
 };
 exports.generateTOTPSecret = () => {
     return new Promise((res, rej) => {
@@ -432,7 +432,7 @@ const getOgTagsForUrl = async (originalUrl, statusId) => {
     let url = originalUrl;
     let responseData = '';
     const redisKey = 'og_info_url_v1_' + url;
-    const cachedResult = await ioredis_1.default.get(redisKey);
+    const cachedResult = await redis.get().get(redisKey);
     if (cachedResult) {
         const response = JSON.parse(cachedResult);
         response.statusId = statusId;
@@ -459,7 +459,7 @@ const getOgTagsForUrl = async (originalUrl, statusId) => {
         statusId: statusId,
         ogInfo: convertResponseBodyToOgInfo(responseData),
     };
-    await ioredis_1.default.setex(redisKey, 86400, JSON.stringify(result));
+    await redis.get().setex(redisKey, 86400, JSON.stringify(result));
     return result;
 };
 exports.multiGetOgTagsForYoutubeLinks = async (data) => {

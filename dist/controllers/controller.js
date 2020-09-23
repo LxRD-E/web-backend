@@ -20,6 +20,7 @@ const report_abuse_1 = require("../dal/report-abuse");
 const currency_exchange_1 = require("../dal/currency-exchange");
 const data_persistence_1 = require("../dal/data-persistence");
 const user_referral_1 = require("../dal/user-referral");
+const trade_ads_1 = require("../dal/trade-ads");
 const Www_1 = require("../models/v2/Www");
 const Filter_1 = require("../helpers/Filter");
 const event = require("../events/events");
@@ -55,9 +56,9 @@ class StandardController extends Errors_1.default {
         this.currencyExchange = new currency_exchange_1.default();
         this.dataPersistence = new data_persistence_1.default();
         this.userReferral = new user_referral_1.default();
+        this.tradeAds = new trade_ads_1.default();
         this.event = event;
         if (knexOverload) {
-            console.log('overloading knex');
             this.user.knex = knexOverload;
             this.mod.knex = knexOverload;
             this.group.knex = knexOverload;
@@ -76,6 +77,7 @@ class StandardController extends Errors_1.default {
             this.reportAbuse.knex = knexOverload;
             this.currencyExchange.knex = knexOverload;
             this.userReferral.knex = knexOverload;
+            this.tradeAds.knex = knexOverload;
         }
     }
     static cError(...ers) {

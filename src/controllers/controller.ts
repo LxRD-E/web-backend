@@ -19,10 +19,11 @@ import reportAbuse from '../dal/report-abuse';
 import currencyExchange from '../dal/currency-exchange';
 import dataPersistence from '../dal/data-persistence';
 import userReferral from '../dal/user-referral';
+import tradeAds from '../dal/trade-ads';
 // Model stuff
-import {WWWTemplate} from '../models/v2/Www';
+import { WWWTemplate } from '../models/v2/Www';
 // Filters
-import {numberWithCommas} from '../helpers/Filter';
+import { numberWithCommas } from '../helpers/Filter';
 // Events
 import * as event from '../events/events';
 // External libraries
@@ -31,10 +32,10 @@ import TSErrorsBase from "../helpers/Errors";
 import xss = require('xss');
 import moment = require('moment');
 import Knex = require('knex');
-import {QueryBuilder} from "knex";
+import { QueryBuilder } from "knex";
 import * as model from "../models/models";
 
-type ValidTableNames = 'catalog' | 'catalog_assets' | 'catalog_comments' | 'chat_messages' | 'currency_exchange_fund' | 'currency_exchange_position' | 'currency_exchange_record' | 'currency_products' | 'currency_transactions' | 'forum_categories' | 'forum_posts' | 'forum_subcategories' | 'forum_threads' | 'friendships' | 'friend_request' | 'game' | 'game_map' | 'game_script' | 'game_server' | 'game_server_players' | 'game_thumbnails' | 'groups' | 'group_members' | 'group_members_pending' | 'group_ownership_change' | 'group_roles' | 'group_shout' | 'group_wall' | 'knex_migrations' | 'knex_migrations_lock' | 'moderation_ban' | 'moderation_currency' | 'moderation_give' | 'password_resets' | 'support_tickets' | 'support_ticket_responses' | 'thumbnails' | 'thumbnail_hashes' | 'trades' | "trade_items" | 'transactions' | 'users' | 'user_usernames' | 'user_ads' | 'user_avatar' | 'user_avatarcolor' | 'user_emails' | 'user_inventory' | 'user_ip' | 'user_messages'  | 'user_moderation' | 'user_outfit' | 'user_outfit_avatar' | 'user_outfit_avatarcolor' | 'user_staff_comments' | 'user_status' | 'user_status_abuse_report' | 'user_status_comment' | 'user_status_comment_reply' | 'user_status_reactions';
+type ValidTableNames = 'catalog' | 'catalog_assets' | 'catalog_comments' | 'chat_messages' | 'currency_exchange_fund' | 'currency_exchange_position' | 'currency_exchange_record' | 'currency_products' | 'currency_transactions' | 'forum_categories' | 'forum_posts' | 'forum_subcategories' | 'forum_threads' | 'friendships' | 'friend_request' | 'game' | 'game_map' | 'game_script' | 'game_server' | 'game_server_players' | 'game_thumbnails' | 'groups' | 'group_members' | 'group_members_pending' | 'group_ownership_change' | 'group_roles' | 'group_shout' | 'group_wall' | 'knex_migrations' | 'knex_migrations_lock' | 'moderation_ban' | 'moderation_currency' | 'moderation_give' | 'password_resets' | 'support_tickets' | 'support_ticket_responses' | 'thumbnails' | 'thumbnail_hashes' | 'trades' | "trade_items" | 'transactions' | 'users' | 'user_usernames' | 'user_ads' | 'user_avatar' | 'user_avatarcolor' | 'user_emails' | 'user_inventory' | 'user_ip' | 'user_messages' | 'user_moderation' | 'user_outfit' | 'user_outfit_avatar' | 'user_outfit_avatarcolor' | 'user_staff_comments' | 'user_status' | 'user_status_abuse_report' | 'user_status_comment' | 'user_status_comment_reply' | 'user_status_reactions';
 
 type TransactionThis<T> = {
     auth: never;
@@ -53,6 +54,7 @@ type TransactionThis<T> = {
     staff: never;
     ad: never;
     support: never;
+    tradeAds: never;
 } & T;
 
 /**
@@ -93,6 +95,7 @@ export default class StandardController extends TSErrorsBase {
     public currencyExchange = new currencyExchange();
     public dataPersistence = new dataPersistence();
     public userReferral = new userReferral();
+    public tradeAds = new tradeAds();
     public event = event;
     /**
      * Begin a transaction while using normal controller services
@@ -104,7 +107,7 @@ export default class StandardController extends TSErrorsBase {
         // Yeah, runtime type checks are dumb but if everybody writes proper unit tests then this shouldn't be an issue...
         if (process.env.NODE_ENV === 'development') {
             let stringifiedCallback = callback.toString();
-            if (stringifiedCallback.slice(0, 'async function '.length) !== 'async function ' && stringifiedCallback.slice(0,'function '.length) !== 'function ') {
+            if (stringifiedCallback.slice(0, 'async function '.length) !== 'async function ' && stringifiedCallback.slice(0, 'function '.length) !== 'function ') {
                 throw new Error('StandardController.transaction() does not support arrow functions.');
             }
         }
@@ -127,9 +130,9 @@ export default class StandardController extends TSErrorsBase {
                     }
                 }
                 return await callback.apply(thisParam, [newController]);
-            }catch(e) {
+            } catch (e) {
                 if (typeof e !== 'object') {
-                    console.log('found the one that isnt an object, ',e);
+                    console.log('found the one that isnt an object, ', e);
                 }
                 throw e;
             }
@@ -138,7 +141,6 @@ export default class StandardController extends TSErrorsBase {
     constructor(knexOverload?: Knex) {
         super();
         if (knexOverload) {
-            console.log('overloading knex');
             this.user.knex = knexOverload;
             this.mod.knex = knexOverload;
             this.group.knex = knexOverload;
@@ -157,6 +159,7 @@ export default class StandardController extends TSErrorsBase {
             this.reportAbuse.knex = knexOverload;
             this.currencyExchange.knex = knexOverload;
             this.userReferral.knex = knexOverload;
+            this.tradeAds.knex = knexOverload;
         }
     }
 }

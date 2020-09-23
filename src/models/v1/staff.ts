@@ -213,3 +213,18 @@ export const UserLeaderboardAccountStatus = [
     'terminated',
     'deleted',
 ]
+
+export class ModerationCurrencyEntry {
+    @Required()
+    moderationCurrencyId: number;
+    @Required()
+    userIdGiver: number;
+    @Required()
+    userIdReceiver: number;
+    @Required()
+    amount: number;
+    @Required()
+    currency: number;
+    @Required()
+    date: string;
+}

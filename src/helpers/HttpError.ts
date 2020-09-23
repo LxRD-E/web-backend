@@ -179,9 +179,10 @@ export enum HttpErrors {
     InvalidReferralId,
     ReferralAlreadyExists,
     NotFound,
+    NotEnabled,
 }
 import os = require('os');
-import {lbOrigin} from '../middleware/Any';
+import { lbOrigin } from '../middleware/Any';
 // @Locals('userInfo') userInfo: model.user.UserInfo,
 export const ErrorTemplate = (title: string, body: string): string => {
     return `
@@ -232,5 +233,5 @@ export const ErrorTemplate = (title: string, body: string): string => {
             <p>${body}</p>
         </div>
     </body>
-    </html>`.replace(/\n/g, '').replace(/  /g,'');
+    </html>`.replace(/\n/g, '').replace(/  /g, '');
 }

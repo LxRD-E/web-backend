@@ -32,6 +32,25 @@ let AuthController = class AuthController extends controller_1.default {
     constructor() {
         super();
     }
+    async updateCookieConsent(session, body) {
+        let ga = body.googleAnalytics;
+        if (typeof ga !== 'boolean') {
+            throw new this.BadRequest('InvalidParameter');
+        }
+        if (typeof session !== 'object' || session === null) {
+            throw new this.Conflict('Session is not an object.');
+        }
+        session.googleAnalytics = ga;
+        return {};
+    }
+    async getCookieConsent(session) {
+        if (typeof session.googleAnalytics !== 'boolean') {
+            session.googleAnalytics = false;
+        }
+        return {
+            googleAnalytics: session.googleAnalytics || false,
+        };
+    }
     getCurrentUser(userInfo, session) {
         let d = userInfo;
         if (typeof session.impersonateUserId === 'number') {
@@ -511,6 +530,27 @@ let AuthController = class AuthController extends controller_1.default {
         return history;
     }
 };
+__decorate([
+    common_1.Patch('/cookie-consent'),
+    swagger_1.Summary('Update cookie consent settings'),
+    common_1.Use(auth_1.csrf),
+    __param(0, common_1.Session()),
+    __param(1, common_1.Required()),
+    __param(1, common_1.BodyParams(model.auth.CookieConsentInformation)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, model.auth.CookieConsentInformation]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "updateCookieConsent", null);
+__decorate([
+    common_1.Get('/cookie-consent'),
+    swagger_1.Summary('Get current cookie consent information'),
+    swagger_1.Description('If the current session has not agreed to any cookies, they are all set to "false" by default.'),
+    swagger_1.Returns(200, { type: model.auth.CookieConsentInformation, description: 'Current user cookie consent info' }),
+    __param(0, common_1.Session()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "getCookieConsent", null);
 __decorate([
     common_1.Get('/current-user'),
     swagger_1.Summary('Get the current authenticated user'),

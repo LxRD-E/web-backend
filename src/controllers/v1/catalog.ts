@@ -6,7 +6,7 @@
 /// import CatalogError from './error';
 // models
 import * as model from '../../models/models';
-import {filterId, filterOffset} from '../../helpers/Filter';
+import { filterId, filterOffset } from '../../helpers/Filter';
 /// import {invalidParam} from '../../middleware/paramsvalidate';
 // Autoload
 import {
@@ -27,10 +27,10 @@ import {
     UseBeforeEach
 } from '@tsed/common';
 import controller from '../controller';
-import {Description, Returns, Summary} from '@tsed/swagger';
-import {csrf} from '../../dal/auth';
-import {YesAuth} from '../../middleware/Auth';
-import {MultipartFile} from '@tsed/multipartfiles';
+import { Description, Returns, Summary } from '@tsed/swagger';
+import { csrf } from '../../dal/auth';
+import { YesAuth } from '../../middleware/Auth';
+import { MultipartFile } from '@tsed/multipartfiles';
 
 /**
  * Catalog Controller
@@ -118,7 +118,7 @@ export class CatalogController extends controller {
 
     @Get('/:catalogId/sales/count')
     @Summary('Count catalog item sales')
-    @Returns(200, {type: class {sales: number;}})
+    @Returns(200, { type: class { sales: number; } })
     public async getCatalogItemSalesCount(
         @Required()
         @PathParams('catalogId', Number) id: number
@@ -208,6 +208,7 @@ export class CatalogController extends controller {
     @Summary('Search the catalog')
     public async searchCatalog(
         @QueryParams('offset', Number) offset: number,
+        @QueryParams('limit', Number) limit: number = 25,
         @QueryParams('category', Number) category: number,
         @QueryParams('orderBy', String) orderBy: string = 'id',
         @QueryParams('orderByType', String) orderByType: string = 'desc',
@@ -219,6 +220,9 @@ export class CatalogController extends controller {
         if (orderByType !== "desc" && orderByType !== "asc") {
             throw new this.BadRequest('InvalidOrderByType');
         }
+        if (limit > 100 || limit < 1) {
+            limit = 25;
+        }
         const goodCategory = filterId(category) as number;
         let categoryEnum: model.catalog.searchCategory | model.catalog.category;
         if (goodCategory === model.catalog.searchCategory.Any || goodCategory === model.catalog.searchCategory.Collectibles || goodCategory === model.catalog.searchCategory.Featured) {
@@ -228,7 +232,7 @@ export class CatalogController extends controller {
         } else {
             throw new this.BadRequest('InvalidCategory');
         }
-        let SearchResults = await this.catalog.getCatalog(offset, categoryEnum, orderBy, orderByType, query);
+        let SearchResults = await this.catalog.getCatalog(offset, limit, categoryEnum, orderBy, orderByType, query);
         if (category === model.catalog.searchCategory.Collectibles) {
             let arrayOfCatalogIds: number[] = [];
             for (const item of SearchResults) {
@@ -249,7 +253,7 @@ export class CatalogController extends controller {
 
     @Patch('/:catalogId/info')
     @Use(csrf, YesAuth)
-    @Returns(400, {type: model.Error, description: 'InvalidCatalogId: catalogId is invalid\nInvalidModerationStatus: Moderation status is invalid\nInvalidPermissions: Requester is not authorized to edit this item\nInvalidCatalogName: Name is invalid\nInvalidCatalogDescription: Description is invalid\nInvalidIsForSaleOption: isForSale must be 0 or 1\nConstraintPriceTooHigh: Price is too high\nInvalidCurrency: Currency type is invalid\nInvalidCategory: Category is invalid\nInvalidCollectibleState: collectible must be 0 or 1\nInvalidModerationStatus: Moderation status is not valid\n'})
+    @Returns(400, { type: model.Error, description: 'InvalidCatalogId: catalogId is invalid\nInvalidModerationStatus: Moderation status is invalid\nInvalidPermissions: Requester is not authorized to edit this item\nInvalidCatalogName: Name is invalid\nInvalidCatalogDescription: Description is invalid\nInvalidIsForSaleOption: isForSale must be 0 or 1\nConstraintPriceTooHigh: Price is too high\nInvalidCurrency: Currency type is invalid\nInvalidCategory: Category is invalid\nInvalidCollectibleState: collectible must be 0 or 1\nInvalidModerationStatus: Moderation status is not valid\n' })
     public async updateItemInfo(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @Required()
@@ -320,7 +324,7 @@ export class CatalogController extends controller {
         if (!category) {
             category = CatalogInfo.category;
         }
-        console.log('cat',category);
+        console.log('cat', category);
         if (typeof model.catalog.category[category] !== 'string') {
             throw new this.BadRequest('InvalidCategory');
         }
@@ -345,7 +349,7 @@ export class CatalogController extends controller {
                 throw new this.BadRequest('InvalidModerationStatus');
             }
             moderationStatus = newModerationStatus;
-        }else{
+        } else {
             category = CatalogInfo.category;
         }
         await this.catalog.updateCatalogItemInfo(catalogId, newName, newDescription, newPrice, currency, newStock, newCollectible, isForSale, moderationStatus, category);
@@ -446,7 +450,7 @@ export class CatalogController extends controller {
     @Delete('/:catalogId/comment/:commentId')
     @Summary('Delete a catalog item comment')
     @Description('This endpoint is meant for users wishing to delete their own comments, although it will also delete comments made by any user, as long as the requester is a staff member')
-    @Returns(400, {type: model.Error, description: 'InvalidCommentId CommentId is invalid\n'})
+    @Returns(400, { type: model.Error, description: 'InvalidCommentId CommentId is invalid\n' })
     public async deleteComment(
         @Locals('userInfo') userInfo: model.UserSession,
         @PathParams('catalogId', Number) catalogId: number,
@@ -458,7 +462,7 @@ export class CatalogController extends controller {
             if (info.isDeleted === 1) {
                 throw new Error('CommentAlreadyDeleted');
             }
-        }catch(e) {
+        } catch (e) {
             throw new this.BadRequest('InvalidCommentId');
         }
         if (info.userId !== userInfo.userId && userInfo.staff >= 1 === false) {
@@ -530,7 +534,7 @@ export class CatalogController extends controller {
     @Patch('/:catalogId/files')
     @Summary('Update a catalog item\'s files')
     @Description('Restricted to staff use only')
-    @Use(csrf,YesAuth)
+    @Use(csrf, YesAuth)
     public async updateItemFiles(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('catalogId', Number) catalogId: number,
@@ -600,9 +604,9 @@ export class CatalogController extends controller {
         reRenderItem().then(d => {
 
         })
-        .catch(e => {
-            console.error(e);
-        })
+            .catch(e => {
+                console.error(e);
+            })
         // Return Success
         return { success: true, id: catalogId };
     }
@@ -669,7 +673,7 @@ export class CatalogController extends controller {
                     url: data,
                 }
             }
-        }else{
+        } else {
             regenAvatar().then().catch(e => {
                 console.error(e);
             });
@@ -686,8 +690,8 @@ export class CatalogController extends controller {
     @Post('/create')
     @Summary('Create a catalog item')
     @Use(csrf, YesAuth)
-    @Returns(200, {description: 'OK', type: model.catalog.CatalogCreationSuccessResponse})
-    @Returns(400, {description: 'InvalidOBJSpecified: OBJ required for category but not specified or invalid\nInvalidMTLSpecified: MTL required for category but not specified or invalid\nNoFileSpecified: No file was specified in the request\nInvalidCategory: Category is invalid or not allowed for current user\nInvalidPrice: Price is not valid\nInvalidCurrency: Currency is not valid\nConstraintPriceTooHigh: Price is too high\nInvalidCatalogName: Catalog Name is too large, too small, or otherwise invalid\nInvalidCatalogDescription: Description is too large or otherwise invalid\nInvalidPermissions: User does not have permission to upload to the groupId specified\n',type: model.Error})
+    @Returns(200, { description: 'OK', type: model.catalog.CatalogCreationSuccessResponse })
+    @Returns(400, { description: 'InvalidOBJSpecified: OBJ required for category but not specified or invalid\nInvalidMTLSpecified: MTL required for category but not specified or invalid\nNoFileSpecified: No file was specified in the request\nInvalidCategory: Category is invalid or not allowed for current user\nInvalidPrice: Price is not valid\nInvalidCurrency: Currency is not valid\nConstraintPriceTooHigh: Price is too high\nInvalidCatalogName: Catalog Name is too large, too small, or otherwise invalid\nInvalidCatalogDescription: Description is too large or otherwise invalid\nInvalidPermissions: User does not have permission to upload to the groupId specified\n', type: model.Error })
     public async create(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @MultipartFile() uploadedFiles: Express.Multer.File[],
@@ -853,8 +857,8 @@ export class CatalogController extends controller {
     @Delete('/:catalogId/inventory')
     @Summary('Delete a userInventoryItem owned by the authenticated user')
     @Description('This will delete all userInventoryItems with the catalogId specified that belong to the authenticated user')
-    @Returns(400, {type: model.Error, description: 'InvalidCatalogId: The catalogId specified is invalid\n'})
-    @Returns(409, {type: model.Error, description: 'ItemCannotBeDeleted: This item cannot be deleted\n'})
+    @Returns(400, { type: model.Error, description: 'InvalidCatalogId: The catalogId specified is invalid\n' })
+    @Returns(409, { type: model.Error, description: 'ItemCannotBeDeleted: This item cannot be deleted\n' })
     @Use(csrf, YesAuth)
     public async deleteCatalogItem(
         @Locals('userInfo') userInfo: model.UserSession,
@@ -863,11 +867,11 @@ export class CatalogController extends controller {
         const forUpdate = [
             'user_inventory'
         ];
-        await this.transaction(this, forUpdate,async function (trx) {
+        await this.transaction(this, forUpdate, async function (trx) {
             let item: model.catalog.CatalogInfo;
             try {
-                item = await trx.catalog.getInfo(catalogId, ['category','catalogId']);
-            }catch(e) {
+                item = await trx.catalog.getInfo(catalogId, ['category', 'catalogId']);
+            } catch (e) {
                 throw new this.BadRequest('InvalidCatalogId');
             }
             let allowedCategories = [

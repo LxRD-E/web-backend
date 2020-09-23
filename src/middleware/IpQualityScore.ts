@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Axios from 'axios';
 import config from '../helpers/config';
-import redis from '../helpers/ioredis';
+import * as redis from '../helpers/ioredis';
 
 export type Strictness = 0 | 1 | 2 | 3;
 
@@ -109,7 +109,7 @@ export const check = (options?: IQualityScoreOptions) => {
             let result: IQualityScoreResponse | undefined;
             let redisKey = 'ip_quality_score_' + ip;
             if (!options.disableCache) {
-                let attempt = await redis.get(redisKey);
+                let attempt = await redis.get().get(redisKey);
                 if (typeof attempt === 'string') {
                     try {
                         result = JSON.parse(attempt);
@@ -128,11 +128,9 @@ export const check = (options?: IQualityScoreOptions) => {
                 }
                 str = str.slice(0, str.length - 1);
                 let url = `https://www.ipqualityscore.com/api/json/ip/${apiKey}/${ip}?${str}`;
-                console.log('url', url);
-
                 let response = await Axios.get(url);
                 result = response.data;
-                await redis.setex(redisKey, 86400, JSON.stringify(result));
+                await redis.get().setex(redisKey, 86400, JSON.stringify(result));
             }
 
             if (result) {

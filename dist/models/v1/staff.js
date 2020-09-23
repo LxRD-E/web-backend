@@ -123,4 +123,31 @@ exports.UserLeaderboardAccountStatus = [
     'terminated',
     'deleted',
 ];
+class ModerationCurrencyEntry {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], ModerationCurrencyEntry.prototype, "moderationCurrencyId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], ModerationCurrencyEntry.prototype, "userIdGiver", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], ModerationCurrencyEntry.prototype, "userIdReceiver", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], ModerationCurrencyEntry.prototype, "amount", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], ModerationCurrencyEntry.prototype, "currency", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], ModerationCurrencyEntry.prototype, "date", void 0);
+exports.ModerationCurrencyEntry = ModerationCurrencyEntry;
 

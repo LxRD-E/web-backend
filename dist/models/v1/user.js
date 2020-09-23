@@ -478,6 +478,7 @@ var ipAddressActions;
     ipAddressActions[ipAddressActions["TradeCompleted"] = 7] = "TradeCompleted";
     ipAddressActions[ipAddressActions["PutItemForSale"] = 8] = "PutItemForSale";
     ipAddressActions[ipAddressActions["TradeFailedDueToTwoStep"] = 9] = "TradeFailedDueToTwoStep";
+    ipAddressActions[ipAddressActions["TradeAdCreated"] = 10] = "TradeAdCreated";
 })(ipAddressActions = exports.ipAddressActions || (exports.ipAddressActions = {}));
 var banned;
 (function (banned) {

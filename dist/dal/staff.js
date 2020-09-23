@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const os = require("os");
-const ioredis_1 = require("../helpers/ioredis");
+const redis = require("../helpers/ioredis");
 const model = require("../models/models");
 const _init_1 = require("./_init");
 class StaffDAL extends _init_1.default {
@@ -106,6 +106,16 @@ class StaffDAL extends _init_1.default {
             'date': this.moment().format('YYYY-MM-DD HH:mm:ss'),
         });
     }
+    async getCurrencyGivenToUser(userId, limit = 100, offset = 0) {
+        return this.knex('moderation_currency').select('id as moderationCurrencyId', 'userid as userIdGiver', 'userid_affected as userIdReceiver', 'amount', 'currency', 'date').where({
+            'userid_affected': userId,
+        }).limit(limit).offset(offset).orderBy('id', 'desc');
+    }
+    async getCurrencySentByUser(userId, limit = 100, offset = 0) {
+        return this.knex('moderation_currency').select('id as moderationCurrencyId', 'userid as userIdGiver', 'userid_affected as userIdReceiver', 'amount', 'currency', 'date').where({
+            'userid': userId,
+        }).limit(limit).offset(offset).orderBy('id', 'desc');
+    }
     async multiGetThumbnailsFromIdsIgnoreModeration(ids) {
         const query = this.knex('thumbnails').select('thumbnails.url', 'thumbnails.reference_id as catalogId').innerJoin('catalog', 'catalog.id', 'thumbnails.reference_id').limit(25);
         ids.forEach((id) => {
@@ -137,10 +147,10 @@ class StaffDAL extends _init_1.default {
         await this.knex('catalog').update({ 'is_pending': state }).where({ 'catalog.id': catalogId });
     }
     async updateBannerText(bannerText) {
-        await ioredis_1.default.set('siteWideBannerDisplay', bannerText);
+        await redis.get().set('siteWideBannerDisplay', bannerText);
     }
     async getBannerText() {
-        const banner = await ioredis_1.default.get('siteWideBannerDisplay');
+        const banner = await redis.get().get('siteWideBannerDisplay');
         return banner;
     }
     async search(offset) {

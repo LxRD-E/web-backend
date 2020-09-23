@@ -3,6 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const config_1 = require("./config");
 const IORedis = require("ioredis");
 let redis;
+let get = () => {
+    return redis;
+};
+exports.get = get;
 if (process.env.NODE_ENV !== 'test') {
     const ioRedisConfig = {
         password: config_1.default.redis.pass || '',
@@ -14,8 +18,13 @@ if (process.env.NODE_ENV !== 'test') {
     };
     redis = new IORedis(ioRedisConfig);
     redis.on('error', (ev) => {
-        console.log('IORedis Error:');
-        console.log(ev);
+        console.error('IORedis Error:', ev);
+        try {
+            redis.disconnect();
+        }
+        catch (err) {
+            console.error('ioredis disconnect error', err);
+        }
         redis = new IORedis(ioRedisConfig);
     });
 }

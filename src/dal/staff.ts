@@ -3,7 +3,7 @@
  */
 
 import os = require('os');
-import redis from '../helpers/ioredis';
+import * as redis from '../helpers/ioredis';
 
 import * as model from '../models/models';
 import _init from './_init';
@@ -165,6 +165,26 @@ class StaffDAL extends _init {
     }
 
     /**
+     * Get currency that was given to the {userId} by staff
+     * @param userId 
+     */
+    public async getCurrencyGivenToUser(userId: number, limit: number = 100, offset: number = 0): Promise<model.staff.ModerationCurrencyEntry[]> {
+        return this.knex('moderation_currency').select('id as moderationCurrencyId', 'userid as userIdGiver', 'userid_affected as userIdReceiver', 'amount', 'currency', 'date').where({
+            'userid_affected': userId,
+        }).limit(limit).offset(offset).orderBy('id', 'desc');
+    }
+
+    /**
+     * Get currency that was sent to a user by staff
+     * @param userId 
+     */
+    public async getCurrencySentByUser(userId: number, limit: number = 100, offset: number = 0): Promise<model.staff.ModerationCurrencyEntry[]> {
+        return this.knex('moderation_currency').select('id as moderationCurrencyId', 'userid as userIdGiver', 'userid_affected as userIdReceiver', 'amount', 'currency', 'date').where({
+            'userid': userId,
+        }).limit(limit).offset(offset).orderBy('id', 'desc');
+    }
+
+    /**
      * Get Multiple Thumbnails of Catalog Items from their ID
      * @param ids Array of Catalog IDs
      */
@@ -214,14 +234,14 @@ class StaffDAL extends _init {
      * @param bannerText 
      */
     public async updateBannerText(bannerText: string): Promise<void> {
-        await redis.set('siteWideBannerDisplay', bannerText);
+        await redis.get().set('siteWideBannerDisplay', bannerText);
     }
 
     /**
      * Get banner text
      */
     public async getBannerText(): Promise<string | null> {
-        const banner = await redis.get('siteWideBannerDisplay');
+        const banner = await redis.get().get('siteWideBannerDisplay');
         return banner;
     }
 

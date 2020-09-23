@@ -182,6 +182,7 @@ var HttpErrors;
     HttpErrors[HttpErrors["InvalidReferralId"] = 177] = "InvalidReferralId";
     HttpErrors[HttpErrors["ReferralAlreadyExists"] = 178] = "ReferralAlreadyExists";
     HttpErrors[HttpErrors["NotFound"] = 179] = "NotFound";
+    HttpErrors[HttpErrors["NotEnabled"] = 180] = "NotEnabled";
 })(HttpErrors = exports.HttpErrors || (exports.HttpErrors = {}));
 const Any_1 = require("../middleware/Any");
 exports.ErrorTemplate = (title, body) => {

@@ -89,8 +89,8 @@ class CatalogDAL extends _init_1.default {
         const count = await this.knex("catalog").count('id as Total').where({ 'catalog.is_for_sale': model.catalog.isForSale.true }).andWhere('catalog.price', '>', 0);
         return count[0]['Total'];
     }
-    async getCatalog(offset, category, orderBy, orderByType, query) {
-        const selectQuery = this.knex("catalog").select("catalog.id as catalogId", "catalog.name as catalogName", "catalog.price", "catalog.currency", "catalog.creator as creatorId", "catalog.creator_type as creatorType", "catalog.original_creatorid as userId", "catalog.is_collectible as collectible", "catalog.max_sales as maxSales").limit(25).offset(offset).orderBy(orderBy, orderByType);
+    async getCatalog(offset, limit, category, orderBy, orderByType, query) {
+        const selectQuery = this.knex("catalog").select("catalog.id as catalogId", "catalog.name as catalogName", "catalog.price", "catalog.currency", "catalog.creator as creatorId", "catalog.creator_type as creatorType", "catalog.original_creatorid as userId", "catalog.is_collectible as collectible", "catalog.max_sales as maxSales").limit(limit).offset(offset).orderBy(orderBy, orderByType);
         if (category === model.catalog.searchCategory.Any) {
             selectQuery.where({
                 "is_for_sale": model.catalog.isForSale.true,
@@ -111,6 +111,7 @@ class CatalogDAL extends _init_1.default {
                 "is_pending": model.catalog.moderatorStatus.Ready,
                 "is_collectible": model.catalog.collectible.true
             });
+            selectQuery.select('catalog.average_price as averagePrice');
         }
         else {
             selectQuery.where({

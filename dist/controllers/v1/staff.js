@@ -27,6 +27,7 @@ const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 const Auth_1 = require("../../middleware/Auth");
 const auth_1 = require("../../dal/auth");
+const _ = require("lodash");
 let StaffController = class StaffController extends controller_1.default {
     constructor() {
         super();
@@ -762,6 +763,47 @@ let StaffController = class StaffController extends controller_1.default {
         }
         return await this.user.getLeaderboardSorted(sortBy, accountStatus, limit, offset);
     }
+    async getSentCurrency(userId, offset = 0, limit = 100) {
+        if (limit < 1 || limit > 100) {
+            limit = 100;
+        }
+        return this.staff.getCurrencySentByUser(userId, limit, offset);
+    }
+    async getRecievedCurrency(userId, offset = 0, limit = 100) {
+        if (limit < 1 || limit > 100) {
+            limit = 100;
+        }
+        return this.staff.getCurrencyGivenToUser(userId, limit, offset);
+    }
+    async estimateUserCountry(userId) {
+        let result = {
+            countryCode: 'US',
+            country: 'United States of America',
+            didLookupSucceed: false,
+        };
+        let allUserIps = await this.user.getKnownUniqueIps(userId, 150);
+        if (allUserIps.length === 0) {
+            return result;
+        }
+        let countriesArray = [];
+        let allData = [];
+        for (const ip of allUserIps) {
+            let data = await this.user.getCountryDataFromIp(ip);
+            if (data) {
+                allData.push(data);
+                countriesArray.push(data.countryCode);
+            }
+        }
+        let mostLikelyCountry = _.head(_(countriesArray).countBy().entries().maxBy(_.last));
+        if (typeof mostLikelyCountry === 'string') {
+            result.didLookupSucceed = true;
+            result.countryCode = mostLikelyCountry;
+            result.country = allData.filter(val => {
+                return val.countryCode === mostLikelyCountry;
+            })[0].country;
+        }
+        return result;
+    }
     async searchUsers(email, username, userId) {
         let query;
         let column;
@@ -1430,6 +1472,41 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number, String, String]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "userLeaderboard", null);
+__decorate([
+    common_1.Get('/user/:userId/sent-currency'),
+    swagger_1.Summary('Get currency sent to somebody by the {userId}'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.GiveCurrencyToUser)),
+    swagger_1.ReturnsArray({ type: model.staff.ModerationCurrencyEntry }),
+    __param(0, common_1.Required()),
+    __param(0, common_1.PathParams('userId', Number)),
+    __param(1, common_1.QueryParams('offset', Number)),
+    __param(2, common_1.QueryParams('limit', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "getSentCurrency", null);
+__decorate([
+    common_1.Get('/user/:userId/received-currency'),
+    swagger_1.Summary('Get currency sent to the {userId} from staff'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.TakeCurrencyFromUser)),
+    swagger_1.ReturnsArray({ type: model.staff.ModerationCurrencyEntry }),
+    __param(0, common_1.Required()),
+    __param(0, common_1.PathParams('userId', Number)),
+    __param(1, common_1.QueryParams('offset', Number)),
+    __param(2, common_1.QueryParams('limit', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "getRecievedCurrency", null);
+__decorate([
+    common_1.Get('/user/:userId/country'),
+    swagger_1.Summary('Estimate the country of the {userId}'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManagePrivateUserInfo)),
+    __param(0, common_1.PathParams('userId', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "estimateUserCountry", null);
 __decorate([
     common_1.Get('/user/search'),
     swagger_1.Summary('Search for users by username, email, or userId'),

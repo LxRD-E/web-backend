@@ -21,16 +21,14 @@ require("@tsed/ajv");
 require("@tsed/swagger");
 const Path = require("path");
 const responseTime = require("response-time");
-require("./events/setup");
 const cons = require("consolidate");
 const NotFound_1 = require("./middleware/NotFound");
 const Logger_1 = require("./helpers/Logger");
-const remove_swagger_branding_1 = require("./helpers/remove-swagger-branding");
+require("./events/setup");
 const session_1 = require("./start/session");
 const websockets_1 = require("./start/websockets");
 const Any_1 = require("./middleware/Any");
 const multer = require("multer");
-remove_swagger_branding_1.default();
 if (process.env.NODE_ENV === 'production') {
     Logger_1.default();
 }
@@ -102,7 +100,6 @@ let Server = class Server extends common_1.ServerLoader {
             ];
             for (const skip of toSkip) {
                 if (req.url.slice(0, req.url.indexOf('?')).match(skip)) {
-                    console.log('skip due to match', skip);
                     return next();
                 }
             }

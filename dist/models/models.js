@@ -60,6 +60,8 @@ const dataPersistence = require("./v1/data-persistence");
 exports.dataPersistence = dataPersistence;
 const userReferral = require("./v1/user-referral");
 exports.userReferral = userReferral;
+const tradeAds = require("./v1/trade-ads");
+exports.tradeAds = tradeAds;
 const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
 class _errorData {

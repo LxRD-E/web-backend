@@ -129,6 +129,14 @@ export class UserInfo {
     @PropertyType(Number)
     @Enum(0, 1)
     isDeveloper: 0 | 1;
+    /**
+     * Is the account locked?
+     */
+    /*
+    @PropertyType(Number)
+    @Enum(0, 1)
+    isLocked: 0 | 1;
+    */
 }
 
 export class PastUsernames {
@@ -513,6 +521,7 @@ export enum ipAddressActions {
     'TradeCompleted',
     'PutItemForSale',
     'TradeFailedDueToTwoStep',
+    'TradeAdCreated',
 }
 /**
  * Is a user banned?

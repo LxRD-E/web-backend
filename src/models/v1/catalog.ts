@@ -169,7 +169,11 @@ export class SearchResults {
     @Required()
     maxSales: number | null;
     @PropertyType(Number)
-    collectibleLowestPrice: number|null;
+    @Description('This will onl appear when category is collectible. Null if item has no sellers.')
+    collectibleLowestPrice: number | null;
+    @PropertyType(Number)
+    @Description('This will only appear when category is collectible')
+    averagePrice: number;
 }
 /**
  * catalog_comments

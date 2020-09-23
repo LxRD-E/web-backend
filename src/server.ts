@@ -8,23 +8,20 @@ import * as Express from "express";
 import { ServerLoader, ServerSettings } from "@tsed/common";
 import "@tsed/ajv"; // import ajv ts.ed module
 import "@tsed/swagger"; // import swagger Ts.ED module
-import Path = require("path");
+import * as Path from 'path';
 
-// @ts-ignore
-import responseTime = require('response-time');
-import './events/setup';
-
+// random middleware
+import * as responseTime from 'response-time';
 import * as cons from 'consolidate';
 import { NotFoundMiddleware } from "./middleware/NotFound";
 import logger from './helpers/Logger';
-import removeSwaggerBranding from './helpers/remove-swagger-branding';
+// events setup
+import './events/setup';
 // start middleware
 import session from './start/session';
 import ws from './start/websockets';
 import Any, { generateCspWithNonce } from './middleware/Any';
 import multer = require('multer');
-import { NextFunction } from "express";
-removeSwaggerBranding();
 // If production
 if (process.env.NODE_ENV === 'production') {
     // Init custom logger (redirects console.log to ./out.log so that we can tail logs)
@@ -112,9 +109,11 @@ export class Server extends ServerLoader {
             // .use(morgan('dev'))
         }
         const validHosts = [
+            // prod
             "https://play.blockshub.net",
             "https://www.blockshub.net",
             "https://blockshub.net",
+            // dev
             "http://localhost",
             "http://www.blockshub.hh",
             "http://play.blockshub.hh",
@@ -153,7 +152,7 @@ export class Server extends ServerLoader {
         });
         // Setup sessions
         this.set('trust proxy', 1) // trust first proxy
-        this.use((req: Request, res: Response, next: NextFunction) => {
+        this.use((req: Express.Request, res: Express.Response, next: Express.NextFunction) => {
             let toSkip = [
                 /\/api\/v1\/game\/(\d+)\/map/g,
                 /\/api\/v1\/game\/(\d+)\/scripts/g,
@@ -161,11 +160,9 @@ export class Server extends ServerLoader {
             ];
             for (const skip of toSkip) {
                 if (req.url.slice(0, req.url.indexOf('?')).match(skip)) {
-                    console.log('skip due to match', skip);
                     return next();
                 }
             }
-            // @ts-ignore
             return session(req, res, next);
         });
 

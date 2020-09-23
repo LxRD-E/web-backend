@@ -177,12 +177,15 @@ let CatalogController = class CatalogController extends controller_1.default {
         let result = await this.catalog.MultiGetNamesFromIds(safeIds);
         return result;
     }
-    async searchCatalog(offset, category, orderBy = 'id', orderByType = 'desc', query) {
+    async searchCatalog(offset, limit = 25, category, orderBy = 'id', orderByType = 'desc', query) {
         if (orderBy !== "id" && orderBy !== "price") {
             throw new this.BadRequest('InvalidOrderBy');
         }
         if (orderByType !== "desc" && orderByType !== "asc") {
             throw new this.BadRequest('InvalidOrderByType');
+        }
+        if (limit > 100 || limit < 1) {
+            limit = 25;
         }
         const goodCategory = Filter_1.filterId(category);
         let categoryEnum;
@@ -195,7 +198,7 @@ let CatalogController = class CatalogController extends controller_1.default {
         else {
             throw new this.BadRequest('InvalidCategory');
         }
-        let SearchResults = await this.catalog.getCatalog(offset, categoryEnum, orderBy, orderByType, query);
+        let SearchResults = await this.catalog.getCatalog(offset, limit, categoryEnum, orderBy, orderByType, query);
         if (category === model.catalog.searchCategory.Collectibles) {
             let arrayOfCatalogIds = [];
             for (const item of SearchResults) {
@@ -759,12 +762,13 @@ __decorate([
     common_1.Get('/'),
     swagger_1.Summary('Search the catalog'),
     __param(0, common_1.QueryParams('offset', Number)),
-    __param(1, common_1.QueryParams('category', Number)),
-    __param(2, common_1.QueryParams('orderBy', String)),
-    __param(3, common_1.QueryParams('orderByType', String)),
-    __param(4, common_1.QueryParams('q', String)),
+    __param(1, common_1.QueryParams('limit', Number)),
+    __param(2, common_1.QueryParams('category', Number)),
+    __param(3, common_1.QueryParams('orderBy', String)),
+    __param(4, common_1.QueryParams('orderByType', String)),
+    __param(5, common_1.QueryParams('q', String)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number, String, String, String]),
+    __metadata("design:paramtypes", [Number, Number, Number, String, String, String]),
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "searchCatalog", null);
 __decorate([

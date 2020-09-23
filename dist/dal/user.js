@@ -79,6 +79,8 @@ class UsersDAL extends _init_1.default {
             else if (element === 'isDeveloper') {
                 array[index] = 'is_developer as isDeveloper';
             }
+            else if (element === 'isLocked') {
+            }
         });
         let query = this.knex('users').select(specificColumns).where({ 'users.id': id });
         const userInfoSelect = await query;
@@ -246,6 +248,10 @@ class UsersDAL extends _init_1.default {
     async encryptIpAddress(ipAddress) {
         const encryptedIP = await auth_1.encrypt(ipAddress, ipEncryptionKey);
         return encryptedIP;
+    }
+    async decryptIpAddress(ipAddress) {
+        const decrypted = await auth_1.decrypt(ipAddress, ipEncryptionKey);
+        return decrypted;
     }
     async logUserIp(userId, ipAddress, action) {
         const encryptedIP = await this.encryptIpAddress(ipAddress);
@@ -722,6 +728,12 @@ class UsersDAL extends _init_1.default {
         const inventory = await query;
         return inventory;
     }
+    async getUniqueOwnedCollectibleCatalogIds(userId) {
+        let query = await this.knex('user_inventory').distinct('user_inventory.catalog_id').where({
+            'user_id': userId
+        });
+        return query;
+    }
     async getItemByInventoryId(userInventoryId) {
         const inventory = await this.knex('user_inventory').where({ 'user_inventory.id': userInventoryId }).select('user_inventory.id as userInventoryId', 'user_inventory.catalog_id as catalogId', 'user_inventory.price as price', 'user_inventory.user_id as userId').orderBy('user_inventory.id', "desc");
         return inventory[0];
@@ -801,6 +813,27 @@ class UsersDAL extends _init_1.default {
             'code': code,
             'date_created': this.moment().format('YYYY-MM-DD HH:mm:ss'),
         });
+    }
+    async getKnownUniqueIps(userId, limit = 100) {
+        let query = this.knex("user_ip").distinct('ip_address').limit(limit).where({
+            'userid': userId,
+        });
+        let res = await query;
+        let updates = [];
+        for (const item of res) {
+            updates.push(this.decryptIpAddress(item['ip_address']));
+        }
+        let stringIps = await Promise.all(updates);
+        return stringIps;
+    }
+    async getCountryDataFromIp(ip) {
+        let result = this.geoip.lookup(ip);
+        if (!result) {
+            return;
+        }
+        result.countryCode = result.country;
+        result.country = this.countryList.getName(result.countryCode);
+        return result;
     }
     async checkIfIpIsNew(userId, ipAddress, actionsToCheckFor) {
         const time = this.moment().subtract(30, 'days').format('YYYY-MM-DD HH:mm:ss');

@@ -9,10 +9,11 @@ import * as Thumbnails from '../models/v1/thumnails';
 // Libs
 import Config from '../helpers/config';
 // AUTH-Stuff
-import { decryptPasswordHash, encrypt, encryptPasswordHash } from './auth'
+import { decryptPasswordHash, encrypt, encryptPasswordHash, decrypt } from './auth'
 // Init
 import _init from './_init';
 import * as model from '../models/models';
+import * as geoip from 'geoip-lite';
 
 /**
  * Encryption/Decryption Keys
@@ -73,6 +74,8 @@ class UsersDAL extends _init {
                 array[index] = '2fa_enabled as 2faEnabled';
             } else if (element === 'isDeveloper') {
                 array[index] = 'is_developer as isDeveloper';
+            } else if (element === 'isLocked') {
+                // array[index] = 'is_locked as isLocked';
             }
         });
         let query = this.knex('users').select(specificColumns).where({ 'users.id': id });
@@ -352,6 +355,15 @@ class UsersDAL extends _init {
     public async encryptIpAddress(ipAddress: string): Promise<string> {
         const encryptedIP = await encrypt(ipAddress, ipEncryptionKey);
         return encryptedIP;
+    }
+
+    /**
+     * Decrypt an IP address
+     * @param ipAddress 
+     */
+    public async decryptIpAddress(ipAddress: string): Promise<string> {
+        const decrypted = await decrypt(ipAddress, ipEncryptionKey);
+        return decrypted;
     }
 
     /**
@@ -1090,6 +1102,17 @@ class UsersDAL extends _init {
     }
 
     /**
+     * Get an array of unique catalogIds owned by the {userId} that are collectible
+     * @param userId 
+     */
+    public async getUniqueOwnedCollectibleCatalogIds(userId: number): Promise<number[]> {
+        let query = await this.knex('user_inventory').distinct('user_inventory.catalog_id').where({
+            'user_id': userId
+        });
+        return query;
+    }
+
+    /**
      * Get a user_inventory item by it's id
      * @param userInventoryId Inventory ID
      */
@@ -1251,6 +1274,37 @@ class UsersDAL extends _init {
             'code': code,
             'date_created': this.moment().format('YYYY-MM-DD HH:mm:ss'),
         });
+    }
+
+    /**
+     * Get known unique IPs of the {userId}
+     * @param userId 
+     */
+    public async getKnownUniqueIps(userId: number, limit: number = 100): Promise<string[]> {
+        let query = this.knex("user_ip").distinct('ip_address').limit(limit).where({
+            'userid': userId,
+        })
+        let res = await query;
+        let updates: Promise<any>[] = [];
+        for (const item of res) {
+            updates.push(this.decryptIpAddress(item['ip_address']));
+        }
+        let stringIps: string[] = await Promise.all(updates);
+        return stringIps;
+    }
+
+    /**
+     * Get country information from an ip
+     * @param ip 
+     */
+    public async getCountryDataFromIp(ip: string): Promise<geoip.Lookup & { countryCode: string } | undefined> {
+        let result: any = this.geoip.lookup(ip);
+        if (!result) {
+            return;
+        }
+        result.countryCode = result.country;
+        result.country = this.countryList.getName(result.countryCode)
+        return result;
     }
 
     /**

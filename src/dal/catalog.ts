@@ -166,9 +166,9 @@ class CatalogDAL extends _init {
      * @param orderByType
      * @param query Optional. Query
      */
-    public async getCatalog(offset: number, category: model.catalog.searchCategory | model.catalog.category, orderBy: 'price' | 'id', orderByType: 'desc' | 'asc', query?: string): Promise<model.catalog.SearchResults[]> {
+    public async getCatalog(offset: number, limit: number, category: model.catalog.searchCategory | model.catalog.category, orderBy: 'price' | 'id', orderByType: 'desc' | 'asc', query?: string): Promise<model.catalog.SearchResults[]> {
         // Filter Sort
-        const selectQuery = this.knex("catalog").select("catalog.id as catalogId", "catalog.name as catalogName", "catalog.price", "catalog.currency", "catalog.creator as creatorId", "catalog.creator_type as creatorType", "catalog.original_creatorid as userId", "catalog.is_collectible as collectible", "catalog.max_sales as maxSales").limit(25).offset(offset).orderBy(orderBy, orderByType);
+        const selectQuery = this.knex("catalog").select("catalog.id as catalogId", "catalog.name as catalogName", "catalog.price", "catalog.currency", "catalog.creator as creatorId", "catalog.creator_type as creatorType", "catalog.original_creatorid as userId", "catalog.is_collectible as collectible", "catalog.max_sales as maxSales").limit(limit).offset(offset).orderBy(orderBy, orderByType);
         if (category === model.catalog.searchCategory.Any) {
             selectQuery.where({
                 "is_for_sale": model.catalog.isForSale.true,
@@ -187,6 +187,7 @@ class CatalogDAL extends _init {
                 "is_pending": model.catalog.moderatorStatus.Ready,
                 "is_collectible": model.catalog.collectible.true
             });
+            selectQuery.select('catalog.average_price as averagePrice')
         } else {
             selectQuery.where({
                 "is_for_sale": model.catalog.isForSale.true,

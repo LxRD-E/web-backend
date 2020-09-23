@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = require("axios");
 const config_1 = require("../helpers/config");
-const ioredis_1 = require("../helpers/ioredis");
+const redis = require("../helpers/ioredis");
 exports.IpMaxScores = {
     'Signup': 50,
 };
@@ -46,7 +46,7 @@ exports.check = (options) => {
             let result;
             let redisKey = 'ip_quality_score_' + ip;
             if (!options.disableCache) {
-                let attempt = await ioredis_1.default.get(redisKey);
+                let attempt = await redis.get().get(redisKey);
                 if (typeof attempt === 'string') {
                     try {
                         result = JSON.parse(attempt);
@@ -64,10 +64,9 @@ exports.check = (options) => {
                 }
                 str = str.slice(0, str.length - 1);
                 let url = `https://www.ipqualityscore.com/api/json/ip/${apiKey}/${ip}?${str}`;
-                console.log('url', url);
                 let response = await axios_1.default.get(url);
                 result = response.data;
-                await ioredis_1.default.setex(redisKey, 86400, JSON.stringify(result));
+                await redis.get().setex(redisKey, 86400, JSON.stringify(result));
             }
             if (result) {
                 let status = result.fraud_score;

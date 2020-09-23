@@ -5,11 +5,12 @@ import * as user from './v1/user';
 import * as group from './v1/group';
 import * as game from './v1/game';
 import * as userReferral from './v1/user-referral';
-import {Middleware, QueryParams, Req} from "@tsed/common";
+import * as tradeAds from './v1/trade-ads';
+import { Middleware, QueryParams, Req } from "@tsed/common";
 import StandardController from "../controllers/controller";
-import {filterId} from "../helpers/Filter";
-import {YesAuth, NoAuth} from "./Auth";
-import {csrf} from '../dal/auth';
+import { filterId } from "../helpers/Filter";
+import { YesAuth, NoAuth } from "./Auth";
+import { csrf } from '../dal/auth';
 // generic functions
 
 /**
@@ -75,8 +76,8 @@ class ConvertIdsToCsv extends StandardController {
     }
 }
 
-import {Locals} from "@tsed/common";
-import {applyDecorators} from "@tsed/core";
+import { Locals } from "@tsed/common";
+import { applyDecorators } from "@tsed/core";
 
 function UserInfo(): ParameterDecorator {
     return applyDecorators(
@@ -101,4 +102,5 @@ export {
     group,
     game,
     userReferral,
+    tradeAds,
 };

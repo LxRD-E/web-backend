@@ -126,8 +126,14 @@ __decorate([
 ], SearchResults.prototype, "maxSales", void 0);
 __decorate([
     common_1.PropertyType(Number),
+    swagger_1.Description('This will onl appear when category is collectible. Null if item has no sellers.'),
     __metadata("design:type", Object)
 ], SearchResults.prototype, "collectibleLowestPrice", void 0);
+__decorate([
+    common_1.PropertyType(Number),
+    swagger_1.Description('This will only appear when category is collectible'),
+    __metadata("design:type", Number)
+], SearchResults.prototype, "averagePrice", void 0);
 exports.SearchResults = SearchResults;
 class LowestPriceCollectibleItems {
 }

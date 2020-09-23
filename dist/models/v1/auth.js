@@ -125,4 +125,12 @@ __decorate([
     __metadata("design:type", Number)
 ], ValidateAuthenticationCodeResponse.prototype, "iat", void 0);
 exports.ValidateAuthenticationCodeResponse = ValidateAuthenticationCodeResponse;
+class CookieConsentInformation {
+}
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('Signifies consent to googleAnalytics'),
+    __metadata("design:type", Boolean)
+], CookieConsentInformation.prototype, "googleAnalytics", void 0);
+exports.CookieConsentInformation = CookieConsentInformation;
 

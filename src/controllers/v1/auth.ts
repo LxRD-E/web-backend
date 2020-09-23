@@ -46,6 +46,42 @@ export default class AuthController extends controller {
         super();
     }
 
+    @Patch('/cookie-consent')
+    @Summary('Update cookie consent settings')
+    @Use(csrf)
+    public async updateCookieConsent(
+        @Session() session: any,
+        @Required()
+        @BodyParams(model.auth.CookieConsentInformation) body: model.auth.CookieConsentInformation,
+    ) {
+        let ga = body.googleAnalytics;
+        if (typeof ga !== 'boolean') {
+            throw new this.BadRequest('InvalidParameter');
+        }
+        if (typeof session !== 'object' || session === null) {
+            throw new this.Conflict('Session is not an object.');
+        }
+        session.googleAnalytics = ga;
+        // Ok
+        return {}
+    }
+
+    @Get('/cookie-consent')
+    @Summary('Get current cookie consent information')
+    @Description('If the current session has not agreed to any cookies, they are all set to "false" by default.')
+    @Returns(200, { type: model.auth.CookieConsentInformation, description: 'Current user cookie consent info' })
+    public async getCookieConsent(
+        @Session() session: any,
+    ) {
+        if (typeof session.googleAnalytics !== 'boolean') {
+            session.googleAnalytics = false;
+        }
+        return {
+            googleAnalytics: session.googleAnalytics || false,
+        }
+    }
+
+
     @Get('/current-user')
     @Summary('Get the current authenticated user')
     @Use(YesAuth)
