@@ -46,6 +46,27 @@ export default class AuthController extends controller {
         super();
     }
 
+    @Get('/current-country')
+    @Summary('Get user country')
+    @Returns(200, { type: model.auth.UserCountryResponse })
+    public async getCurrentCountry(
+        @Req() req: Req,
+    ) {
+        let ip = req.ip;
+        let loc = await this.user.getCountryDataFromIp(ip);
+        if (loc) {
+            return {
+                country: loc.country,
+                cookiePromptRequired: loc.eu || loc.countryCode === 'UK',
+            }
+        } else {
+            return {
+                country: 'UNKNOWN',
+                cookiePromptRequired: true,
+            }
+        }
+    }
+
     @Patch('/cookie-consent')
     @Summary('Update cookie consent settings')
     @Use(csrf)

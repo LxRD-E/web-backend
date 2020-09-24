@@ -133,4 +133,16 @@ __decorate([
     __metadata("design:type", Boolean)
 ], CookieConsentInformation.prototype, "googleAnalytics", void 0);
 exports.CookieConsentInformation = CookieConsentInformation;
+class UserCountryResponse {
+}
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('User country or "UNKNOWN"'),
+    __metadata("design:type", String)
+], UserCountryResponse.prototype, "country", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Boolean)
+], UserCountryResponse.prototype, "cookiePromptRequired", void 0);
+exports.UserCountryResponse = UserCountryResponse;
 

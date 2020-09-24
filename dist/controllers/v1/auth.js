@@ -32,6 +32,22 @@ let AuthController = class AuthController extends controller_1.default {
     constructor() {
         super();
     }
+    async getCurrentCountry(req) {
+        let ip = req.ip;
+        let loc = await this.user.getCountryDataFromIp(ip);
+        if (loc) {
+            return {
+                country: loc.country,
+                cookiePromptRequired: loc.eu || loc.countryCode === 'UK',
+            };
+        }
+        else {
+            return {
+                country: 'UNKNOWN',
+                cookiePromptRequired: true,
+            };
+        }
+    }
     async updateCookieConsent(session, body) {
         let ga = body.googleAnalytics;
         if (typeof ga !== 'boolean') {
@@ -530,6 +546,15 @@ let AuthController = class AuthController extends controller_1.default {
         return history;
     }
 };
+__decorate([
+    common_1.Get('/current-country'),
+    swagger_1.Summary('Get user country'),
+    swagger_1.Returns(200, { type: model.auth.UserCountryResponse }),
+    __param(0, common_1.Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "getCurrentCountry", null);
 __decorate([
     common_1.Patch('/cookie-consent'),
     swagger_1.Summary('Update cookie consent settings'),

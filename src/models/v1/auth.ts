@@ -77,3 +77,11 @@ export class CookieConsentInformation {
     @Description('Signifies consent to googleAnalytics')
     public googleAnalytics: boolean;
 }
+
+export class UserCountryResponse {
+    @Required()
+    @Description('User country or "UNKNOWN"')
+    country: string;
+    @Required()
+    cookiePromptRequired: boolean;
+}
