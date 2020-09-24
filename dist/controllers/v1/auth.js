@@ -38,7 +38,7 @@ let AuthController = class AuthController extends controller_1.default {
         if (loc) {
             return {
                 country: loc.country,
-                cookiePromptRequired: loc.eu || loc.countryCode === 'UK',
+                cookiePromptRequired: loc.eu === '1' || loc.countryCode === 'UK',
             };
         }
         else {
