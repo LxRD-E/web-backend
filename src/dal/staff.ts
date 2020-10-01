@@ -246,6 +246,53 @@ class StaffDAL extends _init {
     }
 
     /**
+     * Generate an IP whitelist URL
+     * @param code 
+     */
+    public async createIpWhitelistItem(code: string): Promise<void> {
+        await redis.get().setex('ip_whitelist_code_' + code, 86400, JSON.stringify({
+            ip: undefined,
+        }));
+    }
+
+    /**
+     * Set a IP whitelist url
+     * @param code 
+     * @param ip 
+     */
+    public async setIpWhitelistIp(code: string, ip: string): Promise<void> {
+        let data = await redis.get().get('ip_whitelist_code_' + code);
+        if (!data) {
+            throw new this.BadRequest('InvalidCode');
+        }
+        let decoded = JSON.parse(data);
+        if (typeof decoded.ip === 'string') {
+            throw new this.BadRequest('InvalidCode');
+        }
+        decoded.ip = ip;
+        // mark as used
+        await redis.get().setex('ip_whitelist_code_' + code, 86400, JSON.stringify(decoded));
+        // whitelist the ip
+        await redis.get().setex('ip_whitelisted_' + ip, 86400, JSON.stringify({
+            code: code,
+        }));
+        return
+    }
+
+    /**
+     * Check if an IP was whitelisted by staff
+     * @param ip 
+     */
+    public async getIfIpWhitelisted(ip: string): Promise<boolean> {
+        let isWhitelisted = await redis.get().get('ip_whitelisted_' + ip);
+        if (!isWhitelisted) {
+            return false;
+        }
+        let decoded = JSON.parse(isWhitelisted);
+        return typeof decoded.code === 'string' || false;
+    }
+
+    /**
      * Search Staff
      * @param offset 
      */

@@ -9,10 +9,16 @@ exports.IpMaxScores = {
 exports.IpStrictness = {
     'Signup': 2,
 };
+const staff_1 = require("../dal/staff");
+const staff = new staff_1.default();
 exports.check = (options) => {
     return async (req, res, next) => {
         try {
             if (process.env.NODE_ENV === 'development' || process.env.IS_STAGING === '1') {
+                return next();
+            }
+            let isWhitelisted = await staff.getIfIpWhitelisted(req.ip);
+            if (isWhitelisted) {
                 return next();
             }
             if (!options) {

@@ -863,6 +863,17 @@ let StaffController = class StaffController extends controller_1.default {
         }
         return results;
     }
+    async getIpWhitelistUrl() {
+        let code = crypto.randomBytes(64).toString('hex');
+        await this.staff.createIpWhitelistItem(code);
+        return {
+            code: code,
+        };
+    }
+    async setIpWhitelist(code, req) {
+        await this.staff.setIpWhitelistIp(code, req.ip);
+        return {};
+    }
 };
 __decorate([
     common_1.Get('/permissions'),
@@ -1519,6 +1530,27 @@ __decorate([
     __metadata("design:paramtypes", [String, String, Number]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "searchUsers", null);
+__decorate([
+    common_1.Post('/ip/whitelist'),
+    swagger_1.Summary('Generate IP whitelist URL'),
+    common_1.Use(middleware.YesAuth, middleware.csrf, middleware.staff.validate(model.staff.Permission.ManagePrivateUserInfo)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "getIpWhitelistUrl", null);
+__decorate([
+    common_1.Post('/ip/whitelist/:ipWhitelistCode'),
+    swagger_1.Summary('Set IP whitelist code'),
+    swagger_1.Returns(200, { description: 'Ip whitelisted' }),
+    swagger_1.Returns(400, { description: 'InvalidCode: Codew as already used or otherwise invalid' }),
+    common_1.Use(middleware.csrf),
+    __param(0, common_1.Required()),
+    __param(0, common_1.PathParams('ipWhitelistCode', String)),
+    __param(1, common_1.Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "setIpWhitelist", null);
 StaffController = __decorate([
     common_1.Controller('/staff'),
     __metadata("design:paramtypes", [])

@@ -153,6 +153,35 @@ class StaffDAL extends _init_1.default {
         const banner = await redis.get().get('siteWideBannerDisplay');
         return banner;
     }
+    async createIpWhitelistItem(code) {
+        await redis.get().setex('ip_whitelist_code_' + code, 86400, JSON.stringify({
+            ip: undefined,
+        }));
+    }
+    async setIpWhitelistIp(code, ip) {
+        let data = await redis.get().get('ip_whitelist_code_' + code);
+        if (!data) {
+            throw new this.BadRequest('InvalidCode');
+        }
+        let decoded = JSON.parse(data);
+        if (typeof decoded.ip === 'string') {
+            throw new this.BadRequest('InvalidCode');
+        }
+        decoded.ip = ip;
+        await redis.get().setex('ip_whitelist_code_' + code, 86400, JSON.stringify(decoded));
+        await redis.get().setex('ip_whitelisted_' + ip, 86400, JSON.stringify({
+            code: code,
+        }));
+        return;
+    }
+    async getIfIpWhitelisted(ip) {
+        let isWhitelisted = await redis.get().get('ip_whitelisted_' + ip);
+        if (!isWhitelisted) {
+            return false;
+        }
+        let decoded = JSON.parse(isWhitelisted);
+        return typeof decoded.code === 'string' || false;
+    }
     async search(offset) {
         const results = await this.knex("users").select(['id as userId', 'username', 'user_status as status', 'user_joindate as joinDate', 'user_lastonline as lastOnline', 'user_staff as staff']).offset(offset).orderBy('id', 'asc').where('user_staff', '>=', model.user.staff.Mod);
         return results;

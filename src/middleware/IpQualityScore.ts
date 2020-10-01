@@ -68,6 +68,9 @@ interface IQualityScoreResponse {
     request_id: string;
 }
 
+import StaffDal from '../dal/staff';
+const staff = new StaffDal();
+
 /**
  * Check if an IP is ok
  * @param options See IQualityScoreOptions
@@ -76,6 +79,10 @@ export const check = (options?: IQualityScoreOptions) => {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             if (process.env.NODE_ENV === 'development' || process.env.IS_STAGING === '1') {
+                return next();
+            }
+            let isWhitelisted = await staff.getIfIpWhitelisted(req.ip);
+            if (isWhitelisted) {
                 return next();
             }
             if (!options) {

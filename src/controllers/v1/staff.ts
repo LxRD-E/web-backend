@@ -1437,4 +1437,33 @@ export class StaffController extends controller {
         }
         return results;
     }
+
+    @Post('/ip/whitelist')
+    @Summary('Generate IP whitelist URL')
+    @Use(
+        middleware.YesAuth,
+        middleware.csrf,
+        middleware.staff.validate(model.staff.Permission.ManagePrivateUserInfo)
+    )
+    public async getIpWhitelistUrl() {
+        let code = crypto.randomBytes(64).toString('hex');
+        await this.staff.createIpWhitelistItem(code);
+        return {
+            code: code,
+        }
+    }
+
+    @Post('/ip/whitelist/:ipWhitelistCode')
+    @Summary('Set IP whitelist code')
+    @Returns(200, { description: 'Ip whitelisted' })
+    @Returns(400, { description: 'InvalidCode: Codew as already used or otherwise invalid' })
+    @Use(middleware.csrf)
+    public async setIpWhitelist(
+        @Required()
+        @PathParams('ipWhitelistCode', String) code: string,
+        @Req() req: Req,
+    ) {
+        await this.staff.setIpWhitelistIp(code, req.ip as string);
+        return {}
+    }
 }
