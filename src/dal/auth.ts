@@ -225,7 +225,7 @@ export const decrypt = (encryptedString: string, key: string, iv?: Buffer | stri
     // for legacy purposes
     // todo: remove
     if (typeof iv !== 'string' && typeof iv !== 'object') {
-        console.warn('[warning] no iv specified for auth.decrypt(), using default of NULL');
+        // console.warn('[warning] no iv specified for auth.decrypt(), using default of NULL');
         iv = Buffer.from('0'.repeat(32), 'hex');
     }
     const decipher = Crypto.createDecipheriv('aes-256-cbc', key, iv);

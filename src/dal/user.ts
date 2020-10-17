@@ -14,6 +14,7 @@ import { decryptPasswordHash, encrypt, encryptPasswordHash, decrypt } from './au
 import _init from './_init';
 import * as model from '../models/models';
 import * as geoip from 'geoip-lite';
+import { dynamicSort } from '../helpers/DynamicSort';
 
 /**
  * Encryption/Decryption Keys
@@ -1297,7 +1298,7 @@ class UsersDAL extends _init {
      * Get country information from an ip
      * @param ip 
      */
-    public async getCountryDataFromIp(ip: string): Promise<geoip.Lookup & { countryCode: string } | undefined> {
+    public getCountryDataFromIp(ip: string): geoip.Lookup & { countryCode: string } | undefined {
         let result: any = this.geoip.lookup(ip);
         if (!result) {
             return;
@@ -1305,6 +1306,38 @@ class UsersDAL extends _init {
         result.countryCode = result.country;
         result.country = this.countryList.getName(result.countryCode)
         return result;
+    }
+
+    /**
+     * Get ip actions
+     * @param actionType 
+     * @param sort asc or desc, defaults to desc
+     */
+    public async getIpActions(actionType?: number, sort: 'asc' | 'desc' = 'desc', limit: number = 100, offset: number = 0): Promise<model.user.IPActionEntry[]> {
+        let query = this.knex('user_ip').select('id as actionId', 'userid as userId', 'ip_address as encryptedIpAddress', 'date', 'action').limit(limit).offset(offset);
+        if (typeof actionType === 'number') {
+            query.where({
+                'action': actionType,
+            })
+        }
+        if (sort === 'desc') {
+            query.orderBy('id', 'desc');
+        }
+        let results = await query;
+        let newResults: any[] = [];
+        let newResultsProms: any[] = [];
+        const processResult = async (val: any) => {
+            let ip = await this.decryptIpAddress(val.encryptedIpAddress);
+            let country = this.getCountryDataFromIp(ip);
+            val.country = (country && country.country) || 'UNKNOWN';
+            delete val.encryptedIpAddress;
+            newResults.push(val);
+        }
+        for (const item of results) {
+            newResultsProms.push(processResult(item));
+        }
+        await Promise.all(newResultsProms);
+        return newResults.sort(dynamicSort('-actionId'));
     }
 
     /**

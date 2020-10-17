@@ -24,6 +24,20 @@ export interface UserIpAddress {
     action: ipAddressActions;
 };
 
+export class IPActionEntry {
+    @Required()
+    userId: number;
+    @Required()
+    @Description('This can be "UNKNOWN" if country is not known, otherwise, it is the country name')
+    @Example("United States of America")
+    country: string;
+    @Required()
+    @Example('2020-09-14T04:02:55.000Z')
+    date: string;
+    @Required()
+    action: ipAddressActions;
+}
+
 /**
  * Interface of the users table
  */

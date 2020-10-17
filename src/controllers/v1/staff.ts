@@ -1475,4 +1475,20 @@ export class StaffController extends controller {
         await this.staff.setIpWhitelistIp(code, req.ip as string);
         return {}
     }
+
+    @Get('/ip-logs')
+    @Summary('Get latest ip log actions')
+    @Description(`Current actionTypes:\n\nLogin = 0\nSignUp = 1\nSignOut = 2\nUnsuccessfulLoginWithCompletedCaptcha = 3\nUnsuccessfulLoginWithoutCaptcha = 4\nPurchaseOfItem = 5\nTradeSent = 6\nTradeCompleted = 7\nPutItemForSale = 8\nTradeFailedDueToTwoStep = 9\nTradeAdCreated = 10\n`)
+    @ReturnsArray(200, { type: model.user.IPActionEntry })
+    @Use(middleware.YesAuth, middleware.staff.validate(model.staff.Permission.ManagePrivateUserInfo))
+    public async getLatestUserLogs(
+        @QueryParams('actionType', Number) actionType?: number,
+        @QueryParams('limit', Number) limit?: number,
+        @QueryParams('offset', Number) offset?: number,
+    ) {
+        if (!limit || limit && limit < 1 || limit && limit > 100) {
+            limit = 100;
+        }
+        return this.user.getIpActions(actionType, 'desc', limit, offset);
+    }
 }
