@@ -187,7 +187,6 @@ exports.encrypt = (text, key, iv) => {
 };
 exports.decrypt = (encryptedString, key, iv) => {
     if (typeof iv !== 'string' && typeof iv !== 'object') {
-        console.warn('[warning] no iv specified for auth.decrypt(), using default of NULL');
         iv = Buffer.from('0'.repeat(32), 'hex');
     }
     const decipher = Crypto.createDecipheriv('aes-256-cbc', key, iv);

@@ -27,6 +27,28 @@ __decorate([
 ], FriendshipMetadata.prototype, "maxFriendships", void 0);
 exports.FriendshipMetadata = FriendshipMetadata;
 ;
+class IPActionEntry {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], IPActionEntry.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Description('This can be "UNKNOWN" if country is not known, otherwise, it is the country name'),
+    swagger_1.Example("United States of America"),
+    __metadata("design:type", String)
+], IPActionEntry.prototype, "country", void 0);
+__decorate([
+    common_1.Required(),
+    swagger_1.Example('2020-09-14T04:02:55.000Z'),
+    __metadata("design:type", String)
+], IPActionEntry.prototype, "date", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], IPActionEntry.prototype, "action", void 0);
+exports.IPActionEntry = IPActionEntry;
 class UserInfo {
 }
 __decorate([

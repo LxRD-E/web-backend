@@ -8,6 +8,7 @@ const config_1 = require("../helpers/config");
 const auth_1 = require("./auth");
 const _init_1 = require("./_init");
 const model = require("../models/models");
+const DynamicSort_1 = require("../helpers/DynamicSort");
 const passwordEncryptionKey = config_1.default.encryptionKeys.password;
 const ipEncryptionKey = config_1.default.encryptionKeys.ip;
 class UsersDAL extends _init_1.default {
@@ -826,7 +827,7 @@ class UsersDAL extends _init_1.default {
         let stringIps = await Promise.all(updates);
         return stringIps;
     }
-    async getCountryDataFromIp(ip) {
+    getCountryDataFromIp(ip) {
         let result = this.geoip.lookup(ip);
         if (!result) {
             return;
@@ -834,6 +835,32 @@ class UsersDAL extends _init_1.default {
         result.countryCode = result.country;
         result.country = this.countryList.getName(result.countryCode);
         return result;
+    }
+    async getIpActions(actionType, sort = 'desc', limit = 100, offset = 0) {
+        let query = this.knex('user_ip').select('id as actionId', 'userid as userId', 'ip_address as encryptedIpAddress', 'date', 'action').limit(limit).offset(offset);
+        if (typeof actionType === 'number') {
+            query.where({
+                'action': actionType,
+            });
+        }
+        if (sort === 'desc') {
+            query.orderBy('id', 'desc');
+        }
+        let results = await query;
+        let newResults = [];
+        let newResultsProms = [];
+        const processResult = async (val) => {
+            let ip = await this.decryptIpAddress(val.encryptedIpAddress);
+            let country = this.getCountryDataFromIp(ip);
+            val.country = (country && country.country) || 'UNKNOWN';
+            delete val.encryptedIpAddress;
+            newResults.push(val);
+        };
+        for (const item of results) {
+            newResultsProms.push(processResult(item));
+        }
+        await Promise.all(newResultsProms);
+        return newResults.sort(DynamicSort_1.dynamicSort('-actionId'));
     }
     async checkIfIpIsNew(userId, ipAddress, actionsToCheckFor) {
         const time = this.moment().subtract(30, 'days').format('YYYY-MM-DD HH:mm:ss');

@@ -880,6 +880,12 @@ let StaffController = class StaffController extends controller_1.default {
         await this.staff.setIpWhitelistIp(code, req.ip);
         return {};
     }
+    async getLatestUserLogs(actionType, limit, offset) {
+        if (!limit || limit && limit < 1 || limit && limit > 100) {
+            limit = 100;
+        }
+        return this.user.getIpActions(actionType, 'desc', limit, offset);
+    }
 };
 __decorate([
     common_1.Get('/permissions'),
@@ -1564,6 +1570,19 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "setIpWhitelist", null);
+__decorate([
+    common_1.Get('/ip-logs'),
+    swagger_1.Summary('Get latest ip log actions'),
+    swagger_1.Description(`Current actionTypes:\n\nLogin = 0\nSignUp = 1\nSignOut = 2\nUnsuccessfulLoginWithCompletedCaptcha = 3\nUnsuccessfulLoginWithoutCaptcha = 4\nPurchaseOfItem = 5\nTradeSent = 6\nTradeCompleted = 7\nPutItemForSale = 8\nTradeFailedDueToTwoStep = 9\nTradeAdCreated = 10\n`),
+    swagger_1.ReturnsArray(200, { type: model.user.IPActionEntry }),
+    common_1.Use(middleware.YesAuth, middleware.staff.validate(model.staff.Permission.ManagePrivateUserInfo)),
+    __param(0, common_1.QueryParams('actionType', Number)),
+    __param(1, common_1.QueryParams('limit', Number)),
+    __param(2, common_1.QueryParams('offset', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "getLatestUserLogs", null);
 StaffController = __decorate([
     common_1.Controller('/staff'),
     __metadata("design:paramtypes", [])
