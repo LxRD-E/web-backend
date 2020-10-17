@@ -737,6 +737,16 @@ export class StaffController extends controller {
         };
     }
 
+    @Get('/banner')
+    @Summary('Get site-wide banner text')
+    public async getBanner() {
+        let txt = await this.staff.getBannerText();
+        return {
+            message: txt,
+            isHtmlFiltered: false,
+        }
+    }
+
     @Patch('/banner')
     @Summary('Update site-wide banner text')
     @Use(csrf, YesAuth, middleware.staff.validate(model.staff.Permission.ManageBanner))
@@ -745,17 +755,16 @@ export class StaffController extends controller {
         @BodyParams('enabled', Number) enabled: number,
         @BodyParams('text', String) bannerText: string
     ) {
-        let isEnabled = filterId(enabled) as number;
-        if (!isEnabled) {
-            isEnabled = 0;
+        if (!enabled) {
+            enabled = 0;
         } else {
-            isEnabled = 1;
+            enabled = 1;
         }
         if (bannerText && bannerText.length > 1024) {
             throw new this.BadRequest('InvalidBannerText');
         }
         // Set Redis
-        if (isEnabled === 1) {
+        if (enabled === 1) {
             await this.staff.updateBannerText(bannerText);
         } else {
             await this.staff.updateBannerText('');

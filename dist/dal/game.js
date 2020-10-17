@@ -10,7 +10,7 @@ const crypto = require("crypto");
 class GameDAL extends _init_1.default {
     async getInfo(id, specificColumns) {
         if (!specificColumns) {
-            specificColumns = ['gameId', 'gameName', 'gameDescription', 'visitCount', 'playerCount', 'likeCount', 'dislikeCount', 'gameState', 'creatorId', 'creatorType', 'genre'];
+            specificColumns = ['gameId', 'gameName', 'gameDescription', 'visitCount', 'playerCount', 'likeCount', 'dislikeCount', 'gameState', 'creatorId', 'creatorType', 'genre', 'createdAt', 'updatedAt'];
         }
         specificColumns.forEach((element, index, array) => {
             if (element === 'gameId') {

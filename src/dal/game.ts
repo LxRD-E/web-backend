@@ -5,9 +5,9 @@ import redis from '../helpers/ioredis_pubsub';
 import * as Game from '../models/v1/game';
 import * as Catalog from '../models/v1/catalog';
 import config from '../helpers/config';
-import {Redis} from 'ioredis';
+import { Redis } from 'ioredis';
 import _init from './_init';
-import {game} from '../models/models';
+import { game } from '../models/models';
 import aws = require('aws-sdk');
 import crypto = require('crypto');
 
@@ -22,7 +22,7 @@ class GameDAL extends _init {
         'gameId' | 'gameName' | 'gameDescription' | 'maxPlayers' | 'visitCount' | 'playerCount' | 'likeCount' | 'dislikeCount' | 'gameState' | 'creatorId' | 'creatorType' | 'createdAt' | 'updatedAt' | 'genre'
     >): Promise<Game.GameInfo> {
         if (!specificColumns) {
-            specificColumns = ['gameId', 'gameName', 'gameDescription', 'visitCount', 'playerCount', 'likeCount', 'dislikeCount', 'gameState', 'creatorId', 'creatorType', 'genre'];
+            specificColumns = ['gameId', 'gameName', 'gameDescription', 'visitCount', 'playerCount', 'likeCount', 'dislikeCount', 'gameState', 'creatorId', 'creatorType', 'genre', 'createdAt', 'updatedAt'];
         }
         specificColumns.forEach((element: string, index: number, array: Array<string>): void => {
             if (element === 'gameId') {
@@ -102,13 +102,13 @@ class GameDAL extends _init {
         if (genre === Game.GameGenres.Any) {
             // grab games
             games = await this.knex('game')
-            .select(columnsToSelect)
-            .limit(limit)
-            .offset(offset)
-            .orderBy(sortByColumn, sortMode)
-            .where({
-                'game_state': Game.GameState.public,
-            }).andWhere(extraWhereClause);
+                .select(columnsToSelect)
+                .limit(limit)
+                .offset(offset)
+                .orderBy(sortByColumn, sortMode)
+                .where({
+                    'game_state': Game.GameState.public,
+                }).andWhere(extraWhereClause);
             // count games
             let _total = await this.knex('game').count('id as total').where({
                 'game_state': Game.GameState.public,
@@ -117,14 +117,14 @@ class GameDAL extends _init {
         } else {
             // grab games
             games = await this.knex('game')
-            .select(columnsToSelect)
-            .limit(limit)
-            .offset(offset)
-            .orderBy(sortByColumn, sortMode)
-            .where({
-                'game_state': Game.GameState.public,
-                'genre': genre,
-            }).andWhere(extraWhereClause);
+                .select(columnsToSelect)
+                .limit(limit)
+                .offset(offset)
+                .orderBy(sortByColumn, sortMode)
+                .where({
+                    'game_state': Game.GameState.public,
+                    'genre': genre,
+                }).andWhere(extraWhereClause);
             // count games
             let _total = await this.knex('game').count('id as total').where({
                 'game_state': Game.GameState.public,

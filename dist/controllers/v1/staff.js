@@ -496,18 +496,24 @@ let StaffController = class StaffController extends controller_1.default {
             'success': true,
         };
     }
+    async getBanner() {
+        let txt = await this.staff.getBannerText();
+        return {
+            message: txt,
+            isHtmlFiltered: false,
+        };
+    }
     async updateBanner(userInfo, enabled, bannerText) {
-        let isEnabled = Filter_1.filterId(enabled);
-        if (!isEnabled) {
-            isEnabled = 0;
+        if (!enabled) {
+            enabled = 0;
         }
         else {
-            isEnabled = 1;
+            enabled = 1;
         }
         if (bannerText && bannerText.length > 1024) {
             throw new this.BadRequest('InvalidBannerText');
         }
-        if (isEnabled === 1) {
+        if (enabled === 1) {
             await this.staff.updateBannerText(bannerText);
         }
         else {
@@ -1118,6 +1124,13 @@ __decorate([
     __metadata("design:paramtypes", [model.user.UserInfo, Number, Boolean, Boolean, Boolean]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "regenAvatar", null);
+__decorate([
+    common_1.Get('/banner'),
+    swagger_1.Summary('Get site-wide banner text'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "getBanner", null);
 __decorate([
     common_1.Patch('/banner'),
     swagger_1.Summary('Update site-wide banner text'),

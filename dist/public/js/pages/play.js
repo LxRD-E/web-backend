@@ -69,3 +69,4 @@ request("/game/metadata","GET").then(function(a){a.canCreateGames&&$("#create-ga
 
 
 
+
