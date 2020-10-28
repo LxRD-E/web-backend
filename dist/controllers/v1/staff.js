@@ -696,14 +696,65 @@ let StaffController = class StaffController extends controller_1.default {
             success: true,
         };
     }
-    async updateGroupStatus(userInfo, groupId, status) {
+    async getGroupStatusHistory(userInfo, groupId, offset = 0, limit = 100) {
+        const results = await this.group.getGroupStatusChanges(groupId, offset, limit);
+        return {
+            data: results,
+        };
+    }
+    async updateGroupStatus(userInfo, groupId, status, reason) {
         if (!model.group.groupStatus[status]) {
             throw new this.BadRequest('InvalidGroupStatus');
         }
-        await this.group.updateGroupStatus(groupId, status);
+        if (!reason || reason.length < 4 || reason.length >= 1024) {
+            throw new this.BadRequest('InvalidReason');
+        }
+        const forUpdate = [
+            'groups',
+            'moderation_group_status',
+        ];
+        return this.transaction(this, forUpdate, async function (trx) {
+            const groupInfo = await trx.group.getInfo(groupId);
+            await trx.group.logGroupStatusUpdate(groupId, userInfo.userId, groupInfo.groupStatus, status, reason);
+            await trx.group.updateGroupStatus(groupId, status);
+            return {
+                success: true,
+            };
+        });
+    }
+    async getGroupNameHistory(userInfo, groupId, offset = 0, limit = 100) {
+        const results = await this.group.getGroupNameChanges(groupId, offset, limit);
         return {
-            success: true,
+            data: results,
         };
+    }
+    async updateGroupName(userInfo, groupId, name, reason) {
+        if (!name || name.length > model.group.GROUP_NAME_MAX_LENGTH || name.length < model.group.GROUP_NAME_MIN_LENGTH) {
+            throw new this.BadRequest('InvalidGroupName');
+        }
+        if (!reason || reason.length < 4 || reason.length >= 1024) {
+            throw new this.BadRequest('InvalidReason');
+        }
+        const forUpdate = [
+            'groups',
+            'moderation_group_name',
+        ];
+        return this.transaction(this, forUpdate, async function (trx) {
+            const groupInfo = await trx.group.getInfo(groupId);
+            await trx.group.logGroupNameUpdate(groupId, userInfo.userId, groupInfo.groupName, name, reason);
+            try {
+                await trx.group.updateGroupName(groupId, name);
+            }
+            catch (e) {
+                if (e.code && e.code === "ER_DUP_ENTRY") {
+                    throw new this.BadRequest('GroupNameTaken');
+                }
+                throw e;
+            }
+            return {
+                success: true,
+            };
+        });
     }
     async latestAbuseReports(userInfo) {
         return await this.reportAbuse.latestReportedUserStatuses();
@@ -1369,16 +1420,61 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "updateTicketStatus", null);
 __decorate([
+    common_1.Get('/groups/:groupId/status'),
+    swagger_1.Summary('Get group status update logs'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManageGroup)),
+    swagger_1.Returns(400, controller_1.default.cError('InvalidGroupId: Group is not valid', 'InvalidLimit: Limit is too large or too small')),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('groupId', Number)),
+    __param(2, common_1.QueryParams('offset', Number)),
+    __param(3, common_1.QueryParams('limit', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "getGroupStatusHistory", null);
+__decorate([
     common_1.Patch('/groups/:groupId/status'),
     swagger_1.Summary('Update a groups status'),
     common_1.Use(Auth_1.YesAuth, auth_1.csrf, middleware.staff.validate(model.staff.Permission.ManageGroup)),
+    swagger_1.Returns(400, controller_1.default.cError('InvalidGroupStatus: Group status is not valid', 'InvalidReason: Reason is not valid')),
     __param(0, common_1.Locals('userInfo')),
     __param(1, common_1.PathParams('groupId', Number)),
+    __param(2, common_1.Required()),
     __param(2, common_1.BodyParams('status', Number)),
+    __param(3, common_1.Required()),
+    __param(3, common_1.BodyParams('reason', String)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number]),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number, String]),
     __metadata("design:returntype", Promise)
 ], StaffController.prototype, "updateGroupStatus", null);
+__decorate([
+    common_1.Get('/groups/:groupId/name'),
+    swagger_1.Summary('Get group name update logs'),
+    common_1.Use(Auth_1.YesAuth, middleware.staff.validate(model.staff.Permission.ManageGroup)),
+    swagger_1.Returns(400, controller_1.default.cError('InvalidGroupId: Group is not valid', 'InvalidLimit: Limit is too large or too small')),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('groupId', Number)),
+    __param(2, common_1.QueryParams('offset', Number)),
+    __param(3, common_1.QueryParams('limit', Number)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, Number, Number]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "getGroupNameHistory", null);
+__decorate([
+    common_1.Patch('/groups/:groupId/name'),
+    swagger_1.Summary('Update a groups name'),
+    common_1.Use(Auth_1.YesAuth, auth_1.csrf, middleware.staff.validate(model.staff.Permission.ManageGroup)),
+    swagger_1.Returns(400, controller_1.default.cError('InvalidGroupName: Group name is not valid', 'GroupNameTaken: Group name is already in use', 'InvalidReason: reason is not valid')),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('groupId', Number)),
+    __param(2, common_1.Required()),
+    __param(2, common_1.BodyParams('name', String)),
+    __param(3, common_1.Required()),
+    __param(3, common_1.BodyParams('reason', String)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [model.user.UserInfo, Number, String, String]),
+    __metadata("design:returntype", Promise)
+], StaffController.prototype, "updateGroupName", null);
 __decorate([
     common_1.Get('/feed/friends/abuse-reports'),
     swagger_1.Summary('Get latest abuse reports for friend feed'),

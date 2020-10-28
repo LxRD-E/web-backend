@@ -106,13 +106,15 @@ let GroupsController = class GroupsController extends controller_1.default {
         }
         return role;
     }
-    async getInfo(groupId) {
+    async getInfo(userInfo, groupId) {
         try {
             const groupInfo = await this.group.getInfo(groupId);
-            if (groupInfo.groupStatus === model.group.groupStatus.locked) {
-                return {
-                    groupStatus: groupInfo.groupStatus,
-                };
+            if (!userInfo || userInfo && userInfo.staff < 1) {
+                if (groupInfo.groupStatus === model.group.groupStatus.locked) {
+                    return {
+                        groupStatus: groupInfo.groupStatus,
+                    };
+                }
             }
             return groupInfo;
         }
@@ -825,9 +827,10 @@ __decorate([
     swagger_1.Description('This endpoint is a bit exceptional. If the groupStatus is locked (1), it will only return { groupStatus: 1 } but if it is not locked, it will return all group info'),
     swagger_1.Returns(200, { type: model.group.groupDetails }),
     swagger_1.Returns(400, { type: model.Error, description: 'InvalidGroupId: invalid id\n' }),
-    __param(0, common_1.PathParams('groupId', Number)),
+    __param(0, common_1.Locals('userInfo')),
+    __param(1, common_1.PathParams('groupId', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [model.UserSession, Number]),
     __metadata("design:returntype", Promise)
 ], GroupsController.prototype, "getInfo", null);
 __decorate([

@@ -16,6 +16,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@tsed/common");
 const swagger_1 = require("@tsed/swagger");
+exports.GROUP_NAME_MAX_LENGTH = 32;
+exports.GROUP_NAME_MIN_LENGTH = 3;
 exports.MAX_GROUPS = 100;
 exports.MAX_GROUP_ROLES = 32;
 exports.MAX_RANK_VALUE = 255;
@@ -221,4 +223,66 @@ __decorate([
     __metadata("design:type", Number)
 ], GroupJoinRequest.prototype, "userId", void 0);
 exports.GroupJoinRequest = GroupJoinRequest;
+class GroupNameChangeEntry {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GroupNameChangeEntry.prototype, "moderationGroupNameId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GroupNameChangeEntry.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GroupNameChangeEntry.prototype, "groupId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], GroupNameChangeEntry.prototype, "reason", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], GroupNameChangeEntry.prototype, "oldName", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], GroupNameChangeEntry.prototype, "newName", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], GroupNameChangeEntry.prototype, "createdAt", void 0);
+exports.GroupNameChangeEntry = GroupNameChangeEntry;
+class GroupStatusChangeEntry {
+}
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GroupStatusChangeEntry.prototype, "moderationGroupStatusId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GroupStatusChangeEntry.prototype, "userId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GroupStatusChangeEntry.prototype, "groupId", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], GroupStatusChangeEntry.prototype, "reason", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GroupStatusChangeEntry.prototype, "oldStatus", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", Number)
+], GroupStatusChangeEntry.prototype, "newStatus", void 0);
+__decorate([
+    common_1.Required(),
+    __metadata("design:type", String)
+], GroupStatusChangeEntry.prototype, "createdAt", void 0);
+exports.GroupStatusChangeEntry = GroupStatusChangeEntry;
 

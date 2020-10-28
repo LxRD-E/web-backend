@@ -34,7 +34,7 @@ let TradeAdsController = class TradeAdsController extends controller_1.default {
             isEnabled: model.tradeAds.isEnabled,
         };
     }
-    async search(userInfo, isRunning = 1, onlyShowCompletable = 0, limit = 100, offset = 0) {
+    async search(userInfo, isRunning = 1, onlyShowCompletable = 0, userId, limit = 100, offset = 0) {
         if (isRunning !== 0 && isRunning !== 1) {
             isRunning = 1;
         }
@@ -49,7 +49,11 @@ let TradeAdsController = class TradeAdsController extends controller_1.default {
         if (onlyShowCompletable) {
             request.allowedRequestedCatalogIds = await this.user.getUniqueOwnedCollectibleCatalogIds(userInfo.userId);
         }
+        if (typeof userId === 'number') {
+            request.userId = userId;
+        }
         request.isRunning = isRunning;
+        request.offset = offset;
         return this.tradeAds.search(request);
     }
     async createTradeAd(req, userInfo, body) {
@@ -148,6 +152,10 @@ let TradeAdsController = class TradeAdsController extends controller_1.default {
             'success': true,
         };
     }
+    async deleteAd() {
+    }
+    async acceptAd() {
+    }
 };
 __decorate([
     common_1.Get('/metadata'),
@@ -163,12 +171,16 @@ __decorate([
     common_1.Use(middleware.YesAuth, middleware.tradeAds.ValidateFeatureFlag),
     swagger_1.Returns(200, { type: model.tradeAds.TradeAdsSearchResponse }),
     __param(0, common_1.Locals('userInfo')),
+    __param(1, swagger_1.Description('Only show trade ads that are running (1 = true, 0 = false, defaults to true)')),
     __param(1, common_1.QueryParams('isRunning', Number)),
+    __param(2, swagger_1.Description('Only show trade ads that can be completed by the authenticated user (1 = true, 0 = false, defaults to false)')),
     __param(2, common_1.QueryParams('onlyShowCompletable', Number)),
-    __param(3, common_1.QueryParams('limit', Number)),
-    __param(4, common_1.QueryParams('offset', Number)),
+    __param(3, swagger_1.Description('Only show trade ads created by this userId')),
+    __param(3, common_1.QueryParams('userId', Number)),
+    __param(4, common_1.QueryParams('limit', Number)),
+    __param(5, common_1.QueryParams('offset', Number)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [model.UserSession, Number, Number, Number, Number]),
+    __metadata("design:paramtypes", [model.UserSession, Number, Number, Number, Number, Number]),
     __metadata("design:returntype", Promise)
 ], TradeAdsController.prototype, "search", null);
 __decorate([
@@ -193,6 +205,21 @@ __decorate([
     __metadata("design:paramtypes", [Object, model.UserSession, model.tradeAds.CreateTradeAdRequest]),
     __metadata("design:returntype", Promise)
 ], TradeAdsController.prototype, "createTradeAd", null);
+__decorate([
+    common_1.Delete('/ad/:adId'),
+    swagger_1.Summary('Delete a trade ad'),
+    swagger_1.Description('This action can only be performed on trade ads that are currently running, i.e., if the trade ad was already accepted then it cannot be completed'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], TradeAdsController.prototype, "deleteAd", null);
+__decorate([
+    common_1.Post('/ad/:adId/accept'),
+    swagger_1.Summary('Accept a trade advertisment'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], TradeAdsController.prototype, "acceptAd", null);
 TradeAdsController = __decorate([
     common_1.Controller('/trade-ads'),
     __metadata("design:paramtypes", [])

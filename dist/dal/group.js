@@ -263,6 +263,40 @@ class GroupsDAL extends _init_1.default {
             'status': status,
         }).where({ 'id': groupId }).limit(1);
     }
+    async logGroupStatusUpdate(groupId, userId, oldStatus, newStatus, reason) {
+        await this.knex('moderation_group_status').insert({
+            'user_id': userId,
+            'group_id': groupId,
+            'old_status': oldStatus,
+            'status': newStatus,
+            reason: reason,
+        });
+    }
+    async getGroupStatusChanges(groupId, offset, limit) {
+        const data = await this.knex('moderation_group_status').select('id as moderationGroupStatusId', 'user_id as userId', 'group_id as groupId', 'reason', 'old_status as oldStatus', 'status as newStatus', 'created_at as createdAt').where({
+            'group_id': groupId,
+        }).orderBy('id', 'desc').limit(limit).offset(offset);
+        return data;
+    }
+    async updateGroupName(groupId, name) {
+        await this.knex('groups').update({
+            'name': name,
+        }).where({ 'id': groupId }).limit(1);
+    }
+    async logGroupNameUpdate(groupId, userId, oldName, newName, reason) {
+        await this.knex('moderation_group_name').insert({
+            'user_id': userId,
+            'group_id': groupId,
+            'old_name': oldName,
+            'name': newName,
+            reason: reason,
+        });
+    }
+    async getGroupNameChanges(groupId, offset, limit) {
+        return await this.knex('moderation_group_name').select('id as moderationGroupNameId', 'user_id as userId', 'group_id as groupId', 'reason', 'old_name as oldName', 'name as newName', 'created_at as createdAt').where({
+            'group_id': groupId,
+        }).orderBy('id', 'desc').limit(limit).offset(offset);
+    }
     async doesGroupRequireApprovalForNewMembers(groupId) {
         let status = await this.knex('groups').select('approval_required').where({
             'id': groupId,
