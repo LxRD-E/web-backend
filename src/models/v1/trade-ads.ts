@@ -15,6 +15,8 @@ export class TradeAdsSearchRequest {
     orderByColumn?: string;
     orderBy?: 'asc' | 'desc';
     limit: number;
+    offset: number;
+    userId?: number;
 }
 
 export class TradeAdItem {

@@ -52,8 +52,16 @@ export default class TradeAdsController extends controller {
     @Returns(200, { type: model.tradeAds.TradeAdsSearchResponse })
     public async search(
         @Locals('userInfo') userInfo: model.UserSession,
+
+        @Description('Only show trade ads that are running (1 = true, 0 = false, defaults to true)')
         @QueryParams('isRunning', Number) isRunning: number = 1,
+
+        @Description('Only show trade ads that can be completed by the authenticated user (1 = true, 0 = false, defaults to false)')
         @QueryParams('onlyShowCompletable', Number) onlyShowCompletable: number = 0,
+
+        @Description('Only show trade ads created by this userId')
+        @QueryParams('userId', Number) userId?: number,
+
         @QueryParams('limit', Number) limit: number = 100,
         @QueryParams('offset', Number) offset: number = 0,
     ) {
@@ -75,7 +83,11 @@ export default class TradeAdsController extends controller {
         if (onlyShowCompletable) {
             request.allowedRequestedCatalogIds = await this.user.getUniqueOwnedCollectibleCatalogIds(userInfo.userId);
         }
+        if (typeof userId === 'number') {
+            request.userId = userId;
+        }
         request.isRunning = isRunning as 0 | 1;
+        request.offset = offset;
         return this.tradeAds.search(request);
     }
 
@@ -213,5 +225,18 @@ export default class TradeAdsController extends controller {
         return {
             'success': true,
         };
+    }
+
+    @Delete('/ad/:adId')
+    @Summary('Delete a trade ad')
+    @Description('This action can only be performed on trade ads that are currently running, i.e., if the trade ad was already accepted then it cannot be completed')
+    public async deleteAd() {
+
+    }
+
+    @Post('/ad/:adId/accept')
+    @Summary('Accept a trade advertisment')
+    public async acceptAd() {
+
     }
 }

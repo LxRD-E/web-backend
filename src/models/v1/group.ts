@@ -3,6 +3,10 @@ import { Description } from "@tsed/swagger";
 
 // meta stuff
 
+export const GROUP_NAME_MAX_LENGTH = 32;
+
+export const GROUP_NAME_MIN_LENGTH = 3;
+
 /**
  * Maximum amount of groups a user can be in at once
  */
@@ -224,3 +228,36 @@ export class GroupJoinRequest {
     userId: number;
 }
 
+export class GroupNameChangeEntry {
+    @Required()
+    moderationGroupNameId: number;
+    @Required()
+    userId: number;
+    @Required()
+    groupId: number;
+    @Required()
+    reason: string;
+    @Required()
+    oldName: string;
+    @Required()
+    newName: string;
+    @Required()
+    createdAt: string;
+}
+
+export class GroupStatusChangeEntry {
+    @Required()
+    moderationGroupStatusId: number;
+    @Required()
+    userId: number;
+    @Required()
+    groupId: number;
+    @Required()
+    reason: string;
+    @Required()
+    oldStatus: groupStatus;
+    @Required()
+    newStatus: groupStatus;
+    @Required()
+    createdAt: string;
+}

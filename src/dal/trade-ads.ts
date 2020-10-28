@@ -19,6 +19,11 @@ export default class TradeAdsDAL extends _init {
         resp.total = 0;
         resp.data = [];
 
+        let extraWhereClauseForSearch: any = {};
+        if (typeof request.userId === 'number') {
+            extraWhereClauseForSearch['userid_one'] = request.userId;
+        }
+
         let tradeIds: number[] = [];
         if (request.allowedRequestedCatalogIds) {
             let tradeAdIdQuery = this.knex('trade_ad_items').select('trade_ad_id', 'catalog_id', 'side', 'userinventory_id');
@@ -36,6 +41,7 @@ export default class TradeAdsDAL extends _init {
                 }
             }
             resp.total = unique.length;
+            let _currentOffset = 0;
             for (const id of unique) {
                 if (tradeIds.includes(id)) {
                     continue;
@@ -50,6 +56,10 @@ export default class TradeAdsDAL extends _init {
                         ok = false;
                     }
                 }
+                _currentOffset++;
+                if (_currentOffset < request.offset) {
+                    continue; // skip it
+                }
                 if (ok) {
                     tradeIds.push(id);
                 }
@@ -60,7 +70,7 @@ export default class TradeAdsDAL extends _init {
         } else {
             let trades = await this.knex('trade_ads').select('id', 'is_running').where({
                 'is_running': request.isRunning,
-            }).limit(request.limit) as { id: number; is_running: 0 | 1 }[]
+            }).limit(request.limit).andWhere(extraWhereClauseForSearch).offset(request.offset) as { id: number; is_running: 0 | 1 }[]
             let count = await this.knex('trade_ads').count('id as total').where({
                 'is_running': request.isRunning,
             })
@@ -69,11 +79,15 @@ export default class TradeAdsDAL extends _init {
                 tradeIds.push(val.id);
             })
         }
+
         // get trade information
         for (const id of tradeIds) {
             let info = await this.knex('trade_ads').select('id as tradeAdId', 'is_running as isRunning', 'date', 'userid_one as userId', 'userid_one_primary as offerPrimary', 'userid_two_primary as requestPrimary').where({
                 'id': id,
-            })
+            }).andWhere(extraWhereClauseForSearch)
+            if (!info || !info[0]) {
+                continue;
+            }
             let items = await this.knex('trade_ad_items').select('trade_ad_items.trade_ad_id as tradeAdId', 'trade_ad_items.catalog_id as catalogId', 'trade_ad_items.userinventory_id as userInventoryId', 'trade_ad_items.side', 'catalog.average_price as averagePrice').where({
                 'trade_ad_id': id,
             }).innerJoin('catalog', 'catalog.id', 'trade_ad_items.catalog_id') as { tradeAdId: number; catalogId: number; userInventoryId: number; side: 1 | 2; averagePrice: number; }[];

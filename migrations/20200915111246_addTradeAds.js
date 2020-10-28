@@ -1,8 +1,7 @@
 /**
  * Add trade ads system
  */
-console.error('Not yet enabled.');
-process.exit(1);
+
 exports.up = async (knex, Promise) => {
     // table for the trade ads
     await knex.schema.createTable('trade_ads', t => {

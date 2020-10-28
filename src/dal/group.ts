@@ -460,6 +460,94 @@ class GroupsDAL extends _init {
     }
 
     /**
+     * Log a group status update
+     * @param groupId The group changed
+     * @param userId The ID of the user who changed the group status
+     * @param oldStatus The status of the group prior to the update
+     * @param newStatus The new status
+     * @param reason Reason for the status update
+     */
+    public async logGroupStatusUpdate(groupId: number, userId: number, oldStatus: group.groupStatus, newStatus: group.groupStatus, reason: string): Promise<void> {
+        await this.knex('moderation_group_status').insert({
+            'user_id': userId,
+            'group_id': groupId,
+            'old_status': oldStatus,
+            'status': newStatus,
+            reason: reason,
+        });
+    }
+
+    /**
+     * Get status changes made to the {groupId}
+     * @param groupId 
+     * @param offset 
+     * @param limit 
+     */
+    public async getGroupStatusChanges(groupId: number, offset: number, limit: number): Promise<group.GroupStatusChangeEntry[]> {
+        const data = await this.knex('moderation_group_status').select(
+            'id as moderationGroupStatusId',
+            'user_id as userId',
+            'group_id as groupId',
+            'reason',
+            'old_status as oldStatus',
+            'status as newStatus',
+            'created_at as createdAt',
+        ).where({
+            'group_id': groupId,
+        }).orderBy('id', 'desc').limit(limit).offset(offset);
+        return data;
+    }
+
+    /**
+     * Update a group name
+     * @param groupId The groupID to update
+     * @param name The new name
+     */
+    public async updateGroupName(groupId: number, name: string): Promise<void> {
+        await this.knex('groups').update({
+            'name': name,
+        }).where({ 'id': groupId }).limit(1);
+    }
+
+    /**
+     * Log a group name change
+     * @param groupId The groupID updated
+     * @param userId The userID who updated the group
+     * @param oldName The name prior to being updated
+     * @param newName The new name
+     * @param reason Reason for the name change
+     */
+    public async logGroupNameUpdate(groupId: number, userId: number, oldName: string, newName: string, reason: string): Promise<void> {
+        await this.knex('moderation_group_name').insert({
+            'user_id': userId,
+            'group_id': groupId,
+            'old_name': oldName,
+            'name': newName,
+            reason: reason,
+        });
+    }
+
+    /**
+     * Get name changes made to the {groupId}
+     * @param groupId 
+     * @param offset 
+     * @param limit 
+     */
+    public async getGroupNameChanges(groupId: number, offset: number, limit: number): Promise<group.GroupNameChangeEntry[]> {
+        return await this.knex('moderation_group_name').select(
+            'id as moderationGroupNameId',
+            'user_id as userId',
+            'group_id as groupId',
+            'reason',
+            'old_name as oldName',
+            'name as newName',
+            'created_at as createdAt',
+        ).where({
+            'group_id': groupId,
+        }).orderBy('id', 'desc').limit(limit).offset(offset);
+    }
+
+    /**
      * Given a groupId, this method checks whether or not new members will have to be approved before joining
      * @param groupId 
      */

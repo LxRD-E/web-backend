@@ -1137,23 +1137,113 @@ export class StaffController extends controller {
         };
     }
 
+    @Get('/groups/:groupId/status')
+    @Summary('Get group status update logs')
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ManageGroup))
+    @Returns(400, controller.cError('InvalidGroupId: Group is not valid', 'InvalidLimit: Limit is too large or too small'))
+    public async getGroupStatusHistory(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('groupId', Number) groupId: number,
+        @QueryParams('offset', Number) offset: number = 0,
+        @QueryParams('limit', Number) limit: number = 100,
+    ) {
+        const results = await this.group.getGroupStatusChanges(groupId, offset, limit);
+        return {
+            data: results,
+        }
+    }
+
     @Patch('/groups/:groupId/status')
     @Summary('Update a groups status')
     @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ManageGroup))
+    @Returns(400, controller.cError('InvalidGroupStatus: Group status is not valid', 'InvalidReason: Reason is not valid'))
     public async updateGroupStatus(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number,
+        @Required()
         @BodyParams('status', Number) status: number,
+        @Required()
+        @BodyParams('reason', String) reason: string,
     ) {
         if (!model.group.groupStatus[status]) {
             throw new this.BadRequest('InvalidGroupStatus');
         }
-        // update status
-        await this.group.updateGroupStatus(groupId, status);
-        // ok
+        if (!reason || reason.length < 4 || reason.length >= 1024) {
+            throw new this.BadRequest('InvalidReason');
+        }
+        const forUpdate = [
+            'groups',
+            'moderation_group_status',
+        ];
+        return this.transaction(this, forUpdate, async function (trx) {
+            // get info
+            const groupInfo = await trx.group.getInfo(groupId);
+            // log update
+            await trx.group.logGroupStatusUpdate(groupId, userInfo.userId, groupInfo.groupStatus, status, reason);
+            // update status
+            await trx.group.updateGroupStatus(groupId, status);
+            return {
+                success: true,
+            };
+        });
+    }
+
+    @Get('/groups/:groupId/name')
+    @Summary('Get group name update logs')
+    @Use(YesAuth, middleware.staff.validate(model.staff.Permission.ManageGroup))
+    @Returns(400, controller.cError('InvalidGroupId: Group is not valid', 'InvalidLimit: Limit is too large or too small'))
+    public async getGroupNameHistory(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('groupId', Number) groupId: number,
+        @QueryParams('offset', Number) offset: number = 0,
+        @QueryParams('limit', Number) limit: number = 100,
+    ) {
+        const results = await this.group.getGroupNameChanges(groupId, offset, limit);
         return {
-            success: true,
-        };
+            data: results,
+        }
+    }
+
+    @Patch('/groups/:groupId/name')
+    @Summary('Update a groups name')
+    @Use(YesAuth, csrf, middleware.staff.validate(model.staff.Permission.ManageGroup))
+    @Returns(400, controller.cError('InvalidGroupName: Group name is not valid', 'GroupNameTaken: Group name is already in use', 'InvalidReason: reason is not valid'))
+    public async updateGroupName(
+        @Locals('userInfo') userInfo: model.user.UserInfo,
+        @PathParams('groupId', Number) groupId: number,
+        @Required()
+        @BodyParams('name', String) name: string,
+        @Required()
+        @BodyParams('reason', String) reason: string,
+    ) {
+        if (!name || name.length > model.group.GROUP_NAME_MAX_LENGTH || name.length < model.group.GROUP_NAME_MIN_LENGTH) {
+            throw new this.BadRequest('InvalidGroupName');
+        }
+        if (!reason || reason.length < 4 || reason.length >= 1024) {
+            throw new this.BadRequest('InvalidReason');
+        }
+        const forUpdate = [
+            'groups',
+            'moderation_group_name',
+        ];
+        return this.transaction(this, forUpdate, async function (trx) {
+            // get info
+            const groupInfo = await trx.group.getInfo(groupId);
+            // log update
+            await trx.group.logGroupNameUpdate(groupId, userInfo.userId, groupInfo.groupName, name, reason);
+            // try to update name
+            try {
+                await trx.group.updateGroupName(groupId, name);
+            } catch (e) {
+                if (e.code && e.code === "ER_DUP_ENTRY") {
+                    throw new this.BadRequest('GroupNameTaken');
+                }
+                throw e;
+            }
+            return {
+                success: true,
+            };
+        });
     }
 
     @Get('/feed/friends/abuse-reports')

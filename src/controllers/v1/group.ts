@@ -25,10 +25,10 @@ import {
     UseBefore,
     UseBeforeEach
 } from '@tsed/common';
-import {MultipartFile} from "@tsed/multipartfiles";
-import {Description, Returns, ReturnsArray, Summary} from '@tsed/swagger';
-import {YesAuth} from '../../middleware/Auth';
-import {csrf} from '../../dal/auth';
+import { MultipartFile } from "@tsed/multipartfiles";
+import { Description, Returns, ReturnsArray, Summary } from '@tsed/swagger';
+import { YesAuth } from '../../middleware/Auth';
+import { csrf } from '../../dal/auth';
 
 import controller from '../controller';
 
@@ -127,7 +127,7 @@ export class GroupsController extends controller {
     /**
      * Get the Authenticated User's Role in a Group
      */
-    private async getAuthRole(userData: model.user.UserInfo|undefined = undefined, groupId: number): Promise<model.group.roleInfo> {
+    private async getAuthRole(userData: model.user.UserInfo | undefined = undefined, groupId: number): Promise<model.group.roleInfo> {
         // Grab Roleset Data
         let role;
         try {
@@ -145,17 +145,20 @@ export class GroupsController extends controller {
     @Get('/:groupId/info')
     @Summary('Get group info')
     @Description('This endpoint is a bit exceptional. If the groupStatus is locked (1), it will only return { groupStatus: 1 } but if it is not locked, it will return all group info')
-    @Returns(200, {type: model.group.groupDetails})
+    @Returns(200, { type: model.group.groupDetails })
     @Returns(400, { type: model.Error, description: 'InvalidGroupId: invalid id\n' })
     public async getInfo(
+        @Locals('userInfo') userInfo: model.UserSession,
         @PathParams('groupId', Number) groupId: number
     ) {
         try {
             const groupInfo = await this.group.getInfo(groupId);
-            if (groupInfo.groupStatus === model.group.groupStatus.locked) {
-                return {
-                    groupStatus: groupInfo.groupStatus,
-                };
+            if (!userInfo || userInfo && userInfo.staff < 1) {
+                if (groupInfo.groupStatus === model.group.groupStatus.locked) {
+                    return {
+                        groupStatus: groupInfo.groupStatus,
+                    };
+                }
             }
             return groupInfo;
         } catch (e) {
@@ -232,7 +235,7 @@ export class GroupsController extends controller {
     @Get('/:groupId/shout')
     @Summary('Get group\'s current shout')
     @Use(middleware.group.ValidateGroupId)
-    @Returns(200, {type: model.group.groupShout})
+    @Returns(200, { type: model.group.groupShout })
     public async getShout(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number
@@ -273,7 +276,7 @@ export class GroupsController extends controller {
     @Get('/:groupId/funds')
     @Summary('Get group funds (User must have manage permission)')
     @Use(middleware.group.ValidateGroupId)
-    @Returns(200, {type: model.group.GroupFunds, description: 'Group Funds'})
+    @Returns(200, { type: model.group.GroupFunds, description: 'Group Funds' })
     public async getFunds(
         @Locals('userInfo') userInfo: model.user.UserInfo,
         @PathParams('groupId', Number) groupId: number,
@@ -701,10 +704,10 @@ export class GroupsController extends controller {
             }
             // Verify Roleset
             // Check if rank is already taken
-                const takenRoleset = await this.group.getRoleSetByRank(groupId, rank);
-                if (takenRoleset.roleSetId !== roleSetId) {
-                    throw new this.Conflict('RankIdIsTaken');
-                }
+            const takenRoleset = await this.group.getRoleSetByRank(groupId, rank);
+            if (takenRoleset.roleSetId !== roleSetId) {
+                throw new this.Conflict('RankIdIsTaken');
+            }
 
             // Grab Roleset to Edit
             const roleset = await this.group.getRoleById(roleSetId);
@@ -784,7 +787,7 @@ export class GroupsController extends controller {
             let exists: any = false;
             try {
                 exists = await this.group.getRoleSetByRank(groupId, rank);
-            } catch{
+            } catch {
 
             }
             if (exists) {
@@ -1143,7 +1146,7 @@ export class GroupsController extends controller {
                 console.error(e);
             }
         };
-        renderIcon().then(() => {}).catch(e => console.error);
+        renderIcon().then(() => { }).catch(e => console.error);
         // Update Group Icon ID
         await this.group.updateGroupIconId(groupId, groupIconCatalogId);
         // Complete Transaction
@@ -1242,7 +1245,7 @@ export class GroupsController extends controller {
             'groups',
             'users',
         ];
-        await this.transaction(this, forUpdate,async function (trx) {
+        await this.transaction(this, forUpdate, async function (trx) {
             // Confirm group is valid
             let groupInfo: model.group.groupDetails;
             try {
